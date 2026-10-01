@@ -16,7 +16,7 @@
  */
 import formConfig from '../../js/shared/form-config.js';
 import validate from '../../js/shared/validate.js';
-import { buildAlert } from '../_lib/discord.js';
+import { buildAlert } from '../discord.js';
 
 const MAX_BODY_BYTES = 14 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
