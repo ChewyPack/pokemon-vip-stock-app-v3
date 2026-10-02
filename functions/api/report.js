@@ -5,16 +5,16 @@
  * Browser sends multipart form data:
  *   data         JSON string with the answers
  *   photos       0-5 image files
- *   elapsedMs    how long the member spent on the form (bot check)
- *   website      honeypot field, must be empty
+ *   elapsedMs    how long the member spent on the form
+ *   website      honeypot field
  *
  * Cloudflare binding:
  *   DB -> pokemon-vip-members
  *
  * Environment variables:
- *   DISCORD_WEBHOOK_URL       required. In-stock alerts post here.
- *   DISCORD_ALERT_ROLE_ID     optional. Role to ping on in-stock alerts.
- *   DISCORD_LOG_WEBHOOK_URL   optional. Every report posts here.
+ *   DISCORD_WEBHOOK_URL       required
+ *   DISCORD_ALERT_ROLE_ID     optional
+ *   DISCORD_LOG_WEBHOOK_URL   optional
  */
 
 import formConfig from '../../js/shared/form-config.js';
@@ -72,14 +72,11 @@ async function postToDiscord(webhookUrl, payload, photos) {
 
   return fetch(url, {
     method: 'POST',
-    body
+    body: body
   });
 }
 
 export async function onRequestPost({ request, env }) {
-  /*
-   * Verify Discord configuration.
-   */
   const alertUrl = env.DISCORD_WEBHOOK_URL || '';
 
   if (!WEBHOOK_PREFIX.test(alertUrl)) {
@@ -92,9 +89,6 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  /*
-   * Reject extremely large requests.
-   */
   const declared = Number(
     request.headers.get('content-length') || 0
   );
@@ -109,9 +103,6 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  /*
-   * Read multipart form.
-   */
   let form;
 
   try {
@@ -126,12 +117,6 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  /*
-   * Bot checks.
-   *
-   * Bots that fill the honeypot or submit too quickly
-   * receive a fake success response.
-   */
   const honeypot = String(
     form.get('website') || ''
   );
@@ -146,9 +131,6 @@ export async function onRequestPost({ request, env }) {
     });
   }
 
-  /*
-   * Parse submitted JSON.
-   */
   let data;
 
   try {
@@ -165,9 +147,6 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  /*
-   * Validate the report against the shared form config.
-   */
   const result = validate.validateAll(
     formConfig,
     data,
@@ -189,9 +168,6 @@ export async function onRequestPost({ request, env }) {
 
   const report = result.clean;
 
-  /*
-   * Process photos.
-   */
   const files = form
     .getAll('photos')
     .filter(function (f) {
@@ -264,30 +240,18 @@ export async function onRequestPost({ request, env }) {
   /*
    * SAVE REPORT TO D1
    *
-   * DB is the Cloudflare D1 binding
-   * connected to pokemon-vip-members.
+   * DB is the D1 binding connected to
+   * pokemon-vip-members.
    */
   try {
+    const sql =
+      'INSERT INTO reports ' +
+      '(store, location, product, quantity, price, reported_by, ' +
+      'photo_url, notes, price_type, product_located, seen_at, still_there) ' +
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
     await env.DB
-      .prepare(
-        `
-        INSERT INTO reports (
-          store,
-          location,
-          product,
-          quantity,
-          price,
-          reported_by,
-          photo_url,
-          notes,
-          price_type,
-          product_located,
-          seen_at,
-          still_there
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
-      )
+      .prepare(sql)
       .bind(
         report.retailer || '',
         report.location || '',
@@ -320,15 +284,14 @@ export async function onRequestPost({ request, env }) {
    * Build Discord alert.
    */
   const alert = buildAlert(report, {
-    roleId:
-      env.DISCORD_ALERT_ROLE_ID || '',
-    photoNames
+    roleId: env.DISCORD_ALERT_ROLE_ID || '',
+    photoNames: photoNames
   });
 
   const sends = [];
 
   /*
-   * In-stock reports only go to the alert channel.
+   * In-stock reports only.
    */
   if (alert.inStock) {
     sends.push(
@@ -341,7 +304,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   /*
-   * Optional log channel receives every report.
+   * Optional log channel.
    */
   const logUrl =
     env.DISCORD_LOG_WEBHOOK_URL || '';
@@ -349,7 +312,7 @@ export async function onRequestPost({ request, env }) {
   if (WEBHOOK_PREFIX.test(logUrl)) {
     const log = buildAlert(report, {
       roleId: '',
-      photoNames
+      photoNames: photoNames
     });
 
     sends.push(
@@ -361,9 +324,6 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  /*
-   * Send Discord messages.
-   */
   let responses;
 
   try {
@@ -378,9 +338,6 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  /*
-   * Discord rate limit.
-   */
   if (
     responses.some(function (r) {
       return r.status === 429;
@@ -395,9 +352,6 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  /*
-   * Discord returned an error.
-   */
   if (
     responses.some(function (r) {
       return !r.ok;
@@ -412,18 +366,12 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  /*
-   * Successful submission.
-   */
   return json({
     ok: true,
     alerted: alert.inStock
   });
 }
 
-/*
- * Reject GET/other requests.
- */
 export async function onRequest() {
   return json(
     {
