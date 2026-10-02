@@ -16,6 +16,16 @@
     // Leave empty to hide the "Join the Discord" button.
     discordInviteUrl: '',
 
+    // VIP membership settings.
+    // Stripe checkout links will be added here later.
+    vip: {
+      enabled: true,
+      monthlyPrice: 5,
+      yearlyPrice: 50,
+      checkoutMonthlyUrl: '',
+      checkoutYearlyUrl: ''
+    },
+
     // The server function that forwards reports to Discord.
     submitEndpoint: '/api/report',
 
@@ -56,9 +66,21 @@
     ],
 
     howItWorks: [
-      { title: 'Spot it', text: 'Find Pokémon products on a shelf, at the counter or online.', icon: '👀' },
-      { title: 'Report it', text: 'A few taps: where, what and when. Add photos if you can.', icon: '📸' },
-      { title: 'Crew gets pinged', text: 'Your report posts to the VIP Discord for everyone to see.', icon: '🔔' }
+      {
+        title: 'Spot it',
+        text: 'Find Pokémon products on a shelf, at the counter or online.',
+        icon: '👀'
+      },
+      {
+        title: 'Report it',
+        text: 'A few taps: where, what and when. Add photos if you can.',
+        icon: '📸'
+      },
+      {
+        title: 'Crew gets pinged',
+        text: 'Your report posts to the VIP Discord for everyone to see.',
+        icon: '🔔'
+      }
     ],
 
     notice: "A report doesn't guarantee the product is still available. Inventory changes quickly."
