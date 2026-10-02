@@ -68,7 +68,10 @@ export async function onRequestPost({ request, env }) {
   const alertUrl = env.DISCORD_WEBHOOK_URL || '';
 
   if (!WEBHOOK_PREFIX.test(alertUrl)) {
-    return json({ ok: false, error: 'not_configured' }, 500);
+    return json({
+      ok: false,
+      error: 'not_configured'
+    }, 500);
   }
 
   const declared = Number(
@@ -76,7 +79,10 @@ export async function onRequestPost({ request, env }) {
   );
 
   if (declared > MAX_BODY_BYTES) {
-    return json({ ok: false, error: 'too_large' }, 413);
+    return json({
+      ok: false,
+      error: 'too_large'
+    }, 413);
   }
 
   let form;
@@ -84,7 +90,10 @@ export async function onRequestPost({ request, env }) {
   try {
     form = await request.formData();
   } catch (e) {
-    return json({ ok: false, error: 'bad_request' }, 400);
+    return json({
+      ok: false,
+      error: 'bad_request'
+    }, 400);
   }
 
   // Bot checks
@@ -101,14 +110,19 @@ export async function onRequestPost({ request, env }) {
   try {
     data = JSON.parse(String(form.get('data') || ''));
   } catch (e) {
-    return json({ ok: false, error: 'bad_request' }, 400);
+    return json({
+      ok: false,
+      error: 'bad_request'
+    }, 400);
   }
 
   // Validate and clean report
   const result = validate.validateAll(
     formConfig,
     data,
-    { futureToleranceMs: 15 * 60 * 1000 }
+    {
+      futureToleranceMs: 15 * 60 * 1000
+    }
   );
 
   if (!result.ok) {
@@ -173,8 +187,7 @@ export async function onRequestPost({ request, env }) {
   /*
    * SAVE REPORT TO D1
    *
-   * The DB binding is:
-   *   DB -> pokemon-vip-members
+   * DB = pokemon-vip-members
    */
   try {
     await env.DB.prepare(`
@@ -186,23 +199,29 @@ export async function onRequestPost({ request, env }) {
         price,
         reported_by,
         photo_url,
-        notes
+        notes,
+        price_type,
+        product_located,
+        seen_at,
+        still_there
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
       .bind(
-        report.store || '',
+        report.retailer || '',
         report.location || '',
         report.product || '',
-        Number.isFinite(Number(report.quantity))
-          ? Number(report.quantity)
-          : null,
-        Number.isFinite(Number(report.price))
+        report.qty || '',
+        report.price !== undefined && report.price !== ''
           ? Number(report.price)
           : null,
-        report.reportedBy || report.reported_by || '',
+        report.reporter || '',
         photoNames.join(', '),
-        report.notes || ''
+        report.notes || '',
+        report.priceType || '',
+        report.productLocated || '',
+        report.seenAt || '',
+        report.stillThere || ''
       )
       .run();
   } catch (e) {
@@ -212,7 +231,7 @@ export async function onRequestPost({ request, env }) {
     }, 500);
   }
 
-  // Alert channel: in-stock reports only
+  // Build Discord alert
   const alert = buildAlert(report, {
     roleId: env.DISCORD_ALERT_ROLE_ID || '',
     photoNames
@@ -220,6 +239,7 @@ export async function onRequestPost({ request, env }) {
 
   const sends = [];
 
+  // In-stock reports only
   if (alert.inStock) {
     sends.push(
       postToDiscord(
@@ -230,7 +250,7 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  // Optional log channel: everything
+  // Optional log channel: every report
   const logUrl = env.DISCORD_LOG_WEBHOOK_URL || '';
 
   if (WEBHOOK_PREFIX.test(logUrl)) {
