@@ -7,7 +7,7 @@
  *   elapsedMs    how long the member spent on the form
  *   website      honeypot field
  *
- * Cloudflare binding:
+ * Cloudflare bindings:
  *   DB -> pokemon-vip-members
  *
  * Environment variables:
@@ -28,6 +28,8 @@ const MIN_FILL_MS = 3000;
 const WEBHOOK_PREFIX =
   /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//;
 
+const SESSION_COOKIE = 'vip_session';
+
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -38,7 +40,84 @@ function json(body, status = 200) {
   });
 }
 
-async function postToDiscord(webhookUrl, payload, photos) {
+function getCookie(request, name) {
+  const header = request.headers.get('Cookie') || '';
+
+  const parts = header.split(';');
+
+  for (const part of parts) {
+    const trimmed = part.trim();
+
+    if (trimmed.startsWith(name + '=')) {
+      return trimmed.substring(name.length + 1);
+    }
+  }
+
+  return '';
+}
+
+function base64Url(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+async function sha256(value) {
+  const data = new TextEncoder().encode(value);
+
+  return crypto.subtle.digest(
+    'SHA-256',
+    data
+  );
+}
+
+async function getActiveMember(request, env) {
+  const token = getCookie(
+    request,
+    SESSION_COOKIE
+  );
+
+  if (!token) {
+    return null;
+  }
+
+  const hashBuffer = await sha256(token);
+
+  const tokenHash = base64Url(
+    hashBuffer
+  );
+
+  const result = await env.DB.prepare(
+    `SELECT id, name, email, membership_status,
+            membership_type, session_expires_at
+     FROM users
+     WHERE session_token_hash = ?
+       AND membership_status = 'active'
+     LIMIT 1`
+  )
+    .bind(tokenHash)
+    .first();
+
+  if (!result) {
+    return null;
+  }
+
+  if (
+    !result.session_expires_at ||
+    Number(result.session_expires_at) < Date.now()
+  ) {
+    return null;
+  }
+
+  return result;
+}
+
+async function postToDiscord(
+  webhookUrl,
+  payload,
+  photos
+) {
   const url =
     webhookUrl +
     (webhookUrl.includes('?') ? '&' : '?') +
@@ -75,8 +154,46 @@ async function postToDiscord(webhookUrl, payload, photos) {
   });
 }
 
-export async function onRequestPost({ request, env }) {
-  const alertUrl = env.DISCORD_WEBHOOK_URL || '';
+export async function onRequestPost({
+  request,
+  env
+}) {
+  /*
+   * VIP MEMBERSHIP CHECK
+   *
+   * This happens before we process or save
+   * the report.
+   */
+  try {
+    const member =
+      await getActiveMember(request, env);
+
+    if (!member) {
+      return json(
+        {
+          ok: false,
+          error: 'membership_required'
+        },
+        403
+      );
+    }
+  } catch (error) {
+    console.error(
+      'Membership check error:',
+      error
+    );
+
+    return json(
+      {
+        ok: false,
+        error: 'membership_check_failed'
+      },
+      500
+    );
+  }
+
+  const alertUrl =
+    env.DISCORD_WEBHOOK_URL || '';
 
   if (!WEBHOOK_PREFIX.test(alertUrl)) {
     return json(
@@ -124,7 +241,10 @@ export async function onRequestPost({ request, env }) {
     form.get('elapsedMs') || 0
   );
 
-  if (honeypot || elapsed < MIN_FILL_MS) {
+  if (
+    honeypot ||
+    elapsed < MIN_FILL_MS
+  ) {
     return json({
       ok: true
     });
@@ -150,7 +270,8 @@ export async function onRequestPost({ request, env }) {
     formConfig,
     data,
     {
-      futureToleranceMs: 15 * 60 * 1000
+      futureToleranceMs:
+        15 * 60 * 1000
     }
   );
 
@@ -189,11 +310,17 @@ export async function onRequestPost({ request, env }) {
   let total = 0;
   const photos = [];
 
-  for (let i = 0; i < files.length; i++) {
+  for (
+    let i = 0;
+    i < files.length;
+    i++
+  ) {
     const f = files[i];
 
     if (
-      !/^image\/(jpeg|png|webp)$/.test(f.type)
+      !/^image\/(jpeg|png|webp)$/.test(
+        f.type
+      )
     ) {
       return json(
         {
@@ -204,7 +331,9 @@ export async function onRequestPost({ request, env }) {
       );
     }
 
-    if (f.size > MAX_PHOTO_BYTES) {
+    if (
+      f.size > MAX_PHOTO_BYTES
+    ) {
       return json(
         {
           ok: false,
@@ -218,11 +347,17 @@ export async function onRequestPost({ request, env }) {
 
     photos.push({
       file: f,
-      name: 'photo' + (i + 1) + '.jpg'
+      name:
+        'photo' +
+        (i + 1) +
+        '.jpg'
     });
   }
 
-  if (total > MAX_TOTAL_PHOTO_BYTES) {
+  if (
+    total >
+    MAX_TOTAL_PHOTO_BYTES
+  ) {
     return json(
       {
         ok: false,
@@ -232,15 +367,13 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  const photoNames = photos.map(function (p) {
-    return p.name;
-  });
+  const photoNames =
+    photos.map(function (p) {
+      return p.name;
+    });
 
   /*
    * SAVE REPORT TO D1
-   *
-   * DB is the D1 binding connected to
-   * pokemon-vip-members.
    */
   try {
     const sql =
@@ -270,7 +403,10 @@ export async function onRequestPost({ request, env }) {
       )
       .run();
   } catch (e) {
-    console.error('D1 database error:', e);
+    console.error(
+      'D1 database error:',
+      e
+    );
 
     return json(
       {
@@ -282,17 +418,22 @@ export async function onRequestPost({ request, env }) {
   }
 
   /*
-   * Build Discord alert.
+   * BUILD DISCORD ALERT
    */
-  const alert = buildAlert(report, {
-    roleId: env.DISCORD_ALERT_ROLE_ID || '',
-    photoNames: photoNames
-  });
+  const alert = buildAlert(
+    report,
+    {
+      roleId:
+        env.DISCORD_ALERT_ROLE_ID || '',
+      photoNames:
+        photoNames
+    }
+  );
 
   const sends = [];
 
   /*
-   * In-stock reports only.
+   * IN-STOCK REPORTS ONLY
    */
   if (alert.inStock) {
     sends.push(
@@ -305,16 +446,22 @@ export async function onRequestPost({ request, env }) {
   }
 
   /*
-   * Optional log channel.
+   * OPTIONAL LOG CHANNEL
    */
   const logUrl =
     env.DISCORD_LOG_WEBHOOK_URL || '';
 
-  if (WEBHOOK_PREFIX.test(logUrl)) {
-    const log = buildAlert(report, {
-      roleId: '',
-      photoNames: photoNames
-    });
+  if (
+    WEBHOOK_PREFIX.test(logUrl)
+  ) {
+    const log = buildAlert(
+      report,
+      {
+        roleId: '',
+        photoNames:
+          photoNames
+      }
+    );
 
     sends.push(
       postToDiscord(
@@ -328,9 +475,13 @@ export async function onRequestPost({ request, env }) {
   let responses;
 
   try {
-    responses = await Promise.all(sends);
+    responses =
+      await Promise.all(sends);
   } catch (e) {
-    console.error('Discord connection error:', e);
+    console.error(
+      'Discord connection error:',
+      e
+    );
 
     return json(
       {
