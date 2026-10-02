@@ -25,7 +25,9 @@ const MAX_BODY_BYTES = 14 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
 const MAX_TOTAL_PHOTO_BYTES = 9 * 1024 * 1024;
 const MIN_FILL_MS = 3000;
-const WEBHOOK_PREFIX = /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//;
+
+const WEBHOOK_PREFIX =
+  /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//;
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -46,16 +48,26 @@ async function postToDiscord(webhookUrl, payload, photos) {
   if (!photos.length) {
     return fetch(url, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json'
+      },
       body: JSON.stringify(payload)
     });
   }
 
   const body = new FormData();
-  body.append('payload_json', JSON.stringify(payload));
 
-  photos.forEach((p, i) => {
-    body.append(`files[${i}]`, p.file, p.name);
+  body.append(
+    'payload_json',
+    JSON.stringify(payload)
+  );
+
+  photos.forEach(function (p, i) {
+    body.append(
+      'files[' + i + ']',
+      p.file,
+      p.name
+    );
   });
 
   return fetch(url, {
@@ -65,58 +77,97 @@ async function postToDiscord(webhookUrl, payload, photos) {
 }
 
 export async function onRequestPost({ request, env }) {
+  /*
+   * Verify Discord configuration.
+   */
   const alertUrl = env.DISCORD_WEBHOOK_URL || '';
 
   if (!WEBHOOK_PREFIX.test(alertUrl)) {
-    return json({
-      ok: false,
-      error: 'not_configured'
-    }, 500);
+    return json(
+      {
+        ok: false,
+        error: 'not_configured'
+      },
+      500
+    );
   }
 
+  /*
+   * Reject extremely large requests.
+   */
   const declared = Number(
     request.headers.get('content-length') || 0
   );
 
   if (declared > MAX_BODY_BYTES) {
-    return json({
-      ok: false,
-      error: 'too_large'
-    }, 413);
+    return json(
+      {
+        ok: false,
+        error: 'too_large'
+      },
+      413
+    );
   }
 
+  /*
+   * Read multipart form.
+   */
   let form;
 
   try {
     form = await request.formData();
   } catch (e) {
-    return json({
-      ok: false,
-      error: 'bad_request'
-    }, 400);
+    return json(
+      {
+        ok: false,
+        error: 'bad_request'
+      },
+      400
+    );
   }
 
-  // Bot checks
-  const honeypot = String(form.get('website') || '');
-  const elapsed = Number(form.get('elapsedMs') || 0);
+  /*
+   * Bot checks.
+   *
+   * Bots that fill the honeypot or submit too quickly
+   * receive a fake success response.
+   */
+  const honeypot = String(
+    form.get('website') || ''
+  );
+
+  const elapsed = Number(
+    form.get('elapsedMs') || 0
+  );
 
   if (honeypot || elapsed < MIN_FILL_MS) {
-    return json({ ok: true });
+    return json({
+      ok: true
+    });
   }
 
-  // Parse submitted report
+  /*
+   * Parse submitted JSON.
+   */
   let data;
 
   try {
-    data = JSON.parse(String(form.get('data') || ''));
+    data = JSON.parse(
+      String(form.get('data') || '')
+    );
   } catch (e) {
-    return json({
-      ok: false,
-      error: 'bad_request'
-    }, 400);
+    return json(
+      {
+        ok: false,
+        error: 'bad_request'
+      },
+      400
+    );
   }
 
-  // Validate and clean report
+  /*
+   * Validate the report against the shared form config.
+   */
   const result = validate.validateAll(
     formConfig,
     data,
@@ -126,25 +177,38 @@ export async function onRequestPost({ request, env }) {
   );
 
   if (!result.ok) {
-    return json({
-      ok: false,
-      error: 'invalid',
-      errors: result.errors
-    }, 422);
+    return json(
+      {
+        ok: false,
+        error: 'invalid',
+        errors: result.errors
+      },
+      422
+    );
   }
 
   const report = result.clean;
 
-  // Photos
+  /*
+   * Process photos.
+   */
   const files = form
     .getAll('photos')
-    .filter((f) => typeof f !== 'string');
+    .filter(function (f) {
+      return typeof f !== 'string';
+    });
 
-  if (files.length > formConfig.limits.maxPhotos) {
-    return json({
-      ok: false,
-      error: 'too_many_photos'
-    }, 422);
+  if (
+    files.length >
+    formConfig.limits.maxPhotos
+  ) {
+    return json(
+      {
+        ok: false,
+        error: 'too_many_photos'
+      },
+      422
+    );
   }
 
   let total = 0;
@@ -153,66 +217,84 @@ export async function onRequestPost({ request, env }) {
   for (let i = 0; i < files.length; i++) {
     const f = files[i];
 
-    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) {
-      return json({
-        ok: false,
-        error: 'bad_photo'
-      }, 422);
+    if (
+      !/^image\/(jpeg|png|webp)$/.test(f.type)
+    ) {
+      return json(
+        {
+          ok: false,
+          error: 'bad_photo'
+        },
+        422
+      );
     }
 
     if (f.size > MAX_PHOTO_BYTES) {
-      return json({
-        ok: false,
-        error: 'photo_too_large'
-      }, 413);
+      return json(
+        {
+          ok: false,
+          error: 'photo_too_large'
+        },
+        413
+      );
     }
 
     total += f.size;
 
     photos.push({
       file: f,
-      name: `photo${i + 1}.jpg`
+      name: 'photo' + (i + 1) + '.jpg'
     });
   }
 
   if (total > MAX_TOTAL_PHOTO_BYTES) {
-    return json({
-      ok: false,
-      error: 'photo_too_large'
-    }, 413);
+    return json(
+      {
+        ok: false,
+        error: 'photo_too_large'
+      },
+      413
+    );
   }
 
-  const photoNames = photos.map((p) => p.name);
+  const photoNames = photos.map(function (p) {
+    return p.name;
+  });
 
   /*
    * SAVE REPORT TO D1
    *
-   * DB = pokemon-vip-members
+   * DB is the Cloudflare D1 binding
+   * connected to pokemon-vip-members.
    */
   try {
-    await env.DB.prepare(`
-      INSERT INTO reports (
-        store,
-        location,
-        product,
-        quantity,
-        price,
-        reported_by,
-        photo_url,
-        notes,
-        price_type,
-        product_located,
-        seen_at,
-        still_there
+    await env.DB
+      .prepare(
+        `
+        INSERT INTO reports (
+          store,
+          location,
+          product,
+          quantity,
+          price,
+          reported_by,
+          photo_url,
+          notes,
+          price_type,
+          product_located,
+          seen_at,
+          still_there
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `)
       .bind(
         report.retailer || '',
         report.location || '',
         report.product || '',
         report.qty || '',
-        report.price !== undefined && report.price !== ''
+        report.price !== undefined &&
+        report.price !== ''
           ? Number(report.price)
           : null,
         report.reporter || '',
@@ -225,21 +307,29 @@ export async function onRequestPost({ request, env }) {
       )
       .run();
   } catch (e) {
-    return json({
-      ok: false,
-      error: 'database_error'
-    }, 500);
+    return json(
+      {
+        ok: false,
+        error: 'database_error'
+      },
+      500
+    );
   }
 
-  // Build Discord alert
+  /*
+   * Build Discord alert.
+   */
   const alert = buildAlert(report, {
-    roleId: env.DISCORD_ALERT_ROLE_ID || '',
+    roleId:
+      env.DISCORD_ALERT_ROLE_ID || '',
     photoNames
   });
 
   const sends = [];
 
-  // In-stock reports only
+  /*
+   * In-stock reports only go to the alert channel.
+   */
   if (alert.inStock) {
     sends.push(
       postToDiscord(
@@ -250,8 +340,11 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  // Optional log channel: every report
-  const logUrl = env.DISCORD_LOG_WEBHOOK_URL || '';
+  /*
+   * Optional log channel receives every report.
+   */
+  const logUrl =
+    env.DISCORD_LOG_WEBHOOK_URL || '';
 
   if (WEBHOOK_PREFIX.test(logUrl)) {
     const log = buildAlert(report, {
@@ -268,41 +361,76 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
+  /*
+   * Send Discord messages.
+   */
   let responses;
 
   try {
     responses = await Promise.all(sends);
   } catch (e) {
-    return json({
-      ok: false,
-      error: 'discord_unreachable'
-    }, 502);
+    return json(
+      {
+        ok: false,
+        error: 'discord_unreachable'
+      },
+      502
+    );
   }
 
-  if (responses.some((r) => r.status === 429)) {
-    return json({
-      ok: false,
-      error: 'busy'
-    }, 503);
+  /*
+   * Discord rate limit.
+   */
+  if (
+    responses.some(function (r) {
+      return r.status === 429;
+    })
+  ) {
+    return json(
+      {
+        ok: false,
+        error: 'busy'
+      },
+      503
+    );
   }
 
-  if (responses.some((r) => !r.ok)) {
-    return json({
-      ok: false,
-      error: 'discord_error'
-    }, 502);
+  /*
+   * Discord returned an error.
+   */
+  if (
+    responses.some(function (r) {
+      return !r.ok;
+    })
+  ) {
+    return json(
+      {
+        ok: false,
+        error: 'discord_error'
+      },
+      502
+    );
   }
 
+  /*
+   * Successful submission.
+   */
   return json({
     ok: true,
     alerted: alert.inStock
   });
 }
 
+/*
+ * Reject GET/other requests.
+ */
 export async function onRequest() {
-  return json({
-    ok: false,
-    error: 'method_not_allowed'
-  }, 405);
+  return json(
+    {
+      ok: false,
+      error: 'method_not_allowed'
+    },
+    405
+  );
 }
 ```
