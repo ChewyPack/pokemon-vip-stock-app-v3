@@ -1,3 +1,4 @@
+```js
 /*
  * APP
  *
@@ -353,8 +354,13 @@
       await handleCheckoutReturn();
 
     if (checkoutActivated) {
-      flow.open();
-      return;
+      var activeAfterCheckout =
+        await checkMembership();
+
+      if (activeAfterCheckout) {
+        flow.open();
+        return;
+      }
     }
 
     var active =
@@ -536,8 +542,4 @@
 
   window.addEventListener(
     'hashchange',
-    route
-  );
-
-  route();
-})();
+   
