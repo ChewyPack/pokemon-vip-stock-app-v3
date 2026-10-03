@@ -183,3 +183,4 @@ export async function onRequestGet({ request, env }) {
     return redirect('/#discord-error');
   }
 }
+
