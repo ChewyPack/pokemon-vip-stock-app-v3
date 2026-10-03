@@ -2,7 +2,8 @@
  * APP SHELL
  *
  * Handles routing, membership access, checkout return,
- * paywall rendering and successful report completion.
+ * Discord connection status, paywall rendering
+ * and successful report completion.
  */
 (function () {
   var VIP = (window.VIP = window.VIP || {});
@@ -232,6 +233,182 @@
     }
   }
 
+  async function getDiscordStatus() {
+    try {
+      var response = await fetch(
+        '/api/discord/status',
+        {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store'
+        }
+      );
+
+      if (!response.ok) {
+        return {
+          ok: false,
+          active: false,
+          connected: false
+        };
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(
+        'Discord status error:',
+        error
+      );
+
+      return {
+        ok: false,
+        active: false,
+        connected: false
+      };
+    }
+  }
+
+  function renderDiscordPanel(status) {
+    var connected =
+      status &&
+      status.ok &&
+      status.active &&
+      status.connected;
+
+    var username =
+      status &&
+      status.discord_username
+        ? status.discord_username
+        : '';
+
+    var panel = h(
+      'section',
+      {
+        class: 'panel discord-panel'
+      },
+
+      h(
+        'div',
+        {
+          class: 'panel__head'
+        },
+
+        h(
+          'h2',
+          {
+            class: 'panel__title'
+          },
+          connected
+            ? 'Discord Connected ✓'
+            : 'Connect Your Discord'
+        ),
+
+        h(
+          'p',
+          {
+            class: 'panel__blurb'
+          },
+          connected
+            ? 'Your Discord account is connected to your Pokémon VIP membership.'
+            : 'Connect your Discord account to access the VIP community.'
+        )
+      ),
+
+      h(
+        'div',
+        {
+          class: 'panel__body'
+        },
+
+        connected
+          ? h(
+              'div',
+              {
+                class: 'notice'
+              },
+              'Connected as ',
+              h(
+                'strong',
+                null,
+                username || 'Discord User'
+              )
+            )
+          : h(
+              'div',
+              {
+                class: 'discord-connect'
+              },
+
+              h(
+                'p',
+                null,
+                'Connect Discord to link your VIP membership with your Discord account and receive your VIP Member role.'
+              ),
+
+              h(
+                'a',
+                {
+                  class: 'btn btn--primary',
+                  href: '/api/discord/connect'
+                },
+                'Connect Discord'
+              )
+            )
+      )
+    );
+
+    return panel;
+  }
+
+  async function renderReport() {
+    var active =
+      await checkMembership();
+
+    if (!active) {
+      renderPaywall();
+      return;
+    }
+
+    VIP.clear(views.form);
+
+    var discordStatus =
+      await getDiscordStatus();
+
+    var discordPanel =
+      renderDiscordPanel(
+        discordStatus
+      );
+
+    views.form.appendChild(
+      discordPanel
+    );
+
+    var reportContainer =
+      h(
+        'div',
+        {
+          class: 'report-flow'
+        }
+      );
+
+    views.form.appendChild(
+      reportContainer
+    );
+
+    if (!flow) {
+      flow = VIP.flow(
+        reportContainer,
+        {
+          onSuccess:
+            handleSuccess
+        }
+      );
+    }
+
+    flow.open();
+
+    show('form');
+  }
+
   async function handleCheckoutReturn() {
     var params =
       new URLSearchParams(
@@ -303,43 +480,48 @@
       await handleCheckoutReturn();
 
     if (checkoutActivated) {
-      var activeAfterCheckout =
-        await checkMembership();
-
-      if (activeAfterCheckout) {
-        if (!flow) {
-          flow = VIP.flow(
-            views.form,
-            {
-              onSuccess:
-                handleSuccess
-            }
-          );
-        }
-
-        flow.open();
-        return;
-      }
+      await renderReport();
+      return;
     }
 
-    var active =
-      await checkMembership();
+    await renderReport();
+  }
 
-    if (active) {
-      if (!flow) {
-        flow = VIP.flow(
-          views.form,
-          {
-            onSuccess:
-              handleSuccess
-          }
+  function handleDiscordResult() {
+    var hash =
+      window.location.hash;
+
+    if (hash === '#discord-connected') {
+      window.history.replaceState(
+        {},
+        document.title,
+        '/#report'
+      );
+
+      openReport();
+
+      return true;
+    }
+
+    if (hash === '#discord-error') {
+      window.history.replaceState(
+        {},
+        document.title,
+        '/#report'
+      );
+
+      openReport();
+
+      setTimeout(function () {
+        alert(
+          'We could not connect your Discord account. Please try again.'
         );
-      }
+      }, 100);
 
-      flow.open();
-    } else {
-      renderPaywall();
+      return true;
     }
+
+    return false;
   }
 
   function handleSuccess(info) {
@@ -446,6 +628,14 @@
   function route() {
     var hash =
       location.hash;
+
+    if (
+      hash === '#discord-connected' ||
+      hash === '#discord-error'
+    ) {
+      handleDiscordResult();
+      return;
+    }
 
     if (hash === '#report') {
       show('form');
