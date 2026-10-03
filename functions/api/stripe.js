@@ -1,3 +1,35 @@
+async function removeVipRole(discordUserId, env) {
+  if (!discordUserId) {
+    return;
+  }
+
+  const url =
+    `https://discord.com/api/v10/guilds/` +
+    `${env.DISCORD_GUILD_ID}/members/` +
+    `${discordUserId}/roles/` +
+    `${env.DISCORD_VIP_ROLE_ID}`;
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`
+    }
+  });
+
+  if (!response.ok && response.status !== 404) {
+    const errorText = await response.text();
+
+    console.error(
+      'Discord VIP role removal failed:',
+      response.status,
+      errorText
+    );
+
+    throw new Error(
+      'discord_role_removal_failed'
+    );
+  }
+}
 export async function onRequestPost({ request, env }) {
   const signature = request.headers.get("stripe-signature");
 
