@@ -1,15 +1,11 @@
-```js
 /*
- * APP
+ * APP SHELL
  *
- * Routes:
- *   (none)  -> landing
- *   #report -> VIP membership gate / report form
- *   #done   -> success
+ * Handles routing, membership access, checkout return,
+ * paywall rendering and successful report completion.
  */
-
 (function () {
-  var VIP = window.VIP;
+  var VIP = (window.VIP = window.VIP || {});
   var h = VIP.h;
 
   var views = {
@@ -18,273 +14,220 @@
     done: document.getElementById('view-done')
   };
 
-  var lastSuccess = null;
-  var current = null;
   var flow = null;
+  var lastSuccess = null;
 
-  VIP.landing.render(views.home);
-  VIP.effects.tilt(views.home);
+  function show(name) {
+    Object.keys(views).forEach(function (key) {
+      if (!views[key]) return;
+      views[key].hidden = key !== name;
+    });
+  }
 
-  flow = VIP.flow(views.form, {
-    onSuccess: function (info) {
-      lastSuccess = info;
-      location.hash = '#done';
+  function renderPaywall() {
+    VIP.clear(views.form);
+
+    var panel = h(
+      'section',
+      { class: 'panel' },
+
+      h(
+        'div',
+        { class: 'panel__head' },
+
+        h(
+          'h2',
+          {
+            class: 'panel__title',
+            tabindex: '-1'
+          },
+          'Unlock Pokémon VIP'
+        ),
+
+        h(
+          'p',
+          { class: 'panel__blurb' },
+          'A VIP membership is required to submit stock reports and access the VIP community.'
+        )
+      ),
+
+      h(
+        'div',
+        { class: 'panel__body' },
+
+        h(
+          'div',
+          { class: 'vip-plans' },
+
+          h(
+            'div',
+            { class: 'vip-plan' },
+
+            h(
+              'div',
+              { class: 'vip-plan__name' },
+              'MONTHLY'
+            ),
+
+            h(
+              'div',
+              { class: 'vip-plan__price' },
+              '$5'
+            ),
+
+            h(
+              'p',
+              { class: 'vip-plan__text' },
+              'VIP access billed monthly.'
+            ),
+
+            h(
+              'button',
+              {
+                type: 'button',
+                class: 'btn btn--primary',
+                onclick: function () {
+                  startCheckout('monthly');
+                }
+              },
+              'Join Monthly'
+            )
+          ),
+
+          h(
+            'div',
+            {
+              class: 'vip-plan vip-plan--featured'
+            },
+
+            h(
+              'div',
+              {
+                class: 'vip-plan__badge'
+              },
+              'SAVE $10'
+            ),
+
+            h(
+              'div',
+              { class: 'vip-plan__name' },
+              'YEARLY'
+            ),
+
+            h(
+              'div',
+              { class: 'vip-plan__price' },
+              '$50'
+            ),
+
+            h(
+              'p',
+              { class: 'vip-plan__text' },
+              'VIP access billed yearly.'
+            ),
+
+            h(
+              'button',
+              {
+                type: 'button',
+                class: 'btn btn--primary',
+                onclick: function () {
+                  startCheckout('yearly');
+                }
+              },
+              'Join Yearly'
+            )
+          )
+        ),
+
+        h(
+          'p',
+          {
+            class: 'notice'
+          },
+          'After checkout, your VIP access will activate automatically.'
+        )
+      )
+    );
+
+    views.form.appendChild(panel);
+    show('form');
+
+    var title =
+      views.form.querySelector('.panel__title');
+
+    if (title) {
+      title.focus({
+        preventScroll: true
+      });
     }
-  });
+  }
 
   async function startCheckout(plan) {
     try {
-      var res = await fetch(
+      var response = await fetch(
         '/api/checkout',
         {
           method: 'POST',
-          credentials: 'include',
           headers: {
-            'content-type': 'application/json'
+            'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             plan: plan
           })
         }
       );
 
-      var body = null;
+      var data = await response.json();
 
-      try {
-        body = await res.json();
-      } catch (e) {}
-
-      if (
-        res.ok &&
-        body &&
-        body.ok &&
-        body.url
-      ) {
-        window.location.href = body.url;
-        return;
+      if (!response.ok || !data.ok || !data.url) {
+        throw new Error(
+          data.error || 'Unable to start checkout.'
+        );
       }
 
-      alert(
-        'We could not start checkout. Please try again.'
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(
+        'Checkout error:',
+        error
       );
-    } catch (e) {
+
       alert(
-        'We could not reach checkout. Please check your connection and try again.'
+        'Unable to start checkout right now. Please try again.'
       );
     }
   }
 
-  function renderPaywall() {
-    var cfg = VIP.siteConfig;
-    var vip = cfg.vip || {};
-
-    VIP.clear(views.form);
-
-    views.form.appendChild(
-      h(
-        'div',
-        { class: 'wrap' },
-
-        h(
-          'div',
-          { class: 'form-shell' },
-
-          h(
-            'div',
-            { class: 'form-head' },
-
-            h(
-              'div',
-              {
-                class: 'eyebrow'
-              },
-              'VIP MEMBERSHIP'
-            ),
-
-            h(
-              'h2',
-              {
-                class: 'form-title'
-              },
-              'Unlock Pokémon VIP'
-            ),
-
-            h(
-              'p',
-              {
-                class: 'form-subtitle'
-              },
-              'VIP membership is required to submit stock reports and access the VIP community.'
-            )
-          ),
-
-          h(
-            'div',
-            {
-              class: 'vip-plans'
-            },
-
-            h(
-              'div',
-              {
-                class: 'vip-plan'
-              },
-
-              h(
-                'div',
-                {
-                  class: 'vip-plan__name'
-                },
-                'MONTHLY'
-              ),
-
-              h(
-                'div',
-                {
-                  class: 'vip-plan__price'
-                },
-                '$' +
-                  String(
-                    vip.monthlyPrice || 5
-                  ) +
-                  '/month'
-              ),
-
-              h(
-                'p',
-                {
-                  class: 'vip-plan__text'
-                },
-                'Full VIP access. Cancel anytime.'
-              ),
-
-              h(
-                'button',
-                {
-                  class: 'btn btn--lg',
-                  type: 'button',
-                  onclick: function () {
-                    startCheckout(
-                      'monthly'
-                    );
-                  }
-                },
-                'Join Monthly'
-              )
-            ),
-
-            h(
-              'div',
-              {
-                class:
-                  'vip-plan vip-plan--featured'
-              },
-
-              h(
-                'div',
-                {
-                  class: 'vip-plan__badge'
-                },
-                'SAVE $10'
-              ),
-
-              h(
-                'div',
-                {
-                  class: 'vip-plan__name'
-                },
-                'YEARLY'
-              ),
-
-              h(
-                'div',
-                {
-                  class: 'vip-plan__price'
-                },
-                '$' +
-                  String(
-                    vip.yearlyPrice || 50
-                  ) +
-                  '/year'
-              ),
-
-              h(
-                'p',
-                {
-                  class: 'vip-plan__text'
-                },
-                'Full VIP access for the year.'
-              ),
-
-              h(
-                'button',
-                {
-                  class: 'btn btn--lg',
-                  type: 'button',
-                  onclick: function () {
-                    startCheckout(
-                      'yearly'
-                    );
-                  }
-                },
-                'Join Yearly'
-              )
-            )
-          ),
-
-          h(
-            'p',
-            {
-              class: 'notice notice--light'
-            },
-            'After checkout, you will return here and your VIP report access will be unlocked.'
-          ),
-
-          h(
-            'div',
-            {
-              class: 'done__actions'
-            },
-
-            h(
-              'a',
-              {
-                class: 'text-link',
-                href: '#'
-              },
-              'Back to home'
-            )
-          )
-        )
-      )
-    );
-  }
-
   async function checkMembership() {
     try {
-      var res =
-        await fetch(
-          '/api/membership',
-          {
-            method: 'GET',
-            credentials: 'include',
-            cache: 'no-store'
-          }
-        );
+      var response = await fetch(
+        '/api/membership',
+        {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store'
+        }
+      );
 
-      var body = null;
+      if (!response.ok) {
+        return false;
+      }
 
-      try {
-        body = await res.json();
-      } catch (e) {}
+      var data = await response.json();
 
       return !!(
-        res.ok &&
-        body &&
-        body.ok &&
-        body.active
+        data &&
+        data.ok &&
+        data.active
       );
-    } catch (e) {
+    } catch (error) {
+      console.error(
+        'Membership check error:',
+        error
+      );
+
       return false;
     }
   }
@@ -295,61 +238,67 @@
         window.location.search
       );
 
+    var checkout =
+      params.get('checkout');
+
     var sessionId =
       params.get('session_id');
 
-    if (!sessionId) {
+    if (
+      checkout !== 'success' ||
+      !sessionId
+    ) {
       return false;
     }
 
     try {
-      var res =
-        await fetch(
-          '/api/membership',
-          {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'content-type':
-                'application/json'
-            },
-            body: JSON.stringify({
-              session_id:
-                sessionId
-            })
-          }
-        );
+      var response = await fetch(
+        '/api/membership',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            session_id: sessionId
+          })
+        }
+      );
 
-      var body = null;
-
-      try {
-        body = await res.json();
-      } catch (e) {}
+      var data = await response.json();
 
       if (
-        res.ok &&
-        body &&
-        body.ok &&
-        body.active
+        !response.ok ||
+        !data.ok ||
+        !data.active
       ) {
-        window.history.replaceState(
-          {},
-          document.title,
-          '/#report'
+        console.error(
+          'Membership activation failed:',
+          data
         );
 
-        return true;
+        return false;
       }
 
-      return false;
-    } catch (e) {
+      window.history.replaceState(
+        {},
+        document.title,
+        '/#report'
+      );
+
+      return true;
+    } catch (error) {
+      console.error(
+        'Checkout return error:',
+        error
+      );
+
       return false;
     }
   }
 
   async function openReport() {
-    VIP.clear(views.form);
-
     var checkoutActivated =
       await handleCheckoutReturn();
 
@@ -358,6 +307,16 @@
         await checkMembership();
 
       if (activeAfterCheckout) {
+        if (!flow) {
+          flow = VIP.flow(
+            views.form,
+            {
+              onSuccess:
+                handleSuccess
+            }
+          );
+        }
+
         flow.open();
         return;
       }
@@ -367,132 +326,120 @@
       await checkMembership();
 
     if (active) {
+      if (!flow) {
+        flow = VIP.flow(
+          views.form,
+          {
+            onSuccess:
+              handleSuccess
+          }
+        );
+      }
+
       flow.open();
     } else {
       renderPaywall();
     }
   }
 
-  function renderDone(info) {
-    var cfg = VIP.siteConfig;
+  function handleSuccess(info) {
+    lastSuccess = info;
 
+    window.location.hash =
+      '#done';
+  }
+
+  function renderDone(info) {
     VIP.clear(views.done);
 
-    views.done.appendChild(
+    var report =
+      info && info.report
+        ? info.report
+        : {};
+
+    var title =
+      h(
+        'h2',
+        {
+          class: 'panel__title',
+          tabindex: '-1'
+        },
+        'Report sent!'
+      );
+
+    var blurb =
+      h(
+        'p',
+        {
+          class: 'panel__blurb'
+        },
+        'Thanks for helping the Pokémon VIP community.'
+      );
+
+    var body =
       h(
         'div',
         {
-          class: 'wrap done'
+          class: 'panel__body'
         },
 
         h(
           'div',
           {
-            class: 'done__badge',
-            'aria-hidden': 'true'
+            class: 'notice'
           },
-          '✓'
-        ),
-
-        h(
-          'h2',
-          {
-            class: 'done__title',
-            tabindex: '-1',
-            id: 'done-title'
-          },
-          'Report sent!'
-        ),
-
-        h(
-          'p',
-          {
-            class: 'done__text'
-          },
-          info.alerted
-            ? "It's on its way to the VIP Discord. Thanks for helping the crew."
-            : "Thanks for the update. Sold-out reports don't trigger a VIP alert."
-        ),
-
-        info.demo
-          ? h(
-              'p',
-              {
-                class:
-                  'notice notice--light'
-              },
-              'Preview mode: nothing was actually sent.'
-            )
-          : null,
-
-        h(
-          'p',
-          {
-            class:
-              'notice notice--light'
-          },
-          cfg.notice
+          info && info.alerted
+            ? 'Your report was submitted and the item is still there.'
+            : 'Your stock report was submitted successfully.'
         ),
 
         h(
           'div',
           {
-            class: 'done__actions'
+            class: 'done-actions'
           },
 
           h(
             'a',
             {
-              class: 'btn btn--lg',
+              class: 'btn btn--primary',
               href: '#report'
             },
-            'Report another'
+            'Submit Another Report'
           ),
-
-          cfg.discordInviteUrl
-            ? h(
-                'a',
-                {
-                  class:
-                    'btn btn--lg btn--discord',
-                  href:
-                    cfg.discordInviteUrl,
-                  target: '_blank',
-                  rel: 'noopener'
-                },
-                'Join the Discord'
-              )
-            : null,
 
           h(
             'a',
             {
-              class: 'text-link',
+              class: 'btn btn--ghost',
               href: '#'
             },
-            'Back to home'
+            'Back Home'
           )
         )
-      )
-    );
-  }
+      );
 
-  function show(name) {
-    Object.keys(views).forEach(
-      function (k) {
-        views[k].hidden =
-          k !== name;
-      }
-    );
+    var panel =
+      h(
+        'section',
+        {
+          class: 'panel'
+        },
 
-    if (name !== current) {
-      window.scrollTo(0, 0);
-      current = name;
-    }
+        h(
+          'div',
+          {
+            class: 'panel__head'
+          },
+          title,
+          blurb
+        ),
 
-    document.body.setAttribute(
-      'data-view',
-      name
+        body
+      );
+
+    views.done.appendChild(
+      panel
     );
   }
 
@@ -503,22 +450,32 @@
     if (hash === '#report') {
       show('form');
       openReport();
+
     } else if (
       hash === '#done' &&
       lastSuccess
     ) {
-      renderDone(lastSuccess);
+      renderDone(
+        lastSuccess
+      );
+
       show('done');
 
-      document
-        .getElementById('done-title')
-        .focus({
+      var title =
+        document.getElementById(
+          'done-title'
+        );
+
+      if (title) {
+        title.focus({
           preventScroll: true
         });
+      }
 
       VIP.effects.burst(
         views.done
       );
+
     } else {
       show('home');
 
@@ -542,4 +499,8 @@
 
   window.addEventListener(
     'hashchange',
-   
+    route
+  );
+
+  route();
+})();
