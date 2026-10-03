@@ -1,3 +1,4 @@
+```js
 async function removeVipRole(discordUserId, env) {
   if (!discordUserId) {
     return;
@@ -64,43 +65,167 @@ async function addVipRole(discordUserId, env) {
   }
 }
 
-export async function onRequestPost({ request, env }) {
+async function getCustomerEmail(customerId, env) {
+  if (!customerId) {
+    return "";
+  }
+
+  const customerResponse = await fetch(
+    `https://api.stripe.com/v1/customers/${customerId}`,
+    {
+      headers: {
+        Authorization:
+          `Bearer ${env.STRIPE_SECRET_KEY}`
+      }
+    }
+  );
+
+  if (!customerResponse.ok) {
+    const errorText =
+      await customerResponse.text();
+
+    console.error(
+      "Stripe customer lookup failed:",
+      customerResponse.status,
+      errorText
+    );
+
+    return "";
+  }
+
+  const customer =
+    await customerResponse.json();
+
+  return customer.email || "";
+}
+
+function getMembershipType(subscription) {
+  const metadataType =
+    subscription.metadata?.membership_type ||
+    "";
+
+  if (
+    metadataType === "yearly" ||
+    metadataType === "monthly"
+  ) {
+    return metadataType;
+  }
+
+  const priceId =
+    subscription.items?.data?.[0]?.price?.id ||
+    "";
+
+  if (
+    priceId ===
+    "price_1ULZQSGXWs1THDBRLb2MUNtf"
+  ) {
+    return "yearly";
+  }
+
+  return "monthly";
+}
+
+async function updateMemberStatus(
+  email,
+  status,
+  membershipType,
+  env
+) {
+  if (!email) {
+    return;
+  }
+
+  await env.DB.prepare(
+    `UPDATE users
+     SET membership_status = ?,
+         membership_type = ?
+     WHERE email = ?`
+  )
+    .bind(
+      status,
+      membershipType,
+      email
+    )
+    .run();
+
+  const discordMember =
+    await env.DB.prepare(
+      `SELECT discord_user_id
+       FROM users
+       WHERE email = ?
+       LIMIT 1`
+    )
+      .bind(email)
+      .first();
+
+  if (
+    !discordMember ||
+    !discordMember.discord_user_id
+  ) {
+    return;
+  }
+
+  if (status === "active") {
+    await addVipRole(
+      discordMember.discord_user_id,
+      env
+    );
+  } else {
+    await removeVipRole(
+      discordMember.discord_user_id,
+      env
+    );
+  }
+}
+
+export async function onRequestPost({
+  request,
+  env
+}) {
   const signature =
-    request.headers.get("stripe-signature");
+    request.headers.get(
+      "stripe-signature"
+    );
 
   if (!signature) {
     return new Response(
       JSON.stringify({
         ok: false,
-        error: "Missing Stripe signature"
+        error:
+          "Missing Stripe signature"
       }),
       {
         status: 400,
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type":
+            "application/json"
         }
       }
     );
   }
 
-  const body = await request.text();
+  const body =
+    await request.text();
 
-  const event = await verifyStripeSignature(
-    body,
-    signature,
-    env.STRIPE_WEBHOOK_SECRET
-  );
+  const event =
+    await verifyStripeSignature(
+      body,
+      signature,
+      env.STRIPE_WEBHOOK_SECRET
+    );
 
   if (!event) {
     return new Response(
       JSON.stringify({
         ok: false,
-        error: "Invalid Stripe signature"
+        error:
+          "Invalid Stripe signature"
       }),
       {
         status: 400,
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type":
+            "application/json"
         }
       }
     );
@@ -109,7 +234,8 @@ export async function onRequestPost({ request, env }) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object;
+        const session =
+          event.data.object;
 
         const email =
           session.customer_details?.email ||
@@ -120,35 +246,36 @@ export async function onRequestPost({ request, env }) {
           break;
         }
 
-        let membershipType = "monthly";
+        let membershipType =
+          "monthly";
 
-        /*
-         * Prefer checkout subscription metadata.
-         * This correctly identifies yearly subscriptions
-         * without requiring expanded line_items.
-         */
         const metadataType =
-          session.subscription_details?.metadata?.membership_type ||
-          session.metadata?.membership_type ||
+          session.subscription_details
+            ?.metadata
+            ?.membership_type ||
+          session.metadata
+            ?.membership_type ||
           "";
 
         if (
           metadataType === "yearly" ||
           metadataType === "monthly"
         ) {
-          membershipType = metadataType;
+          membershipType =
+            metadataType;
         } else if (
           session.line_items?.data?.length
         ) {
           const priceId =
-            session.line_items.data[0]?.price?.id ||
-            "";
+            session.line_items.data[0]
+              ?.price?.id || "";
 
           if (
             priceId ===
             "price_1ULZQSGXWs1THDBRLb2MUNtf"
           ) {
-            membershipType = "yearly";
+            membershipType =
+              "yearly";
           }
         }
 
@@ -158,16 +285,75 @@ export async function onRequestPost({ request, env }) {
            VALUES (?, ?, ?, ?)
            ON CONFLICT(email)
            DO UPDATE SET
-             membership_status = excluded.membership_status,
-             membership_type = excluded.membership_type`
+             membership_status =
+               excluded.membership_status,
+             membership_type =
+               excluded.membership_type`
         )
           .bind(
-            session.customer_details?.name || "",
+            session.customer_details
+              ?.name || "",
             email,
             "active",
             membershipType
           )
           .run();
+
+        const discordMember =
+          await env.DB.prepare(
+            `SELECT discord_user_id
+             FROM users
+             WHERE email = ?
+             LIMIT 1`
+          )
+            .bind(email)
+            .first();
+
+        if (
+          discordMember &&
+          discordMember.discord_user_id
+        ) {
+          await addVipRole(
+            discordMember.discord_user_id,
+            env
+          );
+        }
+
+        break;
+      }
+
+      case "customer.subscription.created": {
+        const subscription =
+          event.data.object;
+
+        const customerId =
+          subscription.customer;
+
+        const status =
+          subscription.status === "active" ||
+          subscription.status === "trialing"
+            ? "active"
+            : "inactive";
+
+        const membershipType =
+          getMembershipType(
+            subscription
+          );
+
+        const email =
+          await getCustomerEmail(
+            customerId,
+            env
+          );
+
+        if (email) {
+          await updateMemberStatus(
+            email,
+            status,
+            membershipType,
+            env
+          );
+        }
 
         break;
       }
@@ -185,116 +371,24 @@ export async function onRequestPost({ request, env }) {
             ? "active"
             : "inactive";
 
-        const priceId =
-          subscription.items?.data?.[0]?.price?.id ||
-          "";
-
-        let membershipType =
-          priceId ===
-          "price_1ULZQSGXWs1THDBRLb2MUNtf"
-            ? "yearly"
-            : "monthly";
-
-        /*
-         * Subscription metadata is the preferred
-         * membership type when available.
-         */
-        const metadataType =
-          subscription.metadata?.membership_type ||
-          "";
-
-        if (
-          metadataType === "yearly" ||
-          metadataType === "monthly"
-        ) {
-          membershipType = metadataType;
-        }
-
-        const customerResponse =
-          await fetch(
-            `https://api.stripe.com/v1/customers/${customerId}`,
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${env.STRIPE_SECRET_KEY}`
-              }
-            }
+        const membershipType =
+          getMembershipType(
+            subscription
           );
 
-        if (customerResponse.ok) {
-          const customer =
-            await customerResponse.json();
+        const email =
+          await getCustomerEmail(
+            customerId,
+            env
+          );
 
-          const email =
-            customer.email || "";
-
-          if (email) {
-            await env.DB.prepare(
-              `UPDATE users
-               SET membership_status = ?,
-                   membership_type = ?
-               WHERE email = ?`
-            )
-              .bind(
-                status,
-                membershipType,
-                email
-              )
-              .run();
-
-            /*
-             * If the subscription is no longer active,
-             * remove the VIP Discord role.
-             */
-            if (status === "inactive") {
-              const discordMember =
-                await env.DB.prepare(
-                  `SELECT discord_user_id
-                   FROM users
-                   WHERE email = ?
-                   LIMIT 1`
-                )
-                  .bind(email)
-                  .first();
-
-              if (
-                discordMember &&
-                discordMember.discord_user_id
-              ) {
-                await removeVipRole(
-                  discordMember.discord_user_id,
-                  env
-                );
-              }
-            }
-
-            /*
-             * If the subscription becomes active again
-             * and the Discord account is connected,
-             * restore the VIP Discord role.
-             */
-            if (status === "active") {
-              const discordMember =
-                await env.DB.prepare(
-                  `SELECT discord_user_id
-                   FROM users
-                   WHERE email = ?
-                   LIMIT 1`
-                )
-                  .bind(email)
-                  .first();
-
-              if (
-                discordMember &&
-                discordMember.discord_user_id
-              ) {
-                await addVipRole(
-                  discordMember.discord_user_id,
-                  env
-                );
-              }
-            }
-          }
+        if (email) {
+          await updateMemberStatus(
+            email,
+            status,
+            membershipType,
+            env
+          );
         }
 
         break;
@@ -307,63 +401,21 @@ export async function onRequestPost({ request, env }) {
         const customerId =
           subscription.customer;
 
-        const customerResponse =
-          await fetch(
-            `https://api.stripe.com/v1/customers/${customerId}`,
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${env.STRIPE_SECRET_KEY}`
-              }
-            }
+        const email =
+          await getCustomerEmail(
+            customerId,
+            env
           );
 
-        if (customerResponse.ok) {
-          const customer =
-            await customerResponse.json();
-
-          const email =
-            customer.email || "";
-
-          if (email) {
-            /*
-             * Get Discord account before changing
-             * membership status.
-             */
-            const discordMember =
-              await env.DB.prepare(
-                `SELECT discord_user_id
-                 FROM users
-                 WHERE email = ?
-                 LIMIT 1`
-              )
-                .bind(email)
-                .first();
-
-            /*
-             * Mark the membership inactive.
-             */
-            await env.DB.prepare(
-              `UPDATE users
-               SET membership_status = 'inactive'
-               WHERE email = ?`
-            )
-              .bind(email)
-              .run();
-
-            /*
-             * Remove the VIP Discord role.
-             */
-            if (
-              discordMember &&
-              discordMember.discord_user_id
-            ) {
-              await removeVipRole(
-                discordMember.discord_user_id,
-                env
-              );
-            }
-          }
+        if (email) {
+          await updateMemberStatus(
+            email,
+            "inactive",
+            getMembershipType(
+              subscription
+            ),
+            env
+          );
         }
 
         break;
@@ -380,7 +432,8 @@ export async function onRequestPost({ request, env }) {
       {
         status: 200,
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type":
+            "application/json"
         }
       }
     );
@@ -393,12 +446,14 @@ export async function onRequestPost({ request, env }) {
     return new Response(
       JSON.stringify({
         ok: false,
-        error: "Webhook processing failed"
+        error:
+          "Webhook processing failed"
       }),
       {
         status: 500,
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type":
+            "application/json"
         }
       }
     );
@@ -406,7 +461,8 @@ export async function onRequestPost({ request, env }) {
 }
 
 
-// Verify Stripe webhook signature using Web Crypto
+// Verify Stripe webhook signature
+// using Web Crypto
 async function verifyStripeSignature(
   payload,
   signatureHeader,
@@ -494,3 +550,4 @@ async function verifyStripeSignature(
     return null;
   }
 }
+```
