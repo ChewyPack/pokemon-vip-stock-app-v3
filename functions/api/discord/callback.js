@@ -35,6 +35,33 @@ function redirect(url) {
   });
 }
 
+async function addVipRole(discordUserId, env) {
+  const url =
+    `https://discord.com/api/v10/guilds/` +
+    `${env.DISCORD_GUILD_ID}/members/` +
+    `${discordUserId}/roles/` +
+    `${env.DISCORD_VIP_ROLE_ID}`;
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+
+    console.error(
+      'Discord VIP role assignment failed:',
+      response.status,
+      errorText
+    );
+
+    throw new Error('discord_role_assignment_failed');
+  }
+}
+
 export async function onRequestGet({ request, env }) {
   try {
     const requestUrl = new URL(request.url);
@@ -157,6 +184,9 @@ export async function onRequestGet({ request, env }) {
       return redirect('/#discord-error');
     }
 
+    /*
+     * Save the Discord account to the VIP member.
+     */
     const now = Date.now();
 
     await env.DB.prepare(
@@ -170,11 +200,18 @@ export async function onRequestGet({ request, env }) {
     )
       .bind(
         String(discordUser.id),
-        discordUser.global_name || discordUser.username || 'Discord User',
+        discordUser.global_name ||
+          discordUser.username ||
+          'Discord User',
         now,
         member.id
       )
       .run();
+
+    /*
+     * Give the connected Discord account the VIP Member role.
+     */
+    await addVipRole(String(discordUser.id), env);
 
     return redirect('/#discord-connected');
   } catch (error) {
@@ -183,4 +220,3 @@ export async function onRequestGet({ request, env }) {
     return redirect('/#discord-error');
   }
 }
-
