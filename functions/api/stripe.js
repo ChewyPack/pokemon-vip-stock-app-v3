@@ -10,7 +10,7 @@ async function removeVipRole(discordUserId, env) {
     `${env.DISCORD_VIP_ROLE_ID}`;
 
   const response = await fetch(url, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: {
       Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`
     }
@@ -20,18 +20,53 @@ async function removeVipRole(discordUserId, env) {
     const errorText = await response.text();
 
     console.error(
-      'Discord VIP role removal failed:',
+      "Discord VIP role removal failed:",
       response.status,
       errorText
     );
 
     throw new Error(
-      'discord_role_removal_failed'
+      "discord_role_removal_failed"
     );
   }
 }
+
+async function addVipRole(discordUserId, env) {
+  if (!discordUserId) {
+    return;
+  }
+
+  const url =
+    `https://discord.com/api/v10/guilds/` +
+    `${env.DISCORD_GUILD_ID}/members/` +
+    `${discordUserId}/roles/` +
+    `${env.DISCORD_VIP_ROLE_ID}`;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+
+    console.error(
+      "Discord VIP role assignment failed:",
+      response.status,
+      errorText
+    );
+
+    throw new Error(
+      "discord_role_assignment_failed"
+    );
+  }
+}
+
 export async function onRequestPost({ request, env }) {
-  const signature = request.headers.get("stripe-signature");
+  const signature =
+    request.headers.get("stripe-signature");
 
   if (!signature) {
     return new Response(
@@ -50,7 +85,6 @@ export async function onRequestPost({ request, env }) {
 
   const body = await request.text();
 
-  // Stripe signature verification
   const event = await verifyStripeSignature(
     body,
     signature,
@@ -88,9 +122,27 @@ export async function onRequestPost({ request, env }) {
 
         let membershipType = "monthly";
 
-        if (session.line_items?.data?.length) {
+        /*
+         * Prefer checkout subscription metadata.
+         * This correctly identifies yearly subscriptions
+         * without requiring expanded line_items.
+         */
+        const metadataType =
+          session.subscription_details?.metadata?.membership_type ||
+          session.metadata?.membership_type ||
+          "";
+
+        if (
+          metadataType === "yearly" ||
+          metadataType === "monthly"
+        ) {
+          membershipType = metadataType;
+        } else if (
+          session.line_items?.data?.length
+        ) {
           const priceId =
-            session.line_items.data[0]?.price?.id || "";
+            session.line_items.data[0]?.price?.id ||
+            "";
 
           if (
             priceId ===
@@ -121,9 +173,11 @@ export async function onRequestPost({ request, env }) {
       }
 
       case "customer.subscription.updated": {
-        const subscription = event.data.object;
+        const subscription =
+          event.data.object;
 
-        const customerId = subscription.customer;
+        const customerId =
+          subscription.customer;
 
         const status =
           subscription.status === "active" ||
@@ -132,26 +186,47 @@ export async function onRequestPost({ request, env }) {
             : "inactive";
 
         const priceId =
-          subscription.items?.data?.[0]?.price?.id || "";
+          subscription.items?.data?.[0]?.price?.id ||
+          "";
 
-        const membershipType =
+        let membershipType =
           priceId ===
           "price_1ULZQSGXWs1THDBRLb2MUNtf"
             ? "yearly"
             : "monthly";
 
-        const customerResponse = await fetch(
-          `https://api.stripe.com/v1/customers/${customerId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`
+        /*
+         * Subscription metadata is the preferred
+         * membership type when available.
+         */
+        const metadataType =
+          subscription.metadata?.membership_type ||
+          "";
+
+        if (
+          metadataType === "yearly" ||
+          metadataType === "monthly"
+        ) {
+          membershipType = metadataType;
+        }
+
+        const customerResponse =
+          await fetch(
+            `https://api.stripe.com/v1/customers/${customerId}`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${env.STRIPE_SECRET_KEY}`
+              }
             }
-          }
-        );
+          );
 
         if (customerResponse.ok) {
-          const customer = await customerResponse.json();
-          const email = customer.email || "";
+          const customer =
+            await customerResponse.json();
+
+          const email =
+            customer.email || "";
 
           if (email) {
             await env.DB.prepare(
@@ -160,8 +235,65 @@ export async function onRequestPost({ request, env }) {
                    membership_type = ?
                WHERE email = ?`
             )
-              .bind(status, membershipType, email)
+              .bind(
+                status,
+                membershipType,
+                email
+              )
               .run();
+
+            /*
+             * If the subscription is no longer active,
+             * remove the VIP Discord role.
+             */
+            if (status === "inactive") {
+              const discordMember =
+                await env.DB.prepare(
+                  `SELECT discord_user_id
+                   FROM users
+                   WHERE email = ?
+                   LIMIT 1`
+                )
+                  .bind(email)
+                  .first();
+
+              if (
+                discordMember &&
+                discordMember.discord_user_id
+              ) {
+                await removeVipRole(
+                  discordMember.discord_user_id,
+                  env
+                );
+              }
+            }
+
+            /*
+             * If the subscription becomes active again
+             * and the Discord account is connected,
+             * restore the VIP Discord role.
+             */
+            if (status === "active") {
+              const discordMember =
+                await env.DB.prepare(
+                  `SELECT discord_user_id
+                   FROM users
+                   WHERE email = ?
+                   LIMIT 1`
+                )
+                  .bind(email)
+                  .first();
+
+              if (
+                discordMember &&
+                discordMember.discord_user_id
+              ) {
+                await addVipRole(
+                  discordMember.discord_user_id,
+                  env
+                );
+              }
+            }
           }
         }
 
@@ -169,23 +301,48 @@ export async function onRequestPost({ request, env }) {
       }
 
       case "customer.subscription.deleted": {
-        const subscription = event.data.object;
-        const customerId = subscription.customer;
+        const subscription =
+          event.data.object;
 
-        const customerResponse = await fetch(
-          `https://api.stripe.com/v1/customers/${customerId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`
+        const customerId =
+          subscription.customer;
+
+        const customerResponse =
+          await fetch(
+            `https://api.stripe.com/v1/customers/${customerId}`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${env.STRIPE_SECRET_KEY}`
+              }
             }
-          }
-        );
+          );
 
         if (customerResponse.ok) {
-          const customer = await customerResponse.json();
-          const email = customer.email || "";
+          const customer =
+            await customerResponse.json();
+
+          const email =
+            customer.email || "";
 
           if (email) {
+            /*
+             * Get Discord account before changing
+             * membership status.
+             */
+            const discordMember =
+              await env.DB.prepare(
+                `SELECT discord_user_id
+                 FROM users
+                 WHERE email = ?
+                 LIMIT 1`
+              )
+                .bind(email)
+                .first();
+
+            /*
+             * Mark the membership inactive.
+             */
             await env.DB.prepare(
               `UPDATE users
                SET membership_status = 'inactive'
@@ -193,6 +350,19 @@ export async function onRequestPost({ request, env }) {
             )
               .bind(email)
               .run();
+
+            /*
+             * Remove the VIP Discord role.
+             */
+            if (
+              discordMember &&
+              discordMember.discord_user_id
+            ) {
+              await removeVipRole(
+                discordMember.discord_user_id,
+                env
+              );
+            }
           }
         }
 
@@ -215,7 +385,10 @@ export async function onRequestPost({ request, env }) {
       }
     );
   } catch (error) {
-    console.error("Stripe webhook error:", error);
+    console.error(
+      "Stripe webhook error:",
+      error
+    );
 
     return new Response(
       JSON.stringify({
@@ -240,54 +413,74 @@ async function verifyStripeSignature(
   secret
 ) {
   try {
-    const parts = signatureHeader.split(",");
+    const parts =
+      signatureHeader.split(",");
 
-    const timestampPart = parts.find((p) =>
-      p.startsWith("t=")
-    );
+    const timestampPart =
+      parts.find((p) =>
+        p.startsWith("t=")
+      );
 
-    const signaturePart = parts.find((p) =>
-      p.startsWith("v1=")
-    );
+    const signaturePart =
+      parts.find((p) =>
+        p.startsWith("v1=")
+      );
 
-    if (!timestampPart || !signaturePart) {
+    if (
+      !timestampPart ||
+      !signaturePart
+    ) {
       return null;
     }
 
-    const timestamp = timestampPart.substring(2);
-    const signature = signaturePart.substring(3);
+    const timestamp =
+      timestampPart.substring(2);
+
+    const signature =
+      signaturePart.substring(3);
 
     const signedPayload =
       timestamp + "." + payload;
 
-    const encoder = new TextEncoder();
+    const encoder =
+      new TextEncoder();
 
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(secret),
-      {
-        name: "HMAC",
-        hash: "SHA-256"
-      },
-      false,
-      ["sign"]
-    );
+    const key =
+      await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(secret),
+        {
+          name: "HMAC",
+          hash: "SHA-256"
+        },
+        false,
+        ["sign"]
+      );
 
-    const digest = await crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(signedPayload)
-    );
+    const digest =
+      await crypto.subtle.sign(
+        "HMAC",
+        key,
+        encoder.encode(
+          signedPayload
+        )
+      );
 
-    const expectedSignature = Array.from(
-      new Uint8Array(digest)
-    )
-      .map((b) =>
-        b.toString(16).padStart(2, "0")
+    const expectedSignature =
+      Array.from(
+        new Uint8Array(digest)
       )
-      .join("");
+        .map((b) =>
+          b
+            .toString(16)
+            .padStart(2, "0")
+        )
+        .join("");
 
-    if (expectedSignature !== signature) {
+    if (
+      expectedSignature !==
+      signature
+    ) {
       return null;
     }
 
