@@ -1,14 +1,9 @@
-```js
 async function removeVipRole(discordUserId, env) {
   if (!discordUserId) {
     return;
   }
 
-  const url =
-    `https://discord.com/api/v10/guilds/` +
-    `${env.DISCORD_GUILD_ID}/members/` +
-    `${discordUserId}/roles/` +
-    `${env.DISCORD_VIP_ROLE_ID}`;
+  const url = `https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${env.DISCORD_VIP_ROLE_ID}`;
 
   const response = await fetch(url, {
     method: "DELETE",
@@ -26,9 +21,7 @@ async function removeVipRole(discordUserId, env) {
       errorText
     );
 
-    throw new Error(
-      "discord_role_removal_failed"
-    );
+    throw new Error("discord_role_removal_failed");
   }
 }
 
@@ -37,11 +30,7 @@ async function addVipRole(discordUserId, env) {
     return;
   }
 
-  const url =
-    `https://discord.com/api/v10/guilds/` +
-    `${env.DISCORD_GUILD_ID}/members/` +
-    `${discordUserId}/roles/` +
-    `${env.DISCORD_VIP_ROLE_ID}`;
+  const url = `https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${env.DISCORD_VIP_ROLE_ID}`;
 
   const response = await fetch(url, {
     method: "PUT",
@@ -59,9 +48,7 @@ async function addVipRole(discordUserId, env) {
       errorText
     );
 
-    throw new Error(
-      "discord_role_assignment_failed"
-    );
+    throw new Error("discord_role_assignment_failed");
   }
 }
 
@@ -74,15 +61,13 @@ async function getCustomerEmail(customerId, env) {
     `https://api.stripe.com/v1/customers/${customerId}`,
     {
       headers: {
-        Authorization:
-          `Bearer ${env.STRIPE_SECRET_KEY}`
+        Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`
       }
     }
   );
 
   if (!customerResponse.ok) {
-    const errorText =
-      await customerResponse.text();
+    const errorText = await customerResponse.text();
 
     console.error(
       "Stripe customer lookup failed:",
@@ -93,16 +78,14 @@ async function getCustomerEmail(customerId, env) {
     return "";
   }
 
-  const customer =
-    await customerResponse.json();
+  const customer = await customerResponse.json();
 
   return customer.email || "";
 }
 
 function getMembershipType(subscription) {
   const metadataType =
-    subscription.metadata?.membership_type ||
-    "";
+    subscription.metadata?.membership_type || "";
 
   if (
     metadataType === "yearly" ||
@@ -112,12 +95,10 @@ function getMembershipType(subscription) {
   }
 
   const priceId =
-    subscription.items?.data?.[0]?.price?.id ||
-    "";
+    subscription.items?.data?.[0]?.price?.id || "";
 
   if (
-    priceId ===
-    "price_1ULZQSGXWs1THDBRLb2MUNtf"
+    priceId === "price_1ULZQSGXWs1THDBRLb2MUNtf"
   ) {
     return "yearly";
   }
@@ -183,29 +164,24 @@ export async function onRequestPost({
   env
 }) {
   const signature =
-    request.headers.get(
-      "stripe-signature"
-    );
+    request.headers.get("stripe-signature");
 
   if (!signature) {
     return new Response(
       JSON.stringify({
         ok: false,
-        error:
-          "Missing Stripe signature"
+        error: "Missing Stripe signature"
       }),
       {
         status: 400,
         headers: {
-          "Content-Type":
-            "application/json"
+          "Content-Type": "application/json"
         }
       }
     );
   }
 
-  const body =
-    await request.text();
+  const body = await request.text();
 
   const event =
     await verifyStripeSignature(
@@ -218,14 +194,12 @@ export async function onRequestPost({
     return new Response(
       JSON.stringify({
         ok: false,
-        error:
-          "Invalid Stripe signature"
+        error: "Invalid Stripe signature"
       }),
       {
         status: 400,
         headers: {
-          "Content-Type":
-            "application/json"
+          "Content-Type": "application/json"
         }
       }
     );
@@ -246,8 +220,7 @@ export async function onRequestPost({
           break;
         }
 
-        let membershipType =
-          "monthly";
+        let membershipType = "monthly";
 
         const metadataType =
           session.subscription_details
@@ -261,8 +234,7 @@ export async function onRequestPost({
           metadataType === "yearly" ||
           metadataType === "monthly"
         ) {
-          membershipType =
-            metadataType;
+          membershipType = metadataType;
         } else if (
           session.line_items?.data?.length
         ) {
@@ -274,8 +246,7 @@ export async function onRequestPost({
             priceId ===
             "price_1ULZQSGXWs1THDBRLb2MUNtf"
           ) {
-            membershipType =
-              "yearly";
+            membershipType = "yearly";
           }
         }
 
@@ -336,9 +307,7 @@ export async function onRequestPost({
             : "inactive";
 
         const membershipType =
-          getMembershipType(
-            subscription
-          );
+          getMembershipType(subscription);
 
         const email =
           await getCustomerEmail(
@@ -372,9 +341,7 @@ export async function onRequestPost({
             : "inactive";
 
         const membershipType =
-          getMembershipType(
-            subscription
-          );
+          getMembershipType(subscription);
 
         const email =
           await getCustomerEmail(
@@ -411,9 +378,7 @@ export async function onRequestPost({
           await updateMemberStatus(
             email,
             "inactive",
-            getMembershipType(
-              subscription
-            ),
+            getMembershipType(subscription),
             env
           );
         }
@@ -432,8 +397,7 @@ export async function onRequestPost({
       {
         status: 200,
         headers: {
-          "Content-Type":
-            "application/json"
+          "Content-Type": "application/json"
         }
       }
     );
@@ -446,23 +410,18 @@ export async function onRequestPost({
     return new Response(
       JSON.stringify({
         ok: false,
-        error:
-          "Webhook processing failed"
+        error: "Webhook processing failed"
       }),
       {
         status: 500,
         headers: {
-          "Content-Type":
-            "application/json"
+          "Content-Type": "application/json"
         }
       }
     );
   }
 }
 
-
-// Verify Stripe webhook signature
-// using Web Crypto
 async function verifyStripeSignature(
   payload,
   signatureHeader,
@@ -517,9 +476,7 @@ async function verifyStripeSignature(
       await crypto.subtle.sign(
         "HMAC",
         key,
-        encoder.encode(
-          signedPayload
-        )
+        encoder.encode(signedPayload)
       );
 
     const expectedSignature =
@@ -550,4 +507,3 @@ async function verifyStripeSignature(
     return null;
   }
 }
-```
