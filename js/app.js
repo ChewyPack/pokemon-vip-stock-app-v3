@@ -667,6 +667,12 @@
       );
 
     } else {
+      /*
+       * Render the landing page before showing
+       * the home view.
+       */
+      VIP.landing.render(views.home);
+
       show('home');
 
       var target =
