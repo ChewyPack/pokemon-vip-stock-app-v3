@@ -9,10 +9,10 @@
  */
 
 const MONTHLY_PRICE =
-  'price_1ULZQSGXWs1THDBRMRXDSCaj';
+  'price_1UNaOcK5IxhaGczAyrX7Znyy';
 
 const YEARLY_PRICE =
-  'price_1ULZQSGXWs1THDBRLb2MUNtf';
+  '- price_1UNaOcK5IxhaGczAzg3OAdDb';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
