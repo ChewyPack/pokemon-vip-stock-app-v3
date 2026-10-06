@@ -2,8 +2,8 @@
  * APP SHELL
  *
  * Handles routing, membership access, checkout return,
- * Discord connection status, paywall rendering
- * and successful report completion.
+ * Discord connection status, Discord membership recovery,
+ * paywall rendering and successful report completion.
  */
 (function () {
   var VIP = (window.VIP = window.VIP || {});
@@ -21,7 +21,9 @@
   function show(name) {
     Object.keys(views).forEach(function (key) {
       if (!views[key]) return;
-      views[key].hidden = key !== name;
+
+      views[key].hidden =
+        key !== name;
     });
   }
 
@@ -56,6 +58,49 @@
         'div',
         { class: 'panel__body' },
 
+        /*
+         * EXISTING MEMBER RECOVERY
+         */
+        h(
+          'div',
+          {
+            class: 'vip-reconnect'
+          },
+
+          h(
+            'h3',
+            null,
+            'Already a VIP member?'
+          ),
+
+          h(
+            'p',
+            null,
+            'If you previously connected Discord to your VIP membership, you can reconnect it to restore your access.'
+          ),
+
+          h(
+            'a',
+            {
+              class: 'btn btn--primary',
+              href:
+                '/api/discord/connect?recovery=1'
+            },
+            'Reconnect Discord'
+          )
+        ),
+
+        h(
+          'div',
+          {
+            class: 'vip-divider'
+          },
+          'OR'
+        ),
+
+        /*
+         * NEW MEMBERSHIP PLANS
+         */
         h(
           'div',
           { class: 'vip-plans' },
@@ -87,9 +132,12 @@
               {
                 type: 'button',
                 class: 'btn btn--primary',
-                onclick: function () {
-                  startCheckout('monthly');
-                }
+                onclick:
+                  function () {
+                    startCheckout(
+                      'monthly'
+                    );
+                  }
               },
               'Join Monthly'
             )
@@ -98,32 +146,43 @@
           h(
             'div',
             {
-              class: 'vip-plan vip-plan--featured'
+              class:
+                'vip-plan vip-plan--featured'
             },
 
             h(
               'div',
               {
-                class: 'vip-plan__badge'
+                class:
+                  'vip-plan__badge'
               },
               'SAVE $10'
             ),
 
             h(
               'div',
-              { class: 'vip-plan__name' },
+              {
+                class:
+                  'vip-plan__name'
+              },
               'YEARLY'
             ),
 
             h(
               'div',
-              { class: 'vip-plan__price' },
+              {
+                class:
+                  'vip-plan__price'
+              },
               '$50'
             ),
 
             h(
               'p',
-              { class: 'vip-plan__text' },
+              {
+                class:
+                  'vip-plan__text'
+              },
               'VIP access billed yearly.'
             ),
 
@@ -131,10 +190,14 @@
               'button',
               {
                 type: 'button',
-                class: 'btn btn--primary',
-                onclick: function () {
-                  startCheckout('yearly');
-                }
+                class:
+                  'btn btn--primary',
+                onclick:
+                  function () {
+                    startCheckout(
+                      'yearly'
+                    );
+                  }
               },
               'Join Yearly'
             )
@@ -151,11 +214,16 @@
       )
     );
 
-    views.form.appendChild(panel);
+    views.form.appendChild(
+      panel
+    );
+
     show('form');
 
     var title =
-      views.form.querySelector('.panel__title');
+      views.form.querySelector(
+        '.panel__title'
+      );
 
     if (title) {
       title.focus({
@@ -164,31 +232,44 @@
     }
   }
 
-  async function startCheckout(plan) {
+  async function startCheckout(
+    plan
+  ) {
     try {
-      var response = await fetch(
-        '/api/checkout',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            plan: plan
-          })
-        }
-      );
+      var response =
+        await fetch(
+          '/api/checkout',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+            credentials:
+              'include',
+            body:
+              JSON.stringify({
+                plan: plan
+              })
+          }
+        );
 
-      var data = await response.json();
+      var data =
+        await response.json();
 
-      if (!response.ok || !data.ok || !data.url) {
+      if (
+        !response.ok ||
+        !data.ok ||
+        !data.url
+      ) {
         throw new Error(
-          data.error || 'Unable to start checkout.'
+          data.error ||
+            'Unable to start checkout.'
         );
       }
 
-      window.location.href = data.url;
+      window.location.href =
+        data.url;
     } catch (error) {
       console.error(
         'Checkout error:',
@@ -203,20 +284,23 @@
 
   async function checkMembership() {
     try {
-      var response = await fetch(
-        '/api/membership',
-        {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store'
-        }
-      );
+      var response =
+        await fetch(
+          '/api/membership',
+          {
+            method: 'GET',
+            credentials:
+              'include',
+            cache: 'no-store'
+          }
+        );
 
       if (!response.ok) {
         return false;
       }
 
-      var data = await response.json();
+      var data =
+        await response.json();
 
       return !!(
         data &&
@@ -235,14 +319,16 @@
 
   async function getDiscordStatus() {
     try {
-      var response = await fetch(
-        '/api/discord/status',
-        {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store'
-        }
-      );
+      var response =
+        await fetch(
+          '/api/discord/status',
+          {
+            method: 'GET',
+            credentials:
+              'include',
+            cache: 'no-store'
+          }
+        );
 
       if (!response.ok) {
         return {
@@ -267,7 +353,9 @@
     }
   }
 
-  function renderDiscordPanel(status) {
+  function renderDiscordPanel(
+    status
+  ) {
     var connected =
       status &&
       status.ok &&
@@ -283,19 +371,22 @@
     var panel = h(
       'section',
       {
-        class: 'panel discord-panel'
+        class:
+          'panel discord-panel'
       },
 
       h(
         'div',
         {
-          class: 'panel__head'
+          class:
+            'panel__head'
         },
 
         h(
           'h2',
           {
-            class: 'panel__title'
+            class:
+              'panel__title'
           },
           connected
             ? 'Discord Connected ✓'
@@ -305,7 +396,8 @@
         h(
           'p',
           {
-            class: 'panel__blurb'
+            class:
+              'panel__blurb'
           },
           connected
             ? 'Your Discord account is connected to your Pokémon VIP membership.'
@@ -316,26 +408,30 @@
       h(
         'div',
         {
-          class: 'panel__body'
+          class:
+            'panel__body'
         },
 
         connected
           ? h(
               'div',
               {
-                class: 'notice'
+                class:
+                  'notice'
               },
               'Connected as ',
               h(
                 'strong',
                 null,
-                username || 'Discord User'
+                username ||
+                  'Discord User'
               )
             )
           : h(
               'div',
               {
-                class: 'discord-connect'
+                class:
+                  'discord-connect'
               },
 
               h(
@@ -347,8 +443,10 @@
               h(
                 'a',
                 {
-                  class: 'btn btn--primary',
-                  href: '/api/discord/connect'
+                  class:
+                    'btn btn--primary',
+                  href:
+                    '/api/discord/connect'
                 },
                 'Connect Discord'
               )
@@ -368,7 +466,9 @@
       return;
     }
 
-    VIP.clear(views.form);
+    VIP.clear(
+      views.form
+    );
 
     var discordStatus =
       await getDiscordStatus();
@@ -386,7 +486,8 @@
       h(
         'div',
         {
-          class: 'report-flow'
+          class:
+            'report-flow'
         }
       );
 
@@ -416,34 +517,45 @@
       );
 
     var checkout =
-      params.get('checkout');
+      params.get(
+        'checkout'
+      );
 
     var sessionId =
-      params.get('session_id');
+      params.get(
+        'session_id'
+      );
 
     if (
-      checkout !== 'success' ||
+      checkout !==
+        'success' ||
       !sessionId
     ) {
       return false;
     }
 
     try {
-      var response = await fetch(
-        '/api/membership',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            session_id: sessionId
-          })
-        }
-      );
+      var response =
+        await fetch(
+          '/api/membership',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+            credentials:
+              'include',
+            body:
+              JSON.stringify({
+                session_id:
+                  sessionId
+              })
+          }
+        );
 
-      var data = await response.json();
+      var data =
+        await response.json();
 
       if (
         !response.ok ||
@@ -491,7 +603,13 @@
     var hash =
       window.location.hash;
 
-    if (hash === '#discord-connected') {
+    /*
+     * Successful Discord recovery.
+     */
+    if (
+      hash ===
+      '#discord-recovered'
+    ) {
       window.history.replaceState(
         {},
         document.title,
@@ -503,7 +621,13 @@
       return true;
     }
 
-    if (hash === '#discord-error') {
+    /*
+     * Existing Discord connection.
+     */
+    if (
+      hash ===
+        '#discord-connected'
+    ) {
       window.history.replaceState(
         {},
         document.title,
@@ -512,11 +636,60 @@
 
       openReport();
 
-      setTimeout(function () {
-        alert(
-          'We could not connect your Discord account. Please try again.'
-        );
-      }, 100);
+      return true;
+    }
+
+    /*
+     * Discord recovery could not find
+     * an existing VIP membership.
+     */
+    if (
+      hash ===
+      '#discord-recovery-error'
+    ) {
+      window.history.replaceState(
+        {},
+        document.title,
+        '/#report'
+      );
+
+      renderPaywall();
+
+      setTimeout(
+        function () {
+          alert(
+            'We could not find an active Pokémon VIP membership connected to that Discord account.'
+          );
+        },
+        100
+      );
+
+      return true;
+    }
+
+    /*
+     * General Discord error.
+     */
+    if (
+      hash ===
+      '#discord-error'
+    ) {
+      window.history.replaceState(
+        {},
+        document.title,
+        '/#report'
+      );
+
+      openReport();
+
+      setTimeout(
+        function () {
+          alert(
+            'We could not connect your Discord account. Please try again.'
+          );
+        },
+        100
+      );
 
       return true;
     }
@@ -524,18 +697,25 @@
     return false;
   }
 
-  function handleSuccess(info) {
+  function handleSuccess(
+    info
+  ) {
     lastSuccess = info;
 
     window.location.hash =
       '#done';
   }
 
-  function renderDone(info) {
-    VIP.clear(views.done);
+  function renderDone(
+    info
+  ) {
+    VIP.clear(
+      views.done
+    );
 
     var report =
-      info && info.report
+      info &&
+      info.report
         ? info.report
         : {};
 
@@ -543,8 +723,10 @@
       h(
         'h2',
         {
-          class: 'panel__title',
-          tabindex: '-1'
+          class:
+            'panel__title',
+          tabindex:
+            '-1'
         },
         'Report sent!'
       );
@@ -553,7 +735,8 @@
       h(
         'p',
         {
-          class: 'panel__blurb'
+          class:
+            'panel__blurb'
         },
         'Thanks for helping the Pokémon VIP community.'
       );
@@ -562,15 +745,18 @@
       h(
         'div',
         {
-          class: 'panel__body'
+          class:
+            'panel__body'
         },
 
         h(
           'div',
           {
-            class: 'notice'
+            class:
+              'notice'
           },
-          info && info.alerted
+          info &&
+            info.alerted
             ? 'Your report was submitted and the item is still there.'
             : 'Your stock report was submitted successfully.'
         ),
@@ -578,14 +764,17 @@
         h(
           'div',
           {
-            class: 'done-actions'
+            class:
+              'done-actions'
           },
 
           h(
             'a',
             {
-              class: 'btn btn--primary',
-              href: '#report'
+              class:
+                'btn btn--primary',
+              href:
+                '#report'
             },
             'Submit Another Report'
           ),
@@ -593,8 +782,10 @@
           h(
             'a',
             {
-              class: 'btn btn--ghost',
-              href: '#'
+              class:
+                'btn btn--ghost',
+              href:
+                '#'
             },
             'Back Home'
           )
@@ -605,13 +796,15 @@
       h(
         'section',
         {
-          class: 'panel'
+          class:
+            'panel'
         },
 
         h(
           'div',
           {
-            class: 'panel__head'
+            class:
+              'panel__head'
           },
           title,
           blurb
@@ -629,15 +822,26 @@
     var hash =
       location.hash;
 
+    /*
+     * Discord OAuth results.
+     */
     if (
-      hash === '#discord-connected' ||
-      hash === '#discord-error'
+      hash ===
+        '#discord-connected' ||
+      hash ===
+        '#discord-error' ||
+      hash ===
+        '#discord-recovered' ||
+      hash ===
+        '#discord-recovery-error'
     ) {
       handleDiscordResult();
       return;
     }
 
-    if (hash === '#report') {
+    if (
+      hash === '#report'
+    ) {
       show('form');
       openReport();
 
@@ -658,7 +862,8 @@
 
       if (title) {
         title.focus({
-          preventScroll: true
+          preventScroll:
+            true
         });
       }
 
@@ -671,7 +876,9 @@
        * Render the landing page before showing
        * the home view.
        */
-      VIP.landing.render(views.home);
+      VIP.landing.render(
+        views.home
+      );
 
       show('home');
 
