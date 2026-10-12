@@ -1,6 +1,7 @@
+
 /*
  * FIELD RENDERERS
- * VIP.fields.create(fieldConfig, ctx) -> { el, setError(msg), focus(), ...extras }
+ * VIP.fields.create(fieldConfig, ctx) -> { el, setError, focus, ...extras }
  * ctx = { get(id), set(id, value), limits }
  * One renderer per field type. The form itself never hard-codes a question.
  */
@@ -9,11 +10,21 @@
   var h = VIP.h;
 
   function labelText(field) {
-    return [field.label, field.required ? h('span', { class: 'req', 'aria-hidden': 'true' }, ' *') : null];
+    return [
+      field.label,
+      field.required
+        ? h('span', { class: 'req', 'aria-hidden': 'true' }, ' *')
+        : null
+    ];
   }
 
   function errorNode(id) {
-    return h('p', { class: 'field__error', id: 'err-' + id, role: 'alert', hidden: true });
+    return h('p', {
+      class: 'field__error',
+      id: 'err-' + id,
+      role: 'alert',
+      hidden: true
+    });
   }
 
   function wrap(field, inner, extras) {
@@ -24,6 +35,7 @@
       inner,
       err
     );
+
     return Object.assign(
       {
         el: el,
@@ -38,16 +50,25 @@
   }
 
   function hint(field) {
-    return field.hint ? h('p', { class: 'field__hint', id: 'hint-' + field.id }, field.hint) : null;
+    return field.hint
+      ? h('p', { class: 'field__hint', id: 'hint-' + field.id }, field.hint)
+      : null;
   }
 
   /* ---------- choice (radio cards) ---------- */
   function choice(field, ctx) {
     var name = 'f-' + field.id;
     var inputs = [];
+
     var grid = h(
       'div',
-      { class: 'choice choice--' + (field.layout || 'tiles') + ' choice--n' + field.options.length },
+      {
+        class:
+          'choice choice--' +
+          (field.layout || 'tiles') +
+          ' choice--n' +
+          field.options.length
+      },
       field.options.map(function (opt, i) {
         var input = h('input', {
           type: 'radio',
@@ -59,37 +80,181 @@
             ctx.set(field.id, opt.value);
           }
         });
+
         inputs.push(input);
+
         return h(
           'label',
-          { class: 'tile' + (opt.tone ? ' tile--' + opt.tone : ''), for: name + '-' + i },
+          {
+            class: 'tile' + (opt.tone ? ' tile--' + opt.tone : ''),
+            for: name + '-' + i
+          },
           input,
           h(
             'span',
             { class: 'tile__face' },
-            opt.icon ? h('span', { class: 'tile__icon', 'aria-hidden': 'true' }, opt.icon) : null,
-            h('span', { class: 'tile__label' }, opt.label.replace(/\//g, '/\u200b')),
-            opt.desc ? h('span', { class: 'tile__desc' }, opt.desc) : null
+            opt.icon
+              ? h(
+                  'span',
+                  { class: 'tile__icon', 'aria-hidden': 'true' },
+                  opt.icon
+                )
+              : null,
+            h(
+              'span',
+              { class: 'tile__label' },
+              opt.label.replace(/\//g, '/\u200b')
+            ),
+            opt.desc
+              ? h('span', { class: 'tile__desc' }, opt.desc)
+              : null
           )
         );
       })
     );
-    var inner = [h('legend', { class: 'field__label' }, labelText(field)), hint(field), grid];
-    var f = wrap(field, inner, {
-      focus: function () {
-        var checked = inputs.filter(function (i) {
-          return i.checked;
-        })[0];
-        (checked || inputs[0]).focus();
+
+    return wrap(
+      field,
+      [
+        h('legend', { class: 'field__label' }, labelText(field)),
+        hint(field),
+        grid
+      ],
+      {
+        focus: function () {
+          var checked = inputs.filter(function (input) {
+            return input.checked;
+          })[0];
+
+          (checked || inputs[0]).focus();
+        }
+      }
+    );
+  }
+
+  /* ---------- dropdown / select ---------- */
+  function select(field, ctx) {
+    var id = 'f-' + field.id;
+
+    function getOptions() {
+      var result =
+        typeof field.getOptions === 'function'
+          ? field.getOptions(ctx)
+          : field.options;
+
+      return Array.isArray(result) ? result : [];
+    }
+
+    var control = h('select', {
+      class: 'input input--select',
+      id: id,
+      name: field.id,
+      autocomplete: 'off',
+      'aria-describedby': field.hint ? 'hint-' + field.id : null,
+      onchange: function () {
+        ctx.set(field.id, control.value);
       }
     });
-    return f;
+
+    function refreshOptions() {
+      var previousValue = ctx.get(field.id) || '';
+      var options = getOptions();
+
+      VIP.clear(control);
+
+      control.appendChild(
+        h(
+          'option',
+          { value: '', disabled: true },
+          field.placeholder || 'Choose an option'
+        )
+      );
+
+      options.forEach(function (opt) {
+        var normalized =
+          typeof opt === 'string'
+            ? { value: opt, label: opt }
+            : opt;
+
+        if (!normalized || normalized.value == null) return;
+
+        control.appendChild(
+          h(
+            'option',
+            { value: String(normalized.value) },
+            normalized.label || String(normalized.value)
+          )
+        );
+      });
+
+      var stillValid = options.some(function (opt) {
+        var normalized =
+          typeof opt === 'string'
+            ? { value: opt }
+            : opt;
+
+        return (
+          normalized &&
+          String(normalized.value) === String(previousValue)
+        );
+      });
+
+      if (previousValue && stillValid) {
+        control.value = String(previousValue);
+      } else {
+        control.value = '';
+
+        if (previousValue) {
+          ctx.set(field.id, '');
+        }
+      }
+    }
+
+    refreshOptions();
+
+    return wrap(
+      field,
+      [
+        h('label', { class: 'field__label', for: id }, labelText(field)),
+        hint(field),
+        control
+      ],
+      {
+        focus: function () {
+          control.focus();
+        },
+        sync: function () {
+          var value = ctx.get(field.id) || '';
+          var options = getOptions();
+
+          var valid = options.some(function (opt) {
+            var normalized =
+              typeof opt === 'string'
+                ? { value: opt }
+                : opt;
+
+            return (
+              normalized &&
+              String(normalized.value) === String(value)
+            );
+          });
+
+          if (!valid) {
+            refreshOptions();
+          } else {
+            control.value = String(value);
+          }
+        },
+        refreshOptions: refreshOptions
+      }
+    );
   }
 
   /* ---------- text / price ---------- */
   function text(field, ctx) {
     var id = 'f-' + field.id;
     var isPrice = field.type === 'price';
+
     var input = h('input', {
       class: 'input' + (isPrice ? ' input--price' : ''),
       type: 'text',
@@ -106,15 +271,36 @@
         ctx.set(field.id, input.value);
       }
     });
-    var control = isPrice ? h('div', { class: 'input-wrap' }, h('span', { class: 'input-wrap__prefix', 'aria-hidden': 'true' }, '$'), input) : input;
-    return wrap(field, [h('label', { class: 'field__label', for: id }, labelText(field)), hint(field), control], {
-      focus: function () {
-        input.focus();
-      },
-      sync: function () {
-        input.value = ctx.get(field.id) || '';
+
+    var control = isPrice
+      ? h(
+          'div',
+          { class: 'input-wrap' },
+          h(
+            'span',
+            { class: 'input-wrap__prefix', 'aria-hidden': 'true' },
+            '$'
+          ),
+          input
+        )
+      : input;
+
+    return wrap(
+      field,
+      [
+        h('label', { class: 'field__label', for: id }, labelText(field)),
+        hint(field),
+        control
+      ],
+      {
+        focus: function () {
+          input.focus();
+        },
+        sync: function () {
+          input.value = ctx.get(field.id) || '';
+        }
       }
-    });
+    );
   }
 
   /* ---------- textarea ---------- */
@@ -122,6 +308,7 @@
     var id = 'f-' + field.id;
     var max = field.maxLength || ctx.limits.notesMax;
     var counter = h('span', { class: 'counter' }, '0/' + max);
+
     var input = h('textarea', {
       class: 'input input--area',
       id: id,
@@ -134,25 +321,51 @@
         counter.textContent = input.value.length + '/' + max;
       }
     });
+
     input.value = ctx.get(field.id) || '';
     counter.textContent = input.value.length + '/' + max;
-    return wrap(field, [h('label', { class: 'field__label', for: id }, labelText(field)), input, counter], {
-      focus: function () {
-        input.focus();
+
+    return wrap(
+      field,
+      [
+        h('label', { class: 'field__label', for: id }, labelText(field)),
+        input,
+        counter
+      ],
+      {
+        focus: function () {
+          input.focus();
+        },
+        sync: function () {
+          input.value = ctx.get(field.id) || '';
+          counter.textContent = input.value.length + '/' + max;
+        }
       }
-    });
+    );
   }
 
   /* ---------- date and time ---------- */
   function pad(n) {
     return n < 10 ? '0' + n : String(n);
   }
+
   function toLocalInput(date) {
-    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + 'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+    return (
+      date.getFullYear() +
+      '-' +
+      pad(date.getMonth() + 1) +
+      '-' +
+      pad(date.getDate()) +
+      'T' +
+      pad(date.getHours()) +
+      ':' +
+      pad(date.getMinutes())
+    );
   }
 
   function datetime(field, ctx) {
     var id = 'f-' + field.id;
+
     var input = h('input', {
       class: 'input input--datetime',
       type: 'datetime-local',
@@ -160,17 +373,25 @@
       name: field.id,
       max: toLocalInput(new Date()),
       onchange: function () {
-        ctx.set(field.id, input.value ? new Date(input.value).toISOString() : '');
+        ctx.set(
+          field.id,
+          input.value ? new Date(input.value).toISOString() : ''
+        );
       },
       oninput: function () {
-        ctx.set(field.id, input.value ? new Date(input.value).toISOString() : '');
+        ctx.set(
+          field.id,
+          input.value ? new Date(input.value).toISOString() : ''
+        );
       }
     });
+
     function sync() {
-      var v = ctx.get(field.id);
+      var value = ctx.get(field.id);
       input.max = toLocalInput(new Date());
-      input.value = v ? toLocalInput(new Date(v)) : '';
+      input.value = value ? toLocalInput(new Date(value)) : '';
     }
+
     var now = h(
       'button',
       {
@@ -183,13 +404,22 @@
       },
       'Just now'
     );
+
     sync();
-    return wrap(field, [h('label', { class: 'field__label', for: id }, labelText(field)), h('div', { class: 'datetime-row' }, input, now)], {
-      focus: function () {
-        input.focus();
-      },
-      sync: sync
-    });
+
+    return wrap(
+      field,
+      [
+        h('label', { class: 'field__label', for: id }, labelText(field)),
+        h('div', { class: 'datetime-row' }, input, now)
+      ],
+      {
+        focus: function () {
+          input.focus();
+        },
+        sync: sync
+      }
+    );
   }
 
   /* ---------- photos ---------- */
@@ -199,6 +429,7 @@
     var waiters = [];
     var msg = h('p', { class: 'field__note', role: 'status' });
     var grid = h('ul', { class: 'thumbs' });
+
     var input = h('input', {
       type: 'file',
       class: 'sr-only',
@@ -210,12 +441,19 @@
         input.value = '';
       }
     });
+
     var pick = h(
       'label',
       { class: 'dropzone', for: 'f-photos' },
       h('span', { class: 'dropzone__icon', 'aria-hidden': 'true' }, '📷'),
       h('span', { class: 'dropzone__title' }, 'Add photos'),
-      h('span', { class: 'dropzone__sub' }, 'Up to ' + ctx.limits.maxPhotos + ' photos. Location data is removed before upload.')
+      h(
+        'span',
+        { class: 'dropzone__sub' },
+        'Up to ' +
+          ctx.limits.maxPhotos +
+          ' photos. Location data is removed before upload.'
+      )
     );
 
     function note(text) {
@@ -224,13 +462,27 @@
 
     function renderThumbs() {
       VIP.clear(grid);
+
       items.forEach(function (it) {
         grid.appendChild(
           h(
             'li',
-            { class: 'thumb' + (it.status === 'working' ? ' is-working' : '') },
-            it.url ? h('img', { src: it.url, alt: 'Photo ' + (items.indexOf(it) + 1) }) : null,
-            it.status === 'working' ? h('span', { class: 'thumb__spin', 'aria-label': 'Preparing photo' }) : null,
+            {
+              class:
+                'thumb' + (it.status === 'working' ? ' is-working' : '')
+            },
+            it.url
+              ? h('img', {
+                  src: it.url,
+                  alt: 'Photo ' + (items.indexOf(it) + 1)
+                })
+              : null,
+            it.status === 'working'
+              ? h('span', {
+                  class: 'thumb__spin',
+                  'aria-label': 'Preparing photo'
+                })
+              : null,
             h(
               'button',
               {
@@ -246,6 +498,7 @@
           )
         );
       });
+
       pick.hidden = items.length >= ctx.limits.maxPhotos;
     }
 
@@ -253,15 +506,17 @@
       items = items.filter(function (x) {
         return x !== it;
       });
+
       if (it.url) URL.revokeObjectURL(it.url);
+
       note('');
       renderThumbs();
     }
 
     function settle() {
       if (pending === 0) {
-        waiters.splice(0).forEach(function (w) {
-          w();
+        waiters.splice(0).forEach(function (waiter) {
+          waiter();
         });
       }
     }
@@ -270,21 +525,30 @@
       var files = Array.prototype.slice.call(fileList || []);
       var room = ctx.limits.maxPhotos - items.length;
       var problems = [];
-      if (files.length > room) problems.push('You can add up to ' + ctx.limits.maxPhotos + ' photos.');
+
+      if (files.length > room) {
+        problems.push('You can add up to ' + ctx.limits.maxPhotos + ' photos.');
+      }
+
       files.slice(0, Math.max(room, 0)).forEach(function (file) {
         if (!VIP.images.isImage(file)) {
           problems.push("That file isn't a photo.");
           return;
         }
+
         if (file.size > ctx.limits.photoInputMaxBytes) {
           problems.push('A photo is over 100 MB.');
           return;
         }
+
         var it = { status: 'working', blob: null, url: null };
         items.push(it);
         pending++;
+
         VIP.images
-          .compress(file, { targetBytes: ctx.limits.photoUploadTargetBytes })
+          .compress(file, {
+            targetBytes: ctx.limits.photoUploadTargetBytes
+          })
           .then(function (res) {
             it.blob = res.blob;
             it.url = URL.createObjectURL(res.blob);
@@ -295,6 +559,7 @@
             items = items.filter(function (x) {
               return x !== it;
             });
+
             problems.push("Couldn't read one photo. Try a different one.");
             note(problems[problems.length - 1]);
           })
@@ -304,16 +569,22 @@
             settle();
           });
       });
+
       note(problems[0] || '');
       renderThumbs();
     }
 
     renderThumbs();
+
     return wrap(
       field,
       [
         h('span', { class: 'field__label', id: 'lbl-photos' }, labelText(field)),
-        h('p', { class: 'field__hint' }, 'Optional, but photos make alerts far more useful.'),
+        h(
+          'p',
+          { class: 'field__hint' },
+          'Optional, but photos make alerts far more useful.'
+        ),
         grid,
         pick,
         input,
@@ -324,8 +595,8 @@
           input.focus();
         },
         getPhotos: function () {
-          return items.filter(function (i) {
-            return i.status === 'ready';
+          return items.filter(function (item) {
+            return item.status === 'ready';
           });
         },
         isBusy: function () {
@@ -339,9 +610,10 @@
               });
         },
         reset: function () {
-          items.forEach(function (i) {
-            if (i.url) URL.revokeObjectURL(i.url);
+          items.forEach(function (item) {
+            if (item.url) URL.revokeObjectURL(item.url);
           });
+
           items = [];
           note('');
           renderThumbs();
@@ -350,20 +622,29 @@
     );
   }
 
+  /* ---------- renderer registry ---------- */
   VIP.fields = {
     create: function (field, ctx) {
       switch (field.type) {
         case 'choice':
           return choice(field, ctx);
+
+        case 'select':
+          return select(field, ctx);
+
         case 'text':
         case 'price':
           return text(field, ctx);
+
         case 'textarea':
           return textarea(field, ctx);
+
         case 'datetime':
           return datetime(field, ctx);
+
         case 'photos':
           return photos(field, ctx);
+
         default:
           throw new Error('Unknown field type: ' + field.type);
       }
