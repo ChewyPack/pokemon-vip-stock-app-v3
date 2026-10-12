@@ -182,6 +182,14 @@
   var config = {
     version: 2,
 
+    limits: {
+      maxPhotos: 5,
+      textMax: 120,
+      notesMax: 1000,
+      photoInputMaxBytes: 100 * 1024 * 1024,
+      photoUploadTargetBytes: 1500 * 1024
+    },
+
     states: [
       { value: 'RI', label: 'Rhode Island' },
       { value: 'MA', label: 'Massachusetts' }
@@ -195,7 +203,9 @@
       {
         id: 'where',
         title: 'Where did you find it?',
+        label: 'Store location',
         description: 'Choose the state, retailer, and exact store branch.',
+        blurb: 'Choose the state, retailer, and exact store branch.',
         fields: [
           'state',
           'retailer',
@@ -207,7 +217,9 @@
       {
         id: 'product',
         title: 'What product did you find?',
+        label: 'Product details',
         description: 'Report sealed Pokémon TCG products only.',
+        blurb: 'Report sealed Pokémon TCG products only.',
         fields: [
           'product',
           'productName'
@@ -216,7 +228,9 @@
       {
         id: 'stock',
         title: 'What was on the shelf?',
+        label: 'Stock details',
         description: 'Separate shelf price from MSRP and tell us what you saw.',
+        blurb: 'Separate shelf price from MSRP and tell us what you saw.',
         fields: [
           'qty',
           'shelfPrice',
@@ -229,7 +243,9 @@
       {
         id: 'proof',
         title: 'Add details',
+        label: 'Additional details',
         description: 'Photos help other collectors verify the report.',
+        blurb: 'Photos help other collectors verify the report.',
         fields: [
           'photos',
           'reporter',
@@ -409,7 +425,11 @@
       if (!field) return [];
 
       if (typeof field.getOptions === 'function') {
-        return field.getOptions(ctx || { get: function () { return ''; } });
+        return field.getOptions(ctx || {
+          get: function () {
+            return '';
+          }
+        });
       }
 
       return field.options || [];
