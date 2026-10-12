@@ -1,3 +1,4 @@
+
 /*
  * /api/membership
  *
@@ -30,34 +31,37 @@ function base64Url(bytes) {
 }
 
 async function sha256(value) {
-  const data = new TextEncoder().encode(value);
-  return crypto.subtle.digest('SHA-256', data);
+  return crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value)
+  );
 }
 
-async function createSession(env, email) {
+async function createSession(env, userId) {
   const random = crypto.getRandomValues(new Uint8Array(32));
   const token = base64Url(random);
-
-  const hashBuffer = await sha256(token);
-  const tokenHash = base64Url(hashBuffer);
+  const tokenHash = base64Url(await sha256(token));
 
   const expiresAt =
     Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
 
-  await env.DB.prepare(
+  const result = await env.DB.prepare(
     `UPDATE users
      SET session_token_hash = ?,
          session_expires_at = ?
-     WHERE email = ?
+     WHERE id = ?
        AND membership_status = 'active'`
   )
-    .bind(tokenHash, expiresAt, email)
+    .bind(tokenHash, expiresAt, userId)
     .run();
 
-  return {
-    token,
-    expiresAt
-  };
+  if (!result.meta || result.meta.changes < 1) {
+    throw new Error(
+      'Session was not saved: member is missing or inactive.'
+    );
+  }
+
+  return { token, expiresAt };
 }
 
 function sessionCookie(token, expiresAt) {
@@ -74,9 +78,7 @@ function sessionCookie(token, expiresAt) {
 function getCookie(request, name) {
   const header = request.headers.get('Cookie') || '';
 
-  const parts = header.split(';');
-
-  for (const part of parts) {
+  for (const part of header.split(';')) {
     const trimmed = part.trim();
 
     if (trimmed.startsWith(name + '=')) {
@@ -94,10 +96,9 @@ async function getActiveSession(request, env) {
     return null;
   }
 
-  const hashBuffer = await sha256(token);
-  const tokenHash = base64Url(hashBuffer);
+  const tokenHash = base64Url(await sha256(token));
 
-  const result = await env.DB.prepare(
+  const member = await env.DB.prepare(
     `SELECT id, name, email, membership_status,
             membership_type, session_expires_at
      FROM users
@@ -108,18 +109,18 @@ async function getActiveSession(request, env) {
     .bind(tokenHash)
     .first();
 
-  if (!result) {
+  if (!member) {
     return null;
   }
 
   if (
-    !result.session_expires_at ||
-    Number(result.session_expires_at) < Date.now()
+    !member.session_expires_at ||
+    Number(member.session_expires_at) <= Date.now()
   ) {
     return null;
   }
 
-  return result;
+  return member;
 }
 
 async function verifyCheckoutSession(sessionId, env) {
@@ -131,13 +132,16 @@ async function verifyCheckoutSession(sessionId, env) {
     `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=subscription`,
     {
       headers: {
-        Authorization:
-          'Bearer ' + env.STRIPE_SECRET_KEY
+        Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`
       }
     }
   );
 
   if (!response.ok) {
+    console.error(
+      'Stripe Checkout verification failed:',
+      response.status
+    );
     return null;
   }
 
@@ -147,14 +151,18 @@ async function verifyCheckoutSession(sessionId, env) {
     return null;
   }
 
-  if (session.payment_status !== 'paid') {
+  if (
+    session.payment_status !== 'paid' &&
+    session.payment_status !== 'no_payment_required'
+  ) {
     return null;
   }
 
-  const email =
+  const email = (
     session.customer_details?.email ||
     session.customer_email ||
-    '';
+    ''
+  ).trim().toLowerCase();
 
   if (!email) {
     return null;
@@ -164,14 +172,14 @@ async function verifyCheckoutSession(sessionId, env) {
 
   if (
     subscription &&
-    subscription.status !== 'active' &&
-    subscription.status !== 'trialing'
+    typeof subscription === 'object' &&
+    !['active', 'trialing'].includes(subscription.status)
   ) {
     return null;
   }
 
   return {
-    email: email.toLowerCase().trim(),
+    email,
     name: session.customer_details?.name || ''
   };
 }
@@ -193,133 +201,105 @@ export async function onRequestGet({ request, env }) {
       member: {
         name: member.name || '',
         email: member.email,
-        membership_type:
-          member.membership_type || ''
+        membership_type: member.membership_type || ''
       }
     });
   } catch (error) {
     console.error('Membership check error:', error);
 
-    return json(
-      {
-        ok: false,
-        error: 'membership_check_failed'
-      },
-      500
-    );
+    return json({
+      ok: false,
+      active: false,
+      error: 'membership_check_failed'
+    }, 500);
   }
 }
 
 export async function onRequestPost({ request, env }) {
   if (!env.STRIPE_SECRET_KEY) {
-    return json(
-      {
-        ok: false,
-        error: 'stripe_not_configured'
-      },
-      500
-    );
+    return json({
+      ok: false,
+      error: 'stripe_not_configured'
+    }, 500);
   }
 
   let data;
 
   try {
     data = await request.json();
-  } catch (error) {
-    return json(
-      {
-        ok: false,
-        error: 'bad_request'
-      },
-      400
-    );
+  } catch {
+    return json({
+      ok: false,
+      error: 'bad_request'
+    }, 400);
   }
 
   const sessionId =
-    data && typeof data.session_id === 'string'
+    typeof data?.session_id === 'string'
       ? data.session_id.trim()
       : '';
 
   if (!sessionId) {
-    return json(
-      {
-        ok: false,
-        error: 'missing_session'
-      },
-      400
-    );
+    return json({
+      ok: false,
+      error: 'missing_session'
+    }, 400);
   }
 
   try {
-    const checkout =
-      await verifyCheckoutSession(
-        sessionId,
-        env
-      );
+    const checkout = await verifyCheckoutSession(
+      sessionId,
+      env
+    );
 
     if (!checkout) {
-      return json(
-        {
-          ok: false,
-          error: 'invalid_checkout'
-        },
-        400
-      );
+      return json({
+        ok: false,
+        error: 'invalid_checkout'
+      }, 400);
     }
 
-    const existingUser =
-      await env.DB.prepare(
-        `SELECT id, name, email, membership_status,
-                membership_type
-         FROM users
-         WHERE email = ?
-         LIMIT 1`
-      )
-        .bind(checkout.email)
-        .first();
+    // Match the verified Stripe email without case sensitivity.
+    const member = await env.DB.prepare(
+      `SELECT id, name, email, membership_status,
+              membership_type
+       FROM users
+       WHERE LOWER(TRIM(email)) = ?
+       LIMIT 1`
+    )
+      .bind(checkout.email)
+      .first();
 
-    if (!existingUser) {
-      return json(
-        {
-          ok: false,
-          error: 'membership_not_found'
-        },
-        403
+    if (!member) {
+      console.warn(
+        'Verified checkout has no matching VIP member record.'
       );
+
+      return json({
+        ok: false,
+        error: 'membership_not_found',
+        retryable: true
+      }, 403);
     }
 
-    if (
-      existingUser.membership_status !==
-      'active'
-    ) {
-      return json(
-        {
-          ok: false,
-          error: 'membership_inactive'
-        },
-        403
-      );
+    if (member.membership_status !== 'active') {
+      return json({
+        ok: false,
+        error: 'membership_inactive'
+      }, 403);
     }
 
-    const session =
-      await createSession(
-        env,
-        checkout.email
-      );
+    // Update the exact member row found above.
+    const session = await createSession(env, member.id);
 
     return json(
       {
         ok: true,
         active: true,
         member: {
-          name:
-            existingUser.name ||
-            checkout.name ||
-            '',
-          email: existingUser.email,
-          membership_type:
-            existingUser.membership_type ||
-            ''
+          name: member.name || checkout.name || '',
+          email: member.email,
+          membership_type: member.membership_type || ''
         }
       },
       200,
@@ -331,27 +311,18 @@ export async function onRequestPost({ request, env }) {
       }
     );
   } catch (error) {
-    console.error(
-      'Membership creation error:',
-      error
-    );
+    console.error('Membership creation error:', error);
 
-    return json(
-      {
-        ok: false,
-        error: 'membership_setup_failed'
-      },
-      500
-    );
+    return json({
+      ok: false,
+      error: 'membership_setup_failed'
+    }, 500);
   }
 }
 
 export async function onRequest() {
-  return json(
-    {
-      ok: false,
-      error: 'method_not_allowed'
-    },
-    405
-  );
+  return json({
+    ok: false,
+    error: 'method_not_allowed'
+  }, 405);
 }
