@@ -1,15 +1,15 @@
+
 /*
- * FORM CONFIG — the single source of truth for the sighting form.
+ * FORM CONFIG — single source of truth for the Pokémon VIP stock report.
  *
- * Mirrors the "Pokémon VIP — Report a Stock Sighting" Google Form:
- * same 12 questions, same answer options, same required flags.
+ * Reports are for sealed Pokémon TCG products physically found in retail stores.
+ * Store branches must be verified before being added to branchDirectory.
  *
- * This file is loaded by the browser (window.VIP.formConfig) AND imported by the
- * server function, so the UI and the server validation can never drift apart.
- * To add, remove or rename a question or option, edit it here only.
+ * Loaded by the browser and the server.
  */
 (function (root, factory) {
   var api = factory();
+
   if (typeof module === 'object' && module.exports) {
     module.exports = api;
   } else {
@@ -18,141 +18,275 @@
   }
 })(typeof self !== 'undefined' ? self : this, function () {
   function list(values) {
-    return values.map(function (v) {
-      return typeof v === 'string' ? { value: v, label: v } : v;
+    return values.map(function (value) {
+      return typeof value === 'string'
+        ? { value: value, label: value }
+        : value;
     });
   }
 
+  var retailers = list([
+    'Walmart',
+    'Target',
+    'GameStop',
+    'Dollar General',
+    'CVS',
+    'Walgreens',
+    'Family Dollar',
+    'Five Below',
+    "Dick's Sporting Goods",
+    'Local Card Shop',
+    'Other'
+  ]);
+
+  var states = list([
+    { value: 'RI', label: 'Rhode Island' },
+    { value: 'MA', label: 'Massachusetts' }
+  ]);
+
+  /*
+   * Add verified store branches here.
+   *
+   * Format:
+   * branchDirectory: {
+   *   RI: {
+   *     Walmart: [
+   *       {
+   *         value: 'unique-branch-id',
+   *         label: 'Cranston — 100 Example Street',
+   *         town: 'Cranston',
+   *         address: '100 Example Street'
+   *       }
+   *     ]
+   *   }
+   * }
+   *
+   * Do not add guessed or unverified addresses.
+   */
+  var branchDirectory = {
+    RI: {},
+    MA: {}
+  };
+
+  var manualBranchOption = {
+    value: 'manual',
+    label: 'Other / enter manually'
+  };
+
   var config = {
-    version: 1,
+    version: 2,
 
     limits: {
       maxPhotos: 5,
-      photoInputMaxBytes: 100 * 1024 * 1024, // members may pick files up to 100 MB
-      photoUploadTargetBytes: Math.round(1.4 * 1024 * 1024), // shrunk on the phone before sending
+      photoInputMaxBytes: 100 * 1024 * 1024,
+      photoUploadTargetBytes: Math.round(1.4 * 1024 * 1024),
       textMax: 100,
       notesMax: 500
     },
 
-    // Steps group the questions. Fields are looked up by id below.
+    states: states,
+    retailers: retailers,
+    branchDirectory: branchDirectory,
+
     steps: [
       {
         id: 'where',
         label: 'Where',
-        title: 'Where did you see it?',
-        blurb: "Only report what you've seen yourself or have permission to share.",
-        fields: ['retailer', 'location']
+        title: 'Where did you find the product?',
+        blurb:
+          'Report sealed Pokémon TCG products you personally saw in a physical store.',
+        fields: [
+          'state',
+          'retailer',
+          'branch',
+          'storeTown',
+          'storeAddress'
+        ]
       },
       {
         id: 'what',
-        label: 'What',
-        title: 'What did you find?',
-        blurb: 'Pick the product, how many, and what it costs.',
-        fields: ['product', 'qty', 'price', 'priceType', 'productLocated']
+        label: 'Product',
+        title: 'What sealed product did you find?',
+        blurb:
+          'Report the product, quantity, shelf price, and MSRP when known.',
+        fields: [
+          'product',
+          'productName',
+          'qty',
+          'shelfPrice',
+          'msrp',
+          'productLocated'
+        ]
       },
       {
         id: 'when',
-        label: 'When',
+        label: 'Stock',
         title: 'When did you see it?',
-        blurb: 'Stock moves fast, so timing matters.',
+        blurb:
+          'Recent, accurate reports help members avoid wasted trips.',
         fields: ['seenAt', 'stillThere']
       },
       {
         id: 'proof',
         label: 'Proof',
         title: 'Add photos and your name',
-        blurb: 'Photos are strongly encouraged. They help the crew trust the alert.',
+        blurb:
+          'Photos are optional but strongly encouraged. Never put yourself at risk to get a photo.',
         fields: ['photos', 'reporter', 'notes']
       }
     ],
 
     fields: [
       {
+        id: 'state',
+        label: 'State',
+        type: 'select',
+        required: true,
+        placeholder: 'Choose a state',
+        options: states,
+        hint: 'Rhode Island first; Massachusetts is included for expansion.'
+      },
+      {
         id: 'retailer',
         label: 'Retailer',
+        type: 'select',
+        required: true,
+        placeholder: 'Choose a retailer',
+        options: retailers
+      },
+      {
+        id: 'branch',
+        label: 'Store branch',
+        type: 'select',
+        required: true,
+        placeholder: 'Choose a store branch',
+        options: [manualBranchOption],
+        getOptions: function (ctx) {
+          var state = ctx.get('state');
+          var retailer = ctx.get('retailer');
+          var stateBranches = branchDirectory[state] || {};
+          var retailerBranches = stateBranches[retailer] || [];
+
+          return retailerBranches.concat([manualBranchOption]);
+        },
+        hint:
+          'Branch choices will show the town and street address. If your store is not listed, choose Other / enter manually.'
+      },
+      {
+        id: 'storeTown',
+        label: 'Store town / city',
+        type: 'text',
+        required: false,
+        minLength: 2,
+        maxLength: 100,
+        placeholder: 'Example: Cranston',
+        hint:
+          'Fill this in when you selected Other / enter manually for the branch.',
+        autocomplete: 'address-level2'
+      },
+      {
+        id: 'storeAddress',
+        label: 'Store street address',
+        type: 'text',
+        required: false,
+        minLength: 3,
+        maxLength: 100,
+        placeholder: 'Street address of the store',
+        hint:
+          'Enter the physical store address when using manual branch entry.',
+        autocomplete: 'street-address'
+      },
+      {
+        id: 'product',
+        label: 'Sealed product type',
         type: 'choice',
         layout: 'tiles',
         required: true,
         options: list([
-          'Walmart',
-          'Target',
-          'GameStop',
-          'Dollar General',
-          'CVS',
-          'Walgreens',
-          'Family Dollar',
-          'Five Below',
-          "Dick's Sporting Goods",
-          'Pokémon Center',
-          'Local Card Shop',
-          'Other'
+          { value: 'ETB', label: 'Elite Trainer Box (ETB)' },
+          { value: 'Ultra-Premium Collection', label: 'Ultra-Premium Collection' },
+          { value: 'Booster Bundle', label: 'Booster Bundle' },
+          { value: 'Booster Box', label: 'Booster Box' },
+          { value: 'Booster Pack', label: 'Booster Pack' },
+          { value: 'Tin', label: 'Tin' },
+          { value: 'Collection Box', label: 'Collection Box' },
+          { value: 'Blister Pack', label: 'Blister Pack' },
+          { value: 'Tech Sticker Blister', label: 'Tech Sticker Blister' },
+          { value: 'Battle / Theme Deck', label: 'Battle / Theme Deck' },
+          { value: 'Poster Collection', label: 'Poster Collection' },
+          { value: 'Other Sealed Product', label: 'Other Sealed Product' }
         ])
       },
       {
-        id: 'location',
-        label: 'Location',
+        id: 'productName',
+        label: 'Product / set name',
         type: 'text',
         required: true,
         minLength: 2,
         maxLength: 100,
-        placeholder: 'Cranston, Pocasset Ave',
-        hint: 'City, town or street. Use "Online" for web orders.',
+        placeholder: 'Example: Scarlet & Violet — set or product name',
+        hint:
+          'Enter the product name or set printed on the packaging.',
         autocomplete: 'off'
       },
       {
-        id: 'product',
-        label: 'Product',
-        type: 'choice',
-        layout: 'tiles',
-        required: true,
-        options: list([
-          { value: 'ETB', label: 'ETB', desc: 'Elite Trainer Box' },
-          'Booster Bundle',
-          'Ex Boxes',
-          'Tech Sticker',
-          'Poster',
-          '2/3 pk Blister',
-          'Multiple'
-        ])
-      },
-      {
         id: 'qty',
-        label: 'Qty seen',
+        label: 'Quantity seen',
         type: 'choice',
         layout: 'chips',
         required: true,
         options: list(['1', '2-3', '4-10', '10+', 'Unknown'])
       },
       {
-        id: 'price',
-        label: 'Price',
+        id: 'shelfPrice',
+        label: 'Shelf price per item ($)',
         type: 'price',
         required: false,
-        placeholder: '59.99',
-        hint: 'Per item, numbers only. Leave blank if you are not sure.'
+        placeholder: '49.99',
+        hint:
+          'Enter the price displayed in the store. Leave blank if unknown.'
       },
       {
-        id: 'priceType',
-        label: 'Price type',
-        type: 'choice',
-        layout: 'duo',
-        required: true,
-        options: list([
-          { value: 'MSRP', label: 'MSRP', desc: 'Regular retail price' },
-          { value: 'Market', label: 'Market', desc: 'Above retail' }
-        ])
+        id: 'msrp',
+        label: 'MSRP per item ($)',
+        type: 'price',
+        required: false,
+        placeholder: '49.99',
+        hint:
+          'Enter the manufacturer suggested retail price if known. Do not guess.'
       },
       {
         id: 'productLocated',
-        label: 'Product located',
+        label: 'Where in the store?',
         type: 'choice',
         layout: 'tiles',
         required: true,
         options: list([
-          { value: 'Service Desk/Behind Counter', label: 'Service Desk/Behind Counter', icon: '🛎️' },
-          { value: 'On Shelf', label: 'On Shelf', icon: '📦' },
-          { value: 'Display/Endcap', label: 'Display/Endcap', icon: '🏷️' },
-          { value: 'Pickup/Online Order', label: 'Pickup/Online Order', icon: '🛒' }
+          {
+            value: 'On Shelf',
+            label: 'On Shelf',
+            icon: '📦'
+          },
+          {
+            value: 'Display/Endcap',
+            label: 'Display / Endcap',
+            icon: '🏷️'
+          },
+          {
+            value: 'Service Desk/Behind Counter',
+            label: 'Service Desk / Behind Counter',
+            icon: '🛎️'
+          },
+          {
+            value: 'Checkout Area',
+            label: 'Checkout Area',
+            icon: '🛒'
+          },
+          {
+            value: 'Other Area',
+            label: 'Other Area',
+            icon: '📍'
+          }
         ])
       },
       {
@@ -163,56 +297,83 @@
       },
       {
         id: 'stillThere',
-        label: 'Is it still there?',
+        label: 'Was it still in stock when you left?',
         type: 'choice',
         layout: 'duo',
         required: true,
         options: list([
-          { value: 'Yes', label: 'Yes', desc: 'Still there', tone: 'good' },
-          { value: 'No', label: 'No', desc: 'Sold out', tone: 'bad' }
+          {
+            value: 'Yes',
+            label: 'Yes',
+            desc: 'Still in stock',
+            tone: 'good'
+          },
+          {
+            value: 'No',
+            label: 'No',
+            desc: 'Sold out',
+            tone: 'bad'
+          }
         ])
       },
       {
         id: 'photos',
-        label: 'Upload a photo',
+        label: 'Product / shelf photos',
         type: 'photos',
         required: false
       },
       {
         id: 'reporter',
-        label: 'Your Facebook name',
+        label: 'Your Facebook / Discord name',
         type: 'text',
         required: true,
         minLength: 2,
         maxLength: 60,
         placeholder: 'The name the crew knows you by',
-        hint: 'Shown with your alert in the VIP Discord.',
+        hint: 'Shown with your stock alert in the VIP Discord.',
         autocomplete: 'name'
       },
       {
         id: 'notes',
-        label: 'Anything else members should know?',
+        label: 'Additional details',
         type: 'textarea',
         required: false,
         maxLength: 500,
-        placeholder: 'Limits per customer, line length, when restock happens...'
+        placeholder:
+          'Purchase limits, number of units left, shelf location, or other useful details.'
       }
     ]
   };
 
   config.getField = function (id) {
     for (var i = 0; i < config.fields.length; i++) {
-      if (config.fields[i].id === id) return config.fields[i];
+      if (config.fields[i].id === id) {
+        return config.fields[i];
+      }
     }
     return null;
   };
 
-  config.getOption = function (fieldId, value) {
-    var f = config.getField(fieldId);
-    if (!f || !f.options) return null;
-    for (var i = 0; i < f.options.length; i++) {
-      if (f.options[i].value === value) return f.options[i];
+  config.getOptions = function (fieldId, ctx) {
+    var field = config.getField(fieldId);
+    if (!field) return [];
+
+    if (typeof field.getOptions === 'function') {
+      return field.getOptions(ctx || { get: function () { return ''; } });
     }
+
+    return field.options || [];
+  };
+
+  config.getOption = function (fieldId, value, ctx) {
+    var options = config.getOptions(fieldId, ctx);
+
+    for (var i = 0; i < options.length; i++) {
+      if (String(options[i].value) === String(value)) {
+        return options[i];
+      }
+    }
+
     return null;
   };
 
