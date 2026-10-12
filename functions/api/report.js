@@ -1,13 +1,14 @@
+
 /*
  * POST /api/report
  *
  * Browser sends multipart form data:
- *   data         JSON string with the answers
- *   photos       0-5 image files
- *   elapsedMs    how long the member spent on the form
- *   website      honeypot field
+ *   data       JSON string containing form answers
+ *   photos     0-5 image files
+ *   elapsedMs  time spent filling out the form
+ *   website    honeypot field
  *
- * Cloudflare bindings:
+ * Cloudflare D1 binding:
  *   DB -> pokemon-vip-members
  *
  * Environment variables:
@@ -24,6 +25,7 @@ const MAX_BODY_BYTES = 14 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
 const MAX_TOTAL_PHOTO_BYTES = 9 * 1024 * 1024;
 const MIN_FILL_MS = 3000;
+const MAX_PHOTOS = 5;
 
 const WEBHOOK_PREFIX =
   /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//;
@@ -43,9 +45,7 @@ function json(body, status = 200) {
 function getCookie(request, name) {
   const header = request.headers.get('Cookie') || '';
 
-  const parts = header.split(';');
-
-  for (const part of parts) {
+  for (const part of header.split(';')) {
     const trimmed = part.trim();
 
     if (trimmed.startsWith(name + '=')) {
@@ -64,29 +64,19 @@ function base64Url(bytes) {
 }
 
 async function sha256(value) {
-  const data = new TextEncoder().encode(value);
-
   return crypto.subtle.digest(
     'SHA-256',
-    data
+    new TextEncoder().encode(value)
   );
 }
 
 async function getActiveMember(request, env) {
-  const token = getCookie(
-    request,
-    SESSION_COOKIE
-  );
+  const token = getCookie(request, SESSION_COOKIE);
 
-  if (!token) {
-    return null;
-  }
+  if (!token) return null;
 
   const hashBuffer = await sha256(token);
-
-  const tokenHash = base64Url(
-    hashBuffer
-  );
+  const tokenHash = base64Url(hashBuffer);
 
   const result = await env.DB.prepare(
     `SELECT id, name, email, membership_status,
@@ -99,9 +89,7 @@ async function getActiveMember(request, env) {
     .bind(tokenHash)
     .first();
 
-  if (!result) {
-    return null;
-  }
+  if (!result) return null;
 
   if (
     !result.session_expires_at ||
@@ -113,11 +101,7 @@ async function getActiveMember(request, env) {
   return result;
 }
 
-async function postToDiscord(
-  webhookUrl,
-  payload,
-  photos
-) {
+async function postToDiscord(webhookUrl, payload, photos) {
   const url =
     webhookUrl +
     (webhookUrl.includes('?') ? '&' : '?') +
@@ -135,74 +119,117 @@ async function postToDiscord(
 
   const body = new FormData();
 
-  body.append(
-    'payload_json',
-    JSON.stringify(payload)
-  );
+  body.append('payload_json', JSON.stringify(payload));
 
-  photos.forEach(function (p, i) {
+  photos.forEach(function (photo, index) {
     body.append(
-      'files[' + i + ']',
-      p.file,
-      p.name
+      'files[' + index + ']',
+      photo.file,
+      photo.name
     );
   });
 
   return fetch(url, {
     method: 'POST',
-    body: body
+    body
   });
 }
 
-export async function onRequestPost({
-  request,
-  env
-}) {
-  /*
-   * VIP MEMBERSHIP CHECK
-   *
-   * This happens before we process or save
-   * the report.
-   */
-  try {
-    const member =
-      await getActiveMember(request, env);
-
-    if (!member) {
-      return json(
-        {
-          ok: false,
-          error: 'membership_required'
-        },
-        403
-      );
-    }
-  } catch (error) {
-    console.error(
-      'Membership check error:',
-      error
-    );
-
-    return json(
-      {
-        ok: false,
-        error: 'membership_check_failed'
-      },
-      500
-    );
+function numericPrice(value) {
+  if (value === '' || value === null || value === undefined) {
+    return null;
   }
 
-  const alertUrl =
-    env.DISCORD_WEBHOOK_URL || '';
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : null;
+}
+
+function numericQuantity(value) {
+  // Preserve the original quantity field for older dashboards.
+  // The exact range is also saved in quantity_text.
+  if (value === '1') return 1;
+  if (value === '2-3') return 2;
+  if (value === '4-10') return 4;
+  if (value === '10+') return 10;
+
+  return null;
+}
+
+function makeStoreDetails(report) {
+  const ctx = {
+    get: function (id) {
+      return report[id] || '';
+    }
+  };
+
+  const option =
+    typeof formConfig.getOption === 'function'
+      ? formConfig.getOption('branch', report.branch, ctx)
+      : null;
+
+  let branchLabel = option ? option.label : '';
+
+  if (report.branch === 'manual') {
+    branchLabel = 'Manually entered store';
+  }
+
+  // Use the directory label as the authoritative location for a listed branch.
+  // Its expected format is "Town — street address".
+  if (report.branch !== 'manual' && option) {
+    const parts = String(option.label).split(' — ');
+
+    return {
+      branchLabel: option.label,
+      town: parts.length > 1 ? parts[0].trim() : '',
+      address: parts.length > 1
+        ? parts.slice(1).join(' — ').trim()
+        : '',
+      location: option.label
+    };
+  }
+
+  const town = String(report.storeTown || '').trim();
+  const address = String(report.storeAddress || '').trim();
+
+  return {
+    branchLabel: branchLabel || 'Manually entered store',
+    town,
+    address,
+    location: [town, address].filter(Boolean).join(' — ')
+  };
+}
+
+export async function onRequestPost({ request, env }) {
+  /*
+   * MEMBERSHIP CHECK
+   * Only active members with a valid session can submit reports.
+   */
+  try {
+    const member = await getActiveMember(request, env);
+
+    if (!member) {
+      return json({
+        ok: false,
+        error: 'membership_required'
+      }, 403);
+    }
+  } catch (error) {
+    console.error('Membership check error:', error);
+
+    return json({
+      ok: false,
+      error: 'membership_check_failed'
+    }, 500);
+  }
+
+  const alertUrl = env.DISCORD_WEBHOOK_URL || '';
 
   if (!WEBHOOK_PREFIX.test(alertUrl)) {
-    return json(
-      {
-        ok: false,
-        error: 'not_configured'
-      },
-      500
-    );
+    return json({
+      ok: false,
+      error: 'not_configured'
+    }, 500);
   }
 
   const declared = Number(
@@ -210,314 +237,278 @@ export async function onRequestPost({
   );
 
   if (declared > MAX_BODY_BYTES) {
-    return json(
-      {
-        ok: false,
-        error: 'too_large'
-      },
-      413
-    );
+    return json({
+      ok: false,
+      error: 'too_large'
+    }, 413);
   }
 
   let form;
 
   try {
     form = await request.formData();
-  } catch (e) {
-    return json(
-      {
-        ok: false,
-        error: 'bad_request'
-      },
-      400
-    );
+  } catch (error) {
+    return json({
+      ok: false,
+      error: 'bad_request'
+    }, 400);
   }
 
-  const honeypot = String(
-    form.get('website') || ''
-  );
+  const honeypot = String(form.get('website') || '');
+  const elapsed = Number(form.get('elapsedMs') || 0);
 
-  const elapsed = Number(
-    form.get('elapsedMs') || 0
-  );
-
-  if (
-    honeypot ||
-    elapsed < MIN_FILL_MS
-  ) {
-    return json({
-      ok: true
-    });
+  // Keep the existing bot-trap behavior.
+  if (honeypot || elapsed < MIN_FILL_MS) {
+    return json({ ok: true });
   }
 
   let data;
 
   try {
-    data = JSON.parse(
-      String(form.get('data') || '')
-    );
-  } catch (e) {
-    return json(
-      {
-        ok: false,
-        error: 'bad_request'
-      },
-      400
-    );
+    data = JSON.parse(String(form.get('data') || ''));
+  } catch (error) {
+    return json({
+      ok: false,
+      error: 'bad_request'
+    }, 400);
+  }
+
+  if (
+    !data ||
+    typeof data !== 'object' ||
+    Array.isArray(data)
+  ) {
+    return json({
+      ok: false,
+      error: 'bad_request'
+    }, 400);
   }
 
   const result = validate.validateAll(
     formConfig,
     data,
     {
-      futureToleranceMs:
-        15 * 60 * 1000
+      futureToleranceMs: 15 * 60 * 1000
     }
   );
 
   if (!result.ok) {
-    return json(
-      {
-        ok: false,
-        error: 'invalid',
-        errors: result.errors
-      },
-      422
-    );
+    return json({
+      ok: false,
+      error: 'invalid',
+      errors: result.errors
+    }, 422);
   }
 
   const report = result.clean;
 
-  const files = form
-    .getAll('photos')
-    .filter(function (f) {
-      return typeof f !== 'string';
-    });
+  /*
+   * Resolve the chosen branch against the configured directory.
+   * Do not trust a submitted branch label or address for listed stores.
+   */
+  const store = makeStoreDetails(report);
 
-  if (
-    files.length >
-    formConfig.limits.maxPhotos
-  ) {
-    return json(
-      {
-        ok: false,
-        error: 'too_many_photos'
-      },
-      422
-    );
+  report.branchLabel = store.branchLabel;
+  report.storeTown = store.town;
+  report.storeAddress = store.address;
+  report.location = store.location;
+
+  // Compatibility fields for the current Discord alert builder.
+  report.price = report.shelfPrice;
+  report.priceType = 'Shelf price';
+
+  /*
+   * Validate uploaded photos.
+   */
+  const files = form.getAll('photos').filter(function (file) {
+    return typeof file !== 'string';
+  });
+
+  if (files.length > MAX_PHOTOS) {
+    return json({
+      ok: false,
+      error: 'too_many_photos'
+    }, 422);
   }
 
   let total = 0;
   const photos = [];
 
-  for (
-    let i = 0;
-    i < files.length;
-    i++
-  ) {
-    const f = files[i];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
 
-    if (
-      !/^image\/(jpeg|png|webp)$/.test(
-        f.type
-      )
-    ) {
-      return json(
-        {
-          ok: false,
-          error: 'bad_photo'
-        },
-        422
-      );
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      return json({
+        ok: false,
+        error: 'bad_photo'
+      }, 422);
     }
 
-    if (
-      f.size > MAX_PHOTO_BYTES
-    ) {
-      return json(
-        {
-          ok: false,
-          error: 'photo_too_large'
-        },
-        413
-      );
-    }
-
-    total += f.size;
-
-    photos.push({
-      file: f,
-      name:
-        'photo' +
-        (i + 1) +
-        '.jpg'
-    });
-  }
-
-  if (
-    total >
-    MAX_TOTAL_PHOTO_BYTES
-  ) {
-    return json(
-      {
+    if (file.size > MAX_PHOTO_BYTES) {
+      return json({
         ok: false,
         error: 'photo_too_large'
-      },
-      413
-    );
+      }, 413);
+    }
+
+    total += file.size;
+
+    if (total > MAX_TOTAL_PHOTO_BYTES) {
+      return json({
+        ok: false,
+        error: 'photo_too_large'
+      }, 413);
+    }
+
+    const extension = file.type === 'image/png'
+      ? 'png'
+      : file.type === 'image/webp'
+        ? 'webp'
+        : 'jpg';
+
+    photos.push({
+      file,
+      name: 'photo' + (i + 1) + '.' + extension
+    });
   }
 
-  const photoNames =
-    photos.map(function (p) {
-      return p.name;
-    });
+  const photoNames = photos.map(function (photo) {
+    return photo.name;
+  });
 
   /*
-   * SAVE REPORT TO D1
+   * SAVE REPORT TO D1.
+   *
+   * The old columns remain populated for compatibility with existing
+   * report views. New columns store the new form's complete information.
    */
   try {
-    const sql =
-      'INSERT INTO reports ' +
-      '(store, location, product, quantity, price, reported_by, ' +
-      'photo_url, notes, price_type, product_located, seen_at, still_there) ' +
-      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const sql = `
+      INSERT INTO reports (
+        store,
+        location,
+        product,
+        quantity,
+        price,
+        reported_by,
+        photo_url,
+        notes,
+        price_type,
+        product_located,
+        seen_at,
+        still_there,
+        state,
+        branch_id,
+        store_town,
+        store_address,
+        product_type,
+        product_name,
+        quantity_text,
+        shelf_price,
+        msrp
+      )
+      VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?
+      )
+    `;
 
-    await env.DB
-      .prepare(sql)
+    const productForLegacyViews = [
+      report.product || '',
+      report.productName || ''
+    ].filter(Boolean).join(' — ');
+
+    await env.DB.prepare(sql)
       .bind(
         report.retailer || '',
         report.location || '',
-        report.product || '',
-        report.qty || '',
-        report.price !== undefined &&
-        report.price !== ''
-          ? Number(report.price)
-          : null,
+        productForLegacyViews,
+        numericQuantity(report.qty),
+        numericPrice(report.shelfPrice),
         report.reporter || '',
         photoNames.join(', '),
         report.notes || '',
-        report.priceType || '',
+        'Shelf price',
         report.productLocated || '',
         report.seenAt || '',
-        report.stillThere || ''
+        report.stillThere || '',
+        report.state || '',
+        report.branch || '',
+        report.storeTown || '',
+        report.storeAddress || '',
+        report.product || '',
+        report.productName || '',
+        report.qty || '',
+        numericPrice(report.shelfPrice),
+        numericPrice(report.msrp)
       )
       .run();
-  } catch (e) {
-    console.error(
-      'D1 database error:',
-      e
-    );
+  } catch (error) {
+    console.error('D1 database error:', error);
 
-    return json(
-      {
-        ok: false,
-        error: 'database_error'
-      },
-      500
-    );
+    return json({
+      ok: false,
+      error: 'database_error'
+    }, 500);
   }
 
   /*
-   * BUILD DISCORD ALERT
+   * BUILD DISCORD ALERT.
+   * The current alert builder receives compatibility fields above.
    */
-  const alert = buildAlert(
-    report,
-    {
-      roleId:
-        env.DISCORD_ALERT_ROLE_ID || '',
-      photoNames:
-        photoNames
-    }
-  );
+  const alert = buildAlert(report, {
+    roleId: env.DISCORD_ALERT_ROLE_ID || '',
+    photoNames
+  });
 
   const sends = [];
 
-  /*
-   * IN-STOCK REPORTS ONLY
-   */
+  // Main alert channel: only reports marked as still in stock.
   if (alert.inStock) {
-    sends.push(
-      postToDiscord(
-        alertUrl,
-        alert.payload,
-        photos
-      )
-    );
+    sends.push(postToDiscord(alertUrl, alert.payload, photos));
   }
 
-  /*
-   * OPTIONAL LOG CHANNEL
-   */
-  const logUrl =
-    env.DISCORD_LOG_WEBHOOK_URL || '';
+  // Optional log channel: all valid reports.
+  const logUrl = env.DISCORD_LOG_WEBHOOK_URL || '';
 
-  if (
-    WEBHOOK_PREFIX.test(logUrl)
-  ) {
-    const log = buildAlert(
-      report,
-      {
-        roleId: '',
-        photoNames:
-          photoNames
-      }
-    );
+  if (WEBHOOK_PREFIX.test(logUrl)) {
+    const log = buildAlert(report, {
+      roleId: '',
+      photoNames
+    });
 
-    sends.push(
-      postToDiscord(
-        logUrl,
-        log.payload,
-        photos
-      )
-    );
+    sends.push(postToDiscord(logUrl, log.payload, photos));
   }
 
   let responses;
 
   try {
-    responses =
-      await Promise.all(sends);
-  } catch (e) {
-    console.error(
-      'Discord connection error:',
-      e
-    );
+    responses = await Promise.all(sends);
+  } catch (error) {
+    console.error('Discord connection error:', error);
 
-    return json(
-      {
-        ok: false,
-        error: 'discord_unreachable'
-      },
-      502
-    );
+    return json({
+      ok: false,
+      error: 'discord_unreachable'
+    }, 502);
   }
 
-  if (
-    responses.some(function (r) {
-      return r.status === 429;
-    })
-  ) {
-    return json(
-      {
-        ok: false,
-        error: 'busy'
-      },
-      503
-    );
+  if (responses.some(function (response) {
+    return response.status === 429;
+  })) {
+    return json({
+      ok: false,
+      error: 'busy'
+    }, 503);
   }
 
-  if (
-    responses.some(function (r) {
-      return !r.ok;
-    })
-  ) {
-    return json(
-      {
-        ok: false,
-        error: 'discord_error'
-      },
-      502
-    );
+  if (responses.some(function (response) {
+    return !response.ok;
+  })) {
+    return json({
+      ok: false,
+      error: 'discord_error'
+    }, 502);
   }
 
   return json({
@@ -527,11 +518,8 @@ export async function onRequestPost({
 }
 
 export async function onRequest() {
-  return json(
-    {
-      ok: false,
-      error: 'method_not_allowed'
-    },
-    405
-  );
+  return json({
+    ok: false,
+    error: 'method_not_allowed'
+  }, 405);
 }
