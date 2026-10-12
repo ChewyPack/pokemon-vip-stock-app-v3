@@ -1,8 +1,9 @@
+
 /*
  * REPORT FLOW
- * Steps come from VIP.formConfig. This file knows how to show steps, move between them,
- * validate, review and submit. It does not know any question by name (except the photo
- * field, which has its own component API).
+ * Steps come from VIP.formConfig.
+ * Handles dependent location dropdowns, conditional manual address fields,
+ * navigation, validation, review, drafts and submission.
  */
 (function () {
   var VIP = (window.VIP = window.VIP || {});
@@ -11,34 +12,78 @@
   VIP.flow = function mount(root, hooks) {
     var cfg = VIP.formConfig;
     var V = VIP.validate;
-    var state = { step: 0, values: {}, startedAt: Date.now(), sending: false, dir: 1 };
+    var state = {
+      step: 0,
+      values: {},
+      startedAt: Date.now(),
+      sending: false,
+      dir: 1
+    };
     var fields = {};
 
     /* ---------- state + fields ---------- */
     var ctx = {
       limits: cfg.limits,
+
       get: function (id) {
         return state.values[id];
       },
+
       set: function (id, value) {
+        var changed = state.values[id] !== value;
         state.values[id] = value;
+
         if (fields[id]) fields[id].setError('');
+
+        /*
+         * Changing the state or retailer invalidates the old branch.
+         * Clear manual address fields too, so an address from another store
+         * cannot accidentally be submitted.
+         */
+        if (changed && (id === 'state' || id === 'retailer')) {
+          state.values.branch = '';
+          state.values.storeTown = '';
+          state.values.storeAddress = '';
+
+          ['branch', 'storeTown', 'storeAddress'].forEach(function (fieldId) {
+            if (fields[fieldId]) {
+              fields[fieldId].setError('');
+            }
+          });
+
+          if (fields.branch && fields.branch.refreshOptions) {
+            fields.branch.refreshOptions();
+          }
+
+          if (fields.branch && fields.branch.sync) {
+            fields.branch.sync();
+          }
+        }
+
         hideBanner();
         VIP.draft.save(state.values);
       }
     };
 
     function buildFields() {
-      if (fields.photos && fields.photos.reset) fields.photos.reset();
+      if (fields.photos && fields.photos.reset) {
+        fields.photos.reset();
+      }
+
       state.values = Object.assign({}, VIP.draft.load());
-      if (!state.values.reporter) state.values.reporter = VIP.draft.loadReporter();
+
+      if (!state.values.reporter) {
+        state.values.reporter = VIP.draft.loadReporter();
+      }
+
       state.values.seenAt = new Date().toISOString();
       state.startedAt = Date.now();
       state.step = 0;
       state.dir = 1;
       fields = {};
-      cfg.fields.forEach(function (f) {
-        fields[f.id] = VIP.fields.create(f, ctx);
+
+      cfg.fields.forEach(function (field) {
+        fields[field.id] = VIP.fields.create(field, ctx);
       });
     }
 
@@ -46,14 +91,23 @@
     var title = h('h2', { class: 'panel__title', tabindex: '-1' });
     var blurb = h('p', { class: 'panel__blurb' });
     var body = h('div', { class: 'panel__body' });
-    var honeypot = h('input', { type: 'text', name: 'website', class: 'hp', tabindex: '-1', autocomplete: 'off', 'aria-hidden': 'true' });
+
+    var honeypot = h('input', {
+      type: 'text',
+      name: 'website',
+      class: 'hp',
+      tabindex: '-1',
+      autocomplete: 'off',
+      'aria-hidden': 'true'
+    });
+
     var form = h(
       'form',
       {
         class: 'panel',
         novalidate: true,
-        onsubmit: function (e) {
-          e.preventDefault();
+        onsubmit: function (event) {
+          event.preventDefault();
           next();
         }
       },
@@ -61,39 +115,147 @@
       body,
       honeypot
     );
-    var banner = h('div', { class: 'banner', role: 'alert', hidden: true });
-    var progress = h('div', { class: 'progress', role: 'group', 'aria-label': 'Report progress' });
-    var backBtn = h('button', { type: 'button', class: 'btn btn--ghost', onclick: back }, 'Back');
-    var nextBtn = h('button', { type: 'button', class: 'btn btn--primary', onclick: next }, 'Continue');
+
+    var banner = h('div', {
+      class: 'banner',
+      role: 'alert',
+      hidden: true
+    });
+
+    var progress = h('div', {
+      class: 'progress',
+      role: 'group',
+      'aria-label': 'Report progress'
+    });
+
+    var backBtn = h(
+      'button',
+      {
+        type: 'button',
+        class: 'btn btn--ghost',
+        onclick: back
+      },
+      'Back'
+    );
+
+    var nextBtn = h(
+      'button',
+      {
+        type: 'button',
+        class: 'btn btn--primary',
+        onclick: next
+      },
+      'Continue'
+    );
+
     var nav = h('div', { class: 'nav' }, backBtn, nextBtn);
 
-    root.appendChild(h('header', { class: 'apply-head wrap wrap--form' }, h('a', { class: 'apply-head__home', href: '#' }, 'Pokémon VIP'), progress));
-    root.appendChild(h('div', { class: 'wrap wrap--form' }, banner, form, nav));
+    root.appendChild(
+      h(
+        'header',
+        { class: 'apply-head wrap wrap--form' },
+        h(
+          'a',
+          { class: 'apply-head__home', href: '#' },
+          'Pokémon VIP'
+        ),
+        progress
+      )
+    );
+
+    root.appendChild(
+      h('div', { class: 'wrap wrap--form' }, banner, form, nav)
+    );
 
     function showBanner(text) {
       banner.textContent = text;
       banner.hidden = false;
     }
+
     function hideBanner() {
       banner.hidden = true;
     }
 
     function renderProgress() {
       var total = cfg.steps.length + 1;
-      var labels = cfg.steps.map(function (s) {
-        return s.label;
+      var labels = cfg.steps.map(function (step) {
+        return step.label;
       }).concat(['Review']);
+
       VIP.clear(progress);
+
       progress.appendChild(
         h(
           'ol',
           { class: 'progress__bars' },
           labels.map(function (label, i) {
-            return h('li', { class: 'pip' + (i < state.step ? ' is-done' : '') + (i === state.step ? ' is-current' : ''), 'aria-current': i === state.step ? 'step' : null }, h('span', { class: 'sr-only' }, label));
+            return h(
+              'li',
+              {
+                class:
+                  'pip' +
+                  (i < state.step ? ' is-done' : '') +
+                  (i === state.step ? ' is-current' : ''),
+                'aria-current': i === state.step ? 'step' : null
+              },
+              h('span', { class: 'sr-only' }, label)
+            );
           })
         )
       );
-      progress.appendChild(h('p', { class: 'progress__text' }, h('strong', null, 'Step ' + (state.step + 1) + ' of ' + total), h('span', null, labels[state.step])));
+
+      progress.appendChild(
+        h(
+          'p',
+          { class: 'progress__text' },
+          h(
+            'strong',
+            null,
+            'Step ' + (state.step + 1) + ' of ' + total
+          ),
+          h('span', null, labels[state.step])
+        )
+      );
+    }
+
+    /* ---------- conditional fields ---------- */
+    function isManualBranch() {
+      return state.values.branch === 'manual';
+    }
+
+    function updateConditionalFields() {
+      ['storeTown', 'storeAddress'].forEach(function (id) {
+        if (!fields[id]) return;
+
+        fields[id].el.hidden = !isManualBranch();
+
+        if (!isManualBranch()) {
+          fields[id].setError('');
+        }
+      });
+    }
+
+    function validateManualAddress() {
+      if (!isManualBranch()) return null;
+
+      var town = String(state.values.storeTown || '').trim();
+      var address = String(state.values.storeAddress || '').trim();
+
+      if (town.length < 2) {
+        return {
+          id: 'storeTown',
+          message: 'Enter the town or city for this store.'
+        };
+      }
+
+      if (address.length < 3) {
+        return {
+          id: 'storeAddress',
+          message: 'Enter the street address for this store.'
+        };
+      }
+
+      return null;
     }
 
     /* ---------- review ---------- */
@@ -101,69 +263,160 @@
       return h('span', { class: 'muted' }, text);
     }
 
-    function displayValue(f) {
-      var v = state.values[f.id];
-      if (f.type === 'photos') {
-        var ps = fields.photos.getPhotos();
-        if (!ps.length) return muted('No photos');
+    function displayValue(field) {
+      var value = state.values[field.id];
+
+      if (
+        (field.id === 'storeTown' || field.id === 'storeAddress') &&
+        !isManualBranch()
+      ) {
+        return muted('Not needed for selected branch');
+      }
+
+      if (field.type === 'photos') {
+        var photoItems = fields.photos.getPhotos();
+
+        if (!photoItems.length) return muted('No photos');
+
         return h(
           'ul',
           { class: 'thumbs thumbs--sm' },
-          ps.map(function (p) {
-            return h('li', { class: 'thumb' }, h('img', { src: p.url, alt: '' }));
+          photoItems.map(function (photo) {
+            return h(
+              'li',
+              { class: 'thumb' },
+              h('img', { src: photo.url, alt: '' })
+            );
           })
         );
       }
-      if (v === undefined || v === null || String(v).trim() === '') return muted('Not provided');
-      if (f.type === 'price') return '$' + V.normalizePrice(v);
-      if (f.type === 'datetime') return new Date(v).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-      if (f.type === 'textarea') return h('span', { class: 'prewrap' }, String(v));
-      return String(v);
+
+      if (
+        value === undefined ||
+        value === null ||
+        String(value).trim() === ''
+      ) {
+        return muted('Not provided');
+      }
+
+      if (field.type === 'price') {
+        return '$' + V.normalizePrice(value);
+      }
+
+      if (field.type === 'datetime') {
+        return new Date(value).toLocaleString([], {
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        });
+      }
+
+      if (field.type === 'textarea') {
+        return h('span', { class: 'prewrap' }, String(value));
+      }
+
+      /*
+       * Show the human-readable branch label in review rather than its ID.
+       */
+      if (field.id === 'branch' && value !== 'manual') {
+        var branchOption = cfg.getOption(
+          'branch',
+          value,
+          ctx
+        );
+
+        if (branchOption) return branchOption.label;
+      }
+
+      if (field.id === 'state') {
+        var stateOption = cfg.getOption('state', value, ctx);
+        if (stateOption) return stateOption.label;
+      }
+
+      return String(value);
     }
 
     function reviewNode() {
-      var wrap = h('div', { class: 'review' });
-      cfg.steps.forEach(function (step, si) {
+      var review = h('div', { class: 'review' });
+
+      cfg.steps.forEach(function (step, stepIndex) {
         var dl = h('dl', { class: 'review__list' });
+
         step.fields.forEach(function (id) {
-          var f = cfg.getField(id);
-          dl.appendChild(h('div', { class: 'review__row' }, h('dt', null, f.label), h('dd', null, displayValue(f))));
+          var field = cfg.getField(id);
+
+          dl.appendChild(
+            h(
+              'div',
+              { class: 'review__row' },
+              h('dt', null, field.label),
+              h('dd', null, displayValue(field))
+            )
+          );
         });
-        wrap.appendChild(
+
+        review.appendChild(
           h(
             'section',
             { class: 'review__group' },
-            h('div', { class: 'review__head' }, h('h3', null, step.label), h('button', { type: 'button', class: 'link-btn', onclick: function () {
-              goTo(si);
-            } }, 'Edit')),
+            h(
+              'div',
+              { class: 'review__head' },
+              h('h3', null, step.label),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  class: 'link-btn',
+                  onclick: function () {
+                    goTo(stepIndex);
+                  }
+                },
+                'Edit'
+              )
+            ),
             dl
           )
         );
       });
-      wrap.appendChild(h('p', { class: 'notice' }, VIP.siteConfig.notice));
-      return wrap;
+
+      review.appendChild(
+        h('p', { class: 'notice' }, VIP.siteConfig.notice)
+      );
+
+      return review;
     }
 
     /* ---------- step rendering ---------- */
     function renderStep(focusTitle) {
       var isReview = state.step === cfg.steps.length;
+
       VIP.clear(body);
+
       if (!isReview) {
         var step = cfg.steps[state.step];
+
         title.textContent = step.title;
         blurb.textContent = step.blurb;
+
         step.fields.forEach(function (id) {
-          if (fields[id].sync) fields[id].sync();
+          if (fields[id].sync) {
+            fields[id].sync();
+          }
+
           body.appendChild(fields[id].el);
         });
+
+        updateConditionalFields();
       } else {
         title.textContent = 'Check your report';
         blurb.textContent = 'Tap Edit on anything that needs fixing.';
         body.appendChild(reviewNode());
       }
+
       backBtn.hidden = state.step === 0;
       nextBtn.textContent = isReview ? 'Send report' : 'Continue';
       nextBtn.classList.toggle('btn--send', isReview);
+
       renderProgress();
       hideBanner();
 
@@ -172,29 +425,67 @@
       body.classList.add(state.dir > 0 ? 'slide-fwd' : 'slide-back');
 
       if (focusTitle) {
-        window.scrollTo({ top: 0, behavior: VIP.reducedMotion() ? 'auto' : 'smooth' });
+        window.scrollTo({
+          top: 0,
+          behavior: VIP.reducedMotion() ? 'auto' : 'smooth'
+        });
+
         title.focus({ preventScroll: true });
       }
     }
 
-    function goTo(i) {
-      state.dir = i >= state.step ? 1 : -1;
-      state.step = i;
+    function goTo(index) {
+      state.dir = index >= state.step ? 1 : -1;
+      state.step = index;
       renderStep(true);
     }
 
-    function validateStep(i) {
+    function validateStep(index) {
       var first = null;
-      cfg.steps[i].fields.forEach(function (id) {
-        var msg = V.validateField(cfg.getField(id), state.values[id]);
-        fields[id].setError(msg);
-        if (msg && !first) first = id;
+      var step = cfg.steps[index];
+
+      step.fields.forEach(function (id) {
+        var field = cfg.getField(id);
+
+        if (
+          (id === 'storeTown' || id === 'storeAddress') &&
+          !isManualBranch()
+        ) {
+          fields[id].setError('');
+          return;
+        }
+
+        var message = V.validateField(field, state.values[id]);
+
+        if (isManualBranch() && id === 'storeTown') {
+          if (String(state.values.storeTown || '').trim().length < 2) {
+            message = 'Enter the town or city for this store.';
+          }
+        }
+
+        if (isManualBranch() && id === 'storeAddress') {
+          if (String(state.values.storeAddress || '').trim().length < 3) {
+            message = 'Enter the street address for this store.';
+          }
+        }
+
+        fields[id].setError(message);
+
+        if (message && !first) {
+          first = id;
+        }
       });
+
       if (first) {
-        fields[first].el.scrollIntoView({ block: 'center', behavior: VIP.reducedMotion() ? 'auto' : 'smooth' });
+        fields[first].el.scrollIntoView({
+          block: 'center',
+          behavior: VIP.reducedMotion() ? 'auto' : 'smooth'
+        });
+
         fields[first].focus();
         return false;
       }
+
       return true;
     }
 
@@ -205,8 +496,11 @@
 
     function next() {
       if (state.sending) return;
+
       if (state.step < cfg.steps.length) {
-        if (validateStep(state.step)) goTo(state.step + 1);
+        if (validateStep(state.step)) {
+          goTo(state.step + 1);
+        }
       } else {
         send();
       }
@@ -223,50 +517,92 @@
 
     function stepOfField(id) {
       for (var i = 0; i < cfg.steps.length; i++) {
-        if (cfg.steps[i].fields.indexOf(id) !== -1) return i;
+        if (cfg.steps[i].fields.indexOf(id) !== -1) {
+          return i;
+        }
       }
+
       return 0;
     }
 
     async function send() {
+      var manualAddressError = validateManualAddress();
+
+      if (manualAddressError) {
+        goTo(stepOfField(manualAddressError.id));
+        fields[manualAddressError.id].setError(
+          manualAddressError.message
+        );
+        fields[manualAddressError.id].focus();
+
+        showBanner('Please complete the store address before sending.');
+        return;
+      }
+
       var result = V.validateAll(cfg, state.values);
+
       if (!result.ok) {
         var firstId = Object.keys(result.errors)[0];
+
         goTo(stepOfField(firstId));
+
         Object.keys(result.errors).forEach(function (id) {
-          fields[id].setError(result.errors[id]);
+          if (fields[id]) {
+            fields[id].setError(result.errors[id]);
+          }
         });
-        fields[firstId].focus();
+
+        if (fields[firstId]) fields[firstId].focus();
+
         showBanner('A few answers need fixing before you can send.');
         return;
       }
 
       setBusy(true);
+
       try {
         if (fields.photos.isBusy()) {
           showBanner('Getting your photos ready…');
           await fields.photos.whenReady();
           hideBanner();
         }
-        var out = await VIP.submit.send(result.clean, fields.photos.getPhotos(), {
-          elapsedMs: Date.now() - state.startedAt,
-          honeypot: honeypot.value
-        });
+
+        var out = await VIP.submit.send(
+          result.clean,
+          fields.photos.getPhotos(),
+          {
+            elapsedMs: Date.now() - state.startedAt,
+            honeypot: honeypot.value
+          }
+        );
+
         VIP.draft.clear();
         VIP.draft.saveReporter(result.clean.reporter);
-        var info = { report: result.clean, demo: !!out.demo, alerted: result.clean.stillThere === 'Yes' };
+
+        var info = {
+          report: result.clean,
+          demo: !!out.demo,
+          alerted: result.clean.stillThere === 'Yes'
+        };
+
         setBusy(false);
         reset();
         hooks.onSuccess(info);
       } catch (err) {
         setBusy(false);
+
         if (err.code === 'invalid' && err.fieldErrors) {
           var ids = Object.keys(err.fieldErrors);
+
           goTo(stepOfField(ids[0]));
+
           ids.forEach(function (id) {
-            if (fields[id]) fields[id].setError(err.fieldErrors[id]);
+            if (fields[id]) {
+              fields[id].setError(err.fieldErrors[id]);
+            }
           });
         }
+
         showBanner(err.message || 'Something went wrong. Try again.');
       }
     }
