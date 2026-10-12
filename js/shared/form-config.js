@@ -1,31 +1,24 @@
 
 /*
- * FORM CONFIG — single source of truth for the Pokémon VIP stock report.
+ * POKEMON VIP REPORT FORM CONFIGURATION
  *
- * Reports are for sealed Pokémon TCG products physically found in retail stores.
- * Store branches must be verified before being added to branchDirectory.
+ * Rhode Island store directory starter list.
+ * Massachusetts can be populated later.
  *
- * Loaded by the browser and the server.
+ * Branch values are stable IDs; labels are shown to members.
+ * "manual" lets members enter a store not listed in the directory.
  */
 (function (root, factory) {
-  var api = factory();
+  var config = factory();
 
   if (typeof module === 'object' && module.exports) {
-    module.exports = api;
+    module.exports = config;
   } else {
     root.VIP = root.VIP || {};
-    root.VIP.formConfig = api;
+    root.VIP.formConfig = config;
   }
 })(typeof self !== 'undefined' ? self : this, function () {
-  function list(values) {
-    return values.map(function (value) {
-      return typeof value === 'string'
-        ? { value: value, label: value }
-        : value;
-    });
-  }
-
-  var retailers = list([
+  var retailers = [
     'Walmart',
     'Target',
     'GameStop',
@@ -37,64 +30,172 @@
     "Dick's Sporting Goods",
     'Local Card Shop',
     'Other'
-  ]);
+  ];
 
-  var states = list([
-    { value: 'RI', label: 'Rhode Island' },
-    { value: 'MA', label: 'Massachusetts' }
-  ]);
+  var products = [
+    'Elite Trainer Box (ETB)',
+    'Ultra-Premium Collection',
+    'Booster Bundle',
+    'Booster Box',
+    'Booster Pack',
+    'Tin',
+    'Collection Box',
+    'Blister Pack',
+    'Tech Sticker Blister',
+    'Battle / Theme Deck',
+    'Poster Collection',
+    'Other Sealed Product'
+  ];
 
-  /*
-   * Add verified store branches here.
-   *
-   * Format:
-   * branchDirectory: {
-   *   RI: {
-   *     Walmart: [
-   *       {
-   *         value: 'unique-branch-id',
-   *         label: 'Cranston — 100 Example Street',
-   *         town: 'Cranston',
-   *         address: '100 Example Street'
-   *       }
-   *     ]
-   *   }
-   * }
-   *
-   * Do not add guessed or unverified addresses.
-   */
   var branchDirectory = {
-    RI: {},
-    MA: {}
-  };
+    RI: {
+      Walmart: [
+        { value: 'walmart-coventry', label: 'Coventry — 650 Centre of New England Blvd' },
+        { value: 'walmart-cranston', label: 'Cranston — 1776 Plainfield Pike' },
+        { value: 'walmart-north-kingstown', label: 'North Kingstown — 1031 Ten Rod Rd' },
+        { value: 'walmart-north-smithfield', label: 'North Smithfield — 7 Dowling Village Blvd' },
+        { value: 'walmart-providence', label: 'Providence — 51 Silver Spring St' },
+        { value: 'walmart-warwick-bald-hill', label: 'Warwick — 650 Bald Hill Rd' },
+        { value: 'walmart-warwick-post', label: 'Warwick — 840 Post Rd' },
+        { value: 'walmart-westerly', label: 'Westerly — 258 Post Rd' }
+      ],
 
-  var manualBranchOption = {
-    value: 'manual',
-    label: 'Other / enter manually'
+      Target: [
+        { value: 'target-warwick-bald-hill', label: 'Warwick — 1245 Bald Hill Rd' },
+        { value: 'target-smithfield', label: 'Smithfield — 371 Putnam Pike, Ste A-250' },
+        { value: 'target-lincoln', label: 'Lincoln — 620 George Washington Hwy' },
+        { value: 'target-warwick-400', label: 'Warwick — 400 Bald Hill Rd' }
+      ],
+
+      'Five Below': [
+        { value: 'five-below-cranston', label: 'Cranston — 252 Garfield Ave' },
+        { value: 'five-below-east-providence', label: 'East Providence — 1925 Pawtucket Ave, Ste 4' },
+        { value: 'five-below-providence', label: 'Providence — 1 Providence Place, Unit 4180' },
+        { value: 'five-below-warwick', label: 'Warwick — 300 Quaker Ln, B1' },
+        { value: 'five-below-north-providence', label: 'North Providence — 25 Smithfield Rd' },
+        { value: 'five-below-lincoln', label: 'Lincoln — 620 George Washington Hwy, Unit 32' },
+        { value: 'five-below-smithfield', label: 'Smithfield — 371 Putnam Pike' }
+      ],
+
+      CVS: [
+        { value: 'cvs-cranston-reservoir', label: 'Cranston — 681 Reservoir Ave' },
+        { value: 'cvs-cranston-pontiac', label: 'Cranston — 1188 Pontiac Ave' },
+        { value: 'cvs-cranston-oaklawn', label: 'Cranston — 1195 Oaklawn Ave' },
+        { value: 'cvs-cranston-atwood', label: 'Cranston — 205 Atwood Ave' },
+        { value: 'cvs-cranston-broad', label: 'Cranston — 1776 Broad St' },
+        { value: 'cvs-providence-admiral', label: 'Providence — 400 Admiral St' },
+        { value: 'cvs-providence-hope', label: 'Providence — 799 Hope St' },
+        { value: 'cvs-providence-webster', label: 'Providence — 131 Webster Ave' },
+        { value: 'cvs-providence-angell', label: 'Providence — 481 Angell St' },
+        { value: 'cvs-providence-thayer', label: 'Providence — 291 Thayer St' },
+        { value: 'cvs-providence-place', label: 'Providence — Providence Place Mall, 39 Providence Pl' },
+        { value: 'cvs-providence-manton', label: 'Providence — 935 Manton Ave' },
+        { value: 'cvs-providence-broad', label: 'Providence — 960 Broad St' },
+        { value: 'cvs-east-providence-taunton', label: 'East Providence — 583 Taunton Ave' },
+        { value: 'cvs-east-providence-warren', label: 'East Providence — 640 Warren Ave' },
+        { value: 'cvs-east-greenwich-main', label: 'East Greenwich — 507 Main St' },
+        { value: 'cvs-east-greenwich-turnpike', label: 'East Greenwich — 2250 New London Turnpike' },
+        { value: 'cvs-east-greenwich-county', label: 'East Greenwich — 1285 S County Trail' },
+        { value: 'cvs-johnston-plainfield', label: 'Johnston — 1993 Plainfield Pike' },
+        { value: 'cvs-johnston-hartford', label: 'Johnston — 1400 Hartford Ave' },
+        { value: 'cvs-johnston-putnam', label: 'Johnston — 26 Putnam Pike' },
+        { value: 'cvs-pawtucket-smithfield', label: 'Pawtucket — 601 Smithfield Ave' },
+        { value: 'cvs-pawtucket-newport', label: 'Pawtucket — 835 Newport Ave' },
+        { value: 'cvs-pawtucket-east', label: 'Pawtucket — 425 East Ave' },
+        { value: 'cvs-cumberland-mendon', label: 'Cumberland — 1998 Mendon Rd' },
+        { value: 'cvs-cumberland-broad', label: 'Cumberland — 315 Broad St' },
+        { value: 'cvs-cumberland-diamond', label: 'Cumberland — 2125 Diamond Hill Rd' },
+        { value: 'cvs-north-kingstown-post', label: 'North Kingstown — 6495 Post Rd' },
+        { value: 'cvs-north-kingstown-quaker', label: 'North Kingstown — 4255 Quaker Ln' },
+        { value: 'cvs-west-warwick-main-1270', label: 'West Warwick — 1270 Main St' },
+        { value: 'cvs-west-warwick-main-1734', label: 'West Warwick — 1734 Main St' },
+        { value: 'cvs-west-warwick-providence', label: 'West Warwick — 834 Providence St' }
+      ],
+
+      'Family Dollar': [
+        { value: 'family-dollar-cranston-pontiac', label: 'Cranston — 570 Pontiac Ave' },
+        { value: 'family-dollar-cranston-atwood', label: 'Cranston — 480 Atwood Ave' },
+        { value: 'family-dollar-providence-broad-1280', label: 'Providence — 1280 Broad St' },
+        { value: 'family-dollar-providence-broad-1515', label: 'Providence — 1515 Broad St' },
+        { value: 'family-dollar-providence-branch', label: 'Providence — 1039 Branch Ave' },
+        { value: 'family-dollar-providence-broad-711', label: 'Providence — 711 Broad St' }
+      ],
+
+      'Dollar General': [
+        { value: 'dollar-general-cranston-dyer', label: 'Cranston — 550 Dyer Ave' },
+        { value: 'dollar-general-cranston-park', label: 'Cranston — 1315 Park Ave' },
+        { value: 'dollar-general-cranston-broad', label: 'Cranston — 1548 Broad St' },
+        { value: 'dollar-general-east-providence-pawtucket', label: 'East Providence — 2715 Pawtucket Ave' },
+        { value: 'dollar-general-east-providence-newport', label: 'East Providence — 52 Newport Ave' },
+        { value: 'dollar-general-warwick', label: 'Warwick — 2680 W Shore Rd' },
+        { value: 'dollar-general-pawtucket', label: 'Pawtucket — 295 Armistice Blvd' },
+        { value: 'dollar-general-warren', label: 'Warren — 470 Metacom Ave' },
+        { value: 'dollar-general-wyoming', label: 'Wyoming — 1209 Main St' }
+      ],
+
+      Walgreens: [
+        { value: 'walgreens-providence-elmwood', label: 'Providence — 533 Elmwood Ave' },
+        { value: 'walgreens-providence-pocasset', label: 'Providence — 1 Pocasset Ave' },
+        { value: 'walgreens-johnston-plainfield', label: 'Johnston — 1387 Plainfield St' },
+        { value: 'walgreens-warwick-1560', label: 'Warwick — 1560 Warwick Ave' },
+        { value: 'walgreens-providence-academy', label: 'Providence — 295 Academy Ave' },
+        { value: 'walgreens-providence-pitman', label: 'Providence — 135 Pitman St' },
+        { value: 'walgreens-east-providence', label: 'East Providence — 655 Warren Ave' },
+        { value: 'walgreens-johnston-atwood', label: 'Johnston — 1583 Atwood Ave' },
+        { value: 'walgreens-north-providence-smith', label: 'North Providence — 1510 Smith St' },
+        { value: 'walgreens-warwick-2399', label: 'Warwick — 2399 Warwick Ave' },
+        { value: 'walgreens-riverside', label: 'Riverside — 1086 Willett Ave' },
+        { value: 'walgreens-providence-main', label: 'Providence — 1140 N Main St' },
+        { value: 'walgreens-warwick-bald-hill', label: 'Warwick — 1080 Bald Hill Rd' },
+        { value: 'walgreens-warwick-post', label: 'Warwick — 3336 Post Rd' },
+        { value: 'walgreens-north-providence-mineral-1665', label: 'North Providence — 1665 Mineral Spring Ave' },
+        { value: 'walgreens-north-providence-mineral-1074', label: 'North Providence — 1074 Mineral Spring Ave' },
+        { value: 'walgreens-rumford', label: 'Rumford — 220 Newport Ave' },
+        { value: 'walgreens-pawtucket-broad', label: 'Pawtucket — 100 Broad St' },
+        { value: 'walgreens-pawtucket-cottage', label: 'Pawtucket — 385 Cottage St' }
+      ],
+
+      GameStop: [
+        { value: 'gamestop-cranston-parkade', label: 'Cranston — 286 Garfield Ave, Ste 18' },
+        { value: 'gamestop-warwick-cowesett', label: 'Warwick — 300 Quaker Ln, Ste C17' },
+        { value: 'gamestop-providence-place', label: 'Providence — 45 Providence Place' }
+      ],
+
+      "Dick's Sporting Goods": [
+        { value: 'dicks-smithfield', label: 'Smithfield — 371 Putnam Pike, Suite 300' },
+        { value: 'dicks-warwick', label: 'Warwick — 650 Bald Hill Rd' }
+      ],
+
+      'Local Card Shop': [
+        { value: 'card-shop-courtside', label: 'Courtside Card Shop — 2244 Plainfield Pike, Ste 1, Cranston' },
+        { value: 'card-shop-trading-card-market', label: 'The Trading Card Market — 310 Atwood Ave, Cranston' },
+        { value: 'card-shop-401-tcg', label: '401 TCG Supply — 755 Main St, West Warwick' },
+        { value: 'card-shop-reality-a-games', label: 'Reality A Games — 297 Providence St, West Warwick' }
+      ],
+
+      Other: []
+    },
+
+    MA: {}
   };
 
   var config = {
     version: 2,
 
-    limits: {
-      maxPhotos: 5,
-      photoInputMaxBytes: 100 * 1024 * 1024,
-      photoUploadTargetBytes: Math.round(1.4 * 1024 * 1024),
-      textMax: 100,
-      notesMax: 500
-    },
+    states: [
+      { value: 'RI', label: 'Rhode Island' },
+      { value: 'MA', label: 'Massachusetts' }
+    ],
 
-    states: states,
     retailers: retailers,
+    products: products,
     branchDirectory: branchDirectory,
 
     steps: [
       {
         id: 'where',
-        label: 'Where',
-        title: 'Where did you find the product?',
-        blurb:
-          'Report sealed Pokémon TCG products you personally saw in a physical store.',
+        title: 'Where did you find it?',
+        description: 'Choose the state, retailer, and exact store branch.',
         fields: [
           'state',
           'retailer',
@@ -104,277 +205,223 @@
         ]
       },
       {
-        id: 'what',
-        label: 'Product',
-        title: 'What sealed product did you find?',
-        blurb:
-          'Report the product, quantity, shelf price, and MSRP when known.',
+        id: 'product',
+        title: 'What product did you find?',
+        description: 'Report sealed Pokémon TCG products only.',
         fields: [
           'product',
-          'productName',
-          'qty',
-          'shelfPrice',
-          'msrp',
-          'productLocated'
+          'productName'
         ]
       },
       {
-        id: 'when',
-        label: 'Stock',
-        title: 'When did you see it?',
-        blurb:
-          'Recent, accurate reports help members avoid wasted trips.',
-        fields: ['seenAt', 'stillThere']
+        id: 'stock',
+        title: 'What was on the shelf?',
+        description: 'Separate shelf price from MSRP and tell us what you saw.',
+        fields: [
+          'qty',
+          'shelfPrice',
+          'msrp',
+          'productLocated',
+          'stillThere',
+          'seenAt'
+        ]
       },
       {
         id: 'proof',
-        label: 'Proof',
-        title: 'Add photos and your name',
-        blurb:
-          'Photos are optional but strongly encouraged. Never put yourself at risk to get a photo.',
-        fields: ['photos', 'reporter', 'notes']
+        title: 'Add details',
+        description: 'Photos help other collectors verify the report.',
+        fields: [
+          'photos',
+          'reporter',
+          'notes'
+        ]
       }
     ],
 
     fields: [
       {
         id: 'state',
-        label: 'State',
         type: 'select',
+        label: 'State',
         required: true,
-        placeholder: 'Choose a state',
-        options: states,
-        hint: 'Rhode Island first; Massachusetts is included for expansion.'
+        options: [
+          { value: 'RI', label: 'Rhode Island' },
+          { value: 'MA', label: 'Massachusetts' }
+        ]
       },
       {
         id: 'retailer',
-        label: 'Retailer',
         type: 'select',
+        label: 'Retailer',
         required: true,
-        placeholder: 'Choose a retailer',
-        options: retailers
+        options: retailers.map(function (name) {
+          return { value: name, label: name };
+        })
       },
       {
         id: 'branch',
-        label: 'Store branch',
         type: 'select',
+        label: 'Store branch',
         required: true,
-        placeholder: 'Choose a store branch',
-        options: [manualBranchOption],
+        placeholder: 'Choose a store',
         getOptions: function (ctx) {
-          var state = ctx.get('state');
-          var retailer = ctx.get('retailer');
-          var stateBranches = branchDirectory[state] || {};
-          var retailerBranches = stateBranches[retailer] || [];
+          var state = ctx && ctx.get ? ctx.get('state') : '';
+          var retailer = ctx && ctx.get ? ctx.get('retailer') : '';
+          var list =
+            branchDirectory[state] &&
+            branchDirectory[state][retailer]
+              ? branchDirectory[state][retailer]
+              : [];
 
-          return retailerBranches.concat([manualBranchOption]);
-        },
-        hint:
-          'Branch choices will show the town and street address. If your store is not listed, choose Other / enter manually.'
+          return list.concat([
+            { value: 'manual', label: 'Other / enter store manually' }
+          ]);
+        }
       },
       {
         id: 'storeTown',
-        label: 'Store town / city',
         type: 'text',
+        label: 'Store town or city',
         required: false,
-        minLength: 2,
-        maxLength: 100,
-        placeholder: 'Example: Cranston',
-        hint:
-          'Fill this in when you selected Other / enter manually for the branch.',
-        autocomplete: 'address-level2'
+        maxLength: 80,
+        placeholder: 'Enter the town or city'
       },
       {
         id: 'storeAddress',
-        label: 'Store street address',
         type: 'text',
+        label: 'Store street address',
         required: false,
-        minLength: 3,
-        maxLength: 100,
-        placeholder: 'Street address of the store',
-        hint:
-          'Enter the physical store address when using manual branch entry.',
-        autocomplete: 'street-address'
+        maxLength: 180,
+        placeholder: 'Enter the street address'
       },
       {
         id: 'product',
+        type: 'select',
         label: 'Sealed product type',
-        type: 'choice',
-        layout: 'tiles',
         required: true,
-        options: list([
-          { value: 'ETB', label: 'Elite Trainer Box (ETB)' },
-          { value: 'Ultra-Premium Collection', label: 'Ultra-Premium Collection' },
-          { value: 'Booster Bundle', label: 'Booster Bundle' },
-          { value: 'Booster Box', label: 'Booster Box' },
-          { value: 'Booster Pack', label: 'Booster Pack' },
-          { value: 'Tin', label: 'Tin' },
-          { value: 'Collection Box', label: 'Collection Box' },
-          { value: 'Blister Pack', label: 'Blister Pack' },
-          { value: 'Tech Sticker Blister', label: 'Tech Sticker Blister' },
-          { value: 'Battle / Theme Deck', label: 'Battle / Theme Deck' },
-          { value: 'Poster Collection', label: 'Poster Collection' },
-          { value: 'Other Sealed Product', label: 'Other Sealed Product' }
-        ])
+        options: products.map(function (name) {
+          return { value: name, label: name };
+        })
       },
       {
         id: 'productName',
-        label: 'Product / set name',
         type: 'text',
+        label: 'Set or product name',
         required: true,
         minLength: 2,
-        maxLength: 100,
-        placeholder: 'Example: Scarlet & Violet — set or product name',
-        hint:
-          'Enter the product name or set printed on the packaging.',
-        autocomplete: 'off'
+        maxLength: 120,
+        placeholder: 'Example: Mega Evolution ETB'
       },
       {
         id: 'qty',
+        type: 'select',
         label: 'Quantity seen',
-        type: 'choice',
-        layout: 'chips',
         required: true,
-        options: list(['1', '2-3', '4-10', '10+', 'Unknown'])
+        options: [
+          { value: '1', label: '1' },
+          { value: '2-3', label: '2–3' },
+          { value: '4-10', label: '4–10' },
+          { value: '10+', label: '10+' },
+          { value: 'Unknown', label: 'Unknown' }
+        ]
       },
       {
         id: 'shelfPrice',
-        label: 'Shelf price per item ($)',
         type: 'price',
+        label: 'Shelf price',
         required: false,
-        placeholder: '49.99',
-        hint:
-          'Enter the price displayed in the store. Leave blank if unknown.'
+        placeholder: 'Example: 54.99'
       },
       {
         id: 'msrp',
-        label: 'MSRP per item ($)',
         type: 'price',
+        label: 'MSRP',
         required: false,
-        placeholder: '49.99',
-        hint:
-          'Enter the manufacturer suggested retail price if known. Do not guess.'
+        placeholder: 'Example: 49.99'
       },
       {
         id: 'productLocated',
+        type: 'select',
         label: 'Where in the store?',
-        type: 'choice',
-        layout: 'tiles',
         required: true,
-        options: list([
-          {
-            value: 'On Shelf',
-            label: 'On Shelf',
-            icon: '📦'
-          },
-          {
-            value: 'Display/Endcap',
-            label: 'Display / Endcap',
-            icon: '🏷️'
-          },
-          {
-            value: 'Service Desk/Behind Counter',
-            label: 'Service Desk / Behind Counter',
-            icon: '🛎️'
-          },
-          {
-            value: 'Checkout Area',
-            label: 'Checkout Area',
-            icon: '🛒'
-          },
-          {
-            value: 'Other Area',
-            label: 'Other Area',
-            icon: '📍'
-          }
-        ])
-      },
-      {
-        id: 'seenAt',
-        label: 'When did you see it?',
-        type: 'datetime',
-        required: true
+        options: [
+          { value: 'Main Trading Card Section', label: 'Main trading card section' },
+          { value: 'Front Registers', label: 'Front registers' },
+          { value: 'Checkout Lanes', label: 'Checkout lanes' },
+          { value: 'Customer Service', label: 'Customer service' },
+          { value: 'Behind Counter', label: 'Behind counter' },
+          { value: 'End Cap', label: 'End cap' },
+          { value: 'Toy Aisle', label: 'Toy aisle' },
+          { value: 'Other', label: 'Other location' },
+          { value: 'Unknown', label: 'Not sure' }
+        ]
       },
       {
         id: 'stillThere',
-        label: 'Was it still in stock when you left?',
-        type: 'choice',
-        layout: 'duo',
+        type: 'select',
+        label: 'Was it still in stock when you reported it?',
         required: true,
-        options: list([
-          {
-            value: 'Yes',
-            label: 'Yes',
-            desc: 'Still in stock',
-            tone: 'good'
-          },
-          {
-            value: 'No',
-            label: 'No',
-            desc: 'Sold out',
-            tone: 'bad'
-          }
-        ])
+        options: [
+          { value: 'Yes', label: 'Yes — still in stock' },
+          { value: 'No', label: 'No — sold out or gone' },
+          { value: 'Unknown', label: 'Not sure' }
+        ]
+      },
+      {
+        id: 'seenAt',
+        type: 'datetime',
+        label: 'When did you see it?',
+        required: true
       },
       {
         id: 'photos',
-        label: 'Product / shelf photos',
         type: 'photos',
+        label: 'Photos',
         required: false
       },
       {
         id: 'reporter',
-        label: 'Your Facebook / Discord name',
         type: 'text',
+        label: 'Your name or Discord username',
         required: true,
         minLength: 2,
         maxLength: 60,
-        placeholder: 'The name the crew knows you by',
-        hint: 'Shown with your stock alert in the VIP Discord.',
-        autocomplete: 'name'
+        placeholder: 'Your Discord name'
       },
       {
         id: 'notes',
-        label: 'Additional details',
         type: 'textarea',
+        label: 'Additional notes',
         required: false,
-        maxLength: 500,
-        placeholder:
-          'Purchase limits, number of units left, shelf location, or other useful details.'
+        maxLength: 1000,
+        placeholder: 'Optional: limits, display details, or other useful information'
       }
-    ]
-  };
+    ],
 
-  config.getField = function (id) {
-    for (var i = 0; i < config.fields.length; i++) {
-      if (config.fields[i].id === id) {
-        return config.fields[i];
+    getField: function (fieldId) {
+      return this.fields.find(function (field) {
+        return field.id === fieldId;
+      }) || null;
+    },
+
+    getOptions: function (fieldId, ctx) {
+      var field = this.getField(fieldId);
+      if (!field) return [];
+
+      if (typeof field.getOptions === 'function') {
+        return field.getOptions(ctx || { get: function () { return ''; } });
       }
+
+      return field.options || [];
+    },
+
+    getOption: function (fieldId, value, ctx) {
+      var options = this.getOptions(fieldId, ctx);
+
+      return options.find(function (option) {
+        return String(option.value) === String(value);
+      }) || null;
     }
-    return null;
-  };
-
-  config.getOptions = function (fieldId, ctx) {
-    var field = config.getField(fieldId);
-    if (!field) return [];
-
-    if (typeof field.getOptions === 'function') {
-      return field.getOptions(ctx || { get: function () { return ''; } });
-    }
-
-    return field.options || [];
-  };
-
-  config.getOption = function (fieldId, value, ctx) {
-    var options = config.getOptions(fieldId, ctx);
-
-    for (var i = 0; i < options.length; i++) {
-      if (String(options[i].value) === String(value)) {
-        return options[i];
-      }
-    }
-
-    return null;
   };
 
   return config;
