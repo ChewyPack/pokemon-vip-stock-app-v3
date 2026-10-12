@@ -15,6 +15,10 @@
  *   DISCORD_WEBHOOK_URL       required
  *   DISCORD_ALERT_ROLE_ID     optional
  *   DISCORD_LOG_WEBHOOK_URL   optional
+ *
+ * IMPORTANT:
+ * The existing reports table does not contain a product_type column.
+ * This version matches the actual database schema.
  */
 
 import formConfig from '../../js/shared/form-config.js';
@@ -73,7 +77,9 @@ async function sha256(value) {
 async function getActiveMember(request, env) {
   const token = getCookie(request, SESSION_COOKIE);
 
-  if (!token) return null;
+  if (!token) {
+    return null;
+  }
 
   const hashBuffer = await sha256(token);
   const tokenHash = base64Url(hashBuffer);
@@ -89,7 +95,9 @@ async function getActiveMember(request, env) {
     .bind(tokenHash)
     .first();
 
-  if (!result) return null;
+  if (!result) {
+    return null;
+  }
 
   if (
     !result.session_expires_at ||
@@ -248,6 +256,8 @@ export async function onRequestPost({ request, env }) {
   try {
     form = await request.formData();
   } catch (error) {
+    console.error('Report form parsing error:', error);
+
     return json({
       ok: false,
       error: 'bad_request'
@@ -379,8 +389,9 @@ export async function onRequestPost({ request, env }) {
   /*
    * SAVE REPORT TO D1.
    *
-   * The old columns remain populated for compatibility with existing
-   * report views. New columns store the new form's complete information.
+   * This INSERT matches the existing reports table:
+   * id and created_at are populated automatically.
+   * product_type is intentionally omitted because that column does not exist.
    */
   try {
     const sql = `
@@ -401,15 +412,14 @@ export async function onRequestPost({ request, env }) {
         branch_id,
         store_town,
         store_address,
-        product_type,
         product_name,
         quantity_text,
         shelf_price,
         msrp
       )
       VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
     `;
 
@@ -436,7 +446,6 @@ export async function onRequestPost({ request, env }) {
         report.branch || '',
         report.storeTown || '',
         report.storeAddress || '',
-        report.product || '',
         report.productName || '',
         report.qty || '',
         numericPrice(report.shelfPrice),
@@ -456,10 +465,23 @@ export async function onRequestPost({ request, env }) {
    * BUILD DISCORD ALERT.
    * The current alert builder receives compatibility fields above.
    */
-  const alert = buildAlert(report, {
-    roleId: env.DISCORD_ALERT_ROLE_ID || '',
-    photoNames
-  });
+  let alert;
+
+  try {
+    alert = buildAlert(report, {
+      roleId: env.DISCORD_ALERT_ROLE_ID || '',
+      photoNames
+    });
+  } catch (error) {
+    console.error('Discord alert build error:', error);
+
+    // The report has already been saved. Do not report it as unsaved.
+    return json({
+      ok: true,
+      alerted: false,
+      warning: 'alert_build_failed'
+    });
+  }
 
   const sends = [];
 
@@ -472,12 +494,16 @@ export async function onRequestPost({ request, env }) {
   const logUrl = env.DISCORD_LOG_WEBHOOK_URL || '';
 
   if (WEBHOOK_PREFIX.test(logUrl)) {
-    const log = buildAlert(report, {
-      roleId: '',
-      photoNames
-    });
+    try {
+      const log = buildAlert(report, {
+        roleId: '',
+        photoNames
+      });
 
-    sends.push(postToDiscord(logUrl, log.payload, photos));
+      sends.push(postToDiscord(logUrl, log.payload, photos));
+    } catch (error) {
+      console.error('Discord log alert build error:', error);
+    }
   }
 
   let responses;
@@ -487,33 +513,47 @@ export async function onRequestPost({ request, env }) {
   } catch (error) {
     console.error('Discord connection error:', error);
 
+    // D1 already contains the report. Return success to prevent accidental
+    // duplicate submissions when only Discord delivery failed.
     return json({
-      ok: false,
-      error: 'discord_unreachable'
-    }, 502);
+      ok: true,
+      alerted: false,
+      warning: 'discord_unreachable'
+    });
   }
 
   if (responses.some(function (response) {
     return response.status === 429;
   })) {
+    console.error('Discord rate limit reached after report was saved.');
+
     return json({
-      ok: false,
-      error: 'busy'
-    }, 503);
+      ok: true,
+      alerted: false,
+      warning: 'discord_rate_limited'
+    });
   }
 
   if (responses.some(function (response) {
     return !response.ok;
   })) {
+    console.error(
+      'Discord rejected an alert after report was saved:',
+      responses.map(function (response) {
+        return response.status;
+      })
+    );
+
     return json({
-      ok: false,
-      error: 'discord_error'
-    }, 502);
+      ok: true,
+      alerted: false,
+      warning: 'discord_rejected'
+    });
   }
 
   return json({
     ok: true,
-    alerted: alert.inStock
+    alerted: !!alert.inStock
   });
 }
 
