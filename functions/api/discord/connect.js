@@ -1,4 +1,3 @@
-```javascript
 const SESSION_COOKIE = 'vip_session';
 const SESSION_DAYS = 30;
 
@@ -264,4 +263,3 @@ export async function onRequestGet({ request, env }) {
     );
   }
 }
-```
