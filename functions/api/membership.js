@@ -6,11 +6,21 @@
  *   Checks whether the current browser has an active VIP session.
  *
  * POST:
- *   Verifies a Stripe Checkout Session and creates a VIP session.
+ *   Verifies a completed Stripe Checkout Session, creates or refreshes
+ *   the matching membership record, and creates a VIP browser session.
+ *
+ * Cloudflare D1 binding:
+ *   DB -> pokemon-vip-members
+ *
+ * Required environment variable:
+ *   STRIPE_SECRET_KEY
  */
 
 const SESSION_COOKIE = 'vip_session';
 const SESSION_DAYS = 30;
+
+const MONTHLY_PRICE_ID = 'price_1ULZQSGXWs1THDBRMRXDSCaj';
+const YEARLY_PRICE_ID = 'price_1ULZQSGXWs1THDBRLb2MUNtf';
 
 function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
@@ -35,6 +45,31 @@ async function sha256(value) {
     'SHA-256',
     new TextEncoder().encode(value)
   );
+}
+
+function sessionCookie(token, expiresAt) {
+  return [
+    `${SESSION_COOKIE}=${token}`,
+    'Path=/',
+    'HttpOnly',
+    'Secure',
+    'SameSite=Lax',
+    `Expires=${new Date(expiresAt).toUTCString()}`
+  ].join('; ');
+}
+
+function getCookie(request, name) {
+  const header = request.headers.get('Cookie') || '';
+
+  for (const part of header.split(';')) {
+    const trimmed = part.trim();
+
+    if (trimmed.startsWith(name + '=')) {
+      return trimmed.substring(name.length + 1);
+    }
+  }
+
+  return '';
 }
 
 async function createSession(env, userId) {
@@ -62,31 +97,6 @@ async function createSession(env, userId) {
   }
 
   return { token, expiresAt };
-}
-
-function sessionCookie(token, expiresAt) {
-  return [
-    `${SESSION_COOKIE}=${token}`,
-    'Path=/',
-    'HttpOnly',
-    'Secure',
-    'SameSite=Lax',
-    `Expires=${new Date(expiresAt).toUTCString()}`
-  ].join('; ');
-}
-
-function getCookie(request, name) {
-  const header = request.headers.get('Cookie') || '';
-
-  for (const part of header.split(';')) {
-    const trimmed = part.trim();
-
-    if (trimmed.startsWith(name + '=')) {
-      return trimmed.substring(name.length + 1);
-    }
-  }
-
-  return '';
 }
 
 async function getActiveSession(request, env) {
@@ -123,8 +133,41 @@ async function getActiveSession(request, env) {
   return member;
 }
 
+function getMembershipType(session, subscription) {
+  const sessionType = session.metadata?.membership_type;
+  const subscriptionType = subscription.metadata?.membership_type;
+
+  if (sessionType === 'yearly' || sessionType === 'monthly') {
+    return sessionType;
+  }
+
+  if (
+    subscriptionType === 'yearly' ||
+    subscriptionType === 'monthly'
+  ) {
+    return subscriptionType;
+  }
+
+  const items = subscription.items?.data || [];
+
+  for (const item of items) {
+    const priceId = item.price?.id;
+
+    if (priceId === YEARLY_PRICE_ID) {
+      return 'yearly';
+    }
+
+    if (priceId === MONTHLY_PRICE_ID) {
+      return 'monthly';
+    }
+  }
+
+  // Preserve the previous app behavior for an unrecognized price ID.
+  return 'monthly';
+}
+
 async function verifyCheckoutSession(sessionId, env) {
-  if (!sessionId) {
+  if (!sessionId || !env.STRIPE_SECRET_KEY) {
     return null;
   }
 
@@ -147,13 +190,28 @@ async function verifyCheckoutSession(sessionId, env) {
 
   const session = await response.json();
 
-  if (session.mode !== 'subscription') {
+  if (
+    session.mode !== 'subscription' ||
+    session.status !== 'complete'
+  ) {
     return null;
   }
 
   if (
     session.payment_status !== 'paid' &&
     session.payment_status !== 'no_payment_required'
+  ) {
+    return null;
+  }
+
+  const subscription = session.subscription;
+
+  // Fail closed unless Stripe returned the expanded subscription
+  // and confirms it is currently active or trialing.
+  if (
+    !subscription ||
+    typeof subscription !== 'object' ||
+    !['active', 'trialing'].includes(subscription.status)
   ) {
     return null;
   }
@@ -168,20 +226,96 @@ async function verifyCheckoutSession(sessionId, env) {
     return null;
   }
 
-  const subscription = session.subscription;
-
-  if (
-    subscription &&
-    typeof subscription === 'object' &&
-    !['active', 'trialing'].includes(subscription.status)
-  ) {
-    return null;
-  }
-
   return {
     email,
-    name: session.customer_details?.name || ''
+    name: (
+      session.customer_details?.name ||
+      ''
+    ).trim(),
+    membershipType: getMembershipType(session, subscription)
   };
+}
+
+/*
+ * Find the member by normalized email.
+ * If the webhook has not created the row yet, create it from the
+ * independently verified Stripe checkout.
+ *
+ * Existing Discord fields are deliberately not overwritten.
+ */
+async function activateVerifiedMember(checkout, env) {
+  let member = await env.DB.prepare(
+    `SELECT id, name, email, membership_status,
+            membership_type
+     FROM users
+     WHERE LOWER(TRIM(email)) = ?
+     LIMIT 1`
+  )
+    .bind(checkout.email)
+    .first();
+
+  if (member) {
+    await env.DB.prepare(
+      `UPDATE users
+       SET name = CASE
+                    WHEN ? <> '' THEN ?
+                    ELSE name
+                  END,
+           membership_status = 'active',
+           membership_type = ?
+       WHERE id = ?`
+    )
+      .bind(
+        checkout.name,
+        checkout.name,
+        checkout.membershipType,
+        member.id
+      )
+      .run();
+  } else {
+    await env.DB.prepare(
+      `INSERT INTO users (
+         name,
+         email,
+         membership_status,
+         membership_type
+       )
+       VALUES (?, ?, 'active', ?)
+       ON CONFLICT(email) DO UPDATE SET
+         name = CASE
+                  WHEN excluded.name IS NOT NULL
+                       AND TRIM(excluded.name) <> ''
+                  THEN excluded.name
+                  ELSE users.name
+                END,
+         membership_status = 'active',
+         membership_type = excluded.membership_type`
+    )
+      .bind(
+        checkout.name,
+        checkout.email,
+        checkout.membershipType
+      )
+      .run();
+  }
+
+  member = await env.DB.prepare(
+    `SELECT id, name, email, membership_status,
+            membership_type
+     FROM users
+     WHERE LOWER(TRIM(email)) = ?
+     LIMIT 1`
+  )
+    .bind(checkout.email)
+    .first();
+
+  if (!member || member.membership_status !== 'active') {
+    throw new Error(
+      'Verified membership could not be activated in D1.'
+    );
+  }
+
+  return member;
 }
 
 export async function onRequestGet({ request, env }) {
@@ -259,37 +393,10 @@ export async function onRequestPost({ request, env }) {
       }, 400);
     }
 
-    // Match the verified Stripe email without case sensitivity.
-    const member = await env.DB.prepare(
-      `SELECT id, name, email, membership_status,
-              membership_type
-       FROM users
-       WHERE LOWER(TRIM(email)) = ?
-       LIMIT 1`
-    )
-      .bind(checkout.email)
-      .first();
+    // Activate or repair the D1 record only after Stripe verification.
+    const member = await activateVerifiedMember(checkout, env);
 
-    if (!member) {
-      console.warn(
-        'Verified checkout has no matching VIP member record.'
-      );
-
-      return json({
-        ok: false,
-        error: 'membership_not_found',
-        retryable: true
-      }, 403);
-    }
-
-    if (member.membership_status !== 'active') {
-      return json({
-        ok: false,
-        error: 'membership_inactive'
-      }, 403);
-    }
-
-    // Update the exact member row found above.
+    // Create a website session for the verified active member.
     const session = await createSession(env, member.id);
 
     return json(
@@ -311,7 +418,7 @@ export async function onRequestPost({ request, env }) {
       }
     );
   } catch (error) {
-    console.error('Membership creation error:', error);
+    console.error('Membership setup error:', error);
 
     return json({
       ok: false,
