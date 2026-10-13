@@ -19,8 +19,8 @@
 const SESSION_COOKIE = 'vip_session';
 const SESSION_DAYS = 30;
 
-const MONTHLY_PRICE_ID = 'price_1ULZQSGXWs1THDBRMRXDSCaj';
-const YEARLY_PRICE_ID = 'price_1ULZQSGXWs1THDBRLb2MUNtf';
+const MONTHLY_PRICE_ID = 'price_1UNaOcK5IxhaGczAyrX7Znyy';
+const YEARLY_PRICE_ID = 'price_1UNaOcK5IxhaGczAzg3OAdDb';
 
 function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
