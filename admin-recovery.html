@@ -1,0 +1,155 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PokePrizePool Recovery Admin</title>
+  <style>
+    body {
+      max-width: 640px;
+      margin: 40px auto;
+      padding: 0 18px;
+      font: 16px/1.5 system-ui, sans-serif;
+    }
+    label {
+      display: block;
+      margin-top: 18px;
+      font-weight: 600;
+    }
+    input, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      font: inherit;
+    }
+    button {
+      margin-top: 22px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      overflow-wrap: anywhere;
+    }
+    #result a {
+      display: block;
+      margin-top: 10px;
+    }
+    .warning {
+      padding: 12px;
+      border: 1px solid #999;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>VIP Recovery Links</h1>
+
+  <p class="warning">
+    Private admin tool. Keep the admin secret private.
+    Recovery links grant access to the specific member and expire
+    after 30 minutes. Only send each link to that member.
+  </p>
+
+  <form id="recoveryForm">
+    <label for="adminToken">Admin secret</label>
+    <input
+      id="adminToken"
+      type="password"
+      autocomplete="off"
+      required
+    >
+
+    <label for="memberId">Existing D1 member ID</label>
+    <input
+      id="memberId"
+      type="number"
+      min="1"
+      step="1"
+      placeholder="For example: 3"
+      required
+    >
+
+    <button type="submit">Verify subscription and generate link</button>
+  </form>
+
+  <div id="result" role="status" aria-live="polite"></div>
+
+  <script>
+    const form = document.getElementById("recoveryForm");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      result.textContent = "Verifying subscription...";
+
+      const adminToken =
+        document.getElementById("adminToken").value.trim();
+
+      const memberId =
+        Number(document.getElementById("memberId").value);
+
+      try {
+        const response = await fetch(
+          "/api/admin/recovery-link",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${adminToken}`
+            },
+            body: JSON.stringify({ memberId })
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(
+            data.error || "Could not generate recovery link"
+          );
+        }
+
+        result.replaceChildren();
+
+        const success = document.createElement("p");
+        success.textContent =
+          `Verified member ${data.memberId}. Link expires at ${data.expiresAt}.`;
+        result.appendChild(success);
+
+        const link = document.createElement("a");
+        link.href = data.recoveryLink;
+        link.textContent = data.recoveryLink;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        result.appendChild(link);
+
+        const copyButton = document.createElement("button");
+        copyButton.type = "button";
+        copyButton.textContent = "Copy recovery link";
+
+        copyButton.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(data.recoveryLink);
+            copyButton.textContent = "Copied";
+          } catch {
+            copyButton.textContent =
+              "Copy failed — select the link above";
+          }
+        });
+
+        result.appendChild(copyButton);
+
+        document.getElementById("adminToken").value = "";
+      } catch (error) {
+        result.textContent =
+          error instanceof Error
+            ? error.message
+            : "Something went wrong.";
+      }
+    });
+  </script>
+</body>
+</html>
