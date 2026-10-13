@@ -92,22 +92,26 @@ function getMembershipType(subscription) {
     return metadataType;
   }
 
- 
-const priceId =
-  subscription?.items?.data?.[0]?.price?.id || "";
+  const items = subscription?.items?.data || [];
 
-if (
-  priceId === "price_1UNaOcK5IxhaGczAzg3OAdDb"
-) {
-  return "yearly";
-}
+  for (const item of items) {
+    const priceId = item.price?.id || "";
 
-if (
-  priceId === "price_1UNaOcK5IxhaGczAyrX7Znyy"
-) {
+    if (priceId === "price_1UNaOcK5IxhaGczAzg3OAdDb") {
+      return "yearly";
+    }
+
+    if (priceId === "price_1UNaOcK5IxhaGczAyrX7Znyy") {
+      return "monthly";
+    }
+  }
+
+  console.error(
+    "Could not identify subscription price; defaulting to monthly."
+  );
+
   return "monthly";
 }
-
 
 async function getCheckoutMembershipType(session, env) {
   const metadataType =
@@ -166,22 +170,24 @@ async function updateMemberStatus(
 ) {
   if (!email) return;
 
+  const normalizedEmail = email.trim().toLowerCase();
+
   await env.DB.prepare(
     `UPDATE users
      SET membership_status = ?,
          membership_type = ?
-     WHERE email = ?`
+     WHERE LOWER(TRIM(email)) = ?`
   )
-    .bind(status, membershipType, email)
+    .bind(status, membershipType, normalizedEmail)
     .run();
 
   const discordMember = await env.DB.prepare(
     `SELECT discord_user_id
      FROM users
-     WHERE email = ?
+     WHERE LOWER(TRIM(email)) = ?
      LIMIT 1`
   )
-    .bind(email)
+    .bind(normalizedEmail)
     .first();
 
   if (!discordMember?.discord_user_id) return;
@@ -336,7 +342,6 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  // Verify the exact raw request body sent by Stripe.
   const body = await request.text();
 
   const event = await verifyStripeSignature(
@@ -376,10 +381,11 @@ export async function onRequestPost({ request, env }) {
           break;
         }
 
-        const email =
+        const email = (
           session.customer_details?.email ||
           session.customer_email ||
-          "";
+          ""
+        ).trim().toLowerCase();
 
         if (!email) {
           console.error(
@@ -403,7 +409,7 @@ export async function onRequestPost({ request, env }) {
         )
           .bind(
             session.customer_details?.name || "",
-            email.trim().toLowerCase(),
+            email,
             "active",
             membershipType
           )
@@ -412,10 +418,10 @@ export async function onRequestPost({ request, env }) {
         const discordMember = await env.DB.prepare(
           `SELECT discord_user_id
            FROM users
-           WHERE email = ?
+           WHERE LOWER(TRIM(email)) = ?
            LIMIT 1`
         )
-          .bind(email.trim().toLowerCase())
+          .bind(email)
           .first();
 
         if (discordMember?.discord_user_id) {
@@ -463,7 +469,7 @@ export async function onRequestPost({ request, env }) {
 
         if (email) {
           await updateMemberStatus(
-            email.trim().toLowerCase(),
+            email,
             status,
             membershipType,
             env
@@ -488,7 +494,7 @@ export async function onRequestPost({ request, env }) {
 
         if (email) {
           await updateMemberStatus(
-            email.trim().toLowerCase(),
+            email,
             "inactive",
             getMembershipType(subscription),
             env
