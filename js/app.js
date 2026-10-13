@@ -1,4 +1,4 @@
-
+```javascript
 /*
  * APP SHELL
  *
@@ -483,8 +483,6 @@
   }
 
   async function openReport() {
-    // Prevent simultaneous route events from activating the same
-    // checkout multiple times.
     if (!checkoutReturnHandled) {
       if (!checkoutReturnPromise) {
         checkoutReturnPromise = handleCheckoutReturn();
@@ -624,6 +622,20 @@
 
   function route() {
     var hash = location.hash;
+    var params = new URLSearchParams(window.location.search);
+
+    /*
+     * FIX:
+     * Always process a successful Stripe checkout return,
+     * even if the browser drops or omits the #report hash.
+     * This ensures membership activation is not dependent
+     * on the hash fragment being present.
+     */
+    if (params.get('checkout') === 'success') {
+      show('form');
+      openReport();
+      return;
+    }
 
     if (
       hash === '#discord-connected' ||
@@ -669,4 +681,4 @@
   window.addEventListener('hashchange', route);
   route();
 })();
-
+```
