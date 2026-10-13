@@ -1,4 +1,3 @@
-```javascript
 /*
  * APP SHELL
  *
@@ -681,4 +680,4 @@
   window.addEventListener('hashchange', route);
   route();
 })();
-```
+
