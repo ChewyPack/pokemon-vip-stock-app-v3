@@ -92,17 +92,22 @@ function getMembershipType(subscription) {
     return metadataType;
   }
 
-  const priceId =
-    subscription?.items?.data?.[0]?.price?.id || "";
+ 
+const priceId =
+  subscription?.items?.data?.[0]?.price?.id || "";
 
-  if (
-    priceId === "price_1ULZQSGXWs1THDBRLb2MUNtf"
-  ) {
-    return "yearly";
-  }
+if (
+  priceId === "price_1UNaOcK5IxhaGczAzg3OAdDb"
+) {
+  return "yearly";
+}
 
+if (
+  priceId === "price_1UNaOcK5IxhaGczAyrX7Znyy"
+) {
   return "monthly";
 }
+
 
 async function getCheckoutMembershipType(session, env) {
   const metadataType =
