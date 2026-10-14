@@ -42,6 +42,8 @@
     }
 
     .news-content {
+      position: relative;
+      z-index: 1;
       width: min(1000px, calc(100% - 32px));
       margin: 0 auto;
       padding: 36px 0 70px;
@@ -73,16 +75,10 @@
       line-height: 1.6;
     }
 
-    /* Keep dropdowns above page content. */
+    /* Keep the shared navigation above the page content. */
     #news-navigation {
       position: relative;
       z-index: 100;
-    }
-
-    /* Prevent the shared landing-page layout from affecting this page. */
-    .news-page > .news-content {
-      position: relative;
-      z-index: 1;
     }
 
     @media (max-width: 560px) {
@@ -167,7 +163,8 @@
       }
 
       function dropdown(label, items) {
-        var id = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        var id = 'news-nav-' +
+          label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
         var button = textElement('button', {
           class: 'site-nav__toggle',
@@ -223,6 +220,11 @@
         }, [button, menu]);
       }
 
+      /*
+       * Keep the same navigation structure as Home:
+       * the brand is outside the nav, and the CTA is
+       * the final direct child inside the nav.
+       */
       var nav = make('nav', {
         class: 'site-nav',
         'aria-label': 'Main navigation'
@@ -308,7 +310,10 @@
             title: 'Member Support',
             href: '/community-support.html'
           }
-        ])
+        ]),
+
+        /* Keep this inside .site-nav for the shared CTA styles. */
+        link('Report a Sighting', '/#report')
       ]);
 
       var header = make('header', {
@@ -318,8 +323,7 @@
           class: 'wrap site-nav-header__inner'
         }, [
           link('Pokémon VIP', '/'),
-          nav,
-          link('Report a Sighting', '/#report')
+          nav
         ])
       ]);
 
