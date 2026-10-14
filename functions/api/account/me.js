@@ -4,10 +4,9 @@ function getCookie(request,name){for(const part of (request.headers.get('Cookie'
 function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 async function sha256(value){return b64(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));}
 export async function onRequestGet({request,env}){
- const token=getCookie(request,COOKIE); if(!token)return json({ok:true,authenticated:false});
+ const token=getCookie(request,COOKIE);if(!token)return json({ok:true,authenticated:false});
  try{
-  const hash=await sha256(token);
-  const account=await env.DB.prepare('SELECT id,display_name,email,account_type,created_at,session_expires_at FROM accounts WHERE session_token_hash=? LIMIT 1').bind(hash).first();
+  const account=await env.DB.prepare('SELECT id,display_name,email,account_type,created_at,session_expires_at FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();
   if(!account||!account.session_expires_at||Number(account.session_expires_at)<=Date.now())return json({ok:true,authenticated:false});
   return json({ok:true,authenticated:true,account:{display_name:account.display_name,email:account.email,account_type:account.account_type,created_at:account.created_at},membership:{status:'separate',message:'VIP membership and vendor/organizer verification are managed separately.'}});
  }catch(error){console.error('Account session check failed:',error);return json({ok:false,error:'account_check_failed'},500);}
