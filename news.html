@@ -4,8 +4,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>News & Exclusives | Pokémon VIP</title>
-  <meta name="description" content="Pokémon TCG news and hobby updates from PokePrizePool.">
+
+  <title>News &amp; Exclusives | Pokémon VIP</title>
+  <meta
+    name="description"
+    content="Pokémon TCG news and hobby updates from PokePrizePool."
+  >
+
   <link rel="stylesheet" href="/css/styles.css">
 
   <style>
@@ -18,13 +23,22 @@
       min-height: 100vh;
       margin: 0;
       color: #fff;
-      background:
-        linear-gradient(rgba(3, 10, 29, .76), rgba(3, 10, 29, .88)),
-        url("/assets/backgrounds/vip-collage.jpg") center center / cover fixed no-repeat;
+      background-color: #07142e;
+      background-image:
+        linear-gradient(
+          rgba(3, 10, 29, 0.76),
+          rgba(3, 10, 29, 0.88)
+        ),
+        url("/assets/backgrounds/vip-collage.jpg");
+      background-position: center center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: scroll;
     }
 
     .news-page {
       min-height: 100vh;
+      background: transparent;
     }
 
     .news-content {
@@ -35,21 +49,50 @@
 
     .news-content h1 {
       margin: 0;
-      font-size: clamp(2rem, 5vw, 3.5rem);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 400;
       line-height: 1.1;
+      letter-spacing: 0.03em;
+      text-shadow: 3px 3px 0 #0b2a6b;
     }
 
     .news-empty {
       margin-top: 24px;
       padding: 20px;
-      border: 1px solid rgba(255, 255, 255, .2);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 12px;
-      background: rgba(5, 15, 40, .68);
+      background: rgba(5, 15, 40, 0.68);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
 
     .news-empty p {
       margin: 0;
       line-height: 1.6;
+    }
+
+    /* Keep dropdowns above page content. */
+    #news-navigation {
+      position: relative;
+      z-index: 100;
+    }
+
+    /* Prevent the shared landing-page layout from affecting this page. */
+    .news-page > .news-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 560px) {
+      .news-content {
+        padding-top: 28px;
+      }
+
+      .news-empty {
+        padding: 16px;
+      }
     }
   </style>
 </head>
@@ -58,8 +101,11 @@
   <main class="news-page">
     <div id="news-navigation"></div>
 
-    <section class="news-content" aria-labelledby="news-title">
-      <h1 id="news-title">News & Exclusives</h1>
+    <section
+      class="news-content"
+      aria-labelledby="news-title"
+    >
+      <h1 id="news-title">News &amp; Exclusives</h1>
 
       <div class="news-empty">
         <p>News stories will appear here.</p>
@@ -69,7 +115,13 @@
 
   <script>
     (function () {
+      'use strict';
+
       var root = document.getElementById('news-navigation');
+
+      if (!root) {
+        return;
+      }
 
       function make(tag, attrs, children) {
         var node = document.createElement(tag);
@@ -83,7 +135,9 @@
         });
 
         (children || []).forEach(function (child) {
-          if (child) node.appendChild(child);
+          if (child) {
+            node.appendChild(child);
+          }
         });
 
         return node;
@@ -102,6 +156,16 @@
         }, label);
       }
 
+      function closeDropdowns(header) {
+        header.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+          button.setAttribute('aria-expanded', 'false');
+        });
+
+        header.querySelectorAll('.site-nav__menu').forEach(function (menu) {
+          menu.hidden = true;
+        });
+      }
+
       function dropdown(label, items) {
         var id = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
@@ -116,6 +180,7 @@
           class: 'site-nav__menu',
           id: id
         });
+
         menu.hidden = true;
 
         items.forEach(function (item) {
@@ -126,27 +191,26 @@
           ];
 
           if (item.description) {
-            children.push(textElement('span', {
-              class: 'site-nav__item-description'
-            }, item.description));
+            children.push(
+              textElement('span', {
+                class: 'site-nav__item-description'
+              }, item.description)
+            );
           }
 
-          menu.appendChild(make('a', {
-            class: 'site-nav__item',
-            href: item.href
-          }, children));
+          menu.appendChild(
+            make('a', {
+              class: 'site-nav__item',
+              href: item.href
+            }, children)
+          );
         });
 
         button.addEventListener('click', function () {
-          var opening = button.getAttribute('aria-expanded') !== 'true';
+          var opening =
+            button.getAttribute('aria-expanded') !== 'true';
 
-          root.querySelectorAll('.site-nav__toggle').forEach(function (other) {
-            other.setAttribute('aria-expanded', 'false');
-          });
-
-          root.querySelectorAll('.site-nav__menu').forEach(function (other) {
-            other.hidden = true;
-          });
+          closeDropdowns(root);
 
           if (opening) {
             button.setAttribute('aria-expanded', 'true');
@@ -164,29 +228,86 @@
         'aria-label': 'Main navigation'
       }, [
         link('Home', '/'),
+
         dropdown('Poke Report', [
-          { title: 'Report a Sighting', description: 'Submit an in-store stock report', href: '/#report' },
-          { title: 'News & Exclusives', description: 'Pokémon news and hobby updates', href: '/news.html' },
-          { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
-          { title: 'Events Calendar', description: 'Shows, trade nights, and releases', href: '/events.html' },
-          { title: 'Vendor Directory', description: 'Discover vendors and their specialties', href: '/vendors.html' }
+          {
+            title: 'Report a Sighting',
+            description: 'Submit an in-store stock report',
+            href: '/#report'
+          },
+          {
+            title: 'News & Exclusives',
+            description: 'Pokémon news and hobby updates',
+            href: '/news.html'
+          },
+          {
+            title: 'Market Intelligence',
+            description: 'Market trends and product insights',
+            href: '/market-intelligence.html'
+          },
+          {
+            title: 'Events Calendar',
+            description: 'Shows, trade nights, and releases',
+            href: '/events.html'
+          },
+          {
+            title: 'Vendor Directory',
+            description: 'Discover vendors and their specialties',
+            href: '/vendors.html'
+          }
         ]),
+
         dropdown('Shop', [
-          { title: 'Sealed Products', href: '/shop-sealed.html' },
-          { title: 'Raw Singles', href: '/shop-singles.html' },
-          { title: 'Graded Cards', href: '/shop-slabs.html' },
-          { title: 'Merchandise', href: '/shop-merch.html' }
+          {
+            title: 'Sealed Products',
+            href: '/shop-sealed.html'
+          },
+          {
+            title: 'Raw Singles',
+            href: '/shop-singles.html'
+          },
+          {
+            title: 'Graded Cards',
+            href: '/shop-slabs.html'
+          },
+          {
+            title: 'Merchandise',
+            href: '/shop-merch.html'
+          }
         ]),
+
         dropdown('Giveaways', [
-          { title: 'My Entries', href: '/giveaway-entries.html' },
-          { title: 'Giveaway Rules', href: '/giveaway-rules.html' },
-          { title: 'Live Draws & Videos', href: '/giveaway-live.html' }
+          {
+            title: 'My Entries',
+            href: '/giveaway-entries.html'
+          },
+          {
+            title: 'Giveaway Rules',
+            href: '/giveaway-rules.html'
+          },
+          {
+            title: 'Live Draws & Videos',
+            href: '/giveaway-live.html'
+          }
         ]),
+
         dropdown('Community', [
-          { title: 'Discord Community', href: '/community-discord.html' },
-          { title: 'Collector Resources', href: '/community-resources.html' },
-          { title: 'VIP Badge Collection', href: '/vip-badges.html' },
-          { title: 'Member Support', href: '/community-support.html' }
+          {
+            title: 'Discord Community',
+            href: '/community-discord.html'
+          },
+          {
+            title: 'Collector Resources',
+            href: '/community-resources.html'
+          },
+          {
+            title: 'VIP Badge Collection',
+            href: '/vip-badges.html'
+          },
+          {
+            title: 'Member Support',
+            href: '/community-support.html'
+          }
         ])
       ]);
 
@@ -206,25 +327,13 @@
 
       document.addEventListener('click', function (event) {
         if (!header.contains(event.target)) {
-          header.querySelectorAll('.site-nav__toggle').forEach(function (button) {
-            button.setAttribute('aria-expanded', 'false');
-          });
-
-          header.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-            menu.hidden = true;
-          });
+          closeDropdowns(header);
         }
       });
 
       header.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
-          header.querySelectorAll('.site-nav__toggle').forEach(function (button) {
-            button.setAttribute('aria-expanded', 'false');
-          });
-
-          header.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-            menu.hidden = true;
-          });
+          closeDropdowns(header);
         }
       });
     })();
