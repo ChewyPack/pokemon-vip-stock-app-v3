@@ -20,7 +20,7 @@ export async function onRequestPost({ request, env }) {
   const password = typeof data.password === 'string' ? data.password : '';
   const accountType = typeof data.account_type === 'string' ? data.account_type : '';
   if (displayName.length < 2 || displayName.length > 60) return json({ ok:false, error:'invalid_name' }, 400);
-  if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return json({ ok:false, error:'invalid_email' }, 400);
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok:false, error:'invalid_email' }, 400);
   if (!ACCOUNT_TYPES.has(accountType)) return json({ ok:false, error:'invalid_account_type' }, 400);
   if (password.length < 10 || password.length > 128) return json({ ok:false, error:'password_requirements' }, 400);
   try {
