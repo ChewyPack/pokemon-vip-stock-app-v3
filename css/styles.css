@@ -544,3 +544,237 @@ img { max-width: 100%; }
     grid-template-columns: 1fr;
   }
 }
+/* =========================================================
+   PokePrizePool navigation
+   Additive styles — preserves the existing landing page CSS.
+   ========================================================= */
+
+.site-nav-header {
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  background: #06174a;
+  color: #ffffff;
+  border-bottom: 3px solid #1e9bff;
+  box-shadow: 0 5px 18px rgba(6, 23, 74, 0.22);
+}
+
+.site-nav-header,
+.site-nav-header * {
+  box-sizing: border-box;
+}
+
+.site-nav-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 72px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.site-nav-header a {
+  text-decoration: none;
+}
+
+.site-nav-header__inner > .site-nav__link:first-child {
+  flex: 0 0 auto;
+  color: #ffd21f;
+  font-family: "Bangers", Impact, sans-serif;
+  font-size: 1.65rem;
+  letter-spacing: 0.7px;
+  line-height: 1;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.site-nav__link,
+.site-nav__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.site-nav__link:hover,
+.site-nav__toggle:hover,
+.site-nav__toggle[aria-expanded="true"] {
+  background: #12316f;
+  border-color: #1e9bff;
+  color: #ffd21f;
+}
+
+.site-nav__link:focus-visible,
+.site-nav__toggle:focus-visible,
+.site-nav__item:focus-visible {
+  outline: 3px solid #ffd21f;
+  outline-offset: 3px;
+}
+
+.site-nav-header__inner > .site-nav__link:last-child {
+  flex: 0 0 auto;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #ffd21f;
+  color: #06174a;
+  font-weight: 900;
+}
+
+.site-nav-header__inner > .site-nav__link:last-child:hover {
+  background: #ffffff;
+  color: #06174a;
+  transform: translateY(-1px);
+}
+
+.site-nav__dropdown {
+  position: relative;
+}
+
+.site-nav__menu[hidden] {
+  display: none !important;
+}
+
+.site-nav__menu {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 275px;
+  max-width: min(85vw, 320px);
+  padding: 8px;
+  border: 1px solid rgba(30, 155, 255, 0.65);
+  border-radius: 13px;
+  background: #ffffff;
+  box-shadow: 0 14px 35px rgba(6, 23, 74, 0.25);
+}
+
+.site-nav__item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 12px;
+  border-radius: 8px;
+  color: #0b2a6b;
+  text-decoration: none;
+  transition: background 150ms ease;
+}
+
+.site-nav__item:hover {
+  background: #eaf4ff;
+}
+
+.site-nav__item-title {
+  color: #0b2a6b;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.site-nav__item-description {
+  color: #4b5f8f;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Keep dropdowns usable on tablets and smaller screens. */
+@media (max-width: 900px) {
+  .site-nav-header__inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .site-nav {
+    order: 3;
+    width: 100%;
+    gap: 4px;
+  }
+
+  .site-nav__link,
+  .site-nav__toggle {
+    padding: 9px 10px;
+    font-size: 0.86rem;
+  }
+
+  .site-nav__menu {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* Stack navigation cleanly on phones. */
+@media (max-width: 560px) {
+  .site-nav-header__inner {
+    gap: 10px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .site-nav-header__inner > .site-nav__link:first-child {
+    font-size: 1.5rem;
+  }
+
+  .site-nav-header__inner > .site-nav__link:last-child {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+
+  .site-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .site-nav > .site-nav__link,
+  .site-nav__dropdown > .site-nav__toggle {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 6px;
+    font-size: 0.84rem;
+  }
+
+  .site-nav__menu {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: min(82vw, 300px);
+    max-width: 82vw;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-nav-header *,
+  .site-nav-header *::before,
+  .site-nav-header *::after {
+    transition: none !important;
+  }
+}
