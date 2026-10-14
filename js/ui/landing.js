@@ -1,4 +1,3 @@
-```javascript
 /* LANDING PAGE — original Pokémon VIP landing page with dropdown navigation. */
 (function () {
   var VIP = (window.VIP = window.VIP || {});
@@ -381,4 +380,4 @@
     }
   };
 })();
-```
+
