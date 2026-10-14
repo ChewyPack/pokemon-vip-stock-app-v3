@@ -35,12 +35,7 @@ export async function onRequestPost({ request, env }) {
   } catch (error) {
     if (String(error && error.message || '').toLowerCase().includes('unique')) return json({ ok:false, error:'email_already_registered' }, 409);
     console.error('Account registration failed:', error);
-    // Temporary diagnostic: expose the database error only on this exact staging preview host.
-    const host = new URL(request.url).hostname;
-    if (host === 'feature-collector-account-lo.pokemon-vip-stock-app-v3.pages.dev') {
-      return json({ ok:false, error:'registration_failed', diagnostic: String(error && error.message || error).slice(0, 300) }, 500);
-    }
-    return json({ ok:false, error:'registration_failed' }, 500);
+        return json({ ok:false, error:'registration_failed' }, 500);
   }
 }
 export async function onRequest() { return json({ok:false,error:'method_not_allowed'},405); }
