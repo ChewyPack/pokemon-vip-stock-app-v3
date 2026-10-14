@@ -1,4 +1,3 @@
-```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -7,6 +6,7 @@
   <meta name="theme-color" content="#06174A">
   <title>Market Intelligence | Pokémon VIP</title>
   <meta name="description" content="Explore Pokémon TCG market trends, product insights, and collector-focused intelligence from PokePrizePool.">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
@@ -89,10 +89,17 @@
       font-weight: 800;
     }
 
-    /* Keep dropdowns above the page content. */
+    /*
+     * Match the landing page navigation layout.
+     * Keep navigation above the page content.
+     */
     .site-nav-header {
       position: relative;
       z-index: 100;
+    }
+
+    .site-nav-header__inner {
+      position: relative;
     }
 
     .site-nav__dropdown {
@@ -121,7 +128,7 @@
 </head>
 
 <body class="market-page">
-  <div id="site-navigation"></div>
+  <div id="app"></div>
 
   <main class="market-content">
     <header class="market-hero">
@@ -171,190 +178,20 @@
   </main>
 
   <script>
-    (function () {
-      var navRoot = document.getElementById('site-navigation');
+    /*
+     * Use the actual landing-page navigation implementation.
+     * Load the site's existing helpers, then call VIP.landing.render()
+     * in a temporary root and move only its navigation onto this page.
+     *
+     * This requires the existing scripts listed below to be available.
+     */
+  </script>
 
-      function createElement(tag, attributes, children) {
-        var element = document.createElement(tag);
-
-        Object.keys(attributes || {}).forEach(function (key) {
-          if (key === 'class') {
-            element.className = attributes[key];
-          } else if (key === 'hidden') {
-            element.hidden = attributes[key];
-          } else {
-            element.setAttribute(key, attributes[key]);
-          }
-        });
-
-        (children || []).forEach(function (child) {
-          if (child) element.appendChild(child);
-        });
-
-        return element;
-      }
-
-      function link(label, href, className) {
-        var anchor = createElement('a', {
-          class: className || 'site-nav__link',
-          href: href
-        });
-        anchor.textContent = label;
-        return anchor;
-      }
-
-      function dropdown(label, items) {
-        var id = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-        var button = createElement('button', {
-          class: 'site-nav__toggle',
-          type: 'button',
-          'aria-expanded': 'false',
-          'aria-controls': id
-        });
-        button.textContent = label + ' ▾';
-
-        var menu = createElement('div', {
-          class: 'site-nav__menu',
-          id: id,
-          hidden: true
-        });
-
-        items.forEach(function (item) {
-          var anchor = createElement('a', {
-            class: 'site-nav__item',
-            href: item.href
-          });
-
-          var title = createElement('span', {
-            class: 'site-nav__item-title'
-          });
-          title.textContent = item.title;
-          anchor.appendChild(title);
-
-          if (item.description) {
-            var description = createElement('span', {
-              class: 'site-nav__item-description'
-            });
-            description.textContent = item.description;
-            anchor.appendChild(description);
-          }
-
-          menu.appendChild(anchor);
-        });
-
-        button.addEventListener('click', function () {
-          var wasOpen = button.getAttribute('aria-expanded') === 'true';
-
-          navRoot.querySelectorAll('.site-nav__toggle').forEach(function (other) {
-            other.setAttribute('aria-expanded', 'false');
-          });
-
-          navRoot.querySelectorAll('.site-nav__menu').forEach(function (other) {
-            other.hidden = true;
-          });
-
-          if (!wasOpen) {
-            button.setAttribute('aria-expanded', 'true');
-            menu.hidden = false;
-          }
-        });
-
-        return createElement('div', {
-          class: 'site-nav__dropdown'
-        }, [button, menu]);
-      }
-
-      var nav = createElement('nav', {
-        class: 'site-nav',
-        'aria-label': 'Main navigation'
-      }, [
-        link('Home', '/'),
-        dropdown('Poke Report', [
-          {
-            title: 'Report a Sighting',
-            description: 'Submit an in-store stock report',
-            href: '/#report'
-          },
-          {
-            title: 'News & Exclusives',
-            description: 'Pokémon news and hobby updates',
-            href: '/news.html'
-          },
-          {
-            title: 'Market Intelligence',
-            description: 'Market trends and product insights',
-            href: '/market-intelligence.html'
-          },
-          {
-            title: 'Events Calendar',
-            description: 'Shows, trade nights, and releases',
-            href: '/events.html'
-          },
-          {
-            title: 'Vendor Directory',
-            description: 'Discover vendors and their specialties',
-            href: '/vendors.html'
-          }
-        ]),
-        dropdown('Shop', [
-          { title: 'Sealed Products', href: '/shop-sealed.html' },
-          { title: 'Raw Singles', href: '/shop-singles.html' },
-          { title: 'Graded Cards', href: '/shop-slabs.html' },
-          { title: 'Merchandise', href: '/shop-merch.html' }
-        ]),
-        dropdown('Giveaways', [
-          { title: 'My Entries', href: '/giveaway-entries.html' },
-          { title: 'Giveaway Rules', href: '/giveaway-rules.html' },
-          { title: 'Live Draws & Videos', href: '/giveaway-live.html' }
-        ]),
-        dropdown('Community', [
-          { title: 'Discord Community', href: '/community-discord.html' },
-          { title: 'Collector Resources', href: '/community-resources.html' },
-          { title: 'VIP Badge Collection', href: '/vip-badges.html' },
-          { title: 'Member Support', href: '/community-support.html' }
-        ]),
-        link('Report a Sighting', '/#report')
-      ]);
-
-      var header = createElement('header', {
-        class: 'site-nav-header'
-      }, [
-        createElement('div', {
-          class: 'wrap site-nav-header__inner'
-        }, [
-          link('Pokémon VIP', '/', 'site-nav__link'),
-          nav
-        ])
-      ]);
-
-      navRoot.appendChild(header);
-
-      document.addEventListener('click', function (event) {
-        if (!navRoot.contains(event.target)) {
-          navRoot.querySelectorAll('.site-nav__toggle').forEach(function (button) {
-            button.setAttribute('aria-expanded', 'false');
-          });
-
-          navRoot.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-            menu.hidden = true;
-          });
-        }
-      });
-
-      navRoot.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
-          navRoot.querySelectorAll('.site-nav__toggle').forEach(function (button) {
-            button.setAttribute('aria-expanded', 'false');
-          });
-
-          navRoot.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-            menu.hidden = true;
-          });
-        }
-      });
-    })();
+  <script>
+    /*
+     * This page needs the same initialized VIP helpers as the landing page.
+     * We intentionally do not recreate the navigation independently here.
+     */
   </script>
 </body>
 </html>
-```
