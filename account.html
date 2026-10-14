@@ -100,7 +100,7 @@
     const errors={invalid_name:'Enter a display name between 2 and 60 characters.',invalid_email:'Enter a valid email address.',invalid_account_type:'Choose an account type.',password_requirements:'Your password must be between 10 and 128 characters.',email_already_registered:'An account already uses that email. Try logging in.',invalid_credentials:'Email or password is incorrect.',database_not_configured:'Account database is not configured yet.',registration_failed:'The server could not save this account. We need to check the staging database or server logs before trying again.'};
     throw new Error(errors[data.error]||'We could not complete that request. Please try again.');
    }
-   message.hidden=false;message.textContent='Success! Your account is ready. Redirecting…';window.location.href='/account.html';
+   message.hidden=false;message.textContent='Success! Your account is ready. Redirecting home…';window.location.href='/';
   }catch(error){message.hidden=false;message.textContent=error.message||'Something went wrong.';}
   finally{submit.disabled=false;submit.textContent=mode==='register'?'Create account':'Log in';}
  });
