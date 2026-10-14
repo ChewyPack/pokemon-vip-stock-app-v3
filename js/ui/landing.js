@@ -1,4 +1,4 @@
-/* LANDING PAGE — original Pokémon VIP landing page with dropdown navigation. */
+/* LANDING PAGE — original Pokémon VIP landing page with dropdown navigation and Poke Report sections. */
 (function () {
   var VIP = (window.VIP = window.VIP || {});
   var h = VIP.h;
@@ -29,6 +29,7 @@
 
   function dropdown(label, items) {
     var menuId = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
     var button = h('button', {
       class: 'site-nav__toggle',
       type: 'button',
@@ -152,31 +153,30 @@
       )
     );
 
-    // Close dropdowns when clicking outside the navigation.
     document.addEventListener('click', function (event) {
       if (!nav.contains(event.target)) {
         nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
           button.setAttribute('aria-expanded', 'false');
         });
+
         nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
           menu.hidden = true;
         });
       }
     });
 
-    // Escape closes open dropdowns.
     nav.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
         nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
           button.setAttribute('aria-expanded', 'false');
         });
+
         nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
           menu.hidden = true;
         });
       }
     });
 
-    // On small screens, allow the navigation to scroll rather than overflow.
     return nav;
   }
 
@@ -217,6 +217,44 @@
     );
   }
 
+  function reportSection(id, title, description, content) {
+    return h(
+      'section',
+      {
+        class: 'section',
+        id: id,
+        'aria-labelledby': id + '-title'
+      },
+      h(
+        'div',
+        { class: 'wrap' },
+        h('h2', {
+          class: 'section__title',
+          id: id + '-title'
+        }, title),
+        h('p', { class: 'section__sub' }, description),
+        h(
+          'div',
+          { class: 'panel' },
+          h(
+            'div',
+            { class: 'panel__body' },
+            content
+          )
+        )
+      )
+    );
+  }
+
+  function plannedFeature(title, description) {
+    return h(
+      'div',
+      { class: 'notice' },
+      h('strong', null, title),
+      h('p', null, description)
+    );
+  }
+
   VIP.landing = {
     render: function (root) {
       var cfg = VIP.siteConfig;
@@ -224,6 +262,7 @@
 
       var navigation = buildNavigation();
 
+      /* Original hero — preserved. */
       var hero = h(
         'header',
         { class: 'hero', id: 'home' },
@@ -268,6 +307,7 @@
         bolt()
       );
 
+      /* Original universe cards — preserved. */
       var universes = h(
         'section',
         {
@@ -295,6 +335,7 @@
         )
       );
 
+      /* Original how-it-works section — preserved. */
       var how = h(
         'section',
         {
@@ -336,6 +377,92 @@
         )
       );
 
+      /* New Poke Report content. */
+      var pokeNews = reportSection(
+        'poke-news',
+        'Poke Report: News & Exclusives',
+        'Pokémon news, releases, hobby conversations, exclusives, and noteworthy community stories.',
+        h(
+          'div',
+          null,
+          h('p', null, 'This will become the home for The Poke Report: news, announcements, hobby drama, release updates, and stories worth discussing.'),
+          plannedFeature(
+            'News desk',
+            'A dedicated feed for Pokémon TCG news, product announcements, community stories, and important updates.'
+          ),
+          plannedFeature(
+            'Collector conversations',
+            'Opinion and discussion from people in the hobby, with room for different perspectives.'
+          )
+        )
+      );
+
+      var market = reportSection(
+        'market-intelligence',
+        'Market Intelligence',
+        'Follow the products, prices, and trends collectors are talking about.',
+        h(
+          'div',
+          null,
+          h('p', null, 'The goal is to give members a clearer view of the Pokémon TCG market without presenting guesses as facts.'),
+          plannedFeature(
+            'Price tracking',
+            'Compare selected products and cards over time using clearly identified sources and dates.'
+          ),
+          plannedFeature(
+            'Product watch',
+            'Highlight notable releases, collector demand, and changes worth paying attention to.'
+          ),
+          plannedFeature(
+            'Restock patterns',
+            'Longer-term analysis of member-reported sightings and observed store patterns. Predictions will be labeled as estimates, not guarantees.'
+          )
+        )
+      );
+
+      var events = reportSection(
+        'events',
+        'Pokémon Events Calendar',
+        'Keep track of card shows, trade nights, local events, tournaments, and upcoming releases.',
+        h(
+          'div',
+          null,
+          h('p', null, 'This section will organize the events collectors want to plan around.'),
+          plannedFeature(
+            'Shows & trade meets',
+            'A searchable calendar for card shows, trade nights, and collector meetups.'
+          ),
+          plannedFeature(
+            'Play events',
+            'A place to find Pokémon League gatherings and organized play events.'
+          ),
+          plannedFeature(
+            'Release calendar',
+            'Upcoming Pokémon TCG products and important hobby dates.'
+          )
+        )
+      );
+
+      var vendors = reportSection(
+        'vendors',
+        'Vendor Directory',
+        'Discover vendors, learn what they specialize in, and hear directly from people in the hobby.',
+        h(
+          'div',
+          null,
+          h('p', null, 'The directory is intended to help collectors understand who is buying and selling, what they specialize in, and how they operate.'),
+          plannedFeature(
+            'Vendor profiles',
+            'Profiles covering specialties, buying interests, selling focus, and where to find each vendor.'
+          ),
+          plannedFeature(
+            'Interviews & day-in-the-life features',
+            'Conversations with vendors about collecting, business, the market, and their experiences in the hobby.'
+          )
+        )
+      );
+
+      /* Original call-to-action — preserved. */
       var cta = h(
         'section',
         { class: 'cta-band' },
@@ -355,6 +482,7 @@
         )
       );
 
+      /* Original footer — preserved. */
       var footer = h(
         'footer',
         { class: 'footer' },
@@ -370,6 +498,10 @@
       root.appendChild(hero);
       root.appendChild(universes);
       root.appendChild(how);
+      root.appendChild(pokeNews);
+      root.appendChild(market);
+      root.appendChild(events);
+      root.appendChild(vendors);
       root.appendChild(cta);
       root.appendChild(footer);
     }
