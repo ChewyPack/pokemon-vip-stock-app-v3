@@ -35,6 +35,32 @@
 .account-note{font-size:.88rem;color:#4b5f8f;line-height:1.5}
 @media(max-width:520px){.account-types{grid-template-columns:1fr}.type-card{min-height:unset}}
 [hidden]{display:none!important}
+
+/* Signed-in dashboard */
+.account-panel--dashboard{padding:clamp(18px,4vw,32px)}
+.dashboard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px}
+.dashboard-top h1{text-align:left;margin:0 0 8px}
+.dashboard-top .account-intro{text-align:left;margin:0}
+.account-avatar{display:grid;place-items:center;flex:0 0 58px;width:58px;height:58px;border:3px solid #0b2a6b;border-radius:16px;background:#ffd21f;font-size:1.8rem;box-shadow:3px 3px 0 #0b2a6b}
+.dashboard-eyebrow{font-size:.78rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#5670a6;margin:0 0 7px}
+.dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0}
+.dashboard-card{min-width:0;border:2px solid #d5e0f2;border-radius:12px;padding:17px;background:#f7faff}
+.dashboard-card h2{font:400 1.4rem/1.1 var(--font-display);margin:0 0 10px;color:#0b2a6b}
+.dashboard-card p{margin:0;color:#4b5f8f;line-height:1.5;font-size:.94rem;overflow-wrap:anywhere}
+.dashboard-card--wide{grid-column:1/-1}
+.account-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6a900;background:#fff4b8;color:#634b00;border-radius:999px;padding:6px 11px;font-size:.82rem;font-weight:900}
+.account-detail{display:grid;gap:4px;margin-top:13px}
+.account-detail span{font-size:.78rem;color:#5670a6;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.account-detail strong{overflow-wrap:anywhere}
+.dashboard-card ul{padding-left:20px;margin:10px 0 0;color:#334a7c;line-height:1.7}
+.dashboard-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.dashboard-actions .btn{cursor:pointer;min-height:46px}
+.dashboard-section-title{font:400 1.65rem/1.1 var(--font-display);margin:28px 0 10px}
+.dashboard-note{padding:13px 15px;border-left:4px solid #ffd21f;background:#fff8d5;color:#5e4b08;border-radius:0 8px 8px 0;font-size:.9rem;line-height:1.55}
+.dashboard-status{display:inline-flex;align-items:center;gap:7px;font-size:.85rem;font-weight:900;color:#17603a}
+.dashboard-status:before{content:"";width:8px;height:8px;background:#25a765;border-radius:50%}
+@media(max-width:520px){.dashboard-grid{grid-template-columns:1fr}.dashboard-card--wide{grid-column:auto}.dashboard-top{gap:10px}.account-avatar{flex-basis:48px;width:48px;height:48px;border-radius:13px}}
+
 </style>
 </head>
 <body>
@@ -65,6 +91,59 @@
 </form>
 <p id="message" class="account-message" role="status" aria-live="polite" hidden></p>
 </section>
+
+<section id="dashboard" class="account-panel account-panel--dashboard" hidden>
+  <div class="dashboard-top">
+    <div>
+      <p class="dashboard-eyebrow">Your PokePrizePool account</p>
+      <h1 id="dashboard-heading">Welcome back!</h1>
+      <p class="account-intro">Your home base for everything you do in the Pokémon hobby.</p>
+    </div>
+    <div class="account-avatar" aria-hidden="true">🃏</div>
+  </div>
+  <div class="dashboard-grid">
+    <article class="dashboard-card">
+      <p class="dashboard-eyebrow">Profile</p>
+      <h2>Account details</h2>
+      <div class="account-detail"><span>Display name</span><strong id="profile-name">—</strong></div>
+      <div class="account-detail"><span>Email</span><strong id="profile-email">—</strong></div>
+      <div class="account-detail"><span>Member since</span><strong id="profile-created">—</strong></div>
+    </article>
+    <article class="dashboard-card">
+      <p class="dashboard-eyebrow">Your place in the hobby</p>
+      <h2>Account type</h2>
+      <span id="account-type-badge" class="account-badge">Collector</span>
+      <p id="account-type-description" style="margin-top:12px">Your account type helps shape the tools and features we build for you.</p>
+    </article>
+    <article class="dashboard-card dashboard-card--wide">
+      <p class="dashboard-eyebrow">Membership &amp; access</p>
+      <h2>One account, separate benefits</h2>
+      <p>Your PokePrizePool website account is separate from paid VIP membership and any vendor or event-organizer verification.</p>
+      <ul>
+        <li><strong>Website account:</strong> your sign-in and account type.</li>
+        <li><strong>VIP membership:</strong> paid membership benefits and access.</li>
+        <li><strong>Vendor / organizer verification:</strong> separate approval for business or event features.</li>
+      </ul>
+    </article>
+    <article class="dashboard-card">
+      <p class="dashboard-eyebrow">Coming into focus</p>
+      <h2>Collector tools</h2>
+      <p>Collection tools, wish lists, matching alerts, and personalized hobby features are planned for a future update.</p>
+    </article>
+    <article class="dashboard-card">
+      <p class="dashboard-eyebrow">For the community</p>
+      <h2>Vendor &amp; events</h2>
+      <p>Vendor profiles and event listings are planned features. Choosing an account type does not itself verify or approve an account.</p>
+    </article>
+  </div>
+  <p class="dashboard-note">This dashboard shows your website account details. It does not confirm an active paid VIP subscription or vendor/event-organizer approval.</p>
+  <div class="dashboard-actions">
+    <a class="btn btn--primary" href="/">Explore PokePrizePool</a>
+    <button id="dashboard-logout" class="btn" type="button">Log out</button>
+  </div>
+  <p id="dashboard-message" class="account-message" role="status" aria-live="polite" hidden></p>
+</section>
+
 <p class="account-foot"><a href="/">Back to PokePrizePool</a></p>
 </main>
 <script>
@@ -82,12 +161,37 @@
  }
  loginTab.addEventListener('click',()=>setMode('login'));registerTab.addEventListener('click',()=>setMode('register'));
  async function checkSession(){
-  try{const r=await fetch('/api/account/me',{credentials:'include',cache:'no-store'}),d=await r.json();if(d.ok&&d.authenticated){
-   heading.textContent='You’re signed in';form.hidden=true;loginTab.hidden=true;registerTab.hidden=true;message.hidden=false;
-   const labels={free:'Free',collector:'Collector',vendor:'Vendor',organizer:'Event Organizer'};
-   message.textContent='Signed in as '+d.account.display_name+' ('+d.account.email+'). Account type: '+(labels[d.account.account_type]||'Free')+'. VIP membership and vendor/organizer verification are separate.';
-   const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Log out';b.style.marginTop='12px';b.addEventListener('click',async()=>{await fetch('/api/account/logout',{method:'POST',credentials:'include'});location.reload();});form.parentNode.appendChild(b);
-  }}catch(e){}
+  try{
+   const r=await fetch('/api/account/me',{credentials:'include',cache:'no-store'}),d=await r.json();
+   if(d.ok&&d.authenticated){
+    document.querySelector('.account-panel').hidden=true;
+    document.getElementById('dashboard').hidden=false;
+    loginTab.hidden=true;registerTab.hidden=true;
+    const a=d.account||{},labels={free:'Free',collector:'Collector',vendor:'Vendor',organizer:'Event Organizer'};
+    const descriptions={
+     free:'Your free website account is ready. You can keep exploring PokePrizePool as new community features arrive.',
+     collector:'Your account is set up for the collector experience. Paid VIP membership and its benefits are managed separately.',
+     vendor:'Your account is set to Vendor. Vendor profile publishing and verification are separate steps.',
+     organizer:'Your account is set to Event Organizer. Event listings and organizer approval are separate steps.'
+    };
+    document.getElementById('dashboard-heading').textContent='Welcome back, '+(a.display_name||'collector')+'!';
+    document.getElementById('profile-name').textContent=a.display_name||'—';
+    document.getElementById('profile-email').textContent=a.email||'—';
+    const created=a.created_at?new Date(a.created_at):null;
+    document.getElementById('profile-created').textContent=created&&!Number.isNaN(created.getTime())?created.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'PokePrizePool member';
+    document.getElementById('account-type-badge').textContent=labels[a.account_type]||'Free';
+    document.getElementById('account-type-description').textContent=descriptions[a.account_type]||descriptions.free;
+    document.getElementById('dashboard-logout').addEventListener('click',async()=>{
+     const button=document.getElementById('dashboard-logout'),status=document.getElementById('dashboard-message');
+     button.disabled=true;button.textContent='Logging out…';
+     try{
+      const response=await fetch('/api/account/logout',{method:'POST',credentials:'include'});
+      if(!response.ok)throw new Error('Please try logging out again.');
+      window.location.href='/';
+     }catch(error){status.hidden=false;status.textContent=error.message||'Could not log out. Please try again.';button.disabled=false;button.textContent='Log out';}
+    });
+   }
+  }catch(e){}
  }
  form.addEventListener('submit',async event=>{
   event.preventDefault();message.hidden=true;submit.disabled=true;submit.textContent='Please wait…';
