@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06174A">
+<title>Collector Account | PokePrizePool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+.account-wrap{width:min(560px,calc(100% - 32px));margin:48px auto 80px}
+.account-brand{display:block;text-align:center;color:#ffd21f;font:400 2.8rem/1.1 var(--font-display);text-decoration:none;margin-bottom:20px}
+.account-panel{background:#fff;color:#0b2a6b;border:4px solid #0b2a6b;border-radius:12px;box-shadow:8px 8px 0 #000;padding:clamp(20px,5vw,34px)}
+.account-panel h1{font:400 2.5rem/1.1 var(--font-display);margin:0 0 8px}
+.account-panel p{margin:0 0 18px}
+.account-form{display:grid;gap:14px}
+.account-form label{display:grid;gap:5px;font-weight:800}
+.account-form input{width:100%;padding:13px;border:2px solid #0b2a6b;border-radius:8px;font:inherit;min-height:48px}
+.account-form button{margin-top:6px;cursor:pointer}
+.account-switch{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px}
+.account-switch button{flex:1;min-height:44px;border:2px solid #0b2a6b;border-radius:8px;background:#eaf4ff;color:#0b2a6b;font:inherit;font-weight:900;cursor:pointer}
+.account-switch button[aria-pressed=true]{background:#ffd21f}
+.account-message{margin-top:16px!important;padding:12px;border-radius:8px;background:#eaf4ff;overflow-wrap:anywhere}
+.account-foot{margin-top:20px;text-align:center;color:#fff}
+.account-foot a{color:#ffd21f}
+</style>
+</head>
+<body>
+<main class="account-wrap">
+<a class="account-brand" href="/">PokePrizePool</a>
+<section class="account-panel">
+<h1 id="heading">Your collector account</h1>
+<p>Save your place in the community. A free account does not include paid VIP benefits.</p>
+<div class="account-switch" role="group" aria-label="Choose account action">
+<button id="login-tab" type="button" aria-pressed="true">Log in</button>
+<button id="register-tab" type="button" aria-pressed="false">Create account</button>
+</div>
+<form id="account-form" class="account-form">
+<label id="name-label" hidden>Display name<input id="display-name" name="display_name" autocomplete="nickname" minlength="2" maxlength="60"></label>
+<label>Email<input id="email" name="email" type="email" autocomplete="email" required maxlength="254"></label>
+<label>Password<input id="password" name="password" type="password" autocomplete="current-password" required minlength="12" maxlength="128"><small id="password-help">Use at least 12 characters.</small></label>
+<button id="submit" class="btn btn--primary" type="submit">Log in</button>
+</form>
+<p id="message" class="account-message" role="status" aria-live="polite" hidden></p>
+</section>
+<p class="account-foot"><a href="/">Back to PokePrizePool</a></p>
+</main>
+<script>
+(function(){
+ const form=document.getElementById('account-form');
+ const nameLabel=document.getElementById('name-label');
+ const nameInput=document.getElementById('display-name');
+ const password=document.getElementById('password');
+ const submit=document.getElementById('submit');
+ const message=document.getElementById('message');
+ const heading=document.getElementById('heading');
+ const loginTab=document.getElementById('login-tab');
+ const registerTab=document.getElementById('register-tab');
+ let mode='login';
+ function setMode(next){
+  mode=next; const registering=mode==='register';
+  nameLabel.hidden=!registering; nameInput.required=registering;
+  password.autocomplete=registering?'new-password':'current-password';
+  password.minLength=registering?12:1;
+  document.getElementById('password-help').textContent=registering?'Use at least 12 characters.':'';
+  heading.textContent=registering?'Create your collector account':'Welcome back, collector';
+  submit.textContent=registering?'Create account':'Log in';
+  loginTab.setAttribute('aria-pressed',String(!registering));
+  registerTab.setAttribute('aria-pressed',String(registering));
+  message.hidden=true;
+ }
+ loginTab.addEventListener('click',()=>setMode('login'));
+ registerTab.addEventListener('click',()=>setMode('register'));
+ async function checkSession(){
+  try{const r=await fetch('/api/account/me',{credentials:'include',cache:'no-store'});const d=await r.json();if(d.ok&&d.authenticated){heading.textContent='You’re signed in';form.hidden=true;loginTab.hidden=true;registerTab.hidden=true;message.hidden=false;message.textContent='Signed in as '+d.account.display_name+' ('+d.account.email+'). VIP membership is separate and is not automatically linked.';const b=document.createElement('button');b.type='button';b.className='btn btn--primary';b.textContent='Log out';b.addEventListener('click',async()=>{await fetch('/api/account/logout',{method:'POST',credentials:'include'});location.reload();});form.parentNode.appendChild(b);}}catch(e){}
+ }
+ form.addEventListener('submit',async event=>{
+  event.preventDefault();message.hidden=true;submit.disabled=true;submit.textContent='Please wait…';
+  const body={email:document.getElementById('email').value.trim(),password:password.value};
+  if(mode==='register')body.display_name=nameInput.value.trim();
+  try{
+   const response=await fetch(mode==='register'?'/api/account/register':'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)});
+   const data=await response.json();
+   if(!response.ok||!data.ok){
+    const errors={invalid_name:'Enter a display name between 2 and 60 characters.',invalid_email:'Enter a valid email address.',password_requirements:'Your password must be between 12 and 128 characters.',email_already_registered:'An account already uses that email. Try logging in.',invalid_credentials:'Email or password is incorrect.',database_not_configured:'Account database is not configured yet.'};
+    throw new Error(errors[data.error]||'We could not complete that request. Please try again.');
+   }
+   message.hidden=false;message.textContent='Success! Your collector account is ready. Redirecting…';
+   window.location.href='/account.html';
+  }catch(error){message.hidden=false;message.textContent=error.message||'Something went wrong.';}
+  finally{submit.disabled=false;submit.textContent=mode==='register'?'Create account':'Log in';}
+ });
+ checkSession();
+})();
+</script>
+</body>
+</html>
