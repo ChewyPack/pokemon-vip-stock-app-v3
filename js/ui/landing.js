@@ -1,4 +1,4 @@
-/* LANDING PAGE — PokePrizePool navigation and homepage. */
+/* LANDING PAGE — original Pokémon VIP landing page with dropdown navigation. */
 (function () {
   var VIP = (window.VIP = window.VIP || {});
   var h = VIP.h;
@@ -20,75 +20,164 @@
     return svg;
   }
 
-  function makeLink(label, href, className) {
+  function navLink(label, href) {
     return h('a', {
-      class: className || '',
+      class: 'site-nav__link',
       href: href
     }, label);
   }
 
-  function buildNavigation() {
-    var links = [
-      ['Home', '#home'],
-      ['Poke Report', '#poke-report'],
-      ['Shop', '#shop'],
-      ['Giveaways', '#giveaways'],
-      ['Community', '#community']
-    ];
+  function dropdown(label, items) {
+    var menuId = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    var button = h('button', {
+      class: 'site-nav__toggle',
+      type: 'button',
+      'aria-expanded': 'false',
+      'aria-controls': menuId
+    }, label + ' ▾');
 
-    var navLinks = links.map(function (item) {
-      return makeLink(item[0], item[1], 'main-nav__link');
+    var menu = h(
+      'div',
+      {
+        class: 'site-nav__menu',
+        id: menuId,
+        hidden: true
+      },
+      items.map(function (item) {
+        return h(
+          'a',
+          {
+            class: 'site-nav__item',
+            href: item.href
+          },
+          h('span', { class: 'site-nav__item-title' }, item.title),
+          item.description
+            ? h('span', { class: 'site-nav__item-description' }, item.description)
+            : null
+        );
+      })
+    );
+
+    var wrapper = h(
+      'div',
+      { class: 'site-nav__dropdown' },
+      button,
+      menu
+    );
+
+    button.addEventListener('click', function () {
+      var isOpen = button.getAttribute('aria-expanded') === 'true';
+
+      var allButtons = document.querySelectorAll('.site-nav__toggle');
+      var allMenus = document.querySelectorAll('.site-nav__menu');
+
+      allButtons.forEach(function (otherButton) {
+        otherButton.setAttribute('aria-expanded', 'false');
+      });
+
+      allMenus.forEach(function (otherMenu) {
+        otherMenu.hidden = true;
+      });
+
+      if (!isOpen) {
+        button.setAttribute('aria-expanded', 'true');
+        menu.hidden = false;
+      }
     });
 
-    return h(
-      'div',
-      { class: 'site-header' },
+    return wrapper;
+  }
+
+  function buildNavigation() {
+    var nav = h(
+      'header',
+      { class: 'site-nav-header' },
       h(
         'div',
-        { class: 'wrap site-header__inner' },
-        makeLink(
-          'POKEPRIZEPOOL',
-          '#home',
-          'site-logo'
-        ),
+        { class: 'wrap site-nav-header__inner' },
+        navLink('Pokémon VIP', '#home'),
         h(
           'nav',
-          { class: 'main-nav', 'aria-label': 'Main navigation' },
-          navLinks
+          {
+            class: 'site-nav',
+            'aria-label': 'Main navigation'
+          },
+          navLink('Home', '#home'),
+          dropdown('Poke Report', [
+            {
+              title: 'Report a Sighting',
+              description: 'Submit an in-store stock report',
+              href: '#report'
+            },
+            {
+              title: 'News & Exclusives',
+              description: 'Pokémon news and hobby updates',
+              href: '#poke-news'
+            },
+            {
+              title: 'Market Intelligence',
+              description: 'Market trends and product insights',
+              href: '#market-intelligence'
+            },
+            {
+              title: 'Events Calendar',
+              description: 'Shows, trade nights, and releases',
+              href: '#events'
+            },
+            {
+              title: 'Vendor Directory',
+              description: 'Discover vendors and their specialties',
+              href: '#vendors'
+            }
+          ]),
+          dropdown('Shop', [
+            { title: 'Sealed Products', href: '#shop-sealed' },
+            { title: 'Raw Singles', href: '#shop-singles' },
+            { title: 'Graded Cards', href: '#shop-slabs' },
+            { title: 'Merchandise', href: '#shop-merch' }
+          ]),
+          dropdown('Giveaways', [
+            { title: 'My Entries', href: '#giveaway-entries' },
+            { title: 'Giveaway Rules', href: '#giveaway-rules' },
+            { title: 'Live Draws & Videos', href: '#giveaway-live' }
+          ]),
+          dropdown('Community', [
+            { title: 'Discord Community', href: '#community-discord' },
+            { title: 'Collector Resources', href: '#community-resources' },
+            { title: 'VIP Badge Collection', href: '#vip-badges' },
+            { title: 'Member Support', href: '#community-support' }
+          ])
         ),
-        makeLink('VIP Report', '#report', 'btn btn--sm site-header__cta')
+        navLink('Report a Sighting', '#report')
       )
     );
-  }
 
-  function buildFeatureCard(icon, title, description, href, action) {
-    return h(
-      'article',
-      { class: 'feature-card' },
-      h('span', { class: 'feature-card__icon', 'aria-hidden': 'true' }, icon),
-      h('h3', { class: 'feature-card__title' }, title),
-      h('p', { class: 'feature-card__text' }, description),
-      makeLink(action || 'Explore', href, 'text-link')
-    );
-  }
+    // Close dropdowns when clicking outside the navigation.
+    document.addEventListener('click', function (event) {
+      if (!nav.contains(event.target)) {
+        nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+          button.setAttribute('aria-expanded', 'false');
+        });
+        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
+          menu.hidden = true;
+        });
+      }
+    });
 
-  function buildSection(id, eyebrow, title, description, cards) {
-    return h(
-      'section',
-      {
-        class: 'section portal-section',
-        id: id,
-        'aria-labelledby': id + '-title'
-      },
-      h(
-        'div',
-        { class: 'wrap' },
-        h('p', { class: 'section__eyebrow' }, eyebrow),
-        h('h2', { class: 'section__title', id: id + '-title' }, title),
-        h('p', { class: 'section__sub' }, description),
-        h('div', { class: 'feature-grid' }, cards)
-      )
-    );
+    // Escape closes open dropdowns.
+    nav.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+          button.setAttribute('aria-expanded', 'false');
+        });
+        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
+          menu.hidden = true;
+        });
+      }
+    });
+
+    // On small screens, allow the navigation to scroll rather than overflow.
+    return nav;
   }
 
   function universeCard(u) {
@@ -118,7 +207,10 @@
           { class: 'card__plate' },
           h('h3', { class: 'card__name' }, u.name),
           h('p', { class: 'card__blurb' }, u.blurb),
-          live ? makeLink(u.cta || 'Report a sighting', '#report', 'btn btn--sm') : null
+          live ? h('a', {
+            class: 'btn btn--sm',
+            href: '#report'
+          }, u.cta || 'Report a sighting') : null
         ),
         h('span', { class: 'card__holo', 'aria-hidden': 'true' })
       )
@@ -130,7 +222,7 @@
       var cfg = VIP.siteConfig;
       var poster = VIP.assets.heroPoster;
 
-      var header = buildNavigation();
+      var navigation = buildNavigation();
 
       var hero = h(
         'header',
@@ -141,8 +233,8 @@
           h(
             'h1',
             { class: 'wordmark' },
-            h('span', { class: 'wordmark__top' }, 'POKE'),
-            h('span', { class: 'wordmark__bottom' }, 'PRIZEPOOL')
+            h('span', { class: 'wordmark__top' }, 'Pokémon'),
+            h('span', { class: 'wordmark__bottom' }, 'VIP')
           ),
           h(
             'figure',
@@ -158,97 +250,65 @@
           h(
             'div',
             { class: 'hero__copy' },
-            h('p', { class: 'hero__lead' }, 'The Pokémon community hub built by collectors, for collectors.'),
-            h('p', { class: 'hero__description' }, 'Real-time store reports, market intelligence, giveaways, events, vendors, and a community that shares the hunt.'),
+            h('p', { class: 'hero__lead' }, cfg.brand.lead),
             h(
               'div',
               { class: 'hero__actions' },
-              makeLink('Report a sighting', '#report', 'btn btn--lg'),
-              makeLink('Explore the hub', '#poke-report', 'text-link')
+              h('a', {
+                class: 'btn btn--lg',
+                href: '#report'
+              }, 'Report a sighting'),
+              h('a', {
+                class: 'text-link',
+                href: '#how'
+              }, 'See how it works')
             )
           )
         ),
         bolt()
       );
 
-      var quickLinks = h(
+      var universes = h(
         'section',
-        { class: 'section quick-links-section' },
+        {
+          class: 'section',
+          id: 'universes',
+          'aria-labelledby': 'uni-title'
+        },
         h(
           'div',
           { class: 'wrap' },
-          h('p', { class: 'section__eyebrow' }, 'YOUR COLLECTOR HQ'),
-          h('h2', { class: 'section__title' }, 'Everything Pokémon. In one place.'),
-          h('p', { class: 'section__sub' }, 'Find the latest intel, track what is happening in the hobby, and connect with other collectors.'),
-          h(
-            'div',
-            { class: 'feature-grid feature-grid--four' },
-            buildFeatureCard('📡', 'Poke Report', 'Stock sightings, hobby news, market updates, and exclusive reports.', '#poke-report', 'Explore reports'),
-            buildFeatureCard('🛍️', 'Shop', 'A home for sealed products, singles, graded cards, and branded merch.', '#shop', 'Explore shop'),
-            buildFeatureCard('🎁', 'Giveaways', 'Discover giveaway details, entry information, rules, and live draws.', '#giveaways', 'View giveaways'),
-            buildFeatureCard('🤝', 'Community', 'Connect with collectors, find events, and access member resources.', '#community', 'Meet the community')
-          )
+          h('h2', {
+            class: 'section__title',
+            id: 'uni-title'
+          }, 'Where the crew hunts'),
+          h('p', {
+            class: 'section__sub'
+          }, 'Pokémon is live. More universes are on the way.')
+        ),
+        h(
+          'div',
+          { class: 'binder' },
+          h('div', {
+            class: 'binder__row'
+          }, cfg.universes.map(universeCard))
         )
-      );
-
-      var pokeReport = buildSection(
-        'poke-report',
-        'KNOW BEFORE YOU GO',
-        'Poke Report',
-        'The information collectors need, gathered in one place.',
-        [
-          buildFeatureCard('🚨', 'Live Stock Reports', 'Community sightings with store details, quantities, photos, and availability updates.', '#report', 'Submit a sighting'),
-          buildFeatureCard('📰', 'News & Exclusives', 'Pokémon news, releases, hobby discussion, and community stories.', '#poke-report', 'Coming to the hub'),
-          buildFeatureCard('📈', 'Market Intelligence', 'Track market conversations, product trends, and notable price movements.', '#poke-report', 'Coming to the hub'),
-          buildFeatureCard('📅', 'Events Calendar', 'Keep up with card shows, trade nights, releases, and player events.', '#poke-report', 'Coming to the hub'),
-          buildFeatureCard('🏪', 'Vendor Directory', 'Find vendors and discover what they specialize in buying and selling.', '#poke-report', 'Coming to the hub')
-        ]
-      );
-
-      var shop = buildSection(
-        'shop',
-        'COLLECTOR MARKETPLACE',
-        'The Shop',
-        'A planned home for Pokémon products and PokePrizePool merchandise.',
-        [
-          buildFeatureCard('📦', 'Sealed Products', 'Explore sealed Pokémon products and collector favorites.', '#shop', 'Coming soon'),
-          buildFeatureCard('🃏', 'Raw Singles', 'Discover individual cards for collections and decks.', '#shop', 'Coming soon'),
-          buildFeatureCard('💎', 'Graded Cards', 'A dedicated section for slabbed and graded collectibles.', '#shop', 'Coming soon'),
-          buildFeatureCard('👕', 'PokePrizePool Merch', 'Show your support with branded collector gear.', '#shop', 'Coming soon')
-        ]
-      );
-
-      var giveaways = buildSection(
-        'giveaways',
-        'GOOD LUCK, COLLECTORS',
-        'Giveaways',
-        'A dedicated home for prizes, entry details, and giveaway announcements.',
-        [
-          buildFeatureCard('🎟️', 'Your Entries', 'A future member view for tracking eligible giveaway entries.', '#giveaways', 'Coming soon'),
-          buildFeatureCard('📜', 'Rules & Details', 'Find eligibility requirements, entry methods, and official rules.', '#giveaways', 'Coming soon'),
-          buildFeatureCard('🎥', 'Live Draws', 'A home for giveaway videos and winner announcements.', '#giveaways', 'Coming soon')
-        ]
-      );
-
-      var community = buildSection(
-        'community',
-        'COLLECTORS HELP COLLECTORS',
-        'The Community',
-        'More than a stock alert. Build connections, share knowledge, and celebrate the hobby.',
-        [
-          buildFeatureCard('💬', 'Discord Community', 'Join the community conversation and share sightings with fellow collectors.', '#community', 'Community hub'),
-          buildFeatureCard('🧭', 'Collector Resources', 'A future home for drop-day routes, guides, and useful collector links.', '#community', 'Coming soon'),
-          buildFeatureCard('🏅', 'VIP Badge Collection', 'Earn original PokePrizePool digital milestones, with physical badge rewards planned.', '#community', 'Badge collection planned')
-        ]
       );
 
       var how = h(
         'section',
-        { class: 'section', id: 'how', 'aria-labelledby': 'how-title' },
+        {
+          class: 'section',
+          id: 'how',
+          'aria-labelledby': 'how-title'
+        },
         h(
           'div',
           { class: 'wrap' },
-          h('h2', { class: 'section__title', id: 'how-title' }, 'How stock reporting works'),
+          h('h2', {
+            class: 'section__title',
+            id: 'how-title'
+          }, 'How it works'),
           h(
             'ol',
             { class: 'steps' },
@@ -256,10 +316,20 @@
               return h(
                 'li',
                 { class: 'step-card' },
-                h('span', { class: 'step-card__num', 'aria-hidden': 'true' }, String(i + 1)),
-                h('span', { class: 'step-card__icon', 'aria-hidden': 'true' }, s.icon),
-                h('h3', { class: 'step-card__title' }, s.title),
-                h('p', { class: 'step-card__text' }, s.text)
+                h('span', {
+                  class: 'step-card__num',
+                  'aria-hidden': 'true'
+                }, String(i + 1)),
+                h('span', {
+                  class: 'step-card__icon',
+                  'aria-hidden': 'true'
+                }, s.icon),
+                h('h3', {
+                  class: 'step-card__title'
+                }, s.title),
+                h('p', {
+                  class: 'step-card__text'
+                }, s.text)
               );
             })
           )
@@ -272,9 +342,16 @@
         h(
           'div',
           { class: 'wrap cta-band__inner' },
-          h('h2', { class: 'cta-band__title' }, 'Spotted something? Help the crew.'),
-          makeLink('Report a sighting', '#report', 'btn btn--lg'),
-          h('p', { class: 'notice notice--light' }, cfg.notice)
+          h('h2', {
+            class: 'cta-band__title'
+          }, 'Spotted something?'),
+          h('a', {
+            class: 'btn btn--lg',
+            href: '#report'
+          }, 'Report a sighting'),
+          h('p', {
+            class: 'notice notice--light'
+          }, cfg.notice)
         )
       );
 
@@ -284,20 +361,14 @@
         h(
           'div',
           { class: 'wrap' },
-          h('p', null, 'PokePrizePool — built by collectors, for collectors.'),
-          h('p', null, cfg.legal),
-          h('p', null, 'Pokémon and related names are trademarks of their respective owners. PokePrizePool is an independent community project.')
+          h('p', null, cfg.legal)
         )
       );
 
       VIP.clear(root);
-      root.appendChild(header);
+      root.appendChild(navigation);
       root.appendChild(hero);
-      root.appendChild(quickLinks);
-      root.appendChild(pokeReport);
-      root.appendChild(shop);
-      root.appendChild(giveaways);
-      root.appendChild(community);
+      root.appendChild(universes);
       root.appendChild(how);
       root.appendChild(cta);
       root.appendChild(footer);
