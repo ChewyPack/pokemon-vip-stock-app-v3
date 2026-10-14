@@ -4,157 +4,141 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>News & Exclusives | Pokémon VIP</title>
-  <meta name="description" content="Pokémon TCG news, product announcements, collector conversations, and hobby updates from PokePrizePool.">
-  <meta name="theme-color" content="#06174A">
+  <title>Pokémon News | PokePrizePool</title>
+  <meta name="description" content="Pokémon TCG news, product releases, and collector updates from PokePrizePool.">
   <link rel="stylesheet" href="/css/styles.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
-    .standalone-page {
-      min-height: 100vh;
-      padding: 24px 0 64px;
+    body {
+      margin: 0;
     }
-    .page-top {
+
+    .news-feed {
+      width: min(900px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 60px;
+    }
+
+    .news-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 42px;
+      gap: 12px;
+      margin-bottom: 24px;
     }
-    .page-brand {
-      font-family: Bangers, sans-serif;
-      font-size: 1.8rem;
+
+    .news-logo {
       color: inherit;
-      text-decoration: none;
-      letter-spacing: 1px;
-    }
-    .page-nav {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    .page-nav a {
-      color: inherit;
-      font-weight: 800;
+      font-weight: 900;
       text-decoration: none;
     }
-    .page-nav a:hover {
-      text-decoration: underline;
+
+    .news-header a:last-child {
+      color: inherit;
+      font-weight: 700;
     }
-    .page-heading {
-      margin-bottom: 28px;
+
+    .news-story {
+      padding: 24px 0;
+      border-bottom: 1px solid rgba(140, 160, 200, .35);
     }
-    .page-eyebrow {
+
+    .news-date {
+      margin: 0 0 8px;
+      font-size: .82rem;
       font-weight: 800;
+      letter-spacing: .06em;
       text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
+      opacity: .72;
     }
-    .page-title {
-      font-family: Bangers, sans-serif;
-      font-size: clamp(2.6rem, 7vw, 5rem);
-      line-height: 1;
-      margin: 0 0 16px;
+
+    .news-story h1,
+    .news-story h2 {
+      margin: 0 0 12px;
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+      line-height: 1.25;
     }
-    .page-description {
-      max-width: 700px;
-      font-size: 1.05rem;
+
+    .news-story p {
       line-height: 1.7;
+      margin: 0 0 14px;
     }
-    .news-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-      gap: 18px;
-      margin-top: 28px;
+
+    .news-source {
+      display: inline-block;
+      font-weight: 800;
+      text-decoration: underline;
+      text-underline-offset: 3px;
     }
-    .news-card {
-      padding: 22px;
-      border: 1px solid rgba(127, 150, 200, .35);
-      border-radius: 16px;
-      background: rgba(8, 25, 67, .72);
-      color: #fff;
-    }
-    .news-card h2 {
-      font-size: 1.2rem;
-      margin: 0 0 10px;
-    }
-    .news-card p {
-      line-height: 1.65;
-      margin: 0;
-    }
-    .page-footer {
-      margin-top: 48px;
-      opacity: .8;
-      font-size: .9rem;
+
+    .news-label {
+      display: inline-block;
+      margin-bottom: 10px;
+      font-size: .75rem;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: .75;
     }
   </style>
 </head>
 <body>
-  <div class="bg-speed" aria-hidden="true"></div>
+  <main class="news-feed">
+    <header class="news-header">
+      <a class="news-logo" href="/">POKEPRIZEPOOL</a>
+      <a href="/">Home</a>
+    </header>
 
-  <main class="standalone-page">
-    <div class="wrap">
-      <header class="page-top">
-        <a class="page-brand" href="/">Pokémon VIP</a>
-        <nav class="page-nav" aria-label="Page navigation">
-          <a href="/">Home</a>
-          <a href="/#report">Report a Sighting</a>
-        </nav>
-      </header>
+    <article class="news-story">
+      <p class="news-date">October 14, 2026 · Product Watch</p>
+      <span class="news-label">Pokémon TCG</span>
+      <h1>October's Pokémon TCG Releases: What's Still Coming?</h1>
+      <p>
+        October's release calendar includes more products from the
+        30th Celebration expansion. The Pokémon TCG Deck Crafter's
+        Collection is scheduled for October 23, followed by the
+        Espeon ex and Umbreon ex 30th Celebration Battle Decks on
+        October 30.
+      </p>
+      <a class="news-source"
+         href="https://www.pokemon.com/us/news/check-out-every-pokemon-tcg-product-release-in-october-2026"
+         target="_blank" rel="noopener noreferrer">
+        Read the official release calendar →
+      </a>
+    </article>
 
-      <section class="page-heading">
-        <p class="page-eyebrow">The Poke Report</p>
-        <h1 class="page-title">News & Exclusives</h1>
-        <p class="page-description">
-          Pokémon news, product announcements, collector conversations,
-          market-moving stories, and updates from around the hobby.
-          Built by collectors, for collectors.
-        </p>
-      </section>
+    <article class="news-story">
+      <p class="news-date">September 16, 2026 · Set Release</p>
+      <span class="news-label">Pokémon TCG</span>
+      <h2>30th Celebration Expansion Is Out Now</h2>
+      <p>
+        The 30th Celebration expansion celebrates three decades of
+        the Pokémon Trading Card Game. The set features more than
+        150 cards, a Classic Collection, and 30 different Pikachu
+        illustrations to discover.
+      </p>
+      <a class="news-source"
+         href="https://www.pokemon.com/us/news/the-pokemon-tcg-30th-celebration-expansion-is-available-now"
+         target="_blank" rel="noopener noreferrer">
+        Read the official announcement →
+      </a>
+    </article>
 
-      <section class="news-grid" aria-label="News categories">
-        <article class="news-card">
-          <h2>⚡ Pokémon News</h2>
-          <p>
-            Important announcements, collaborations, release news,
-            and developments worth knowing about.
-          </p>
-        </article>
-
-        <article class="news-card">
-          <h2>📦 Product Updates</h2>
-          <p>
-            Upcoming releases, product reveals, restock developments,
-            and notable retail updates.
-          </p>
-        </article>
-
-        <article class="news-card">
-          <h2>🗣️ Collector Conversations</h2>
-          <p>
-            Community opinions, hobby debates, interviews, and
-            perspectives from people who collect and sell.
-          </p>
-        </article>
-
-        <article class="news-card">
-          <h2>📊 The Poke Report</h2>
-          <p>
-            A home for noteworthy stories and updates. Future reports
-            will identify their sources and publication dates.
-          </p>
-        </article>
-      </section>
-
-      <footer class="page-footer">
-        <p>Pokémon VIP · PokePrizePool</p>
-        <p>This page is being built. New stories and features will be added over time.</p>
-      </footer>
-    </div>
+    <article class="news-story">
+      <p class="news-date">September 29, 2026 · Digital TCG</p>
+      <span class="news-label">Pokémon TCG Pocket</span>
+      <h2>Deluxe Pack: Mega Arrives in Pokémon TCG Pocket</h2>
+      <p>
+        Deluxe Pack: Mega is now available in Pokémon TCG Pocket.
+        The official announcement also outlines upcoming changes
+        to several game features later in October, including
+        community decks and rental decks.
+      </p>
+      <a class="news-source"
+         href="https://www.pokemon.com/us/news/pokemon-tcg-pocket-deluxe-pack-mega-is-now-available"
+         target="_blank" rel="noopener noreferrer">
+        Read the official announcement →
+      </a>
+    </article>
   </main>
 </body>
 </html>
