@@ -149,7 +149,8 @@
             { title: 'Member Support', href: '/community-support.html' }
           ])
         ),
-        navLink('Report a Sighting', '#report')
+        navLink('Report a Sighting', '#report'),
+        navLink('Sign up / Log in', '/account.html')
       )
     );
 
