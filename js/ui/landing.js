@@ -1,4 +1,5 @@
-/* LANDING PAGE — original Pokémon VIP landing page with dropdown navigation and Poke Report sections. */
+```javascript
+/* LANDING PAGE — original Pokémon VIP landing page with dropdown navigation. */
 (function () {
   var VIP = (window.VIP = window.VIP || {});
   var h = VIP.h;
@@ -113,40 +114,40 @@
             {
               title: 'News & Exclusives',
               description: 'Pokémon news and hobby updates',
-              href: '#poke-news'
+              href: '/news.html'
             },
             {
               title: 'Market Intelligence',
               description: 'Market trends and product insights',
-              href: '#market-intelligence'
+              href: '/market-intelligence.html'
             },
             {
               title: 'Events Calendar',
               description: 'Shows, trade nights, and releases',
-              href: '#events'
+              href: '/events.html'
             },
             {
               title: 'Vendor Directory',
               description: 'Discover vendors and their specialties',
-              href: '#vendors'
+              href: '/vendors.html'
             }
           ]),
           dropdown('Shop', [
-            { title: 'Sealed Products', href: '#shop-sealed' },
-            { title: 'Raw Singles', href: '#shop-singles' },
-            { title: 'Graded Cards', href: '#shop-slabs' },
-            { title: 'Merchandise', href: '#shop-merch' }
+            { title: 'Sealed Products', href: '/shop-sealed.html' },
+            { title: 'Raw Singles', href: '/shop-singles.html' },
+            { title: 'Graded Cards', href: '/shop-slabs.html' },
+            { title: 'Merchandise', href: '/shop-merch.html' }
           ]),
           dropdown('Giveaways', [
-            { title: 'My Entries', href: '#giveaway-entries' },
-            { title: 'Giveaway Rules', href: '#giveaway-rules' },
-            { title: 'Live Draws & Videos', href: '#giveaway-live' }
+            { title: 'My Entries', href: '/giveaway-entries.html' },
+            { title: 'Giveaway Rules', href: '/giveaway-rules.html' },
+            { title: 'Live Draws & Videos', href: '/giveaway-live.html' }
           ]),
           dropdown('Community', [
-            { title: 'Discord Community', href: '#community-discord' },
-            { title: 'Collector Resources', href: '#community-resources' },
-            { title: 'VIP Badge Collection', href: '#vip-badges' },
-            { title: 'Member Support', href: '#community-support' }
+            { title: 'Discord Community', href: '/community-discord.html' },
+            { title: 'Collector Resources', href: '/community-resources.html' },
+            { title: 'VIP Badge Collection', href: '/vip-badges.html' },
+            { title: 'Member Support', href: '/community-support.html' }
           ])
         ),
         navLink('Report a Sighting', '#report')
@@ -214,44 +215,6 @@
         ),
         h('span', { class: 'card__holo', 'aria-hidden': 'true' })
       )
-    );
-  }
-
-  function reportSection(id, title, description, content) {
-    return h(
-      'section',
-      {
-        class: 'section',
-        id: id,
-        'aria-labelledby': id + '-title'
-      },
-      h(
-        'div',
-        { class: 'wrap' },
-        h('h2', {
-          class: 'section__title',
-          id: id + '-title'
-        }, title),
-        h('p', { class: 'section__sub' }, description),
-        h(
-          'div',
-          { class: 'panel' },
-          h(
-            'div',
-            { class: 'panel__body' },
-            content
-          )
-        )
-      )
-    );
-  }
-
-  function plannedFeature(title, description) {
-    return h(
-      'div',
-      { class: 'notice' },
-      h('strong', null, title),
-      h('p', null, description)
     );
   }
 
@@ -377,91 +340,6 @@
         )
       );
 
-      /* New Poke Report content. */
-      var pokeNews = reportSection(
-        'poke-news',
-        'Poke Report: News & Exclusives',
-        'Pokémon news, releases, hobby conversations, exclusives, and noteworthy community stories.',
-        h(
-          'div',
-          null,
-          h('p', null, 'This will become the home for The Poke Report: news, announcements, hobby drama, release updates, and stories worth discussing.'),
-          plannedFeature(
-            'News desk',
-            'A dedicated feed for Pokémon TCG news, product announcements, community stories, and important updates.'
-          ),
-          plannedFeature(
-            'Collector conversations',
-            'Opinion and discussion from people in the hobby, with room for different perspectives.'
-          )
-        )
-      );
-
-      var market = reportSection(
-        'market-intelligence',
-        'Market Intelligence',
-        'Follow the products, prices, and trends collectors are talking about.',
-        h(
-          'div',
-          null,
-          h('p', null, 'The goal is to give members a clearer view of the Pokémon TCG market without presenting guesses as facts.'),
-          plannedFeature(
-            'Price tracking',
-            'Compare selected products and cards over time using clearly identified sources and dates.'
-          ),
-          plannedFeature(
-            'Product watch',
-            'Highlight notable releases, collector demand, and changes worth paying attention to.'
-          ),
-          plannedFeature(
-            'Restock patterns',
-            'Longer-term analysis of member-reported sightings and observed store patterns. Predictions will be labeled as estimates, not guarantees.'
-          )
-        )
-      );
-
-      var events = reportSection(
-        'events',
-        'Pokémon Events Calendar',
-        'Keep track of card shows, trade nights, local events, tournaments, and upcoming releases.',
-        h(
-          'div',
-          null,
-          h('p', null, 'This section will organize the events collectors want to plan around.'),
-          plannedFeature(
-            'Shows & trade meets',
-            'A searchable calendar for card shows, trade nights, and collector meetups.'
-          ),
-          plannedFeature(
-            'Play events',
-            'A place to find Pokémon League gatherings and organized play events.'
-          ),
-          plannedFeature(
-            'Release calendar',
-            'Upcoming Pokémon TCG products and important hobby dates.'
-          )
-        )
-      );
-
-      var vendors = reportSection(
-        'vendors',
-        'Vendor Directory',
-        'Discover vendors, learn what they specialize in, and hear directly from people in the hobby.',
-        h(
-          'div',
-          null,
-          h('p', null, 'The directory is intended to help collectors understand who is buying and selling, what they specialize in, and how they operate.'),
-          plannedFeature(
-            'Vendor profiles',
-            'Profiles covering specialties, buying interests, selling focus, and where to find each vendor.'
-          ),
-          plannedFeature(
-            'Interviews & day-in-the-life features',
-            'Conversations with vendors about collecting, business, the market, and their experiences in the hobby.'
-          )
-        )
-      );
-
       /* Original call-to-action — preserved. */
       var cta = h(
         'section',
@@ -498,12 +376,9 @@
       root.appendChild(hero);
       root.appendChild(universes);
       root.appendChild(how);
-      root.appendChild(pokeNews);
-      root.appendChild(market);
-      root.appendChild(events);
-      root.appendChild(vendors);
       root.appendChild(cta);
       root.appendChild(footer);
     }
   };
 })();
+```
