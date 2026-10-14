@@ -24,7 +24,7 @@
 .type-card input{position:absolute;top:14px;right:14px;accent-color:#0b2a6b;width:18px;height:18px}
 .type-icon{font-size:1.8rem;display:block;margin-bottom:5px}
 .type-title{display:block;font-weight:900;font-size:1.1rem}
-.type-copy{display:block;color:#4b5f8f;font-size:.9rem;line-height:1.4;margin-top:4px}
+.type-copy{display:block;color:#4b5f8f;font-size:.9rem;line-height:1.4;margin-top:4px}\n.type-price{display:block;font-weight:900;color:#0b2a6b;margin-top:10px;font-size:1rem}\n.pricing-note{margin:0 0 14px;padding:12px;border:1px solid #c4d3ee;border-radius:8px;background:#f7faff;color:#334a7c;font-size:.9rem;line-height:1.5}
 .account-form{display:grid;gap:14px}
 .account-form label.field-label{display:grid;gap:5px;font-weight:800}
 .account-form input:not([type=radio]){width:100%;padding:13px;border:2px solid #0b2a6b;border-radius:8px;font:inherit;min-height:48px}
@@ -51,12 +51,12 @@
 <div id="type-section" hidden>
 <strong>Choose your account type</strong>
 <div class="account-types">
-<label class="type-card"><input type="radio" name="account_type" value="free" checked><span class="type-icon">👋</span><span class="type-title">Free</span><span class="type-copy">Create an account and explore community features.</span></label>
-<label class="type-card"><input type="radio" name="account_type" value="collector"><span class="type-icon">🃏</span><span class="type-title">Collector</span><span class="type-copy">For collectors tracking products, events, and their hobby.</span></label>
-<label class="type-card"><input type="radio" name="account_type" value="vendor"><span class="type-icon">🏪</span><span class="type-title">Vendor</span><span class="type-copy">For sellers who want to build a vendor profile. Verification may be required.</span></label>
-<label class="type-card"><input type="radio" name="account_type" value="organizer"><span class="type-icon">🎟️</span><span class="type-title">Event Organizer</span><span class="type-copy">For people hosting shows, trade nights, or community events.</span></label>
+<label class="type-card"><input type="radio" name="account_type" value="free" checked><span class="type-icon">👋</span><span class="type-title">Free</span><span class="type-copy">Create an account and explore community features.</span><span class="type-price">Free</span></label>
+<label class="type-card"><input type="radio" name="account_type" value="collector"><span class="type-icon">🃏</span><span class="type-title">Collector</span><span class="type-copy">Collection and wish lists, matching alerts, collector tools, and planned VIP benefits.</span><span class="type-price">$5/month · $50/year</span></label>
+<label class="type-card"><input type="radio" name="account_type" value="vendor"><span class="type-icon">🏪</span><span class="type-title">Vendor</span><span class="type-copy">Build a vendor profile and increase visibility. Verification may be required.</span><span class="type-price">$15/month · $150/year</span></label>
+<label class="type-card"><input type="radio" name="account_type" value="organizer"><span class="type-icon">🎟️</span><span class="type-title">Event Organizer</span><span class="type-copy">For people hosting shows, trade nights, or community events.</span><span class="type-price">$10 per event listing</span></label>
 </div>
-<p class="account-note">Selecting Vendor or Event Organizer requests that account type; it does not automatically verify your business or grant publishing/admin privileges. Paid VIP membership is separate.</p>
+<p class="account-note">Selecting Vendor or Event Organizer requests that account type; it does not automatically verify your business or grant publishing/admin privileges. Collector pricing is planned to include existing VIP benefits. These are staging price displays only; production pricing, Stripe products, and checkout have not been changed.</p>
 </div>
 <label class="field-label" id="name-label" hidden>Display name<input id="display-name" name="display_name" autocomplete="nickname" minlength="2" maxlength="60"></label>
 <label class="field-label">Email<input id="email" name="email" type="email" autocomplete="email" required maxlength="254"></label>
