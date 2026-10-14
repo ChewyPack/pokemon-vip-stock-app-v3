@@ -4,162 +4,66 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>News & Exclusives | PokePrizePool</title>
-  <meta name="description" content="Pokémon news, TCG releases, restock developments, and collector updates from PokePrizePool.">
+  <title>News & Exclusives | Pokémon VIP</title>
+  <meta name="description" content="Pokémon TCG news and hobby updates from PokePrizePool.">
   <link rel="stylesheet" href="/css/styles.css">
+
   <style>
+    html {
+      min-height: 100%;
+      background: #07142e;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: #fff;
+      background:
+        linear-gradient(rgba(3, 10, 29, .76), rgba(3, 10, 29, .88)),
+        url("/assets/backgrounds/vip-collage.jpg") center center / cover fixed no-repeat;
+    }
+
     .news-page {
       min-height: 100vh;
-      padding-bottom: 60px;
     }
 
-    .news-feed {
+    .news-content {
       width: min(1000px, calc(100% - 32px));
       margin: 0 auto;
-      padding-top: 32px;
+      padding: 36px 0 70px;
     }
 
-    .news-feed__heading {
-      font-size: clamp(2rem, 5vw, 3.2rem);
+    .news-content h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.5rem);
       line-height: 1.1;
-      margin: 0 0 26px;
     }
 
-    .news-story {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 10px;
-      padding: 24px 0;
-      border-bottom: 1px solid rgba(140, 160, 200, .35);
+    .news-empty {
+      margin-top: 24px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 12px;
+      background: rgba(5, 15, 40, .68);
     }
 
-    .news-story__meta {
-      font-size: .8rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .07em;
-      opacity: .75;
+    .news-empty p {
       margin: 0;
-    }
-
-    .news-story h2 {
-      font-size: clamp(1.3rem, 3vw, 1.8rem);
-      line-height: 1.25;
-      margin: 0;
-    }
-
-    .news-story__summary {
-      line-height: 1.7;
-      margin: 0;
-      max-width: 760px;
-    }
-
-    .news-story__source {
-      width: fit-content;
-      font-weight: 800;
-      text-decoration: underline;
-      text-underline-offset: 4px;
-    }
-
-    .news-story__source:hover {
-      opacity: .75;
-    }
-
-    @media (min-width: 760px) {
-      .news-story {
-        grid-template-columns: 150px minmax(0, 1fr);
-        column-gap: 24px;
-      }
-
-      .news-story__meta {
-        padding-top: 5px;
-      }
-
-      .news-story__content {
-        display: grid;
-        gap: 12px;
-      }
+      line-height: 1.6;
     }
   </style>
 </head>
 
 <body>
-  <div class="bg-speed" aria-hidden="true"></div>
-
   <main class="news-page">
     <div id="news-navigation"></div>
 
-    <section class="news-feed" aria-labelledby="news-title">
-      <h1 class="news-feed__heading" id="news-title">News & Exclusives</h1>
+    <section class="news-content" aria-labelledby="news-title">
+      <h1 id="news-title">News & Exclusives</h1>
 
-      <article class="news-story">
-        <p class="news-story__meta">October 9, 2026 · Merchandise</p>
-        <div class="news-story__content">
-          <h2>Pokémon Red & Blue Game Boy Jukebox Returns to Pokémon Center</h2>
-          <p class="news-story__summary">
-            The nostalgic Game Boy Jukebox is back at Pokémon Center.
-            The release gives fans another way to revisit music from
-            the original Kanto adventures.
-          </p>
-          <a class="news-story__source"
-             href="https://www.pokemon.com/us/pokemon-news"
-             target="_blank" rel="noopener noreferrer">
-            Source: Official Pokémon News →
-          </a>
-        </div>
-      </article>
-
-      <article class="news-story">
-        <p class="news-story__meta">October 7, 2026 · Video Games</p>
-        <div class="news-story__content">
-          <h2>Pokémon FireRed and LeafGreen Now Link with Pokémon HOME</h2>
-          <p class="news-story__summary">
-            Pokémon has announced connectivity between the Nintendo
-            Switch versions of FireRed and LeafGreen and Pokémon HOME,
-            including a Pokédex reward for players who connect.
-          </p>
-          <a class="news-story__source"
-             href="https://www.pokemon.com/us/pokemon-news"
-             target="_blank" rel="noopener noreferrer">
-            Source: Official Pokémon News →
-          </a>
-        </div>
-      </article>
-
-      <article class="news-story">
-        <p class="news-story__meta">October 1, 2026 · Pokémon TCG</p>
-        <div class="news-story__content">
-          <h2>October Pokémon TCG Release Calendar: Products to Watch</h2>
-          <p class="news-story__summary">
-            The October lineup includes 30th Celebration Mini Tins
-            and Booster Bundles, followed by the Deck Crafter's
-            Collection on October 23 and Espeon ex and Umbreon ex
-            Battle Decks on October 30.
-          </p>
-          <a class="news-story__source"
-             href="https://www.pokemon.com/us/news/check-out-every-pokemon-tcg-product-release-in-october-2026"
-             target="_blank" rel="noopener noreferrer">
-            Source: Official release calendar →
-          </a>
-        </div>
-      </article>
-
-      <article class="news-story">
-        <p class="news-story__meta">September 29, 2026 · Pokémon TCG Pocket</p>
-        <div class="news-story__content">
-          <h2>Deluxe Pack: Mega Arrives in Pokémon TCG Pocket</h2>
-          <p class="news-story__summary">
-            The digital card game introduced Deluxe Pack: Mega.
-            The pack guarantees at least one Pokémon ex, giving
-            players another way to expand their digital collections.
-          </p>
-          <a class="news-story__source"
-             href="https://www.pokemon.com/us/pokemon-news"
-             target="_blank" rel="noopener noreferrer">
-            Source: Official Pokémon News →
-          </a>
-        </div>
-      </article>
+      <div class="news-empty">
+        <p>News stories will appear here.</p>
+      </div>
     </section>
   </main>
 
@@ -167,7 +71,7 @@
     (function () {
       var root = document.getElementById('news-navigation');
 
-      function element(tag, attrs, children) {
+      function make(tag, attrs, children) {
         var node = document.createElement(tag);
 
         Object.keys(attrs || {}).forEach(function (key) {
@@ -185,49 +89,49 @@
         return node;
       }
 
+      function textElement(tag, attrs, value) {
+        var node = make(tag, attrs);
+        node.textContent = value;
+        return node;
+      }
+
       function link(label, href) {
-        var a = element('a', {
+        return textElement('a', {
           class: 'site-nav__link',
           href: href
-        });
-        a.textContent = label;
-        return a;
+        }, label);
       }
 
       function dropdown(label, items) {
         var id = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-        var button = element('button', {
+        var button = textElement('button', {
           class: 'site-nav__toggle',
           type: 'button',
           'aria-expanded': 'false',
           'aria-controls': id
-        });
-        button.textContent = label + ' ▾';
+        }, label + ' ▾');
 
-        var menu = element('div', {
+        var menu = make('div', {
           class: 'site-nav__menu',
           id: id
         });
         menu.hidden = true;
 
         items.forEach(function (item) {
-          var title = element('span', {
-            class: 'site-nav__item-title'
-          });
-          title.textContent = item.title;
-
-          var children = [title];
+          var children = [
+            textElement('span', {
+              class: 'site-nav__item-title'
+            }, item.title)
+          ];
 
           if (item.description) {
-            var description = element('span', {
+            children.push(textElement('span', {
               class: 'site-nav__item-description'
-            });
-            description.textContent = item.description;
-            children.push(description);
+            }, item.description));
           }
 
-          menu.appendChild(element('a', {
+          menu.appendChild(make('a', {
             class: 'site-nav__item',
             href: item.href
           }, children));
@@ -236,12 +140,12 @@
         button.addEventListener('click', function () {
           var opening = button.getAttribute('aria-expanded') !== 'true';
 
-          root.querySelectorAll('.site-nav__toggle').forEach(function (b) {
-            b.setAttribute('aria-expanded', 'false');
+          root.querySelectorAll('.site-nav__toggle').forEach(function (other) {
+            other.setAttribute('aria-expanded', 'false');
           });
 
-          root.querySelectorAll('.site-nav__menu').forEach(function (m) {
-            m.hidden = true;
+          root.querySelectorAll('.site-nav__menu').forEach(function (other) {
+            other.hidden = true;
           });
 
           if (opening) {
@@ -250,54 +154,50 @@
           }
         });
 
-        return element('div', {
+        return make('div', {
           class: 'site-nav__dropdown'
         }, [button, menu]);
       }
 
-      var navItems = element('nav', {
+      var nav = make('nav', {
         class: 'site-nav',
         'aria-label': 'Main navigation'
-      });
+      }, [
+        link('Home', '/'),
+        dropdown('Poke Report', [
+          { title: 'Report a Sighting', description: 'Submit an in-store stock report', href: '/#report' },
+          { title: 'News & Exclusives', description: 'Pokémon news and hobby updates', href: '/news.html' },
+          { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
+          { title: 'Events Calendar', description: 'Shows, trade nights, and releases', href: '/events.html' },
+          { title: 'Vendor Directory', description: 'Discover vendors and their specialties', href: '/vendors.html' }
+        ]),
+        dropdown('Shop', [
+          { title: 'Sealed Products', href: '/shop-sealed.html' },
+          { title: 'Raw Singles', href: '/shop-singles.html' },
+          { title: 'Graded Cards', href: '/shop-slabs.html' },
+          { title: 'Merchandise', href: '/shop-merch.html' }
+        ]),
+        dropdown('Giveaways', [
+          { title: 'My Entries', href: '/giveaway-entries.html' },
+          { title: 'Giveaway Rules', href: '/giveaway-rules.html' },
+          { title: 'Live Draws & Videos', href: '/giveaway-live.html' }
+        ]),
+        dropdown('Community', [
+          { title: 'Discord Community', href: '/community-discord.html' },
+          { title: 'Collector Resources', href: '/community-resources.html' },
+          { title: 'VIP Badge Collection', href: '/vip-badges.html' },
+          { title: 'Member Support', href: '/community-support.html' }
+        ])
+      ]);
 
-      navItems.appendChild(link('Home', '/'));
-
-      navItems.appendChild(dropdown('Poke Report', [
-        { title: 'Report a Sighting', description: 'Submit an in-store stock report', href: '/#report' },
-        { title: 'News & Exclusives', description: 'Pokémon news and hobby updates', href: '/news.html' },
-        { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
-        { title: 'Events Calendar', description: 'Shows, trade nights, and releases', href: '/events.html' },
-        { title: 'Vendor Directory', description: 'Discover vendors and their specialties', href: '/vendors.html' }
-      ]));
-
-      navItems.appendChild(dropdown('Shop', [
-        { title: 'Sealed Products', href: '/shop-sealed.html' },
-        { title: 'Raw Singles', href: '/shop-singles.html' },
-        { title: 'Graded Cards', href: '/shop-slabs.html' },
-        { title: 'Merchandise', href: '/shop-merch.html' }
-      ]));
-
-      navItems.appendChild(dropdown('Giveaways', [
-        { title: 'My Entries', href: '/giveaway-entries.html' },
-        { title: 'Giveaway Rules', href: '/giveaway-rules.html' },
-        { title: 'Live Draws & Videos', href: '/giveaway-live.html' }
-      ]));
-
-      navItems.appendChild(dropdown('Community', [
-        { title: 'Discord Community', href: '/community-discord.html' },
-        { title: 'Collector Resources', href: '/community-resources.html' },
-        { title: 'VIP Badge Collection', href: '/vip-badges.html' },
-        { title: 'Member Support', href: '/community-support.html' }
-      ]));
-
-      var header = element('header', {
+      var header = make('header', {
         class: 'site-nav-header'
       }, [
-        element('div', {
+        make('div', {
           class: 'wrap site-nav-header__inner'
         }, [
           link('Pokémon VIP', '/'),
-          navItems,
+          nav,
           link('Report a Sighting', '/#report')
         ])
       ]);
