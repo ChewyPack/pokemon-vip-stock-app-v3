@@ -59,6 +59,11 @@
 .dashboard-note{padding:13px 15px;border-left:4px solid #ffd21f;background:#fff8d5;color:#5e4b08;border-radius:0 8px 8px 0;font-size:.9rem;line-height:1.55}
 .dashboard-status{display:inline-flex;align-items:center;gap:7px;font-size:.85rem;font-weight:900;color:#17603a}
 .dashboard-status:before{content:"";width:8px;height:8px;background:#25a765;border-radius:50%}
+.membership-checkout{margin-top:16px;padding:14px;border:2px solid #d5e0f2;border-radius:10px;background:#fff}
+.membership-checkout label{display:grid;gap:5px;margin-bottom:10px;font-size:.9rem;font-weight:800}
+.membership-checkout select{width:100%;padding:11px;border:2px solid #0b2a6b;border-radius:8px;font:inherit;background:#fff}
+.membership-checkout button{width:100%;min-height:46px;cursor:pointer}
+.membership-status{display:block;margin-top:10px;font-size:.9rem;color:#334a7c;overflow-wrap:anywhere}
 @media(max-width:520px){.dashboard-grid{grid-template-columns:1fr}.dashboard-card--wide{grid-column:auto}.dashboard-top{gap:10px}.account-avatar{flex-basis:48px;width:48px;height:48px;border-radius:13px}}
 
 </style>
@@ -77,12 +82,12 @@
 <div id="type-section" hidden>
 <strong>Choose your account type</strong>
 <div class="account-types">
-<label class="type-card"><input type="radio" name="account_type" value="free" checked><span class="type-icon">👋</span><span class="type-title">Free</span><span class="type-copy">Create an account and explore community features.</span><span class="type-price">Free</span></label>
-<label class="type-card"><input type="radio" name="account_type" value="collector"><span class="type-icon">🃏</span><span class="type-title">Collector</span><span class="type-copy">Collection and wish lists, matching alerts, collector tools, and planned VIP benefits.</span><span class="type-price">$5/month · $50/year</span></label>
+<label class="type-card"><input type="radio" name="account_type" value="free" checked><span class="type-icon">👋</span><span class="type-title">Collector</span><span class="type-copy">Create a free account and explore the community.</span><span class="type-price">Free</span></label>
+<label class="type-card"><input type="radio" name="account_type" value="collector"><span class="type-icon">🃏</span><span class="type-title">Collector+</span><span class="type-copy">Paid collector membership. Benefits are unlocked after verified checkout.</span><span class="type-price">$5/month · $50/year</span></label>
 <label class="type-card"><input type="radio" name="account_type" value="vendor"><span class="type-icon">🏪</span><span class="type-title">Vendor</span><span class="type-copy">Build a vendor profile and increase visibility. Verification may be required.</span><span class="type-price">$15/month · $150/year</span></label>
-<label class="type-card"><input type="radio" name="account_type" value="organizer"><span class="type-icon">🎟️</span><span class="type-title">Event Organizer</span><span class="type-copy">For people hosting shows, trade nights, or community events.</span><span class="type-price">$10 per event listing</span></label>
+<label class="type-card"><input type="radio" name="account_type" value="organizer"><span class="type-icon">🎟️</span><span class="type-title">Event Organizer</span><span class="type-copy">For people hosting shows, trade nights, or community events.</span><span class="type-price">$25/month · $320/year</span></label>
 </div>
-<p class="account-note">Selecting Vendor or Event Organizer requests that account type; it does not automatically verify your business or grant publishing/admin privileges. Collector pricing is planned to include existing VIP benefits. These are staging price displays only; production pricing, Stripe products, and checkout have not been changed.</p>
+<p class="account-note">Selecting Vendor or Event Organizer requests that account type; it does not automatically verify your business or grant publishing/admin privileges. Collector+ is $5/month or $50/year; Vendor is $15/month or $150/year; Event Organizer is $25/month or $320/year. Paid benefits unlock only after Stripe verifies payment. Event listings are planned at $5 each. These prices apply to staging only.</p>
 </div>
 <label class="field-label" id="name-label" hidden>Display name<input id="display-name" name="display_name" autocomplete="nickname" minlength="2" maxlength="60"></label>
 <label class="field-label">Email<input id="email" name="email" type="email" autocomplete="email" required maxlength="254"></label>
@@ -118,12 +123,31 @@
     <article class="dashboard-card dashboard-card--wide">
       <p class="dashboard-eyebrow">Membership &amp; access</p>
       <h2>One account, separate benefits</h2>
-      <p>Your PokePrizePool website account is separate from paid VIP membership and any vendor or event-organizer verification.</p>
+      <p>Your website sign-in, paid membership, and vendor/event-organizer verification are separate. Payment alone does not approve a vendor profile or event listing.</p>
       <ul>
         <li><strong>Website account:</strong> your sign-in and account type.</li>
-        <li><strong>VIP membership:</strong> paid membership benefits and access.</li>
+        <li><strong>Paid membership:</strong> Collector+, Vendor, or Event Organizer billing status.</li>
         <li><strong>Vendor / organizer verification:</strong> separate approval for business or event features.</li>
       </ul>
+      <div class="membership-checkout">
+        <strong>Choose a paid membership</strong>
+        <p style="margin:6px 0 12px">Checkout opens Stripe Test Mode in staging. Your membership activates after the verified webhook confirms your subscription.</p>
+        <label for="membership-tier">Membership
+          <select id="membership-tier">
+            <option value="collector_plus">Collector+ — $5/month or $50/year</option>
+            <option value="vendor">Vendor — $15/month or $150/year</option>
+            <option value="organizer">Event Organizer — $25/month or $320/year</option>
+          </select>
+        </label>
+        <label for="membership-interval">Billing
+          <select id="membership-interval">
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </label>
+        <button id="start-membership-checkout" class="btn btn--primary" type="button">Continue to Stripe Test Checkout</button>
+        <p id="membership-checkout-status" class="membership-status" role="status" aria-live="polite" hidden></p>
+      </div>
     </article>
     <article class="dashboard-card">
       <p class="dashboard-eyebrow">Coming into focus</p>
@@ -167,10 +191,10 @@
     document.querySelector('.account-panel').hidden=true;
     document.getElementById('dashboard').hidden=false;
     loginTab.hidden=true;registerTab.hidden=true;
-    const a=d.account||{},labels={free:'Free',collector:'Collector',vendor:'Vendor',organizer:'Event Organizer'};
+    const a=d.account||{},m=d.membership||{},labels={free:'Collector (Free)',collector:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
     const descriptions={
      free:'Your free website account is ready. You can keep exploring PokePrizePool as new community features arrive.',
-     collector:'Your account is set up for the collector experience. Paid VIP membership and its benefits are managed separately.',
+     collector:'Your account is set for Collector+. The paid membership must be activated through verified Stripe checkout.',
      vendor:'Your account is set to Vendor. Vendor profile publishing and verification are separate steps.',
      organizer:'Your account is set to Event Organizer. Event listings and organizer approval are separate steps.'
     };
@@ -181,6 +205,25 @@
     document.getElementById('profile-created').textContent=created&&!Number.isNaN(created.getTime())?created.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'PokePrizePool member';
     document.getElementById('account-type-badge').textContent=labels[a.account_type]||'Free';
     document.getElementById('account-type-description').textContent=descriptions[a.account_type]||descriptions.free;
+    const membershipLabels={free:'Collector (Free)',collector_plus:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
+    const membershipStatus=document.getElementById('membership-checkout-status');
+    if(m.status==='active'){
+      membershipStatus.hidden=false;membershipStatus.textContent='Active paid membership: '+(membershipLabels[m.tier]||m.tier)+'. Your subscription is verified.';
+      document.getElementById('start-membership-checkout').disabled=true;document.getElementById('start-membership-checkout').textContent='Membership active';
+    }
+    document.getElementById('start-membership-checkout').addEventListener('click',async()=>{
+     const button=document.getElementById('start-membership-checkout'),status=document.getElementById('membership-checkout-status');
+     button.disabled=true;button.textContent='Connecting to Stripe…';status.hidden=true;
+     try{
+      const response=await fetch('/api/account/checkout',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({tier:document.getElementById('membership-tier').value,interval:document.getElementById('membership-interval').value})});
+      const result=await response.json();
+      if(!response.ok||!result.ok){
+       const messages={stripe_test_key_not_configured:'Staging Test Mode Stripe key has not been configured yet.',login_required:'Please log in again before checkout.',membership_already_active:'Your account already has an active paid membership.',choose_vendor_account_type:'Choose Vendor as your account type first.',choose_organizer_account_type:'Choose Event Organizer as your account type first.',choose_collector_account_type:'Use a Collector account for Collector+.'};
+       throw new Error(messages[result.error]||'Could not start checkout. Please try again.');
+      }
+      window.location.href=result.url;
+     }catch(error){status.hidden=false;status.textContent=error.message||'Checkout failed.';button.disabled=false;button.textContent='Continue to Stripe Test Checkout';}
+    });
     document.getElementById('dashboard-logout').addEventListener('click',async()=>{
      const button=document.getElementById('dashboard-logout'),status=document.getElementById('dashboard-message');
      button.disabled=true;button.textContent='Logging out…';
