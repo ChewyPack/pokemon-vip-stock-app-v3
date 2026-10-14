@@ -1,5 +1,5 @@
 const SESSION_DAYS = 14;
-const PBKDF2_ITERATIONS = 310000;
+const PBKDF2_ITERATIONS = 100000;
 const COOKIE = 'collector_session';
 const ACCOUNT_TYPES = new Set(['free', 'collector', 'vendor', 'organizer']);
 function json(body, status = 200, headers = {}) {
