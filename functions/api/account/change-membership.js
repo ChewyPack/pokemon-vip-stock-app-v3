@@ -133,8 +133,7 @@ export async function onRequestPost({ request, env }) {
     // Only allow known single-item subscriptions without discounts or unusual billing settings.
     // Refuse rather than silently dropping settings when building the future schedule.
     if ((subscription.discounts || []).length ||
-        subscription.pending_setup_intent ||
-        subscription.billing_mode?.type === 'flexible') {
+        subscription.pending_setup_intent) {
       return json({ ok: false, error: 'subscription_requires_manual_review' }, 409);
     }
 
