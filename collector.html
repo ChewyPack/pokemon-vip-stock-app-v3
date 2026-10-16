@@ -176,7 +176,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   if(sort==='set')cards.sort((a,b)=>String(a.set?.name||a.setName||'').localeCompare(String(b.set?.name||b.setName||'')));
   results.innerHTML=cards.map(card=>{
    const image=card.image?String(card.image).replace(/\/$/,'')+'/low.webp':'';
-   return '<button class="cp-catalog-result" type="button" data-card-id="'+safe(card.id)+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">🃏</span>')+'<span><strong>'+safe(card.name||'Unknown card')+'</strong><small>'+safe(card.set?.name||card.setName||catalogSets.find(s=>s.id===String(card.id||'').slice(0,String(card.id||'').lastIndexOf('-')))?.name||'Set not listed')+' · Card #'+safe(card.localId||card.id)+' · '+safe(card.id)+'</small></span></button>';
+   return '<button class="cp-catalog-result" type="button" data-card-id="'+safe(card.id)+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">🃏</span>')+'<span><strong>'+safe(card.name||'Unknown card')+'</strong><small>'+safe(card.set?.name||card.setName||catalogSets.find(s=>s.id===String(card.id||'').slice(0,String(card.id||'').lastIndexOf('-')))?.name||'Set not listed')+(card.customRgb?' · Community-added (not in TCGdex)':'')+' · Card #'+safe(card.localId||card.id)+' · '+safe(card.id)+'</small></span></button>';
   }).join('');
   setStatus('catalog-status','Showing '+cards.length+' matching catalog results. Choose the exact printing you own.');
  }
@@ -200,13 +200,28 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
      if(result.length<100)break;
     }
    }
-   const cards=[...found.values()];if(!cards.length)throw new Error('No catalog matches');
+   const cards=[...found.values()];
+   const normalized=query.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+   if(normalized.includes('mew')||normalized.includes('rgb')){
+    const rgbCards=[
+     {id:'custom-rgb-mew-r',name:'Mew (R/RGB)',localId:'R/RGB',setName:'30th Celebration',customRgb:true},
+     {id:'custom-rgb-mew-g',name:'Mew (G/RGB)',localId:'G/RGB',setName:'30th Celebration',customRgb:true},
+     {id:'custom-rgb-mew-b',name:'Mew (B/RGB)',localId:'B/RGB',setName:'30th Celebration',customRgb:true}
+    ];
+    for(const card of rgbCards)if(!setId||catalogSets.find(s=>s.id===setId)?.name==='30th Celebration')cards.push(card);
+   }
+   if(!cards.length)throw new Error('No catalog matches');
    const q=query.toLowerCase();
    cards.sort((x,y)=>{const score=card=>{const name=String(card.name||'').toLowerCase(),id=String(card.id||'').toLowerCase();return name===q?0:name.includes(q)?1:id.includes(q)?2:3;};return score(x)-score(y)||String(x.name||'').localeCompare(String(y.name||''))||String(x.id||'').localeCompare(String(y.id||''));});
    renderCatalogResults(cards,requestId);
   }catch(error){if(requestId===catalogRequest)setStatus('catalog-status','Catalog search is temporarily unavailable or found no matching cards. Try “Mew” by itself, choose a set, or enter the card manually.');}
  }
  async function selectCatalogCard(id){
+  if(id.startsWith('custom-rgb-mew-')){
+   const variant=id.slice('custom-rgb-mew-'.length).toUpperCase(),number=variant+'/RGB';
+   $('product-name').value='Mew ('+number+')';$('product-type').value='card';$('set-name').value='30th Celebration';$('card-number').value=number;$('image-url').value='';
+   setStatus('catalog-status','Selected community-added RGB Mew variant '+number+'. TCGdex has no market price for this entry; add a verified estimate separately.');$('product-name').focus();return;
+  }
   const buttons=$('catalog-results').querySelectorAll('[data-card-id]');
   buttons.forEach(button=>button.disabled=true);
   setStatus('catalog-status','Loading exact printing details…');
