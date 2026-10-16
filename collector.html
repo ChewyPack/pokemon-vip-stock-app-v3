@@ -240,29 +240,6 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   try{const response=await fetch('/api/account/logout',{method:'POST',credentials:'include'});if(!response.ok)throw new Error('Please try logging out again.');location.href='/';}
   catch(error){setStatus('view-status',error.message||'Could not log out.');button.disabled=false;button.textContent='Log out';}
  });
- $('edit-profile').addEventListener('click',()=>{$('profile-editor').hidden=false;$('bio').focus();});
- $('close-profile-editor').addEventListener('click',()=>{$('profile-editor').hidden=true;});
- $('cancel-profile-edit').addEventListener('click',()=>{$('profile-editor').hidden=true;showProfile(profile,document.getElementById('display-name').textContent);});
- $('profile-form').addEventListener('submit',async e=>{
-  e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('profile-editor-status','Saving profile…');
-  try{const r=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value.trim(),bio:$('bio').value,avatar_url:$('avatar-url').value.trim(),cover_url:$('cover-url').value.trim(),is_public:$('visibility').value==='public'})}),d=await r.json();
-   if(!r.ok||!d.ok){const errors={login_required:'Your session expired. Please sign in again.',database_not_configured:'The staging database is not configured.',invalid_username:'Your username must be 3–24 letters, numbers, or underscores.',username_taken:'That username is already taken. Try another.',bio_too_long:'Your bio is too long.',invalid_avatar_url:'Profile photo must be a valid HTTPS URL.',invalid_cover_url:'Cover photo must be a valid HTTPS URL.',profile_save_failed:'Could not save the profile. Check that the staging collector migrations have been applied.'};throw new Error(errors[d.error]||('Could not save your profile ('+(d.error||'unknown error')+').'));}
-   viewUsername='';history.replaceState({},'',location.pathname);showProfile(d.profile,document.getElementById('display-name').textContent);$('profile-editor').hidden=true;setStatus('profile-editor-status','Profile saved! Your public link is '+location.origin+'/collector.html?user='+encodeURIComponent(d.profile.username));await load();
-  }catch(error){setStatus('profile-editor-status',error.message||'Could not save profile.');}finally{button.disabled=false;}
- });
- function parseCSV(text){
-  const rows=[];let row=[],cell='',quoted=false;
-  for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'&&quoted&&next==='"'){cell+='"';i++;}else if(ch==='"'){quoted=!quoted;}else if(ch===','&&!quoted){row.push(cell.trim());cell='';}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&next==='\n')i++;row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);row=[];cell='';}else cell+=ch;}
-  row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);
-  if(rows.length<2)throw new Error('CSV must include a header row and at least one item.');
-  const headers=rows.shift().map(h=>h.replace(/^\uFEFF/,'').trim().toLowerCase());
-  if(!headers.includes('product_name'))throw new Error('CSV needs a product_name column.');
-  return rows.slice(0,200).map(row=>{const o={};headers.forEach((h,i)=>o[h]=row[i]||'');return {product_name:o.product_name,list_type:['collection','wishlist'].includes(o.list_type)?o.list_type:'collection',product_type:['card','sealed','graded'].includes(o.product_type)?o.product_type:'card',set_name:o.set_name||'',card_number:o.card_number||'',condition:o.condition||'',quantity:o.quantity||1,estimated_value:o.estimated_value||null,notes:o.notes||''};}).filter(x=>x.product_name);
- }
- $('import-form').addEventListener('submit',async e=>{
-  e.preventDefault();const button=e.submitter,file=$('csv-file').files[0];if(!file)return;button.disabled=true;setStatus('import-status','Reading CSV…');
-  try{const parsed=parseCSV(await file.text());if(!parsed.length)throw new Error('No product rows found in the CSV.');const r=await fetch('/api/collector/import',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:parsed})}),d=await r.json();if(!r.ok||!d.ok){const errors={invalid_import_count:'Upload between 1 and 200 rows at a time.',invalid_import_row:'One or more rows have invalid product details. Check quantity and value fields.'};throw new Error(errors[d.error]||'CSV import failed.');}setStatus('import-status','Imported '+d.imported+' items.');const rr=await fetch('/api/collector/items',{credentials:'include',cache:'no-store'}),dd=await rr.json();if(rr.ok&&dd.ok){items=dd.items||[];stats();render();}e.target.reset();}catch(error){setStatus('import-status',error.message||'CSV import failed.');}finally{button.disabled=false;}
- });
  $('item-form').addEventListener('submit',async e=>{
   e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Adding item…');
   const value=$('estimated-value').value;
