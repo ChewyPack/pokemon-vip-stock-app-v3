@@ -262,7 +262,7 @@
           const scheduledDate=new Date(Number(m.scheduled_at)*1000);
           const scheduledTier=membershipLabels[m.scheduled_tier]||m.scheduled_tier;
           const scheduledInterval=m.scheduled_interval==='yearly'?'Annual':'Monthly';
-          cancelNote.textContent='Plan change scheduled for '+(Number.isNaN(scheduledDate.getTime())?'your next renewal':scheduledDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+scheduledTier+' · '+scheduledInterval+'. Your selected tier benefits are active now; your current price stays in place until then. If you cancel before renewal, this planned change will be removed.';
+          cancelNote.textContent='Plan change scheduled for '+(Number.isNaN(scheduledDate.getTime())?'your next renewal':scheduledDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+scheduledTier+' · '+scheduledInterval+'. Your current paid-tier benefits remain active until this change takes effect at renewal. Your current price stays in place until then. If you cancel before renewal, this planned change will be removed.';
         }
       }
     } else {
@@ -342,7 +342,7 @@
        const nextInterval=result.next_interval==='yearly'?'Annual':'Monthly';
        const effectiveDate=new Date(Number(result.effective_at)*1000);
        status.hidden=false;
-       status.textContent='Your benefits will change to '+nextTier+' immediately. The new '+nextInterval.toLowerCase()+' billing plan takes effect '+(Number.isNaN(effectiveDate.getTime())?'at your next renewal':'on '+effectiveDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+'. Your current price stays in place until then.';
+       status.textContent='Your current benefits remain active until the change to '+nextTier+' takes effect. The new '+nextInterval.toLowerCase()+' billing plan takes effect '+(Number.isNaN(effectiveDate.getTime())?'at your next renewal':'on '+effectiveDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+'. Your current price stays in place until then.';
        window.location.reload();
       }catch(error){status.hidden=false;status.textContent=error.message||'Could not schedule the membership change.';button.disabled=false;button.textContent='Schedule change for next renewal';}
       return;
