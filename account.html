@@ -283,6 +283,41 @@
      const button=document.getElementById('start-membership-checkout'),status=document.getElementById('membership-checkout-status');
      button.disabled=true;status.hidden=true;
      if(m.status==='active'&&!m.cancel_at_period_end){
+      const tierRank={collector_plus:1,vendor:2,organizer:3};
+      const selectedTier=tierSelect.value;
+      const selectedInterval=intervalSelect.value;
+      const isUpgrade=(tierRank[selectedTier]||0)>(tierRank[m.tier||'collector_plus']||0);
+      if(isUpgrade){
+       button.textContent='Calculating upgrade…';
+       try{
+        const previewResponse=await fetch('/api/account/upgrade-membership',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({action:'preview',tier:selectedTier,interval:selectedInterval})});
+        const preview=await previewResponse.json();
+        if(!previewResponse.ok||!preview.ok){
+         const errors={login_required:'Please log in again before upgrading.',membership_not_active:'There is no active paid membership to upgrade.',cancellation_scheduled:'Resume renewal before upgrading.',change_already_scheduled:'This subscription already has a scheduled change. Resolve that schedule before upgrading.',subscription_has_discounts_manual_review:'This subscription has a discount and needs manual review.',subscription_has_pending_setup_manual_review:'This subscription has a pending payment setup and needs manual review.',upgrade_preview_failed:'Stripe could not calculate the upgrade amount. No changes were made.'};
+         throw new Error(errors[preview.error]||'Could not calculate the upgrade amount. No changes were made.');
+        }
+        const amount=(Number(preview.amount_due||0)/100).toLocaleString(undefined,{style:'currency',currency:String(preview.currency||'usd').toUpperCase()});
+        const nextTier=membershipLabels[preview.next_tier]||preview.next_tier;
+        const nextInterval=preview.next_interval==='yearly'?'Annual':'Monthly';
+        const accepted=window.confirm('Upgrade to '+nextTier+' · '+nextInterval+' now?\n\nEstimated amount due now: '+amount+' (including applicable tax and prorations).\n\nYour higher-tier benefits will activate after Stripe confirms the upgrade. Continue?');
+        if(!accepted){
+         button.disabled=false;button.textContent='Schedule change for next renewal';status.hidden=false;status.textContent='Upgrade cancelled. No membership changes were made.';return;
+        }
+        button.textContent='Confirming upgrade…';
+        const applyResponse=await fetch('/api/account/upgrade-membership',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({action:'apply',tier:selectedTier,interval:selectedInterval,proration_date:preview.proration_date})});
+        const applied=await applyResponse.json();
+        if(!applyResponse.ok||!applied.ok){
+         const errors={upgrade_preview_expired:'The upgrade quote expired. Please try again to get a fresh amount.',upgrade_payment_failed:'Stripe could not complete the immediate payment. Your existing membership remains unchanged; try another payment method or contact support.',upgrade_apply_failed:'Stripe could not apply the upgrade. Your existing membership has not been confirmed as changed.',change_already_scheduled:'This subscription already has a scheduled change. Resolve that schedule before upgrading.'};
+         throw new Error(errors[applied.error]||'The upgrade could not be completed. Please check your current membership before trying again.');
+        }
+        status.hidden=false;status.textContent='Upgrade submitted. Refreshing your verified membership details…';
+        window.location.reload();
+       }catch(error){
+        status.hidden=false;status.textContent=error.message||'Could not complete the upgrade.';
+        button.disabled=false;button.textContent='Upgrade membership now';
+       }
+       return;
+      }
       button.textContent='Scheduling change…';
       try{
        const response=await fetch('/api/account/change-membership',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({tier:tierSelect.value,interval:intervalSelect.value})});
