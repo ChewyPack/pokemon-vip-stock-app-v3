@@ -116,9 +116,9 @@
     </article>
     <article class="dashboard-card">
       <p class="dashboard-eyebrow">Your place in the hobby</p>
-      <h2>Account type</h2>
+      <h2>Membership level</h2>
       <span id="account-type-badge" class="account-badge">Collector</span>
-      <p id="account-type-description" style="margin-top:12px">Your account type helps shape the tools and features we build for you.</p>
+      <p id="account-type-description" style="margin-top:12px">Your current membership level and access.</p>
     </article>
     <article class="dashboard-card dashboard-card--wide">
       <p class="dashboard-eyebrow">Membership &amp; access</p>
@@ -214,9 +214,14 @@
     document.getElementById('profile-email').textContent=a.email||'—';
     const created=a.created_at?new Date(a.created_at):null;
     document.getElementById('profile-created').textContent=created&&!Number.isNaN(created.getTime())?created.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'PokePrizePool member';
-    document.getElementById('account-type-badge').textContent=labels[a.account_type]||'Free';
-    document.getElementById('account-type-description').textContent=descriptions[a.account_type]||descriptions.free;
     const membershipLabels={free:'Collector (Free)',collector_plus:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
+    const displayedTier=m.status==='active'?(membershipLabels[m.tier]||m.tier):(labels[a.account_type]||'Free');
+    document.getElementById('account-type-badge').textContent=displayedTier;
+    document.getElementById('account-type-description').textContent=m.status==='active'
+      ? 'Your paid membership is active. Vendor and event-organizer verification are handled separately.'
+      : (a.account_type==='free'
+        ? 'Your free website account is ready. Paid membership benefits activate after verified Stripe checkout.'
+        : (descriptions[a.account_type]||descriptions.free));
     const prices={collector_plus:{monthly:'$5/month',yearly:'$50/year'},vendor:{monthly:'$15/month',yearly:'$150/year'},organizer:{monthly:'$25/month',yearly:'$320/year'}};
     const membershipStatus=document.getElementById('membership-checkout-status');
     const membershipSummary=document.getElementById('membership-summary');
