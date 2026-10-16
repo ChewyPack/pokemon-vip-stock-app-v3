@@ -16,6 +16,7 @@ const PRICES = {
     yearly: 'price_1UQVQLGXWs1THDBRe7oCo2FN'
   }
 };
+const RANK = { collector_plus: 1, vendor: 2, organizer: 3 };
 const PRICE_DETAILS = Object.fromEntries(
   Object.entries(PRICES).flatMap(([tier, intervals]) =>
     Object.entries(intervals).map(([interval, price]) => [price, { tier, interval }])
@@ -223,8 +224,8 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: false, error: 'schedule_update_failed' }, 502);
     }
     await env.DB.prepare(
-      'UPDATE accounts SET membership_scheduled_tier = ?, membership_scheduled_interval = ?, membership_scheduled_price_id = ?, membership_scheduled_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND stripe_subscription_id = ?'
-    ).bind(tier, interval, targetPrice, end, account.id, account.stripe_subscription_id).run();
+      'UPDATE accounts SET membership_scheduled_tier = ?, membership_scheduled_interval = ?, membership_scheduled_price_id = ?, membership_scheduled_at = ?, membership_entitlement_tier = CASE WHEN ? < ? THEN ? ELSE COALESCE(membership_entitlement_tier, membership_tier) END, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND stripe_subscription_id = ?'
+    ).bind(tier, interval, targetPrice, end, RANK[tier], RANK[currentDetails.tier], tier, account.id, account.stripe_subscription_id).run();
     return json({
       ok: true,
       scheduled: true,
