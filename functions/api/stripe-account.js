@@ -72,8 +72,8 @@ async function saveSubscription(subscription, env, forcedStatus) {
   const cancelAtPeriodEnd = subscription?.cancel_at_period_end ? 1 : 0;
   const priceId = (subscription.items?.data || []).find(item => PRICE_TIERS[item.price?.id])?.price?.id || null;
   const result = await env.DB.prepare(
-    'UPDATE accounts SET membership_tier = ?, membership_status = ?, stripe_customer_id = ?, stripe_subscription_id = ?, stripe_price_id = ?, membership_current_period_end = ?, membership_source = ?, membership_interval = ?, membership_cancel_at_period_end = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-  ).bind(tier, status, customerId || null, subscription.id, priceId, periodEnd, 'stripe_test', interval, cancelAtPeriodEnd, accountId).run();
+    'UPDATE accounts SET membership_tier = ?, membership_status = ?, stripe_customer_id = ?, stripe_subscription_id = ?, stripe_price_id = ?, membership_current_period_end = ?, membership_source = ?, membership_interval = ?, membership_cancel_at_period_end = ?, membership_scheduled_tier = CASE WHEN membership_scheduled_price_id = ? THEN NULL ELSE membership_scheduled_tier END, membership_scheduled_interval = CASE WHEN membership_scheduled_price_id = ? THEN NULL ELSE membership_scheduled_interval END, membership_scheduled_price_id = CASE WHEN membership_scheduled_price_id = ? THEN NULL ELSE membership_scheduled_price_id END, membership_scheduled_at = CASE WHEN membership_scheduled_price_id = ? THEN NULL ELSE membership_scheduled_at END, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).bind(tier, status, customerId || null, subscription.id, priceId, periodEnd, 'stripe_test', interval, cancelAtPeriodEnd, priceId, priceId, priceId, priceId, accountId).run();
   if (!result.meta || result.meta.changes !== 1) {
     console.error('No staging account matched Stripe account_id metadata:', accountId);
     return false;
