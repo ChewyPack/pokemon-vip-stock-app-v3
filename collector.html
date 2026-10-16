@@ -163,10 +163,10 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
  });
  function parseCSV(text){
   const rows=[];let row=[],cell='',quoted=false;
-  for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'&&quoted&&next==='"'){cell+='"';i++;}else if(ch==='"'){quoted=!quoted;}else if(ch===','&&!quoted){row.push(cell.trim());cell='';}else if((ch==='\\n'||ch==='\\r')&&!quoted){if(ch==='\\r'&&next==='\\n')i++;row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);row=[];cell='';}else cell+=ch;}
+  for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'&&quoted&&next==='"'){cell+='"';i++;}else if(ch==='"'){quoted=!quoted;}else if(ch===','&&!quoted){row.push(cell.trim());cell='';}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&next==='\n')i++;row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);row=[];cell='';}else cell+=ch;}
   row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);
   if(rows.length<2)throw new Error('CSV must include a header row and at least one item.');
-  const headers=rows.shift().map(h=>h.replace(/^\\uFEFF/,'').trim().toLowerCase());
+  const headers=rows.shift().map(h=>h.replace(/^\uFEFF/,'').trim().toLowerCase());
   if(!headers.includes('product_name'))throw new Error('CSV needs a product_name column.');
   return rows.slice(0,200).map(row=>{const o={};headers.forEach((h,i)=>o[h]=row[i]||'');return {product_name:o.product_name,list_type:['collection','wishlist'].includes(o.list_type)?o.list_type:'collection',product_type:['card','sealed','graded'].includes(o.product_type)?o.product_type:'card',set_name:o.set_name||'',card_number:o.card_number||'',condition:o.condition||'',quantity:o.quantity||1,estimated_value:o.estimated_value||null,notes:o.notes||''};}).filter(x=>x.product_name);
  }
