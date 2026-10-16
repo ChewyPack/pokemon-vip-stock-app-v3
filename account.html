@@ -89,7 +89,6 @@
 </div>
 <p class="account-note">Selecting Vendor or Event Organizer requests that account type; it does not automatically verify your business or grant publishing/admin privileges. Collector+ is $5/month or $50/year; Vendor is $15/month or $150/year; Event Organizer is $25/month or $320/year. Paid benefits unlock only after Stripe verifies payment. Event listings are planned at $5 each. These prices apply to staging only.</p>
 </div>
-<label class="field-label" id="name-label" hidden>Display name<input id="display-name" name="display_name" autocomplete="nickname" minlength="2" maxlength="60"></label>
 <label class="field-label" id="username-label" hidden>Collector username<input id="username" name="username" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" placeholder="e.g. PokeChris"><small>3–24 letters, numbers, or underscores. This becomes your public profile link.</small></label>
 <label class="field-label">Email<input id="email" name="email" type="email" autocomplete="email" required maxlength="254"></label>
 <label class="field-label">Password<input id="password" name="password" type="password" autocomplete="current-password" required minlength="1" maxlength="128"><small id="password-help">Enter your password.</small></label>
@@ -190,10 +189,10 @@
  let mode='login';
  function setMode(next){
   mode=next;const registering=mode==='register';
-  typeSection.hidden=!registering;nameLabel.hidden=!registering;nameInput.required=registering;usernameLabel.hidden=!registering;usernameInput.required=registering;
+  typeSection.hidden=!registering;usernameLabel.hidden=!registering;usernameInput.required=registering;
   password.autocomplete=registering?'new-password':'current-password';password.minLength=registering?10:1;
   document.getElementById('password-help').textContent=registering?'Use at least 10 characters.':'Enter your password.';
-  heading.textContent=registering?'Choose your place in the community':'Welcome back, collector';
+  heading.textContent=registering?'Create your collector account':'Welcome back, collector';
   submit.textContent=registering?'Create account':'Log in';
   loginTab.setAttribute('aria-pressed',String(!registering));registerTab.setAttribute('aria-pressed',String(registering));message.hidden=true;
  }
@@ -389,7 +388,7 @@
  form.addEventListener('submit',async event=>{
   event.preventDefault();message.hidden=true;submit.disabled=true;submit.textContent='Please wait…';
   const body={email:document.getElementById('email').value.trim(),password:password.value};
-  if(mode==='register'){body.display_name=nameInput.value.trim();body.username=usernameInput.value.trim();body.account_type=form.querySelector('input[name="account_type"]:checked').value;}
+  if(mode==='register'){body.username=usernameInput.value.trim();body.display_name=body.username;body.account_type=form.querySelector('input[name="account_type"]:checked').value;}
   try{
    const response=await fetch(mode==='register'?'/api/account/register':'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)});
    const data=await response.json();
