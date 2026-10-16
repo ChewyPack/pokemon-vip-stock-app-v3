@@ -10,10 +10,23 @@ export async function onRequestPost({request,env}){
  if(typeof env.STRIPE_TEST_SECRET_KEY!=='string'||!env.STRIPE_TEST_SECRET_KEY.startsWith('sk_test_'))return json({ok:false,error:'stripe_test_key_not_configured'},503);
  const token=getCookie(request,COOKIE);if(!token)return json({ok:false,error:'login_required'},401);
  try{
-  const account=await env.DB.prepare('SELECT id,session_expires_at,membership_status,stripe_subscription_id,membership_cancel_at_period_end FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();
+  const account=await env.DB.prepare('SELECT id,session_expires_at,membership_status,stripe_customer_id,stripe_subscription_id,membership_cancel_at_period_end FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();
   if(!account||!account.session_expires_at||Number(account.session_expires_at)<=Date.now())return json({ok:false,error:'login_required'},401);
   if(account.membership_status!=='active'||!account.stripe_subscription_id)return json({ok:false,error:'membership_not_active'},409);
   if(Number(account.membership_cancel_at_period_end||0)===1)return json({ok:false,error:'cancellation_already_scheduled'},409);
+  // Verify the subscription belongs to this account. If a future plan change is scheduled,
+  // release that schedule first so the member's explicit cancellation applies to the current subscription.
+  const subResponse=await fetch('https://api.stripe.com/v1/subscriptions/'+encodeURIComponent(account.stripe_subscription_id),{headers:{Authorization:'Bearer '+env.STRIPE_TEST_SECRET_KEY}});
+  const subscription=await subResponse.json();
+  const customerId=typeof subscription.customer==='string'?subscription.customer:subscription.customer?.id;
+  if(!subResponse.ok||subscription.id!==account.stripe_subscription_id||customerId!==account.stripe_customer_id||Number(subscription.metadata?.account_id||0)!==Number(account.id))return json({ok:false,error:'subscription_verification_failed'},409);
+  const scheduleId=typeof subscription.schedule==='string'?subscription.schedule:subscription.schedule?.id;
+  if(scheduleId){
+    const releaseResponse=await fetch('https://api.stripe.com/v1/subscription_schedules/'+encodeURIComponent(scheduleId)+'/release',{method:'POST',headers:{Authorization:'Bearer '+env.STRIPE_TEST_SECRET_KEY,'Content-Type':'application/x-www-form-urlencoded'},body:''});
+    const released=await releaseResponse.json();
+    if(!releaseResponse.ok){console.error('Could not release staging plan-change schedule before cancellation:',releaseResponse.status,released.error?.type||'unknown');return json({ok:false,error:'scheduled_change_cancel_failed'},502);}
+    await env.DB.prepare('UPDATE accounts SET membership_scheduled_tier=NULL,membership_scheduled_interval=NULL,membership_scheduled_price_id=NULL,membership_scheduled_at=NULL WHERE id=? AND stripe_subscription_id=?').bind(account.id,account.stripe_subscription_id).run();
+  }
   const params=new URLSearchParams();params.set('cancel_at_period_end','true');
   const response=await fetch('https://api.stripe.com/v1/subscriptions/'+encodeURIComponent(account.stripe_subscription_id),{method:'POST',headers:{Authorization:'Bearer '+env.STRIPE_TEST_SECRET_KEY,'Content-Type':'application/x-www-form-urlencoded'},body:params});
   const result=await response.json();
