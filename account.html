@@ -209,9 +209,9 @@
   function profileMessage(message){if(profileStatus)profileStatus.textContent=message||'';}
   function updateImagePreview(kind,source){
    const preview=document.getElementById(kind+'-upload-preview'),tile=document.getElementById(kind+'-upload-tile');
-   if(!preview||!tile)return;
-   if(source){preview.innerHTML='<img src="'+String(source).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')+'" alt="'+(kind==='avatar'?'Profile photo preview':'Cover photo preview')+'"><span class="settings-upload-hint">Click to change photo</span>';tile.classList.add('has-image');}
-   else{preview.innerHTML=(kind==='avatar'?'🃏':'🌄')+'<span class="settings-upload-hint">Click to upload '+(kind==='avatar'?'photo':'cover photo')+'</span>';tile.classList.remove('has-image');}
+   if(!preview||!tile)return;preview.replaceChildren();
+   if(source){const image=document.createElement('img');image.alt=kind==='avatar'?'Profile photo preview':'Cover photo preview';image.src=source;preview.appendChild(image);const hint=document.createElement('span');hint.className='settings-upload-hint';hint.textContent='Click to change photo';preview.appendChild(hint);tile.classList.add('has-image');}
+   else{preview.append(document.createTextNode(kind==='avatar'?'🃏':'🌄'));const hint=document.createElement('span');hint.className='settings-upload-hint';hint.textContent='Click to upload '+(kind==='avatar'?'photo':'cover photo');preview.appendChild(hint);tile.classList.remove('has-image');}
   }
   function fileToCompressedDataUrl(file,kind){
    return new Promise((resolve,reject)=>{
