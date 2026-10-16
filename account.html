@@ -56,7 +56,7 @@
 .dashboard-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
 .dashboard-actions .btn{cursor:pointer;min-height:46px}
 .dashboard-section-title{font:400 1.65rem/1.1 var(--font-display);margin:28px 0 10px}
-.dashboard-note{padding:13px 15px;border-left:4px solid #ffd21f;background:#fff8d5;color:#5e4b08;border-radius:0 8px 8px 0;font-size:.9rem;line-height:1.55}
+.settings-profile-form{display:grid;gap:12px;margin-top:14px}.settings-profile-form label{display:grid;gap:5px;font-size:.9rem;font-weight:800}.settings-profile-form input,.settings-profile-form textarea,.settings-profile-form select{width:100%;min-height:44px;padding:11px;border:2px solid #0b2a6b;border-radius:8px;font:inherit;background:#fff;color:#0b2a6b}.settings-profile-form textarea{min-height:100px;resize:vertical}.settings-profile-help{font-size:.86rem;color:#4b5f8f;line-height:1.5}.settings-profile-status{margin:0;font-size:.9rem;line-height:1.5;overflow-wrap:anywhere}.dashboard-note{padding:13px 15px;border-left:4px solid #ffd21f;background:#fff8d5;color:#5e4b08;border-radius:0 8px 8px 0;font-size:.9rem;line-height:1.55}
 .dashboard-status{display:inline-flex;align-items:center;gap:7px;font-size:.85rem;font-weight:900;color:#17603a}
 .dashboard-status:before{content:"";width:8px;height:8px;background:#25a765;border-radius:50%}
 .membership-checkout{margin-top:16px;padding:14px;border:2px solid #d5e0f2;border-radius:10px;background:#fff}
@@ -166,6 +166,22 @@
       <h2>Collector profile</h2>
       <p>Create a public collector profile, showcase cards and sealed products, track your collection, and build a wishlist of what you’re hunting.</p>
       <div class="dashboard-actions"><a class="btn btn--primary" href="/collector.html">Open collection &amp; wishlist</a></div>
+    </article>
+    <article class="dashboard-card dashboard-card--wide" id="collector-profile-settings">
+      <p class="dashboard-eyebrow">Public collector profile</p>
+      <h2>Edit your profile</h2>
+      <p>Manage the bio, profile picture, cover photo, and visibility shown on your public collector page.</p>
+      <form id="collector-profile-form" class="settings-profile-form">
+        <label>Collector username<input id="settings-collector-username" readonly aria-describedby="settings-username-help"></label>
+        <small id="settings-username-help" class="settings-profile-help">Your username is used for your public profile link and cannot be changed here.</small>
+        <label>Bio (up to 500 characters)<textarea id="settings-collector-bio" maxlength="500" placeholder="What do you collect? What's your chase card?"></textarea></label>
+        <label>Profile picture URL (optional)<input id="settings-collector-avatar" type="url" placeholder="https://…"></label>
+        <label>Cover photo URL (optional)<input id="settings-collector-cover" type="url" placeholder="https://…"></label>
+        <label>Profile visibility<select id="settings-collector-visibility"><option value="public">Public showcase</option><option value="private">Private profile</option></select></label>
+        <button id="save-collector-profile" class="btn btn--primary" type="submit">Save profile</button>
+        <p id="collector-profile-status" class="settings-profile-status" role="status" aria-live="polite"></p>
+      </form>
+      <div class="dashboard-actions"><a class="btn" id="view-collector-profile" href="/collector.html">View my collector profile</a></div>
     </article>
     <article class="dashboard-card">
       <p class="dashboard-eyebrow">For the community</p>
