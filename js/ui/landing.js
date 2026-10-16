@@ -158,64 +158,15 @@
       )
     );
 
-    // Reflect the signed-in state in the home-page navigation.
+    // Signed-in users get a direct Profile button that opens their collector profile.
     fetch('/api/account/me', { credentials: 'include', cache: 'no-store' })
       .then(function (response) { return response.ok ? response.json() : null; })
       .then(function (data) {
         var accountLink = nav.querySelector('#account-nav-link');
         if (!accountLink || !data || !data.ok || !data.authenticated) return;
-
-        var accountName = data.account && data.account.display_name
-          ? data.account.display_name : 'Account';
-        var wrapper = h('div', { class: 'site-nav__dropdown account-nav-dropdown' });
-        var button = h('button', {
-          class: 'site-nav__toggle',
-          type: 'button',
-          'aria-expanded': 'false',
-          'aria-controls': 'nav-account-menu'
-        }, accountName + ' ▾');
-        var menu = h('div', {
-          class: 'site-nav__menu',
-          id: 'nav-account-menu',
-          hidden: true
-        },
-          h('a', {
-            class: 'site-nav__item',
-            href: '/account.html'
-          },
-            h('span', { class: 'site-nav__item-title' }, 'My Account'),
-            h('span', { class: 'site-nav__item-description' }, 'View your account details')
-          ),
-          h('a', {
-            class: 'site-nav__item',
-            href: '#',
-            id: 'account-nav-logout'
-          }, h('span', { class: 'site-nav__item-title' }, 'Log out'))
-        );
-
-        button.addEventListener('click', function () {
-          var isOpen = button.getAttribute('aria-expanded') === 'true';
-          nav.querySelectorAll('.site-nav__toggle').forEach(function (other) {
-            other.setAttribute('aria-expanded', 'false');
-          });
-          nav.querySelectorAll('.site-nav__menu').forEach(function (otherMenu) {
-            otherMenu.hidden = true;
-          });
-          if (!isOpen) {
-            button.setAttribute('aria-expanded', 'true');
-            menu.hidden = false;
-          }
-        });
-
-        menu.querySelector('#account-nav-logout').addEventListener('click', function (event) {
-          event.preventDefault();
-          fetch('/api/account/logout', { method: 'POST', credentials: 'include' })
-            .finally(function () { window.location.href = '/'; });
-        });
-
-        wrapper.appendChild(button);
-        wrapper.appendChild(menu);
-        accountLink.replaceWith(wrapper);
+        accountLink.href = '/collector.html';
+        accountLink.textContent = 'Profile';
+        accountLink.setAttribute('aria-label', 'Open your collector profile');
       })
       .catch(function (error) {
         console.warn('Could not refresh account navigation:', error);
