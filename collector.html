@@ -68,7 +68,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 </head>
 <body>
 <main class="cp-wrap">
-<nav class="cp-nav"><a class="cp-brand" href="/">PokePrizePool</a><a href="/account.html">Account / Sign in</a></nav>
+<nav class="cp-nav"><a class="cp-brand" href="/">PokePrizePool</a><div class="cp-nav-actions"><a class="cp-settings-link" id="collector-settings" href="/account.html" aria-label="Account settings" title="Account settings"><span aria-hidden="true">⚙</span><span>Settings</span></a><button class="cp-settings-link cp-logout" id="collector-logout" type="button" hidden>Log out</button><a class="cp-settings-link" id="collector-signin" href="/account.html">Sign in</a></div></nav>
 <section class="cp-hero" id="profile-hero">
 <div id="avatar" class="cp-avatar">🃏</div>
 <div><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><p id="bio-display">Your collection, your chase, your story.</p></div>
@@ -235,12 +235,17 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
    }else{
     const r=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),d=await r.json();
     if(r.status===401){location.href='/account.html';return;}if(!r.ok||!d.ok)throw new Error('Could not load your collector profile. Apply the staging database migration if it has not been run.');
-    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);
+    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);$('collector-signin').hidden=true;$('collector-logout').hidden=false;
     if(!profile){$('handle').textContent='Profile not published yet';}
    }
    stats();render();
   }catch(e){setStatus('view-status',e.message||'Could not load the profile.');$('items').innerHTML='<div class="cp-empty">'+safe(e.message||'Could not load the profile.')+'</div>';}
  }
+ $('collector-logout').addEventListener('click',async()=>{
+  const button=$('collector-logout');button.disabled=true;button.textContent='Logging out…';
+  try{const response=await fetch('/api/account/logout',{method:'POST',credentials:'include'});if(!response.ok)throw new Error('Please try logging out again.');location.href='/';}
+  catch(error){setStatus('view-status',error.message||'Could not log out.');button.disabled=false;button.textContent='Log out';}
+ });
  $('profile-form').addEventListener('submit',async e=>{
   e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Saving profile…');
   try{const r=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value.trim(),bio:$('bio').value,avatar_url:$('avatar-url').value.trim(),cover_url:$('cover-url').value.trim(),is_public:$('visibility').value==='public'})}),d=await r.json();
