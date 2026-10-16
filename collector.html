@@ -79,6 +79,11 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 <button class="cp-btn" type="submit">Save profile</button>
 </form>
 <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+<h2>Import from CSV</h2>
+<p class="cp-status">Upload a spreadsheet saved as CSV. Required column: <strong>product_name</strong>. Optional columns: list_type, product_type, set_name, card_number, condition, quantity, estimated_value, notes.</p>
+<form id="import-form"><label class="cp-field">CSV file<input id="csv-file" type="file" accept=".csv,text/csv" required></label><button class="cp-btn secondary" type="submit">Import up to 200 rows</button></form>
+<p id="import-status" class="cp-status" role="status" aria-live="polite"></p>
+<hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
 <h2>Add to your lists</h2>
 <form id="item-form">
 <label class="cp-field">List<select id="list-type"><option value="collection">My Collection</option><option value="wishlist">My Wishlist</option></select></label>
@@ -155,6 +160,19 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
    if(!r.ok||!d.ok){const errors={invalid_username:'Use 3–24 letters, numbers, or underscores.',username_taken:'That username is already taken. Try another.',bio_too_long:'Your bio is too long.',invalid_avatar_url:'Profile photo must be a valid HTTPS URL.'};throw new Error(errors[d.error]||'Could not save your profile.');}
    viewUsername='';history.replaceState({},'',location.pathname);showProfile(d.profile);setStatus('owner-status','Profile saved! Your public link is '+location.origin+'/collector.html?user='+encodeURIComponent(d.profile.username));await load();
   }catch(error){setStatus('owner-status',error.message||'Could not save profile.');}finally{button.disabled=false;}
+ });
+ function parseCSV(text){
+  const rows=[];let row=[],cell='',quoted=false;
+  for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];if(ch==='"'&&quoted&&next==='"'){cell+='"';i++;}else if(ch==='"'){quoted=!quoted;}else if(ch===','&&!quoted){row.push(cell.trim());cell='';}else if((ch==='\\n'||ch==='\\r')&&!quoted){if(ch==='\\r'&&next==='\\n')i++;row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);row=[];cell='';}else cell+=ch;}
+  row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);
+  if(rows.length<2)throw new Error('CSV must include a header row and at least one item.');
+  const headers=rows.shift().map(h=>h.replace(/^\\uFEFF/,'').trim().toLowerCase());
+  if(!headers.includes('product_name'))throw new Error('CSV needs a product_name column.');
+  return rows.slice(0,200).map(row=>{const o={};headers.forEach((h,i)=>o[h]=row[i]||'');return {product_name:o.product_name,list_type:['collection','wishlist'].includes(o.list_type)?o.list_type:'collection',product_type:['card','sealed','graded'].includes(o.product_type)?o.product_type:'card',set_name:o.set_name||'',card_number:o.card_number||'',condition:o.condition||'',quantity:o.quantity||1,estimated_value:o.estimated_value||null,notes:o.notes||''};}).filter(x=>x.product_name);
+ }
+ $('import-form').addEventListener('submit',async e=>{
+  e.preventDefault();const button=e.submitter,file=$('csv-file').files[0];if(!file)return;button.disabled=true;setStatus('import-status','Reading CSV…');
+  try{const parsed=parseCSV(await file.text());if(!parsed.length)throw new Error('No product rows found in the CSV.');const r=await fetch('/api/collector/import',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:parsed})}),d=await r.json();if(!r.ok||!d.ok){const errors={invalid_import_count:'Upload between 1 and 200 rows at a time.',invalid_import_row:'One or more rows have invalid product details. Check quantity and value fields.'};throw new Error(errors[d.error]||'CSV import failed.');}setStatus('import-status','Imported '+d.imported+' items.');const rr=await fetch('/api/collector/items',{credentials:'include',cache:'no-store'}),dd=await rr.json();if(rr.ok&&dd.ok){items=dd.items||[];stats();render();}e.target.reset();}catch(error){setStatus('import-status',error.message||'CSV import failed.');}finally{button.disabled=false;}
  });
  $('item-form').addEventListener('submit',async e=>{
   e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Adding item…');
