@@ -41,7 +41,7 @@ export async function onRequestPost({request,env}){
  if(avatar.length>500|| (avatar&&!/^https:\/\//i.test(avatar)))return json({ok:false,error:'invalid_avatar_url'},400);
  if(cover.length>1000|| (cover&&!/^https:\/\//i.test(cover)))return json({ok:false,error:'invalid_cover_url'},400);
  try{
-  const result=await env.DB.prepare(`undefined`).bind(account.id,username,bio,avatar,cover,isPublic).run();
+  const result=await env.DB.prepare(`INSERT INTO collector_profiles (account_id,username,bio,avatar_url,cover_url,is_public,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(account_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,cover_url=excluded.cover_url,is_public=excluded.is_public,updated_at=CURRENT_TIMESTAMP`).bind(account.id,username,bio,avatar,cover,isPublic).run();
   return json({ok:true,profile:{username,bio,avatar_url:avatar,cover_url:cover,is_public:isPublic}},200);
  }catch(error){
   if(String(error&&error.message||'').toLowerCase().includes('unique'))return json({ok:false,error:'username_taken'},409);
