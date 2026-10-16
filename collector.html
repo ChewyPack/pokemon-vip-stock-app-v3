@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="/css/styles.css">
 <style>
 :root{--navy:#07194d;--blue:#0b2a6b;--yellow:#ffd21f;--muted:#607096;--line:#dbe4f4}
-body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-serif}
+body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-serif}
 .cp-wrap{width:min(1180px,calc(100% - 28px));margin:22px auto 70px}
 .cp-nav{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}
 .cp-brand{font:2rem Bangers,cursive;color:var(--blue);text-decoration:none}
@@ -19,9 +19,6 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 .cp-hero h1{font:2.5rem/1 Bangers,cursive;margin:0 0 8px;overflow-wrap:anywhere}
 .cp-hero p{margin:0;color:#dbe8ff;line-height:1.5}
 .cp-hero-main{min-width:0;flex:1}.cp-bio-row{display:flex;align-items:flex-start;gap:10px}
-.cp-edit-icon{border:1px solid #ffffff66;background:#ffffff18;color:#fff;border-radius:9px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;flex:0 0 36px}
-.cp-profile-editor{margin:14px 0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 3px 12px #07194d08}
-.cp-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.cp-editor-heading h2{font:1.65rem Bangers,cursive;margin:0 0 8px}
 .cp-catalog-refine{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.cp-catalog-refine[hidden]{display:none}
 .cp-catalog-refine label{display:grid;gap:4px;font-size:.8rem;font-weight:900;color:var(--muted)}
 .cp-handle{font-weight:900;color:var(--yellow)!important;margin-bottom:6px!important}
@@ -77,7 +74,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 <nav class="cp-nav"><a class="cp-brand" href="/">PokePrizePool</a><div class="cp-nav-actions"><a class="cp-settings-link" id="collector-settings" href="/account.html" aria-label="Account settings" title="Account settings"><span aria-hidden="true">⚙</span><span>Settings</span></a><button class="cp-settings-link cp-logout" id="collector-logout" type="button" hidden>Log out</button><a class="cp-settings-link" id="collector-signin" href="/account.html">Sign in</a></div></nav>
 <section class="cp-hero" id="profile-hero">
 <div id="avatar" class="cp-avatar">🃏</div>
-<div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><p id="bio-display">Your collection, your chase, your story.</p><button id="edit-profile" class="cp-edit-icon" type="button" aria-label="Edit profile" title="Edit profile" hidden>✎</button></div></div>
+<div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><p id="bio-display">Your collection, your chase, your story.</p></div></div>
 </section>
 <section id="profile-editor" class="cp-profile-editor" hidden>
 <div class="cp-editor-heading"><h2>Edit your profile</h2><button id="close-profile-editor" class="cp-btn secondary" type="button">Close</button></div>
@@ -159,7 +156,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
  }
  function showProfile(p,accountName){
   profile=p;const hero=$('profile-hero');if(hero)hero.style.backgroundImage=p?.cover_url?'url("'+String(p.cover_url).replace(/["\\\\]/g,'')+'"), linear-gradient(120deg,#07194d,#123d8c)':'';
-  $('username').value=p?.username||'';$('username').readOnly=true;$('avatar-url').value=p?.avatar_url||'';$('cover-url').value=p?.cover_url||'';$('bio').value=p?.bio||'';$('visibility').value=Number(p?.is_public??1)===1?'public':'private';
+  
   $('handle').textContent=p?.username?'@'+p.username:'Create your collector handle';
   $('display-name').textContent=accountName||p?.display_name||p?.username||'Collector Profile';
   $('bio-display').textContent=p?.bio||'Pokémon collector — add a bio to tell your story.';
@@ -245,11 +242,11 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
    if(viewUsername){
     const r=await fetch('/api/collector/profile?username='+encodeURIComponent(viewUsername),{cache:'no-store'}),d=await r.json();
     if(!r.ok||!d.ok)throw new Error('This collector profile could not be found or is private.');
-    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;$('edit-profile').hidden=true;$('profile-editor').hidden=true;showProfile(profile,profile.display_name);
+    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;showProfile(profile,profile.display_name);
    }else{
     const r=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),d=await r.json();
     if(r.status===401){location.href='/account.html';return;}if(!r.ok||!d.ok)throw new Error('Could not load your collector profile. Apply the staging database migration if it has not been run.');
-    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);$('collector-signin').hidden=true;$('collector-logout').hidden=false;$('edit-profile').hidden=false;$('profile-editor').hidden=true;
+    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);$('collector-signin').hidden=true;$('collector-logout').hidden=false
     if(!profile){$('handle').textContent='Profile not published yet';}
    }
    stats();render();
