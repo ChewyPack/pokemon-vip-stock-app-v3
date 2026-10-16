@@ -246,15 +246,16 @@
         cancelNote.textContent='Cancellation is scheduled. Your paid membership remains active until the paid-through date shown above. Resume renewal before scheduling a plan change.';
         membershipStatus.textContent='Active paid membership: '+(membershipLabels[tier]||tier)+'. Cancellation is scheduled; access remains active through the paid-through date.';
       }else{
-        tierSelect.disabled=false;intervalSelect.disabled=false;
-        checkoutButton.disabled=false;
-        checkoutButton.textContent='Schedule change for next renewal';
-        cancelNote.hidden=!(m.scheduled_tier&&m.scheduled_interval&&m.scheduled_at);
-        if(!cancelNote.hidden){
+        const hasScheduledChange=Boolean(m.scheduled_tier&&m.scheduled_interval&&m.scheduled_at);
+        tierSelect.disabled=hasScheduledChange;intervalSelect.disabled=hasScheduledChange;
+        checkoutButton.disabled=hasScheduledChange;
+        checkoutButton.textContent=hasScheduledChange?'Change scheduled for next renewal':'Schedule change for next renewal';
+        cancelNote.hidden=!hasScheduledChange;
+        if(hasScheduledChange){
           const scheduledDate=new Date(Number(m.scheduled_at)*1000);
           const scheduledTier=membershipLabels[m.scheduled_tier]||m.scheduled_tier;
           const scheduledInterval=m.scheduled_interval==='yearly'?'Annual':'Monthly';
-          cancelNote.textContent='Plan change scheduled for '+(Number.isNaN(scheduledDate.getTime())?'your next renewal':scheduledDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+scheduledTier+' · '+scheduledInterval+'. Your current membership and price stay in place until then.';
+          cancelNote.textContent='Plan change scheduled for '+(Number.isNaN(scheduledDate.getTime())?'your next renewal':scheduledDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+scheduledTier+' · '+scheduledInterval+'. Your current membership and price stay in place until then. If you cancel before renewal, this planned change will be removed.';
         }
       }
     } else {
