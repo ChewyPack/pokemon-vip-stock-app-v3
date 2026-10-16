@@ -25,7 +25,7 @@ export async function onRequestPost({request,env}){
     const releaseResponse=await fetch('https://api.stripe.com/v1/subscription_schedules/'+encodeURIComponent(scheduleId)+'/release',{method:'POST',headers:{Authorization:'Bearer '+env.STRIPE_TEST_SECRET_KEY,'Content-Type':'application/x-www-form-urlencoded'},body:''});
     const released=await releaseResponse.json();
     if(!releaseResponse.ok){console.error('Could not release staging plan-change schedule before cancellation:',releaseResponse.status,released.error?.type||'unknown');return json({ok:false,error:'scheduled_change_cancel_failed'},502);}
-    await env.DB.prepare('UPDATE accounts SET membership_scheduled_tier=NULL,membership_scheduled_interval=NULL,membership_scheduled_price_id=NULL,membership_scheduled_at=NULL WHERE id=? AND stripe_subscription_id=?').bind(account.id,account.stripe_subscription_id).run();
+    await env.DB.prepare('UPDATE accounts SET membership_scheduled_tier=NULL,membership_scheduled_interval=NULL,membership_scheduled_price_id=NULL,membership_scheduled_at=NULL,membership_entitlement_tier=membership_tier WHERE id=? AND stripe_subscription_id=?').bind(account.id,account.stripe_subscription_id).run();
   }
   const params=new URLSearchParams();params.set('cancel_at_period_end','true');
   const response=await fetch('https://api.stripe.com/v1/subscriptions/'+encodeURIComponent(account.stripe_subscription_id),{method:'POST',headers:{Authorization:'Bearer '+env.STRIPE_TEST_SECRET_KEY,'Content-Type':'application/x-www-form-urlencoded'},body:params});
