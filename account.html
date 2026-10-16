@@ -90,6 +90,7 @@
 <p class="account-note">Selecting Vendor or Event Organizer requests that account type; it does not automatically verify your business or grant publishing/admin privileges. Collector+ is $5/month or $50/year; Vendor is $15/month or $150/year; Event Organizer is $25/month or $320/year. Paid benefits unlock only after Stripe verifies payment. Event listings are planned at $5 each. These prices apply to staging only.</p>
 </div>
 <label class="field-label" id="name-label" hidden>Display name<input id="display-name" name="display_name" autocomplete="nickname" minlength="2" maxlength="60"></label>
+<label class="field-label" id="username-label" hidden>Collector username<input id="username" name="username" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" placeholder="e.g. PokeChris"><small>3–24 letters, numbers, or underscores. This becomes your public profile link.</small></label>
 <label class="field-label">Email<input id="email" name="email" type="email" autocomplete="email" required maxlength="254"></label>
 <label class="field-label">Password<input id="password" name="password" type="password" autocomplete="current-password" required minlength="1" maxlength="128"><small id="password-help">Enter your password.</small></label>
 <button id="submit" class="btn btn--primary" type="submit">Log in</button>
@@ -189,7 +190,7 @@
  let mode='login';
  function setMode(next){
   mode=next;const registering=mode==='register';
-  typeSection.hidden=!registering;nameLabel.hidden=!registering;nameInput.required=registering;
+  typeSection.hidden=!registering;nameLabel.hidden=!registering;nameInput.required=registering;usernameLabel.hidden=!registering;usernameInput.required=registering;
   password.autocomplete=registering?'new-password':'current-password';password.minLength=registering?10:1;
   document.getElementById('password-help').textContent=registering?'Use at least 10 characters.':'Enter your password.';
   heading.textContent=registering?'Choose your place in the community':'Welcome back, collector';
@@ -388,15 +389,15 @@
  form.addEventListener('submit',async event=>{
   event.preventDefault();message.hidden=true;submit.disabled=true;submit.textContent='Please wait…';
   const body={email:document.getElementById('email').value.trim(),password:password.value};
-  if(mode==='register'){body.display_name=nameInput.value.trim();body.account_type=form.querySelector('input[name="account_type"]:checked').value;}
+  if(mode==='register'){body.display_name=nameInput.value.trim();body.username=usernameInput.value.trim();body.account_type=form.querySelector('input[name="account_type"]:checked').value;}
   try{
    const response=await fetch(mode==='register'?'/api/account/register':'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)});
    const data=await response.json();
    if(!response.ok||!data.ok){
-    const errors={invalid_name:'Enter a display name between 2 and 60 characters.',invalid_email:'Enter a valid email address.',invalid_account_type:'Choose an account type.',password_requirements:'Your password must be between 10 and 128 characters.',email_already_registered:'An account already uses that email. Try logging in.',invalid_credentials:'Email or password is incorrect.',database_not_configured:'Account database is not configured yet.',registration_failed:'The server could not save this account. We need to check the staging database or server logs before trying again.'};
+    const errors={invalid_name:'Enter a display name between 2 and 60 characters.',invalid_username:'Choose a username using 3–24 letters, numbers, or underscores.',username_taken:'That username is already taken. Please choose another.',bio_too_long:'Your bio must be 500 characters or fewer.',invalid_avatar_url:'Your profile image URL must start with https://.',invalid_email:'Enter a valid email address.',invalid_account_type:'Choose an account type.',password_requirements:'Your password must be between 10 and 128 characters.',email_already_registered:'An account already uses that email. Try logging in.',invalid_credentials:'Email or password is incorrect.',database_not_configured:'Account database is not configured yet.',registration_failed:'The server could not save this account. We need to check the staging database or server logs before trying again.'};
     throw new Error(errors[data.error]||'We could not complete that request. Please try again.');
    }
-   message.hidden=false;message.textContent='Success! Your account is ready. Redirecting home…';window.location.href='/';
+   message.hidden=false;message.textContent='Success! Your account and collector profile are ready. Redirecting to your collection…';window.location.href='/collector.html';
   }catch(error){message.hidden=false;message.textContent=error.message||'Something went wrong.';}
   finally{submit.disabled=false;submit.textContent=mode==='register'?'Create account':'Log in';}
  });
