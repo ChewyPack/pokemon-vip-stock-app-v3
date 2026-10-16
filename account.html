@@ -203,6 +203,39 @@
 (function(){
  const form=document.getElementById('account-form'), usernameLabel=document.getElementById('username-label'), usernameInput=document.getElementById('username'), password=document.getElementById('password'), submit=document.getElementById('submit'), message=document.getElementById('message'), heading=document.getElementById('heading'), loginTab=document.getElementById('login-tab'), registerTab=document.getElementById('register-tab'), typeSection=document.getElementById('type-section');
  let mode='login';
+  const profileStatus=document.getElementById('collector-profile-status');
+  function profileMessage(message){if(profileStatus)profileStatus.textContent=message||'';}
+  async function loadCollectorSettings(){
+   try{
+    const response=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),data=await response.json();
+    if(!response.ok||!data.ok){
+     const errors={login_required:'Your session expired. Please log in again.',database_not_configured:'The staging database is not configured.',collector_profile_read_failed:'Could not load collector profile settings. Make sure the staging collector migrations are applied.'};
+     throw new Error(errors[data.error]||'Could not load your collector profile settings.');
+    }
+    const p=data.profile||{};
+    document.getElementById('settings-collector-username').value=p.username||'';
+    document.getElementById('settings-collector-bio').value=p.bio||'';
+    document.getElementById('settings-collector-avatar').value=p.avatar_url||'';
+    document.getElementById('settings-collector-cover').value=p.cover_url||'';
+    document.getElementById('settings-collector-visibility').value=Number(p.is_public??1)===1?'public':'private';
+    document.getElementById('view-collector-profile').href=p.username?'/collector.html?user='+encodeURIComponent(p.username):'/collector.html';
+   }catch(error){profileMessage(error.message||'Could not load profile settings.');}
+  }
+  document.getElementById('collector-profile-form').addEventListener('submit',async event=>{
+   event.preventDefault();const button=document.getElementById('save-collector-profile');button.disabled=true;profileMessage('Saving profile…');
+   try{
+    const payload={username:document.getElementById('settings-collector-username').value.trim(),bio:document.getElementById('settings-collector-bio').value,avatar_url:document.getElementById('settings-collector-avatar').value.trim(),cover_url:document.getElementById('settings-collector-cover').value.trim(),is_public:document.getElementById('settings-collector-visibility').value==='public'};
+    const response=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await response.json();
+    if(!response.ok||!data.ok){
+     const errors={login_required:'Your session expired. Please log in again.',database_not_configured:'The staging database is not configured.',invalid_username:'Your username must be 3–24 letters, numbers, or underscores.',username_taken:'That username is already taken. Try another.',bio_too_long:'Your bio must be 500 characters or fewer.',invalid_avatar_url:'Profile picture must be a valid HTTPS URL.',invalid_cover_url:'Cover photo must be a valid HTTPS URL.',profile_save_failed:'Could not save your profile. Check that the staging collector migrations have been applied.'};
+     throw new Error(errors[data.error]||('Could not save your profile ('+(data.error||'unknown error')+').'));
+    }
+    profileMessage('Profile saved. Your public profile is ready to view.');
+    document.getElementById('view-collector-profile').href='/collector.html?user='+encodeURIComponent(data.profile.username);
+   }catch(error){profileMessage(error.message||'Could not save profile.');}
+   finally{button.disabled=false;}
+  });
+
  function setMode(next){
   mode=next;const registering=mode==='register';
   typeSection.hidden=!registering;usernameLabel.hidden=!registering;usernameInput.required=registering;
@@ -220,6 +253,7 @@
     document.querySelector('.account-panel').hidden=true;
     document.getElementById('dashboard').hidden=false;
     loginTab.hidden=true;registerTab.hidden=true;
+     loadCollectorSettings();
     const a=d.account||{},m=d.membership||{},labels={free:'Collector (Free)',collector:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
     const descriptions={
      free:'Your free website account is ready. You can keep exploring PokePrizePool as new community features arrive.',
