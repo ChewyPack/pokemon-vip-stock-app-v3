@@ -231,7 +231,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
    if(viewUsername){
     const r=await fetch('/api/collector/profile?username='+encodeURIComponent(viewUsername),{cache:'no-store'}),d=await r.json();
     if(!r.ok||!d.ok)throw new Error('This collector profile could not be found or is private.');
-    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');showProfile(profile,profile.display_name);
+    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;showProfile(profile,profile.display_name);
    }else{
     const r=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),d=await r.json();
     if(r.status===401){location.href='/account.html';return;}if(!r.ok||!d.ok)throw new Error('Could not load your collector profile. Apply the staging database migration if it has not been run.');
