@@ -215,10 +215,10 @@
     const created=a.created_at?new Date(a.created_at):null;
     document.getElementById('profile-created').textContent=created&&!Number.isNaN(created.getTime())?created.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'PokePrizePool member';
     const membershipLabels={free:'Collector (Free)',collector_plus:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
-    const displayedTier=m.status==='active'?(membershipLabels[m.tier]||m.tier):(labels[a.account_type]||'Free');
+    const displayedTier=m.status==='active'?(membershipLabels[m.entitlement_tier||m.tier]||m.entitlement_tier||m.tier):(labels[a.account_type]||'Free');
     document.getElementById('account-type-badge').textContent=displayedTier;
     document.getElementById('account-type-description').textContent=m.status==='active'
-      ? 'Your paid membership is active. Vendor and event-organizer verification are handled separately.'
+      ? 'Your current tier benefits are active. Vendor and event-organizer verification are handled separately.'
       : (a.account_type==='free'
         ? 'Your free website account is ready. Paid membership benefits activate after verified Stripe checkout.'
         : (descriptions[a.account_type]||descriptions.free));
@@ -231,17 +231,17 @@
     const cancelButton=document.getElementById('cancel-membership');
     const cancelNote=document.getElementById('membership-cancel-note');
     if(m.status==='active'){
-      const tier=m.tier||'collector_plus';
+      const tier=m.billing_tier||m.tier||'collector_plus';
       const interval=m.interval==='yearly'?'yearly':'monthly';
       membershipStatus.hidden=false;
-      membershipStatus.textContent='Active paid membership: '+(membershipLabels[tier]||tier)+'. Your subscription is verified.';
+      membershipStatus.textContent='Active paid membership: '+(membershipLabels[m.entitlement_tier||tier]||m.entitlement_tier||tier)+' benefits. Your Stripe subscription is verified.';
       membershipSummary.hidden=false;
       document.getElementById('membership-detail-tier').textContent=membershipLabels[tier]||tier;
       document.getElementById('membership-detail-interval').textContent=interval==='yearly'?'Annual':'Monthly';
       document.getElementById('membership-detail-price').textContent=(prices[tier]||prices.collector_plus)[interval];
       const periodEnd=m.current_period_end?new Date(Number(m.current_period_end)*1000):null;
       document.getElementById('membership-detail-period-end').textContent=periodEnd&&!Number.isNaN(periodEnd.getTime())?periodEnd.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}):'Not available yet';
-      tierSelect.value=tier;intervalSelect.value=interval;
+      tierSelect.value=m.billing_tier||tier;intervalSelect.value=interval;
       cancelButton.hidden=Boolean(m.cancel_at_period_end);
       if(m.cancel_at_period_end){
         tierSelect.disabled=true;intervalSelect.disabled=true;
@@ -260,7 +260,7 @@
           const scheduledDate=new Date(Number(m.scheduled_at)*1000);
           const scheduledTier=membershipLabels[m.scheduled_tier]||m.scheduled_tier;
           const scheduledInterval=m.scheduled_interval==='yearly'?'Annual':'Monthly';
-          cancelNote.textContent='Plan change scheduled for '+(Number.isNaN(scheduledDate.getTime())?'your next renewal':scheduledDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+scheduledTier+' · '+scheduledInterval+'. Your current membership and price stay in place until then. If you cancel before renewal, this planned change will be removed.';
+          cancelNote.textContent='Plan change scheduled for '+(Number.isNaN(scheduledDate.getTime())?'your next renewal':scheduledDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+scheduledTier+' · '+scheduledInterval+'. Your selected tier benefits are active now; your current price stays in place until then. If you cancel before renewal, this planned change will be removed.';
         }
       }
     } else {
@@ -340,7 +340,7 @@
        const nextInterval=result.next_interval==='yearly'?'Annual':'Monthly';
        const effectiveDate=new Date(Number(result.effective_at)*1000);
        status.hidden=false;
-       status.textContent='Scheduled for '+(Number.isNaN(effectiveDate.getTime())?'your next renewal':effectiveDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+nextTier+' · '+nextInterval+'. Your current membership and price will stay the same until then.';
+       status.textContent='Your benefits will change to '+nextTier+' immediately. The new '+nextInterval.toLowerCase()+' billing plan takes effect '+(Number.isNaN(effectiveDate.getTime())?'at your next renewal':'on '+effectiveDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+'. Your current price stays in place until then.';
        window.location.reload();
       }catch(error){status.hidden=false;status.textContent=error.message||'Could not schedule the membership change.';button.disabled=false;button.textContent='Schedule change for next renewal';}
       return;
