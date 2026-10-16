@@ -240,9 +240,10 @@
       tierSelect.disabled=true;intervalSelect.disabled=true;
       checkoutButton.disabled=true;checkoutButton.textContent='Membership active';
       if(m.cancel_at_period_end){
-        checkoutButton.textContent='Cancellation scheduled';
+        checkoutButton.disabled=false;
+        checkoutButton.textContent='Resume membership renewal';
         cancelNote.hidden=false;
-        cancelNote.textContent='Cancellation is scheduled. Your paid membership remains active until the paid-through date shown above. It will not renew.';
+        cancelNote.textContent='Cancellation is scheduled. Your paid membership remains active until the paid-through date shown above. It will not renew unless you resume renewal.';
         cancelButton.hidden=true;
         membershipStatus.textContent='Active paid membership: '+(membershipLabels[tier]||tier)+'. Cancellation is scheduled; access remains active through the paid-through date.';
       }else{
@@ -272,7 +273,22 @@
     });
     document.getElementById('start-membership-checkout').addEventListener('click',async()=>{
      const button=document.getElementById('start-membership-checkout'),status=document.getElementById('membership-checkout-status');
-     button.disabled=true;button.textContent='Connecting to Stripe…';status.hidden=true;
+     button.disabled=true;status.hidden=true;
+     if(m.cancel_at_period_end){
+      button.textContent='Resuming renewal…';
+      try{
+       const response=await fetch('/api/account/resume-membership',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+       const result=await response.json();
+       if(!response.ok||!result.ok){
+        const errors={login_required:'Please log in again before managing your membership.',membership_not_active:'There is no active paid membership to resume.',cancellation_not_scheduled:'This membership is not scheduled to cancel.',stripe_test_key_not_configured:'Staging Test Mode Stripe key is not configured.'};
+        throw new Error(errors[result.error]||'Could not resume renewal. Please try again.');
+       }
+       status.hidden=false;status.textContent='Renewal resumed. Your current membership will continue and renew normally.';
+       window.location.reload();
+      }catch(error){status.hidden=false;status.textContent=error.message||'Could not resume renewal.';button.disabled=false;button.textContent='Resume membership renewal';}
+      return;
+     }
+     button.textContent='Connecting to Stripe…';
      try{
       const response=await fetch('/api/account/checkout',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({tier:document.getElementById('membership-tier').value,interval:document.getElementById('membership-interval').value})});
       const result=await response.json();
