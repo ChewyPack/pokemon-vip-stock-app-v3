@@ -150,7 +150,8 @@
         <section id="membership-summary" class="membership-summary" aria-labelledby="membership-summary-title" hidden>
           <h3 id="membership-summary-title">Your membership details</h3>
           <div class="membership-summary-grid">
-            <div class="membership-summary-item"><span>Membership tier</span><strong id="membership-detail-tier">—</strong></div>
+            <div class="membership-summary-item"><span>Benefits tier active now</span><strong id="membership-detail-tier">—</strong></div>
+            <div class="membership-summary-item"><span>Current billing tier</span><strong id="membership-detail-billing-tier">—</strong></div>
             <div class="membership-summary-item"><span>Billing plan</span><strong id="membership-detail-interval">—</strong></div>
             <div class="membership-summary-item"><span>Price</span><strong id="membership-detail-price">—</strong></div>
             <div class="membership-summary-item"><span>Paid-through date</span><strong id="membership-detail-period-end">—</strong></div>
@@ -236,7 +237,8 @@
       membershipStatus.hidden=false;
       membershipStatus.textContent='Active paid membership: '+(membershipLabels[m.entitlement_tier||tier]||m.entitlement_tier||tier)+' benefits. Your Stripe subscription is verified.';
       membershipSummary.hidden=false;
-      document.getElementById('membership-detail-tier').textContent=membershipLabels[tier]||tier;
+      document.getElementById('membership-detail-tier').textContent=membershipLabels[m.entitlement_tier||tier]||m.entitlement_tier||tier;
+      document.getElementById('membership-detail-billing-tier').textContent=membershipLabels[m.billing_tier||tier]||m.billing_tier||tier;
       document.getElementById('membership-detail-interval').textContent=interval==='yearly'?'Annual':'Monthly';
       document.getElementById('membership-detail-price').textContent=(prices[tier]||prices.collector_plus)[interval];
       const periodEnd=m.current_period_end?new Date(Number(m.current_period_end)*1000):null;
