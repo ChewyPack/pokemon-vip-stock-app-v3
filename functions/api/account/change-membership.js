@@ -151,13 +151,34 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: false, error: 'schedule_creation_failed' }, 502);
     }
 
-    const scheduleCurrentStart = Number(schedule.phases?.[0]?.start_date || start);
+    const currentPhase = schedule.phases?.[0];
+    const hasSpecialPhaseSettings = Boolean(
+      currentPhase?.application_fee_percent != null ||
+      currentPhase?.automatic_tax?.enabled ||
+      currentPhase?.billing_thresholds ||
+      currentPhase?.collection_method && currentPhase.collection_method !== 'charge_automatically' ||
+      currentPhase?.default_payment_method ||
+      currentPhase?.default_source ||
+      (currentPhase?.default_tax_rates || []).length ||
+      currentPhase?.description ||
+      (currentPhase?.add_invoice_items || []).length ||
+      currentPhase?.on_behalf_of ||
+      currentPhase?.transfer_data ||
+      currentPhase?.trial_end ||
+      (currentPhase?.discounts || []).length
+    );
+    if (hasSpecialPhaseSettings) {
+      await stripeRequest(env, '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release', new URLSearchParams(), 'POST');
+      return json({ ok: false, error: 'subscription_requires_manual_review' }, 409);
+    }
+    const scheduleCurrentStart = Number(currentPhase?.start_date || start);
     if (!Number.isSafeInteger(scheduleCurrentStart) || scheduleCurrentStart < 1) {
       await stripeRequest(env, '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release', new URLSearchParams(), 'POST');
       return json({ ok: false, error: 'billing_period_unavailable' }, 409);
     }
     const phases = new URLSearchParams();
     phases.set('end_behavior', 'release');
+    phases.set('proration_behavior', 'none');
     addPhase(phases, 0, scheduleCurrentStart, end, currentItem.price.id, currentDetails.tier, currentDetails.interval);
     phases.set('phases[0][metadata][account_id]', String(account.id));
     addPhase(phases, 1, end, null, targetPrice, tier, interval);
