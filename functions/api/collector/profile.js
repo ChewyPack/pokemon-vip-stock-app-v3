@@ -22,7 +22,15 @@ export async function onRequestGet({request,env}){
    return json({ok:true,profile:{username:profile.username,display_name:profile.display_name,bio:profile.bio,avatar_url:profile.avatar_url,cover_url:profile.cover_url||'',created_at:profile.created_at},stats:stats||{},items:items.results||[]});
   }
   const account=await currentAccount(request,env);if(!account)return json({ok:false,error:'login_required'},401);
-  const profile=await env.DB.prepare('SELECT username,bio,avatar_url,cover_url,is_public,created_at FROM collector_profiles WHERE account_id=? LIMIT 1').bind(account.id).first();
+  let profile=await env.DB.prepare('SELECT username,bio,avatar_url,cover_url,is_public,created_at FROM collector_profiles WHERE account_id=? LIMIT 1').bind(account.id).first();
+  if(!profile){
+   const base=String(account.display_name||'collector').toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,18)||'collector';
+   let username=base;
+   const existing=await env.DB.prepare('SELECT id FROM collector_profiles WHERE username=? COLLATE NOCASE LIMIT 1').bind(username).first();
+   if(existing)username=(base.slice(0,18)+String(account.id).replace(/[^0-9]/g,'')).slice(0,24);
+   await env.DB.prepare("INSERT INTO collector_profiles (account_id,username,bio,avatar_url,cover_url,is_public) VALUES (?,?, '', '', '', 1)").bind(account.id,username).run();
+   profile=await env.DB.prepare('SELECT username,bio,avatar_url,cover_url,is_public,created_at FROM collector_profiles WHERE account_id=? LIMIT 1').bind(account.id).first();
+  }
   const items=await env.DB.prepare('SELECT id,list_type,product_type,product_name,set_name,card_number,condition,quantity,notes,image_url,estimated_value_cents,created_at FROM collector_items WHERE account_id=? ORDER BY created_at DESC LIMIT 500').bind(account.id).all();
   return json({ok:true,account:{display_name:account.display_name},profile:profile||null,items:items.results||[]});
  }catch(error){console.error('Collector profile read failed:',error);return json({ok:false,error:'collector_profile_read_failed'},500);}
@@ -31,7 +39,10 @@ export async function onRequestPost({request,env}){
  if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
  const account=await currentAccount(request,env);if(!account)return json({ok:false,error:'login_required'},401);
  let data;try{data=await request.json();}catch{return json({ok:false,error:'bad_request'},400);}
- const username=typeof data.username==='string'?data.username.trim():'';
+ const existingProfile=await env.DB.prepare('SELECT username FROM collector_profiles WHERE account_id=? LIMIT 1').bind(account.id).first().catch(()=>null);
+ const submittedUsername=typeof data.username==='string'?data.username.trim():'';
+ const derived=String(account.display_name||'collector').toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,18)||'collector';
+ const username=submittedUsername||existingProfile?.username||derived;
  const bio=typeof data.bio==='string'?data.bio.trim():'';
  const avatar=typeof data.avatar_url==='string'?data.avatar_url.trim():'';
  const cover=typeof data.cover_url==='string'?data.cover_url.trim():'';
