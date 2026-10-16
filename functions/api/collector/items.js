@@ -31,7 +31,7 @@ export async function onRequestPost({request,env}){
  try{
   const result=await env.DB.prepare('INSERT INTO collector_items(account_id,list_type,product_type,product_name,set_name,card_number,condition,quantity,notes,image_url,estimated_value_cents) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(account.id,listType,productType,name,setName,number,condition,quantity,notes,image, value===null?null:Math.round(value*100)).run();
   return json({ok:true,id:result.meta?.last_row_id||null},201);
- }catch(error){console.error('Collector item save failed:',error);return json({ok:false,error:'item_save_failed'},500);}
+ }catch(error){console.error('Collector item save failed:',error);const detail=String(error&&error.message||'').toLowerCase();if(detail.includes('no such table')||detail.includes('no such column')||detail.includes('has no column named'))return json({ok:false,error:'collector_database_migration_required'},500);return json({ok:false,error:'item_save_failed'},500);}
 }
 export async function onRequestDelete({request,env}){
  if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
