@@ -62,7 +62,7 @@
 .membership-checkout{margin-top:16px;padding:14px;border:2px solid #d5e0f2;border-radius:10px;background:#fff}
 .membership-checkout label{display:grid;gap:5px;margin-bottom:10px;font-size:.9rem;font-weight:800}
 .membership-checkout select{width:100%;padding:11px;border:2px solid #0b2a6b;border-radius:8px;font:inherit;background:#fff}
-.membership-checkout button{width:100%;min-height:46px;cursor:pointer}
+.membership-checkout button{width:100%;min-height:46px;cursor:pointer}.membership-checkout button:disabled,.membership-checkout select:disabled{cursor:not-allowed}
 .membership-status{display:block;margin-top:10px;font-size:.9rem;color:#334a7c;overflow-wrap:anywhere}\n.membership-summary{margin-top:14px;padding:16px;border:2px solid #d5e0f2;border-radius:10px;background:#f7faff}\n.membership-summary h3{margin:0 0 12px;font-size:1.15rem}\n.membership-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}\n.membership-summary-item{padding:10px;background:#fff;border:1px solid #d5e0f2;border-radius:8px}\n.membership-summary-item span{display:block;font-size:.75rem;color:#5670a6;font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}\n.membership-summary-item strong{overflow-wrap:anywhere}\n.membership-cancel{margin-top:12px;width:100%;min-height:44px;cursor:pointer;background:#fff;color:#9a2525;border:2px solid #b83a3a;border-radius:8px;font:inherit;font-weight:900}\n.membership-cancel:disabled{opacity:.6;cursor:wait}\n@media(max-width:520px){.membership-summary-grid{grid-template-columns:1fr}}
 @media(max-width:520px){.dashboard-grid{grid-template-columns:1fr}.dashboard-card--wide{grid-column:auto}.dashboard-top{gap:10px}.account-avatar{flex-basis:48px;width:48px;height:48px;border-radius:13px}}
 
@@ -240,6 +240,7 @@
       tierSelect.disabled=true;intervalSelect.disabled=true;
       checkoutButton.disabled=true;checkoutButton.textContent='Membership active';
       if(m.cancel_at_period_end){
+        checkoutButton.textContent='Cancellation scheduled';
         cancelNote.hidden=false;
         cancelNote.textContent='Cancellation is scheduled. Your paid membership remains active until the paid-through date shown above. It will not renew.';
         cancelButton.hidden=true;
