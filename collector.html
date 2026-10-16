@@ -18,6 +18,12 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 .cp-avatar img{width:100%;height:100%;object-fit:cover}
 .cp-hero h1{font:2.5rem/1 Bangers,cursive;margin:0 0 8px;overflow-wrap:anywhere}
 .cp-hero p{margin:0;color:#dbe8ff;line-height:1.5}
+.cp-hero-main{min-width:0;flex:1}.cp-bio-row{display:flex;align-items:flex-start;gap:10px}
+.cp-edit-icon{border:1px solid #ffffff66;background:#ffffff18;color:#fff;border-radius:9px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;flex:0 0 36px}
+.cp-profile-editor{margin:14px 0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 3px 12px #07194d08}
+.cp-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.cp-editor-heading h2{font:1.65rem Bangers,cursive;margin:0 0 8px}
+.cp-catalog-refine{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.cp-catalog-refine[hidden]{display:none}
+.cp-catalog-refine label{display:grid;gap:4px;font-size:.8rem;font-weight:900;color:var(--muted)}
 .cp-handle{font-weight:900;color:var(--yellow)!important;margin-bottom:6px!important}
 .cp-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
 .cp-stat,.cp-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:0 3px 12px #07194d08}
@@ -71,8 +77,19 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 <nav class="cp-nav"><a class="cp-brand" href="/">PokePrizePool</a><div class="cp-nav-actions"><a class="cp-settings-link" id="collector-settings" href="/account.html" aria-label="Account settings" title="Account settings"><span aria-hidden="true">⚙</span><span>Settings</span></a><button class="cp-settings-link cp-logout" id="collector-logout" type="button" hidden>Log out</button><a class="cp-settings-link" id="collector-signin" href="/account.html">Sign in</a></div></nav>
 <section class="cp-hero" id="profile-hero">
 <div id="avatar" class="cp-avatar">🃏</div>
-<div><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><p id="bio-display">Your collection, your chase, your story.</p></div>
+<div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><p id="bio-display">Your collection, your chase, your story.</p><button id="edit-profile" class="cp-edit-icon" type="button" aria-label="Edit profile" title="Edit profile" hidden>✎</button></div></div>
 </section>
+<section id="profile-editor" class="cp-profile-editor" hidden>
+<div class="cp-editor-heading"><h2>Edit your profile</h2><button id="close-profile-editor" class="cp-btn secondary" type="button">Close</button></div>
+<p class="cp-status">Your bio is public when your profile is public. Tell collectors what you chase and collect.</p>
+<form id="profile-form">
+<label class="cp-field">Username<input id="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" readonly></label>
+<label class="cp-field">Profile picture URL (optional)<input id="avatar-url" type="url" placeholder="https://…"></label>
+<label class="cp-field">Cover photo URL (optional)<input id="cover-url" type="url" placeholder="https://…"></label>
+<label class="cp-field">Bio (up to 500 characters)<textarea id="bio" maxlength="500" placeholder="What do you collect? What's your chase card?"></textarea></label>
+<label class="cp-field">Profile visibility<select id="visibility"><option value="public">Public showcase</option><option value="private">Private profile</option></select></label>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cp-btn" type="submit">Save profile</button><button id="cancel-profile-edit" class="cp-btn secondary" type="button">Cancel</button></div>
+</form><p id="owner-status" class="cp-status" role="status" aria-live="polite"></p></section>
 <div class="cp-stats">
 <div class="cp-stat"><span>Collection items</span><strong id="stat-items">0</strong></div>
 <div class="cp-stat"><span>Total quantity</span><strong id="stat-quantity">0</strong></div>
@@ -81,16 +98,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 </div>
 <div class="cp-layout">
 <aside id="owner-tools" class="cp-panel">
-<h2>Build your profile</h2>
-<p class="cp-status">Your username was chosen during signup. Add your profile picture, cover photo, and bio here.</p>
-<form id="profile-form">
-<label class="cp-field">Username (3–24 letters, numbers, underscores)<input id="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" placeholder="e.g. captainchaos94"></label>
-<label class="cp-field">Profile picture URL (optional)<input id="avatar-url" type="url" placeholder="https://…"></label>
-<label class="cp-field">Cover photo URL (optional)<input id="cover-url" type="url" placeholder="https://…"></label>
-<label class="cp-field">Bio (up to 500 characters)<textarea id="bio" maxlength="500" placeholder="What do you collect? What's your chase card?"></textarea></label>
-<label class="cp-field"><span>Profile visibility</span><select id="visibility"><option value="public">Public showcase</option><option value="private">Private profile</option></select></label>
-<button class="cp-btn" type="submit">Save profile</button>
-</form>
+<div class="cp-public-note">Your bio appears directly on your public collector profile. Use the pencil next to your bio to edit it.</div>
 <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
 <h2>Import from CSV</h2>
 <p class="cp-status">Upload a spreadsheet saved as CSV. Required column: <strong>product_name</strong>. Optional columns: list_type, product_type, set_name, card_number, condition, quantity, estimated_value, notes.</p>
@@ -101,13 +109,13 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 <form id="item-form">
 <label class="cp-field">List<select id="list-type"><option value="collection">My Collection</option><option value="wishlist">My Wishlist</option></select></label>
 <div class="cp-catalog">
-<p class="cp-catalog-title">Find a card in the free TCGdex catalog</p>
+<p class="cp-catalog-title">Add a card or product</p><p class="cp-catalog-status">Search by Pokémon, card name, or set — for example, “RGB Mew”.</p>
 <div class="cp-catalog-controls">
 <input id="catalog-search" type="search" placeholder="Search card name (e.g. Charizard)" autocomplete="off" aria-label="Search Pokémon card catalog">
-<select id="catalog-set" aria-label="Filter catalog by set"><option value="">All sets</option></select>
+
 </div>
 <p id="catalog-status" class="cp-catalog-status" role="status" aria-live="polite">Loading set list…</p>
-<div id="catalog-results" class="cp-catalog-results"></div>
+<div id="catalog-results" class="cp-catalog-results"></div><div id="catalog-refine" class="cp-catalog-refine" hidden><label>Filter by set<select id="catalog-set" aria-label="Filter results by set"><option value="">All sets</option></select></label><label>Sort results<select id="catalog-sort"><option value="relevance">Best match</option><option value="name">Name A–Z</option><option value="set">Set A–Z</option></select></label></div>
 </div>
 <label class="cp-field">Product name *<input id="product-name" required maxlength="160" placeholder="e.g. Charizard ex"></label>
 <label class="cp-field">Product type<select id="product-type"><option value="card">Single card</option><option value="graded">Graded card</option><option value="sealed">Sealed product</option></select></label>
@@ -151,10 +159,10 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
  }
  function showProfile(p,accountName){
   profile=p;const hero=$('profile-hero');if(hero)hero.style.backgroundImage=p?.cover_url?'url("'+String(p.cover_url).replace(/["\\\\]/g,'')+'"), linear-gradient(120deg,#07194d,#123d8c)':'';
-  $('username').value=p?.username||'';$('username').readOnly=Boolean(p?.username);$('avatar-url').value=p?.avatar_url||'';$('cover-url').value=p?.cover_url||'';$('bio').value=p?.bio||'';$('visibility').value=Number(p?.is_public??1)===1?'public':'private';
+  $('username').value=p?.username||'';$('username').readOnly=true;$('avatar-url').value=p?.avatar_url||'';$('cover-url').value=p?.cover_url||'';$('bio').value=p?.bio||'';$('visibility').value=Number(p?.is_public??1)===1?'public':'private';
   $('handle').textContent=p?.username?'@'+p.username:'Create your collector handle';
   $('display-name').textContent=accountName||p?.display_name||p?.username||'Collector Profile';
-  $('bio-display').textContent=p?.bio||'Your collection, your chase, your story.';
+  $('bio-display').textContent=p?.bio||'Pokémon collector — add a bio to tell your story.';
   if(p?.avatar_url)$('avatar').innerHTML='<img src="'+safe(p.avatar_url)+'" alt="Profile photo">';else $('avatar').textContent='🃏';
  }
  function stats(){
@@ -181,6 +189,10 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
   if(requestId!==catalogRequest)return;
   const results=$('catalog-results');
   if(!cards.length){results.innerHTML='';setStatus('catalog-status','No matching cards found. Try a shorter name or clear the set filter.');return;}
+  $('catalog-refine').hidden=false;
+  const sort=$('catalog-sort').value;
+  if(sort==='name')cards.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  if(sort==='set')cards.sort((a,b)=>String(a.set?.name||a.setName||'').localeCompare(String(b.set?.name||b.setName||'')));
   results.innerHTML=cards.map(card=>{
    const image=card.image?String(card.image).replace(/\/$/,'')+'/low.webp':'';
    return '<button class="cp-catalog-result" type="button" data-card-id="'+safe(card.id)+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">🃏</span>')+'<span><strong>'+safe(card.name||'Unknown card')+'</strong><small>Card #'+safe(card.localId||card.id)+' · '+safe(card.id)+'</small></span></button>';
@@ -199,8 +211,9 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
    if(setId)params.set('set',setId);
    const response=await fetch(TCGDEX+'/cards?'+params.toString(),{headers:{Accept:'application/json'}});
    if(!response.ok)throw new Error('TCGdex returned HTTP '+response.status);
-   const cards=await response.json();
+   let cards=await response.json();
    if(!Array.isArray(cards))throw new Error('Unexpected card search response.');
+   if(!cards.length&&!setId){const terms=query.split(/\s+/).filter(Boolean);const fallback=terms[terms.length-1]||query;if(fallback.toLowerCase()!==query.toLowerCase()){const retryParams=new URLSearchParams();retryParams.set('name',fallback);retryParams.set('pagination:itemsPerPage','50');const retry=await fetch(TCGDEX+'/cards?'+retryParams.toString(),{headers:{Accept:'application/json'}});if(retry.ok){const retryCards=await retry.json();if(Array.isArray(retryCards))cards=retryCards;}}}
    renderCatalogResults(cards,requestId);
   }catch(error){if(requestId===catalogRequest)setStatus('catalog-status','Catalog search is temporarily unavailable. You can still enter item details manually.');}
  }
@@ -224,6 +237,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
  }
  $('catalog-search').addEventListener('input',()=>{clearTimeout(catalogTimer);catalogTimer=setTimeout(searchCatalog,350);});
  $('catalog-set').addEventListener('change',searchCatalog);
+ $('catalog-sort').addEventListener('change',searchCatalog);
  $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-card-id]');if(button)selectCatalogCard(button.dataset.cardId);});
  loadCatalogSets();
  async function load(){
@@ -231,11 +245,11 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
    if(viewUsername){
     const r=await fetch('/api/collector/profile?username='+encodeURIComponent(viewUsername),{cache:'no-store'}),d=await r.json();
     if(!r.ok||!d.ok)throw new Error('This collector profile could not be found or is private.');
-    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;showProfile(profile,profile.display_name);
+    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;$('edit-profile').hidden=true;$('profile-editor').hidden=true;showProfile(profile,profile.display_name);
    }else{
     const r=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),d=await r.json();
     if(r.status===401){location.href='/account.html';return;}if(!r.ok||!d.ok)throw new Error('Could not load your collector profile. Apply the staging database migration if it has not been run.');
-    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);$('collector-signin').hidden=true;$('collector-logout').hidden=false;
+    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);$('collector-signin').hidden=true;$('collector-logout').hidden=false;$('edit-profile').hidden=false;$('profile-editor').hidden=true;
     if(!profile){$('handle').textContent='Profile not published yet';}
    }
    stats();render();
@@ -246,11 +260,14 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
   try{const response=await fetch('/api/account/logout',{method:'POST',credentials:'include'});if(!response.ok)throw new Error('Please try logging out again.');location.href='/';}
   catch(error){setStatus('view-status',error.message||'Could not log out.');button.disabled=false;button.textContent='Log out';}
  });
+ $('edit-profile').addEventListener('click',()=>{$('profile-editor').hidden=false;$('bio').focus();});
+ $('close-profile-editor').addEventListener('click',()=>{$('profile-editor').hidden=true;});
+ $('cancel-profile-edit').addEventListener('click',()=>{$('profile-editor').hidden=true;showProfile(profile,document.getElementById('display-name').textContent);});
  $('profile-form').addEventListener('submit',async e=>{
   e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Saving profile…');
   try{const r=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value.trim(),bio:$('bio').value,avatar_url:$('avatar-url').value.trim(),cover_url:$('cover-url').value.trim(),is_public:$('visibility').value==='public'})}),d=await r.json();
-   if(!r.ok||!d.ok){const errors={invalid_username:'Use 3–24 letters, numbers, or underscores.',username_taken:'That username is already taken. Try another.',bio_too_long:'Your bio is too long.',invalid_avatar_url:'Profile photo must be a valid HTTPS URL.',invalid_cover_url:'Cover photo must be a valid HTTPS URL.'};throw new Error(errors[d.error]||'Could not save your profile.');}
-   viewUsername='';history.replaceState({},'',location.pathname);showProfile(d.profile);setStatus('owner-status','Profile saved! Your public link is '+location.origin+'/collector.html?user='+encodeURIComponent(d.profile.username));await load();
+   if(!r.ok||!d.ok){const errors={login_required:'Your session expired. Please sign in again.',database_not_configured:'The staging database is not configured.',invalid_username:'Your username must be 3–24 letters, numbers, or underscores.',username_taken:'That username is already taken. Try another.',bio_too_long:'Your bio is too long.',invalid_avatar_url:'Profile photo must be a valid HTTPS URL.',invalid_cover_url:'Cover photo must be a valid HTTPS URL.',profile_save_failed:'Could not save the profile. Check that the staging collector migrations have been applied.'};throw new Error(errors[d.error]||('Could not save your profile ('+(d.error||'unknown error')+').'));}
+   viewUsername='';history.replaceState({},'',location.pathname);showProfile(d.profile,document.getElementById('display-name').textContent);$('profile-editor').hidden=true;setStatus('owner-status','Profile saved! Your public link is '+location.origin+'/collector.html?user='+encodeURIComponent(d.profile.username));await load();
   }catch(error){setStatus('owner-status',error.message||'Could not save profile.');}finally{button.disabled=false;}
  });
  function parseCSV(text){
@@ -270,7 +287,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
   e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Adding item…');
   const value=$('estimated-value').value;
   try{const r=await fetch('/api/collector/items',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({list_type:$('list-type').value,product_type:$('product-type').value,product_name:$('product-name').value,set_name:$('set-name').value,card_number:$('card-number').value,condition:$('condition').value,quantity:Number($('quantity').value),estimated_value:value===''?null:Number(value),image_url:$('image-url').value,notes:$('notes').value})}),d=await r.json();
-   if(!r.ok||!d.ok){const errors={invalid_item:'Check the product name and item details.',invalid_quantity:'Quantity must be between 1 and 9999.',invalid_image_url:'Image must be a valid HTTPS URL.',invalid_estimated_value:'Enter a valid non-negative estimated value.'};throw new Error(errors[d.error]||'Could not add the item.');}
+   if(!r.ok||!d.ok){const errors={login_required:'Your session expired. Please sign in again.',database_not_configured:'The staging database is not configured.',invalid_item:'Check the product name and item details.',invalid_quantity:'Quantity must be between 1 and 9999.',invalid_image_url:'Image must be a valid HTTPS URL.',invalid_estimated_value:'Enter a valid non-negative estimated value.',item_save_failed:'The staging database rejected the item. The collector database migration may not have been applied.'};throw new Error(errors[d.error]||('Could not add the item ('+(d.error||'unknown error')+').'));}
    e.target.reset();$('quantity').value='1';setStatus('owner-status','Item added.');const rr=await fetch('/api/collector/items',{credentials:'include',cache:'no-store'}),dd=await rr.json();if(rr.ok&&dd.ok){items=dd.items||[];stats();render();}
   }catch(error){setStatus('owner-status',error.message||'Could not add item.');}finally{button.disabled=false;}
  });
