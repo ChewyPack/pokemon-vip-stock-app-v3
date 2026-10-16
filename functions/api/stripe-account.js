@@ -47,6 +47,16 @@ async function fetchSubscription(id, env) {
   }
   return response.json();
 }
+function subscriptionPeriodEnd(subscription) {
+  // Newer Stripe API versions expose billing-period dates on subscription items.
+  // Keep the subscription-level field as a fallback for older API responses.
+  const topLevel = Number(subscription?.current_period_end || 0);
+  if (topLevel > 0) return topLevel;
+  const itemEnds = (subscription?.items?.data || [])
+    .map(item => Number(item?.current_period_end || 0))
+    .filter(value => Number.isFinite(value) && value > 0);
+  return itemEnds.length ? Math.max(...itemEnds) : null;
+}
 async function saveSubscription(subscription, env, forcedStatus) {
   const accountId = Number(subscription?.metadata?.account_id || 0);
   const tier = allowedTier(subscription);
@@ -57,7 +67,7 @@ async function saveSubscription(subscription, env, forcedStatus) {
   const rawStatus = forcedStatus || subscription.status;
   const status = ['active', 'trialing'].includes(rawStatus) ? 'active' : 'inactive';
   const customerId = stripeId(subscription.customer);
-  const periodEnd = Number(subscription.current_period_end || 0) || null;
+  const periodEnd = subscriptionPeriodEnd(subscription);
   const priceId = (subscription.items?.data || []).find(item => PRICE_TIERS[item.price?.id])?.price?.id || null;
   const result = await env.DB.prepare(
     'UPDATE accounts SET membership_tier = ?, membership_status = ?, stripe_customer_id = ?, stripe_subscription_id = ?, stripe_price_id = ?, membership_current_period_end = ?, membership_source = ? , updated_at = CURRENT_TIMESTAMP WHERE id = ?'
