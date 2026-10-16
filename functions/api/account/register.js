@@ -19,6 +19,9 @@ export async function onRequestPost({ request, env }) {
   const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
   const password = typeof data.password === 'string' ? data.password : '';
   const accountType = typeof data.account_type === 'string' ? data.account_type : '';
+  const username = typeof data.username === 'string' ? data.username.trim() : '';
+  const bio = typeof data.bio === 'string' ? data.bio.trim() : '';
+  const avatarUrl = typeof data.avatar_url === 'string' ? data.avatar_url.trim() : '';
   if (displayName.length < 2 || displayName.length > 60) return json({ ok:false, error:'invalid_name' }, 400);
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok:false, error:'invalid_email' }, 400);
   if (!ACCOUNT_TYPES.has(accountType)) return json({ ok:false, error:'invalid_account_type' }, 400);
@@ -29,11 +32,17 @@ export async function onRequestPost({ request, env }) {
     const token = b64(crypto.getRandomValues(new Uint8Array(32)));
     const tokenHash = await sha256(token);
     const expiresAt = Date.now() + SESSION_DAYS * 86400000;
-    const result = await env.DB.prepare('INSERT INTO accounts (display_name,email,account_type,password_salt,password_hash,session_token_hash,session_expires_at) VALUES (?,?,?,?,?,?,?)').bind(displayName,email,accountType,b64(salt),hash,tokenHash,expiresAt).run();
-    if (!result.meta || result.meta.changes !== 1) throw new Error('Account insert did not complete');
-    return json({ ok:true, account:{ display_name:displayName, email, account_type:accountType }, note:'Account type does not grant VIP, vendor verification, or organizer privileges.' }, 201, { 'Set-Cookie':cookie(token,expiresAt) });
+    const results = await env.DB.batch([
+      env.DB.prepare('INSERT INTO accounts (display_name,email,account_type,password_salt,password_hash,session_token_hash,session_expires_at) VALUES (?,?,?,?,?,?,?)').bind(displayName,email,accountType,b64(salt),hash,tokenHash,expiresAt),
+      env.DB.prepare('INSERT INTO collector_profiles (account_id,username,bio,avatar_url,is_public) SELECT id,?,?,?,1 FROM accounts WHERE email=? COLLATE NOCASE').bind(username,bio,avatarUrl,email)
+    ]);
+    if (!results[0]?.meta || results[0].meta.changes !== 1 || !results[1]?.meta || results[1].meta.changes !== 1) throw new Error('Account and collector profile creation did not complete');
+    return json({ ok:true, account:{ display_name:displayName, email, account_type:accountType, username }, note:'Account type does not grant VIP, vendor verification, or organizer privileges.' }, 201, { 'Set-Cookie':cookie(token,expiresAt) });
   } catch (error) {
-    if (String(error && error.message || '').toLowerCase().includes('unique')) return json({ ok:false, error:'email_already_registered' }, 409);
+    if (String(error && error.message || '').toLowerCase().includes('unique')) {
+      const usernameExists = await env.DB.prepare('SELECT id FROM collector_profiles WHERE username=? COLLATE NOCASE LIMIT 1').bind(username).first().catch(()=>null);
+      return json({ ok:false, error:usernameExists?'username_taken':'email_already_registered' }, 409);
+    }
     console.error('Account registration failed:', error);
         return json({ ok:false, error:'registration_failed' }, 500);
   }
