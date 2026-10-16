@@ -182,7 +182,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
   const results=$('catalog-results');
   if(!cards.length){results.innerHTML='';setStatus('catalog-status','No matching cards found. Try a shorter name or clear the set filter.');return;}
   results.innerHTML=cards.map(card=>{
-   const image=card.image?String(card.image).replace(/\\/$/,'')+'/low.webp':'';
+   const image=card.image?String(card.image).replace(/\/$/,'')+'/low.webp':'';
    return '<button class="cp-catalog-result" type="button" data-card-id="'+safe(card.id)+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">🃏</span>')+'<span><strong>'+safe(card.name||'Unknown card')+'</strong><small>Card #'+safe(card.localId||card.id)+' · '+safe(card.id)+'</small></span></button>';
   }).join('');
   setStatus('catalog-status','Showing '+cards.length+' matching catalog results. Choose the exact printing you own.');
@@ -216,7 +216,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
    $('product-type').value='card';
    $('set-name').value=card.set?.name||'';
    $('card-number').value=card.localId||'';
-   $('image-url').value=card.image?String(card.image).replace(/\\/$/,'')+'/high.webp':'';
+   $('image-url').value=card.image?String(card.image).replace(/\/$/,'')+'/high.webp':'';
    setStatus('catalog-status','Selected '+(card.name||'card')+(card.set?.name?' — '+card.set.name:'')+'. Confirm the printing and condition before adding it.');
    $('product-name').focus();
   }catch(error){setStatus('catalog-status','Could not load that card. Please choose another result or enter details manually.');}
