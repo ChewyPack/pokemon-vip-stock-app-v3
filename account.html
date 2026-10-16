@@ -237,18 +237,25 @@
       const periodEnd=m.current_period_end?new Date(Number(m.current_period_end)*1000):null;
       document.getElementById('membership-detail-period-end').textContent=periodEnd&&!Number.isNaN(periodEnd.getTime())?periodEnd.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}):'Not available yet';
       tierSelect.value=tier;intervalSelect.value=interval;
-      tierSelect.disabled=true;intervalSelect.disabled=true;
-      checkoutButton.disabled=true;checkoutButton.textContent='Membership active';
+      cancelButton.hidden=Boolean(m.cancel_at_period_end);
       if(m.cancel_at_period_end){
+        tierSelect.disabled=true;intervalSelect.disabled=true;
         checkoutButton.disabled=false;
         checkoutButton.textContent='Resume membership renewal';
         cancelNote.hidden=false;
-        cancelNote.textContent='Cancellation is scheduled. Your paid membership remains active until the paid-through date shown above. It will not renew unless you resume renewal.';
-        cancelButton.hidden=true;
+        cancelNote.textContent='Cancellation is scheduled. Your paid membership remains active until the paid-through date shown above. Resume renewal before scheduling a plan change.';
         membershipStatus.textContent='Active paid membership: '+(membershipLabels[tier]||tier)+'. Cancellation is scheduled; access remains active through the paid-through date.';
       }else{
-        cancelNote.hidden=true;
-        cancelButton.hidden=false;
+        tierSelect.disabled=false;intervalSelect.disabled=false;
+        checkoutButton.disabled=false;
+        checkoutButton.textContent='Schedule change for next renewal';
+        cancelNote.hidden=!(m.scheduled_tier&&m.scheduled_interval&&m.scheduled_at);
+        if(!cancelNote.hidden){
+          const scheduledDate=new Date(Number(m.scheduled_at)*1000);
+          const scheduledTier=membershipLabels[m.scheduled_tier]||m.scheduled_tier;
+          const scheduledInterval=m.scheduled_interval==='yearly'?'Annual':'Monthly';
+          cancelNote.textContent='Plan change scheduled for '+(Number.isNaN(scheduledDate.getTime())?'your next renewal':scheduledDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+scheduledTier+' · '+scheduledInterval+'. Your current membership and price stay in place until then.';
+        }
       }
     } else {
       membershipSummary.hidden=true;
@@ -274,6 +281,24 @@
     document.getElementById('start-membership-checkout').addEventListener('click',async()=>{
      const button=document.getElementById('start-membership-checkout'),status=document.getElementById('membership-checkout-status');
      button.disabled=true;status.hidden=true;
+     if(m.status==='active'&&!m.cancel_at_period_end){
+      button.textContent='Scheduling change…';
+      try{
+       const response=await fetch('/api/account/change-membership',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({tier:tierSelect.value,interval:intervalSelect.value})});
+       const result=await response.json();
+       if(!response.ok||!result.ok){
+        const errors={login_required:'Please log in again before changing your membership.',membership_not_active:'There is no active paid membership to change.',cancellation_scheduled:'Your membership is scheduled to cancel. Resume renewal first, then schedule a plan change.',change_already_scheduled:'A plan change is already scheduled for this subscription.',same_plan_selected:'Choose a different membership tier or billing period.',choose_vendor_account_type:'To select Vendor, your website account type must be Vendor.',choose_organizer_account_type:'To select Event Organizer, your website account type must be Event Organizer.',choose_collector_account_type:'Use a Collector account for Collector+.',subscription_verification_failed:'We could not verify this staging subscription safely. No plan change was made.',unsupported_subscription_items:'This subscription has an unsupported billing setup and needs manual review.',subscription_requires_manual_review:'This subscription has billing settings that need manual review.',billing_period_unavailable:'We could not confirm the next renewal date. No plan change was made.',stripe_test_key_not_configured:'Staging Test Mode Stripe key is not configured.'};
+        throw new Error(errors[result.error]||'Could not schedule the membership change. Please try again.');
+       }
+       const nextTier=membershipLabels[result.next_tier]||result.next_tier;
+       const nextInterval=result.next_interval==='yearly'?'Annual':'Monthly';
+       const effectiveDate=new Date(Number(result.effective_at)*1000);
+       status.hidden=false;
+       status.textContent='Scheduled for '+(Number.isNaN(effectiveDate.getTime())?'your next renewal':effectiveDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+nextTier+' · '+nextInterval+'. Your current membership and price will stay the same until then.';
+       window.location.reload();
+      }catch(error){status.hidden=false;status.textContent=error.message||'Could not schedule the membership change.';button.disabled=false;button.textContent='Schedule change for next renewal';}
+      return;
+     }
      if(m.cancel_at_period_end){
       button.textContent='Resuming renewal…';
       try{
