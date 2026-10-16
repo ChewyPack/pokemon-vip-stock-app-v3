@@ -89,7 +89,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 <label class="cp-field">Bio (up to 500 characters)<textarea id="bio" maxlength="500" placeholder="What do you collect? What's your chase card?"></textarea></label>
 <label class="cp-field">Profile visibility<select id="visibility"><option value="public">Public showcase</option><option value="private">Private profile</option></select></label>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cp-btn" type="submit">Save profile</button><button id="cancel-profile-edit" class="cp-btn secondary" type="button">Cancel</button></div>
-</form><p id="owner-status" class="cp-status" role="status" aria-live="polite"></p></section>
+</form><p id="profile-editor-status" class="cp-status" role="status" aria-live="polite"></p></section>
 <div class="cp-stats">
 <div class="cp-stat"><span>Collection items</span><strong id="stat-items">0</strong></div>
 <div class="cp-stat"><span>Total quantity</span><strong id="stat-quantity">0</strong></div>
@@ -264,11 +264,11 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
  $('close-profile-editor').addEventListener('click',()=>{$('profile-editor').hidden=true;});
  $('cancel-profile-edit').addEventListener('click',()=>{$('profile-editor').hidden=true;showProfile(profile,document.getElementById('display-name').textContent);});
  $('profile-form').addEventListener('submit',async e=>{
-  e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Saving profile…');
+  e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('profile-editor-status','Saving profile…');
   try{const r=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value.trim(),bio:$('bio').value,avatar_url:$('avatar-url').value.trim(),cover_url:$('cover-url').value.trim(),is_public:$('visibility').value==='public'})}),d=await r.json();
    if(!r.ok||!d.ok){const errors={login_required:'Your session expired. Please sign in again.',database_not_configured:'The staging database is not configured.',invalid_username:'Your username must be 3–24 letters, numbers, or underscores.',username_taken:'That username is already taken. Try another.',bio_too_long:'Your bio is too long.',invalid_avatar_url:'Profile photo must be a valid HTTPS URL.',invalid_cover_url:'Cover photo must be a valid HTTPS URL.',profile_save_failed:'Could not save the profile. Check that the staging collector migrations have been applied.'};throw new Error(errors[d.error]||('Could not save your profile ('+(d.error||'unknown error')+').'));}
-   viewUsername='';history.replaceState({},'',location.pathname);showProfile(d.profile,document.getElementById('display-name').textContent);$('profile-editor').hidden=true;setStatus('owner-status','Profile saved! Your public link is '+location.origin+'/collector.html?user='+encodeURIComponent(d.profile.username));await load();
-  }catch(error){setStatus('owner-status',error.message||'Could not save profile.');}finally{button.disabled=false;}
+   viewUsername='';history.replaceState({},'',location.pathname);showProfile(d.profile,document.getElementById('display-name').textContent);$('profile-editor').hidden=true;setStatus('profile-editor-status','Profile saved! Your public link is '+location.origin+'/collector.html?user='+encodeURIComponent(d.profile.username));await load();
+  }catch(error){setStatus('profile-editor-status',error.message||'Could not save profile.');}finally{button.disabled=false;}
  });
  function parseCSV(text){
   const rows=[];let row=[],cell='',quoted=false;
