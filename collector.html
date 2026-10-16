@@ -76,17 +76,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <div id="avatar" class="cp-avatar">🃏</div>
 <div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><p id="bio-display">Your collection, your chase, your story.</p></div></div>
 </section>
-<section id="profile-editor" class="cp-profile-editor" hidden>
-<div class="cp-editor-heading"><h2>Edit your profile</h2><button id="close-profile-editor" class="cp-btn secondary" type="button">Close</button></div>
-<p class="cp-status">Your bio is public when your profile is public. Tell collectors what you chase and collect.</p>
-<form id="profile-form">
-<label class="cp-field">Username<input id="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" readonly></label>
-<label class="cp-field">Profile picture URL (optional)<input id="avatar-url" type="url" placeholder="https://…"></label>
-<label class="cp-field">Cover photo URL (optional)<input id="cover-url" type="url" placeholder="https://…"></label>
-<label class="cp-field">Bio (up to 500 characters)<textarea id="bio" maxlength="500" placeholder="What do you collect? What's your chase card?"></textarea></label>
-<label class="cp-field">Profile visibility<select id="visibility"><option value="public">Public showcase</option><option value="private">Private profile</option></select></label>
-<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cp-btn" type="submit">Save profile</button><button id="cancel-profile-edit" class="cp-btn secondary" type="button">Cancel</button></div>
-</form><p id="profile-editor-status" class="cp-status" role="status" aria-live="polite"></p></section>
+</section>
 <div class="cp-stats">
 <div class="cp-stat"><span>Collection items</span><strong id="stat-items">0</strong></div>
 <div class="cp-stat"><span>Total quantity</span><strong id="stat-quantity">0</strong></div>
@@ -95,13 +85,6 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 </div>
 <div class="cp-layout">
 <aside id="owner-tools" class="cp-panel">
-<div class="cp-public-note">Your bio appears directly on your public collector profile. Use the pencil next to your bio to edit it.</div>
-<hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
-<h2>Import from CSV</h2>
-<p class="cp-status">Upload a spreadsheet saved as CSV. Required column: <strong>product_name</strong>. Optional columns: list_type, product_type, set_name, card_number, condition, quantity, estimated_value, notes.</p>
-<form id="import-form"><label class="cp-field">CSV file<input id="csv-file" type="file" accept=".csv,text/csv" required></label><button class="cp-btn secondary" type="submit">Import up to 200 rows</button></form>
-<p id="import-status" class="cp-status" role="status" aria-live="polite"></p>
-<hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
 <h2>Add to your lists</h2>
 <form id="item-form">
 <label class="cp-field">List<select id="list-type"><option value="collection">My Collection</option><option value="wishlist">My Wishlist</option></select></label>
