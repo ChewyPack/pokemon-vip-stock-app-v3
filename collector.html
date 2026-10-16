@@ -176,7 +176,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   if(sort==='set')cards.sort((a,b)=>String(a.set?.name||a.setName||'').localeCompare(String(b.set?.name||b.setName||'')));
   results.innerHTML=cards.map(card=>{
    const image=card.image?String(card.image).replace(/\/$/,'')+'/low.webp':'';
-   return '<button class="cp-catalog-result" type="button" data-card-id="'+safe(card.id)+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">🃏</span>')+'<span><strong>'+safe(card.name||'Unknown card')+'</strong><small>'+safe(card.set?.name||card.setName||'Set not listed')+' · Card #'+safe(card.localId||card.id)+' · '+safe(card.id)+'</small></span></button>';
+   return '<button class="cp-catalog-result" type="button" data-card-id="'+safe(card.id)+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">🃏</span>')+'<span><strong>'+safe(card.name||'Unknown card')+'</strong><small>'+safe(card.set?.name||card.setName||catalogSets.find(s=>s.id===String(card.id||'').slice(0,String(card.id||'').lastIndexOf('-')))?.name||'Set not listed')+' · Card #'+safe(card.localId||card.id)+' · '+safe(card.id)+'</small></span></button>';
   }).join('');
   setStatus('catalog-status','Showing '+cards.length+' matching catalog results. Choose the exact printing you own.');
  }
@@ -184,23 +184,27 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   const query=$('catalog-search').value.trim(),setId=$('catalog-set').value,requestId=++catalogRequest;
   $('catalog-results').innerHTML='';
   if(query.length<2){setStatus('catalog-status','Enter at least 2 letters to search the card catalog.');return;}
-  setStatus('catalog-status','Searching all matching printings…');
+  setStatus('catalog-status','Searching card names and alternate printings…');
   try{
    const terms=query.split(/\s+/).filter(Boolean),searchTerms=[query];
    if(terms.length>1){const last=terms[terms.length-1];if(!searchTerms.some(x=>x.toLowerCase()===last.toLowerCase()))searchTerms.push(last);for(const term of terms)if(term.length>=3&&!searchTerms.some(x=>x.toLowerCase()===term.toLowerCase()))searchTerms.push(term);}
    const found=new Map();
    for(const term of searchTerms){
     if(requestId!==catalogRequest)return;
-    const params=new URLSearchParams();params.set('name',term);params.set('pagination:itemsPerPage','100');if(setId)params.set('set',setId);
-    const response=await fetch(TCGDEX+'/cards?'+params.toString(),{headers:{Accept:'application/json'}});if(!response.ok)continue;
-    const result=await response.json();if(!Array.isArray(result))continue;
-    for(const card of result){if(!card||!card.id)continue;if(setId&&card.set?.id&&card.set.id!==setId)continue;found.set(card.id,card);}
+    for(let page=1;page<=10;page++){
+     if(requestId!==catalogRequest)return;
+     const params=new URLSearchParams();params.set('name',term);params.set('pagination:page',String(page));params.set('pagination:itemsPerPage','100');if(setId)params.set('set',setId);
+     const response=await fetch(TCGDEX+'/cards?'+params.toString(),{headers:{Accept:'application/json'}});if(!response.ok)break;
+     const result=await response.json();if(!Array.isArray(result)||!result.length)break;
+     for(const card of result)if(card?.id)found.set(card.id,card);
+     if(result.length<100)break;
+    }
    }
    const cards=[...found.values()];if(!cards.length)throw new Error('No catalog matches');
    const q=query.toLowerCase();
-   cards.sort((a,b)=>{const score=card=>{const name=String(card.name||'').toLowerCase(),id=String(card.id||'').toLowerCase();return name===q?0:name.includes(q)?1:id.includes(q)?2:3;};return score(a)-score(b)||String(a.name||'').localeCompare(String(b.name||''))||String(a.set?.name||'').localeCompare(String(b.set?.name||''));});
+   cards.sort((x,y)=>{const score=card=>{const name=String(card.name||'').toLowerCase(),id=String(card.id||'').toLowerCase();return name===q?0:name.includes(q)?1:id.includes(q)?2:3;};return score(x)-score(y)||String(x.name||'').localeCompare(String(y.name||''))||String(x.id||'').localeCompare(String(y.id||''));});
    renderCatalogResults(cards,requestId);
-  }catch(error){if(requestId===catalogRequest)setStatus('catalog-status','Catalog search is temporarily unavailable or found no matching cards. Try the card name alone, choose a set, or enter details manually.');}
+  }catch(error){if(requestId===catalogRequest)setStatus('catalog-status','Catalog search is temporarily unavailable or found no matching cards. Try “Mew” by itself, choose a set, or enter the card manually.');}
  }
  async function selectCatalogCard(id){
   const buttons=$('catalog-results').querySelectorAll('[data-card-id]');
@@ -240,7 +244,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   });
  }
  async function uploadProfileImage(kind,file){
-  if(!own||!profile?.username){setStatus('view-status','Please set up your collector profile in Settings before uploading a photo.');return;}
+  if(!own){setStatus('view-status','You can only change photos on your own collector profile.');return;}
   const field=kind==='avatar'?'avatar_url':'cover_url',fileInput=$(kind==='avatar'?'profile-photo-file':'profile-cover-file');
   setStatus('view-status','Preparing '+(kind==='avatar'?'profile photo':'cover photo')+'…');
   try{
@@ -251,8 +255,8 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    profile={...profile,...result.profile};showProfile(profile,document.getElementById('display-name').textContent);setStatus('view-status',(kind==='avatar'?'Profile photo':'Cover photo')+' updated successfully.');
   }catch(error){setStatus('view-status',error.message||'Could not update image.');}finally{fileInput.value='';}
  }
- $('avatar').addEventListener('click',()=>{if(own&&profile?.username)$('profile-photo-file').click();else if(own)location.href='/account.html#collector-profile-settings';});
- $('change-cover').addEventListener('click',()=>{if(own&&profile?.username)$('profile-cover-file').click();else location.href='/account.html#collector-profile-settings';});
+ $('avatar').addEventListener('click',()=>{if(own)$('profile-photo-file').click();});
+ $('change-cover').addEventListener('click',()=>{if(own)$('profile-cover-file').click();});
  $('profile-photo-file').addEventListener('change',event=>{if(event.target.files?.[0])uploadProfileImage('avatar',event.target.files[0]);});
  $('profile-cover-file').addEventListener('change',event=>{if(event.target.files?.[0])uploadProfileImage('cover',event.target.files[0]);});
  async function load(){
