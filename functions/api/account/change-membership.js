@@ -130,11 +130,13 @@ export async function onRequestPost({ request, env }) {
     if (!Number.isSafeInteger(start) || start < 1 || !Number.isSafeInteger(end) || end <= Math.floor(Date.now() / 1000)) {
       return json({ ok: false, error: 'billing_period_unavailable' }, 409);
     }
-    // Only allow known single-item subscriptions without discounts or unusual billing settings.
-    // Refuse rather than silently dropping settings when building the future schedule.
-    if ((subscription.discounts || []).length ||
-        subscription.pending_setup_intent) {
-      return json({ ok: false, error: 'subscription_requires_manual_review' }, 409);
+    // Preserve safety by identifying the exact unsupported setting instead of returning a generic error.
+    // Flexible billing mode itself is supported and is not a reason to refuse a schedule.
+    if ((subscription.discounts || []).length) {
+      return json({ ok: false, error: 'subscription_has_discounts_manual_review' }, 409);
+    }
+    if (subscription.pending_setup_intent) {
+      return json({ ok: false, error: 'subscription_has_pending_setup_manual_review' }, 409);
     }
 
     const { response: createResponse, result: schedule } = await stripeRequest(
@@ -166,7 +168,22 @@ export async function onRequestPost({ request, env }) {
     );
     if (hasSpecialPhaseSettings) {
       await stripeRequest(env, '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release', new URLSearchParams(), 'POST');
-      return json({ ok: false, error: 'subscription_requires_manual_review' }, 409);
+      const reasons = [];
+      if (currentPhase?.application_fee_percent != null) reasons.push('application_fee');
+      if (currentPhase?.automatic_tax?.enabled) reasons.push('automatic_tax');
+      if (currentPhase?.billing_thresholds) reasons.push('billing_thresholds');
+      if (currentPhase?.collection_method && currentPhase.collection_method !== 'charge_automatically') reasons.push('collection_method');
+      if (currentPhase?.default_payment_method) reasons.push('phase_default_payment_method');
+      if (currentPhase?.default_source) reasons.push('phase_default_source');
+      if ((currentPhase?.default_tax_rates || []).length) reasons.push('default_tax_rates');
+      if (currentPhase?.description) reasons.push('phase_description');
+      if ((currentPhase?.add_invoice_items || []).length) reasons.push('additional_invoice_items');
+      if (currentPhase?.on_behalf_of) reasons.push('on_behalf_of');
+      if (currentPhase?.transfer_data) reasons.push('transfer_data');
+      if (currentPhase?.trial_end) reasons.push('trial_end');
+      if ((currentPhase?.discounts || []).length) reasons.push('phase_discounts');
+      console.error('Staging plan change refused due to phase settings:', reasons.join(',') || 'unknown');
+      return json({ ok: false, error: 'subscription_requires_manual_review', reasons }, 409);
     }
     const scheduleCurrentStart = Number(currentPhase?.start_date || start);
     if (!Number.isSafeInteger(scheduleCurrentStart) || scheduleCurrentStart < 1) {
