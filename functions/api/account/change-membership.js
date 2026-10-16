@@ -68,6 +68,7 @@ function addPhase(params, index, start, end, price, tier, interval) {
   if (end) params.set(`phases[${index}][end_date]`, String(end));
   params.set(`phases[${index}][items][0][price]`, price);
   params.set(`phases[${index}][items][0][quantity]`, '1');
+  params.set(`phases[${index}][proration_behavior]`, 'none');
   params.set(`phases[${index}][metadata][account_id]`, '');
   params.set(`phases[${index}][metadata][membership_tier]`, tier);
   params.set(`phases[${index}][metadata][billing_interval]`, interval);
@@ -127,6 +128,7 @@ export async function onRequestPost({ request, env }) {
     const currentDetails = PRICE_DETAILS[currentItem.price.id];
     const start = periodStart(subscription, currentItem);
     const end = periodEnd(subscription, currentItem);
+    if (targetPrice === currentItem.price.id) return json({ ok: false, error: 'same_plan_selected' }, 400);
     if (!Number.isSafeInteger(start) || start < 1 || !Number.isSafeInteger(end) || end <= Math.floor(Date.now() / 1000)) {
       return json({ ok: false, error: 'billing_period_unavailable' }, 409);
     }
@@ -149,9 +151,14 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: false, error: 'schedule_creation_failed' }, 502);
     }
 
+    const scheduleCurrentStart = Number(schedule.phases?.[0]?.start_date || start);
+    if (!Number.isSafeInteger(scheduleCurrentStart) || scheduleCurrentStart < 1) {
+      await stripeRequest(env, '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release', new URLSearchParams(), 'POST');
+      return json({ ok: false, error: 'billing_period_unavailable' }, 409);
+    }
     const phases = new URLSearchParams();
     phases.set('end_behavior', 'release');
-    addPhase(phases, 0, start, end, currentItem.price.id, currentDetails.tier, currentDetails.interval);
+    addPhase(phases, 0, scheduleCurrentStart, end, currentItem.price.id, currentDetails.tier, currentDetails.interval);
     phases.set('phases[0][metadata][account_id]', String(account.id));
     addPhase(phases, 1, end, null, targetPrice, tier, interval);
     phases.set('phases[1][metadata][account_id]', String(account.id));
@@ -176,6 +183,9 @@ export async function onRequestPost({ request, env }) {
       console.error('Staging membership change schedule update failed:', updateResponse.status, updatedSchedule.error?.type || 'unknown');
       return json({ ok: false, error: 'schedule_update_failed' }, 502);
     }
+    await env.DB.prepare(
+      'UPDATE accounts SET membership_scheduled_tier = ?, membership_scheduled_interval = ?, membership_scheduled_price_id = ?, membership_scheduled_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND stripe_subscription_id = ?'
+    ).bind(tier, interval, targetPrice, end, account.id, account.stripe_subscription_id).run();
     return json({
       ok: true,
       scheduled: true,
