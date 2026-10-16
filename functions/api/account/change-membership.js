@@ -153,7 +153,6 @@ export async function onRequestPost({ request, env }) {
     const currentPhase = schedule.phases?.[0];
     const hasSpecialPhaseSettings = Boolean(
       currentPhase?.application_fee_percent != null ||
-      currentPhase?.automatic_tax?.enabled ||
       currentPhase?.billing_thresholds ||
       currentPhase?.collection_method && currentPhase.collection_method !== 'charge_automatically' ||
       currentPhase?.default_payment_method ||
@@ -170,7 +169,6 @@ export async function onRequestPost({ request, env }) {
       await stripeRequest(env, '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release', new URLSearchParams(), 'POST');
       const reasons = [];
       if (currentPhase?.application_fee_percent != null) reasons.push('application_fee');
-      if (currentPhase?.automatic_tax?.enabled) reasons.push('automatic_tax');
       if (currentPhase?.billing_thresholds) reasons.push('billing_thresholds');
       if (currentPhase?.collection_method && currentPhase.collection_method !== 'charge_automatically') reasons.push('collection_method');
       if (currentPhase?.default_payment_method) reasons.push('phase_default_payment_method');
@@ -197,6 +195,12 @@ export async function onRequestPost({ request, env }) {
     phases.set('phases[0][metadata][account_id]', String(account.id));
     addPhase(phases, 1, end, null, targetPrice, tier, interval);
     phases.set('phases[1][metadata][account_id]', String(account.id));
+    // Preserve Stripe Tax across both phases. If it is enabled on the existing
+    // schedule phase, keep it enabled now and after the plan/interval transition.
+    if (currentPhase?.automatic_tax?.enabled === true) {
+      phases.set('phases[0][automatic_tax][enabled]', 'true');
+      phases.set('phases[1][automatic_tax][enabled]', 'true');
+    }
     // Keep existing subscription-level metadata unchanged until the phase transition.
     // Stripe applies phase metadata at the transition, then the account webhook syncs D1.
     const { response: updateResponse, result: updatedSchedule } = await stripeRequest(
