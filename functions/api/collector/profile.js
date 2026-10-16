@@ -38,8 +38,9 @@ export async function onRequestPost({request,env}){
  const isPublic=data.is_public===false?0:1;
  if(!safeUsername(username))return json({ok:false,error:'invalid_username'},400);
  if(bio.length>500)return json({ok:false,error:'bio_too_long'},400);
- if(avatar.length>500|| (avatar&&!/^https:\/\//i.test(avatar)))return json({ok:false,error:'invalid_avatar_url'},400);
- if(cover.length>1000|| (cover&&!/^https:\/\//i.test(cover)))return json({ok:false,error:'invalid_cover_url'},400);
+ const validImage=(value,maxDataLength)=>!value||(/^https:\/\//i.test(value)&&value.length<=1000)||((value.startsWith('data:image/webp;base64,')||value.startsWith('data:image/jpeg;base64,'))&&value.length<=maxDataLength);
+ if(!validImage(avatar,350000))return json({ok:false,error:'invalid_avatar_url'},400);
+ if(!validImage(cover,850000))return json({ok:false,error:'invalid_cover_url'},400);
  try{
   const result=await env.DB.prepare(`INSERT INTO collector_profiles (account_id,username,bio,avatar_url,cover_url,is_public,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(account_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,cover_url=excluded.cover_url,is_public=excluded.is_public,updated_at=CURRENT_TIMESTAMP`).bind(account.id,username,bio,avatar,cover,isPublic).run();
   return json({ok:true,profile:{username,bio,avatar_url:avatar,cover_url:cover,is_public:isPublic}},200);
