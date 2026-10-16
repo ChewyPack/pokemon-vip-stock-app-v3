@@ -13,7 +13,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 .cp-nav{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}
 .cp-brand{font:2rem Bangers,cursive;color:var(--blue);text-decoration:none}
 .cp-nav a:last-child{font-weight:900;color:var(--blue)}
-.cp-hero{background:linear-gradient(120deg,#07194d,#123d8c);color:#fff;border-radius:18px;padding:clamp(20px,4vw,38px);display:flex;align-items:center;gap:20px;box-shadow:0 8px 24px #07194d20}
+.cp-hero{position:relative;background:linear-gradient(120deg,#07194d,#123d8c);background-size:cover;background-position:center;color:#fff;border-radius:18px;padding:clamp(20px,4vw,38px);display:flex;align-items:center;gap:20px;box-shadow:0 8px 24px #07194d20;min-height:190px;overflow:hidden}.cp-hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#07194df2,#07194db0);pointer-events:none}.cp-hero>*{position:relative;z-index:1}
 .cp-avatar{width:88px;height:88px;flex:0 0 88px;border-radius:24px;border:3px solid var(--yellow);background:#fff;color:var(--blue);display:grid;place-items:center;overflow:hidden;font-size:2.2rem;font-weight:900}
 .cp-avatar img{width:100%;height:100%;object-fit:cover}
 .cp-hero h1{font:2.5rem/1 Bangers,cursive;margin:0 0 8px;overflow-wrap:anywhere}
@@ -57,7 +57,7 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 <body>
 <main class="cp-wrap">
 <nav class="cp-nav"><a class="cp-brand" href="/">PokePrizePool</a><a href="/account.html">Account / Sign in</a></nav>
-<section class="cp-hero">
+<section class="cp-hero" id="profile-hero">
 <div id="avatar" class="cp-avatar">🃏</div>
 <div><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><p id="bio-display">Your collection, your chase, your story.</p></div>
 </section>
@@ -70,10 +70,11 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
 <div class="cp-layout">
 <aside id="owner-tools" class="cp-panel">
 <h2>Build your profile</h2>
-<p class="cp-status">Choose a unique username for your public PokePrizePool profile.</p>
+<p class="cp-status">Your username was chosen during signup. Add your profile picture, cover photo, and bio here.</p>
 <form id="profile-form">
 <label class="cp-field">Username (3–24 letters, numbers, underscores)<input id="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" placeholder="e.g. captainchaos94"></label>
-<label class="cp-field">Profile photo URL (optional)<input id="avatar-url" type="url" placeholder="https://…"></label>
+<label class="cp-field">Profile picture URL (optional)<input id="avatar-url" type="url" placeholder="https://…"></label>
+<label class="cp-field">Cover photo URL (optional)<input id="cover-url" type="url" placeholder="https://…"></label>
 <label class="cp-field">Bio (up to 500 characters)<textarea id="bio" maxlength="500" placeholder="What do you collect? What's your chase card?"></textarea></label>
 <label class="cp-field"><span>Profile visibility</span><select id="visibility"><option value="public">Public showcase</option><option value="private">Private profile</option></select></label>
 <button class="cp-btn" type="submit">Save profile</button>
@@ -125,7 +126,8 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
   $('items').querySelectorAll('[data-remove]').forEach(button=>button.addEventListener('click',()=>removeItem(button.dataset.remove)));
  }
  function showProfile(p,accountName){
-  profile=p;$('username').value=p?.username||'';$('avatar-url').value=p?.avatar_url||'';$('bio').value=p?.bio||'';$('visibility').value=Number(p?.is_public??1)===1?'public':'private';
+  profile=p;const hero=$('profile-hero');if(hero)hero.style.backgroundImage=p?.cover_url?'url("'+String(p.cover_url).replace(/["\\\\]/g,'')+'"), linear-gradient(120deg,#07194d,#123d8c)':'';
+  $('username').value=p?.username||'';$('username').readOnly=Boolean(p?.username);$('avatar-url').value=p?.avatar_url||'';$('cover-url').value=p?.cover_url||'';$('bio').value=p?.bio||'';$('visibility').value=Number(p?.is_public??1)===1?'public':'private';
   $('handle').textContent=p?.username?'@'+p.username:'Create your collector handle';
   $('display-name').textContent=accountName||p?.display_name||p?.username||'Collector Profile';
   $('bio-display').textContent=p?.bio||'Your collection, your chase, your story.';
@@ -156,8 +158,8 @@ body{background:#f1f5fc;color:var(--navy);font-family:Nunito,system-ui,sans-seri
  }
  $('profile-form').addEventListener('submit',async e=>{
   e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Saving profile…');
-  try{const r=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value.trim(),bio:$('bio').value,avatar_url:$('avatar-url').value.trim(),is_public:$('visibility').value==='public'})}),d=await r.json();
-   if(!r.ok||!d.ok){const errors={invalid_username:'Use 3–24 letters, numbers, or underscores.',username_taken:'That username is already taken. Try another.',bio_too_long:'Your bio is too long.',invalid_avatar_url:'Profile photo must be a valid HTTPS URL.'};throw new Error(errors[d.error]||'Could not save your profile.');}
+  try{const r=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value.trim(),bio:$('bio').value,avatar_url:$('avatar-url').value.trim(),cover_url:$('cover-url').value.trim(),is_public:$('visibility').value==='public'})}),d=await r.json();
+   if(!r.ok||!d.ok){const errors={invalid_username:'Use 3–24 letters, numbers, or underscores.',username_taken:'That username is already taken. Try another.',bio_too_long:'Your bio is too long.',invalid_avatar_url:'Profile photo must be a valid HTTPS URL.',invalid_cover_url:'Cover photo must be a valid HTTPS URL.'};throw new Error(errors[d.error]||'Could not save your profile.');}
    viewUsername='';history.replaceState({},'',location.pathname);showProfile(d.profile);setStatus('owner-status','Profile saved! Your public link is '+location.origin+'/collector.html?user='+encodeURIComponent(d.profile.username));await load();
   }catch(error){setStatus('owner-status',error.message||'Could not save profile.');}finally{button.disabled=false;}
  });
