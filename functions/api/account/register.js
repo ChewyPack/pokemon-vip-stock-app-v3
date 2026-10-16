@@ -15,14 +15,14 @@ function cookie(token, expiresAt) { return [`${COOKIE}=${token}`, 'Path=/', 'Htt
 export async function onRequestPost({ request, env }) {
   if (!env.DB) return json({ ok:false, error:'database_not_configured' }, 500);
   let data; try { data = await request.json(); } catch { return json({ ok:false, error:'bad_request' }, 400); }
-  const displayName = typeof data.display_name === 'string' ? data.display_name.trim() : '';
+  const displayName = typeof data.username === 'string' ? data.username.trim() : '';
   const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
   const password = typeof data.password === 'string' ? data.password : '';
   const accountType = typeof data.account_type === 'string' ? data.account_type : '';
   const username = typeof data.username === 'string' ? data.username.trim() : '';
   const bio = typeof data.bio === 'string' ? data.bio.trim() : '';
   const avatarUrl = typeof data.avatar_url === 'string' ? data.avatar_url.trim() : '';
-  if (displayName.length < 2 || displayName.length > 60) return json({ ok:false, error:'invalid_name' }, 400);
+  if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) return json({ ok:false, error:'invalid_username' }, 400);
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok:false, error:'invalid_email' }, 400);
   if (!ACCOUNT_TYPES.has(accountType)) return json({ ok:false, error:'invalid_account_type' }, 400);
   if (password.length < 10 || password.length > 128) return json({ ok:false, error:'password_requirements' }, 400);
