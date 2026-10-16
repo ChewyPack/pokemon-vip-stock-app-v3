@@ -100,9 +100,7 @@ export async function onRequestPost({ request, env }) {
     if (Number(account.membership_cancel_at_period_end || 0) === 1) {
       return json({ ok: false, error: 'cancellation_scheduled' }, 409);
     }
-    if (tier === 'vendor' && account.account_type !== 'vendor') return json({ ok: false, error: 'choose_vendor_account_type' }, 400);
-    if (tier === 'organizer' && account.account_type !== 'organizer') return json({ ok: false, error: 'choose_organizer_account_type' }, 400);
-    if (tier === 'collector_plus' && !['free', 'collector'].includes(account.account_type)) return json({ ok: false, error: 'choose_collector_account_type' }, 400);
+    // Paid membership tier is independent of website account type and verification status.
 
     const targetPrice = PRICES[tier][interval];
     if (targetPrice === account.stripe_price_id) return json({ ok: false, error: 'same_plan_selected' }, 400);
