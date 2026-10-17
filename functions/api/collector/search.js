@@ -51,6 +51,7 @@ export async function onRequestGet({ request, env }) {
     const viewer = await currentAccount(request, env).catch(() => null);
     const result = await env.DB.prepare(`
       SELECT
+        p.account_id,
         p.username,
         p.bio,
         p.avatar_url,
@@ -95,19 +96,7 @@ export async function onRequestGet({ request, env }) {
       isFollowing: Number(profile.is_following || 0) === 1,
       canFollow: !!viewer && Number(viewer.id) !== Number(profile.account_id)
     }));
-    // account_id is deliberately not selected into the public response; determine own-profile
-    // eligibility from the same session using a separate lookup when signed in.
-    if (viewer) {
-      const own = await env.DB.prepare(
-        'SELECT username FROM collector_profiles WHERE account_id = ? LIMIT 1'
-      ).bind(viewer.id).first();
-      for (const profile of results) {
-        if (own?.username && own.username.toLowerCase() === profile.username.toLowerCase()) {
-          profile.canFollow = false;
-          profile.isFollowing = false;
-        }
-      }
-    }
+    for (const profile of results) delete profile.account_id;
     return json({ ok: true, results });
   } catch (error) {
     console.error('Collector search failed:', error);
