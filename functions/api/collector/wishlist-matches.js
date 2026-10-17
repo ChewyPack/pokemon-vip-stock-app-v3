@@ -93,7 +93,8 @@ export async function onRequestGet({ request, env }) {
           within_radius: miles !== null && miles <= radius
         };
       });
-      const visible = same.filter(item => item.distance_miles === null || item.within_radius);
+      const locationEnabled = Number(viewer?.location_enabled || 0) === 1;
+      const visible = locationEnabled ? same.filter(item => item.within_radius) : same;
       return {
         wishlist_item: {
           id: Number(want.id), product_type: want.product_type,
