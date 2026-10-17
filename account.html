@@ -127,9 +127,15 @@
     <article class="dashboard-card">
       <p class="dashboard-eyebrow">Profile</p>
       <h2>Account details</h2>
-      <div class="account-detail"><span>Display name</span><strong id="profile-name">—</strong></div>
-      <div class="account-detail"><span>Email</span><strong id="profile-email">—</strong></div>
       <div class="account-detail"><span>Member since</span><strong id="profile-created">—</strong></div>
+      <form id="personal-settings-form" class="settings-profile-form">
+        <label>Display name<input id="settings-display-name" maxlength="60" required autocomplete="name"></label>
+        <label>Collector username<input id="settings-account-username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" required autocomplete="username"></label>
+        <label>Email address<input id="settings-account-email" type="email" maxlength="254" required autocomplete="email"></label>
+        <label>Phone number (optional)<input id="settings-account-phone" type="tel" maxlength="30" autocomplete="tel" placeholder="Your phone number"></label>
+        <button class="btn btn--primary" id="save-personal-settings" type="submit">Save personal details</button>
+        <p id="personal-settings-status" class="settings-profile-status" role="status" aria-live="polite"></p>
+      </form>
     </article>
     <article class="dashboard-card">
       <p class="dashboard-eyebrow">Your place in the hobby</p>
@@ -279,6 +285,7 @@
     }
     const p=data.profile||{};
     document.getElementById('settings-collector-username').value=p.username||'';
+    document.getElementById('settings-account-username').value=p.username||'';
     document.getElementById('settings-collector-bio').value=p.bio||'';
     document.getElementById('settings-collector-avatar').value=p.avatar_url||'';
     document.getElementById('settings-collector-cover').value=p.cover_url||'';
@@ -332,6 +339,9 @@
     document.getElementById('dashboard-heading').textContent='Welcome back, '+(a.display_name||'collector')+'!';
     document.getElementById('profile-name').textContent=a.display_name||'—';
     document.getElementById('profile-email').textContent=a.email||'—';
+    document.getElementById('settings-display-name').value=a.display_name||'';
+    document.getElementById('settings-account-email').value=a.email||'';
+    document.getElementById('settings-account-phone').value=a.phone_number||'';
     const created=a.created_at?new Date(a.created_at):null;
     document.getElementById('profile-created').textContent=created&&!Number.isNaN(created.getTime())?created.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'PokePrizePool member';
     const membershipLabels={free:'Collector (Free)',collector_plus:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
