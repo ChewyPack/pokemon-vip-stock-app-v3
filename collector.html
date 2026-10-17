@@ -18,7 +18,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-avatar img{width:100%;height:100%;object-fit:cover}.cp-avatar-edit{padding:0;cursor:pointer;font-family:inherit}.cp-avatar-edit:focus-visible,.cp-cover-edit:focus-visible{outline:3px solid #ffd21f;outline-offset:3px}.cp-cover-edit{position:absolute;right:16px;bottom:14px;z-index:3;border:1px solid #ffffff88;border-radius:9px;padding:8px 11px;background:#07194ddd;color:#fff;font:inherit;font-weight:900;cursor:pointer}.cp-cover-edit[hidden]{display:none!important}
 .cp-hero h1{font:2.5rem/1 Bangers,cursive;margin:0 0 8px;overflow-wrap:anywhere}
 .cp-hero p{margin:0;color:#dbe8ff;line-height:1.5}
-.cp-hero-main{min-width:0;flex:1}.cp-bio-row{display:flex;align-items:flex-start;gap:10px}
+.cp-hero-main{min-width:0;flex:1}.cp-bio-row{display:flex;align-items:flex-start;gap:10px}.cp-bio-edit{border:1px solid #ffffff70;border-radius:8px;background:#07194d99;color:#fff;padding:6px 9px;font:inherit;font-size:.8rem;font-weight:900;cursor:pointer}.cp-bio-editor{display:grid;gap:8px;max-width:560px;margin-top:10px}.cp-bio-editor textarea{width:100%;min-height:80px;border:1px solid #ffffff80;border-radius:9px;padding:10px;font:inherit;color:#07194d}.cp-follow-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}.cp-follow-count{color:#fff;font-size:.9rem}.cp-follow-count strong{font-size:1.05rem}.cp-follow-btn{border:1px solid #ffd21f;border-radius:9px;padding:8px 13px;background:#ffd21f;color:#07194d;font:inherit;font-weight:900;cursor:pointer}.cp-follow-btn.secondary{background:transparent;color:#fff}.cp-follow-btn:disabled{opacity:.6;cursor:wait}
 .cp-catalog-refine{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.cp-catalog-refine[hidden]{display:none}
 .cp-catalog-refine label{display:grid;gap:4px;font-size:.8rem;font-weight:900;color:var(--muted)}
 .cp-handle{font-weight:900;color:var(--yellow)!important;margin-bottom:6px!important}
@@ -74,7 +74,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <nav class="cp-nav"><a class="cp-brand" href="/">PokePrizePool</a><div class="cp-nav-actions"><a class="cp-settings-link" id="collector-settings" href="/account.html" aria-label="Account settings" title="Account settings"><span aria-hidden="true">⚙</span><span>Settings</span></a><button class="cp-settings-link cp-logout" id="collector-logout" type="button" hidden>Log out</button><a class="cp-settings-link" id="collector-signin" href="/account.html">Sign in</a></div></nav>
 <section class="cp-hero" id="profile-hero">
 <button id="avatar" class="cp-avatar cp-avatar-edit" type="button" aria-label="Change profile photo" title="Click to change profile photo">🃏</button><input id="profile-photo-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="Upload profile photo"><input id="profile-cover-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="Upload cover photo"><button id="change-cover" class="cp-cover-edit" type="button" hidden>Change cover photo</button>
-<div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><p id="bio-display">Your collection, your chase, your story.</p></div></div>
+<div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><p id="bio-display">Your collection, your chase, your story.</p><button id="edit-bio" class="cp-bio-edit" type="button" hidden>Edit bio</button></div><form id="bio-editor" class="cp-bio-editor" hidden><textarea id="bio-input" maxlength="500" placeholder="Tell other collectors about yourself…"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cp-btn" type="submit">Save bio</button><button id="cancel-bio" class="cp-btn secondary" type="button">Cancel</button></div><p id="bio-status" class="cp-status" role="status" aria-live="polite"></p></form><div class="cp-follow-row"><span class="cp-follow-count"><strong id="followers-count">0</strong> followers</span><span class="cp-follow-count"><strong id="following-count">0</strong> following</span><button id="follow-button" class="cp-follow-btn" type="button" hidden>Follow</button></div></div>
 </section>
 </section>
 <div class="cp-stats">
@@ -89,9 +89,9 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <form id="item-form">
 <label class="cp-field">List<select id="list-type"><option value="collection">My Collection</option><option value="wishlist">My Wishlist</option></select></label>
 <div class="cp-catalog">
-<p class="cp-catalog-title">Add a card or product</p><p class="cp-catalog-status">Search by Pokémon, card name, or set — for example, “RGB Mew”.</p>
+<p class="cp-catalog-title">Add a card or sealed product</p><p class="cp-catalog-status">Choose Single card / Graded card to search cards, or Sealed product to search booster boxes, ETBs, tins, bundles, and collections.</p>
 <div class="cp-catalog-controls">
-<input id="catalog-search" type="search" placeholder="Search card name (e.g. Charizard)" autocomplete="off" aria-label="Search Pokémon card catalog">
+<input id="catalog-search" type="search" placeholder="Search card or sealed product (e.g. Charizard or ETB)" autocomplete="off" aria-label="Search Pokémon card or sealed product catalog">
 
 </div>
 <p id="catalog-status" class="cp-catalog-status" role="status" aria-live="polite">Loading set list…</p>
@@ -125,7 +125,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  const $=id=>document.getElementById(id);
  let own=false,profile=null,items=[],activeList='collection',viewUsername=new URLSearchParams(location.search).get('user')||'';
  const TCGDEX='https://api.tcgdex.net/v2/en';
- let catalogSets=[],catalogTimer=null,catalogRequest=0;
+ let catalogSets=[],catalogTimer=null,catalogRequest=0,followState={followers:0,following:0,isFollowing:false};
 
  const money=cents=>cents===null||cents===undefined?'Not set':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents)/100);
  const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -143,6 +143,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   $('handle').textContent=p?.username?'@'+p.username:'Create your collector handle';
   $('display-name').textContent=accountName||p?.display_name||p?.username||'Collector Profile';
   $('bio-display').textContent=p?.bio||'Pokémon collector — add a bio to tell your story.';
+  $('edit-bio').hidden=!own;$('bio-editor').hidden=true;$('bio-input').value=p?.bio||'';
   if(p?.avatar_url)$('avatar').innerHTML='<img src="'+safe(p.avatar_url)+'" alt="Profile photo">';else $('avatar').textContent='🃏';
   $('avatar').disabled=!own;$('avatar').title=own?'Click to change profile photo':'';$('change-cover').hidden=!own;
  }
@@ -249,11 +250,15 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   }catch(error){setStatus('catalog-status','Could not load that card. Please choose another result or enter details manually.');}
   finally{buttons.forEach(button=>button.disabled=false);}
  }
- $('catalog-search').addEventListener('input',()=>{clearTimeout(catalogTimer);catalogTimer=setTimeout(searchCatalog,350);});
- $('catalog-set').addEventListener('change',searchCatalog);
+ $('catalog-search').addEventListener('input',()=>{clearTimeout(catalogTimer);catalogTimer=setTimeout(()=>{$('product-type').value==='sealed'?searchSealedCatalog():searchCatalog();},350);});
+ $('product-type').addEventListener('change',()=>{const sealed=$('product-type').value==='sealed';$('card-number').disabled=sealed;$('condition').placeholder=sealed?'e.g. Sealed / box condition':'e.g. Near Mint, PSA 10';$('catalog-search').placeholder=sealed?'Search sealed product (e.g. Prismatic Evolutions ETB)':'Search card name (e.g. Charizard)';$('catalog-results').innerHTML='';if($('catalog-search').value.trim().length>=2)(sealed?searchSealedCatalog():searchCatalog());});
+ $('catalog-set').addEventListener('change',()=>{if($('product-type').value!=='sealed')searchCatalog();});
  $('catalog-sort').addEventListener('change',searchCatalog);
  $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-card-id]');if(button)selectCatalogCard(button.dataset.cardId);});
  loadCatalogSets();
+ async function searchSealedCatalog(){const query=$('catalog-search').value.trim(),requestId=++catalogRequest;$('catalog-results').innerHTML='';$('catalog-refine').hidden=true;if(query.length<2){setStatus('catalog-status','Enter at least 2 letters to search sealed products.');return;}setStatus('catalog-status','Searching sealed product catalog…');try{const r=await fetch('/api/collector/sealed-search?q='+encodeURIComponent(query),{credentials:'include',cache:'no-store'}),d=await r.json();if(requestId!==catalogRequest)return;if(!r.ok||!d.ok){if(d.error==='sealed_api_key_missing')throw new Error('Sealed catalog needs a free Pokémon TCG API key. Add it as POKEMON_TCG_API_KEY in the staging Cloudflare Pages settings.');throw new Error('Sealed catalog search is temporarily unavailable.');}const products=d.products||[];window.__sealedResults=products;if(!products.length){setStatus('catalog-status','No sealed products matched. Try a shorter search, or enter the product name manually below.');return;}$('catalog-results').innerHTML=products.map(p=>'<button class="cp-catalog-result" type="button" data-sealed-id="'+safe(p.id||p.sku)+'"><span>'+(p.image_url?'<img loading="lazy" src="'+safe(p.image_url)+'" alt="">':'📦')+'</span><span><strong>'+safe(p.name||'Pokémon sealed product')+'</strong><small>'+safe(p.set_name||'Set not listed')+' · '+safe(p.kind||'Sealed product')+(p.release_date?' · '+safe(p.release_date):'')+'</small></span></button>').join('');setStatus('catalog-status','Showing '+products.length+' sealed product matches. Choose the exact product you own.');}catch(error){setStatus('catalog-status',error.message||'Could not search sealed products.');}}
+ $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-sealed-id]');if(button){const id=button.dataset.sealedId;const product=(window.__sealedResults||[]).find(p=>String(p.id||p.sku)===id);if(product)selectSealedProduct(product);}});
+ function selectSealedProduct(product){$('product-name').value=product.name||'';$('product-type').value='sealed';$('set-name').value=product.set_name||'';$('card-number').value='';$('card-number').disabled=true;$('condition').placeholder='e.g. Sealed / box condition';$('image-url').value=product.image_url||'';$('estimated-value').value='';setStatus('catalog-status','Selected sealed product. Add an estimated value only if you have a reliable current price.');$('product-name').focus();}
  function compressProfileImage(file,kind){
   return new Promise((resolve,reject)=>{
    if(!file||!file.type.startsWith('image/')){reject(new Error('Choose an image file.'));return;}
@@ -284,21 +289,26 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  $('change-cover').addEventListener('click',()=>{if(own)$('profile-cover-file').click();});
  $('profile-photo-file').addEventListener('change',event=>{if(event.target.files?.[0])uploadProfileImage('avatar',event.target.files[0]);});
  $('profile-cover-file').addEventListener('change',event=>{if(event.target.files?.[0])uploadProfileImage('cover',event.target.files[0]);});
+ async function loadFollowState(username){try{const r=await fetch('/api/collector/follow?username='+encodeURIComponent(username),{credentials:'include',cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok)return;followState=d; $('followers-count').textContent=Number(d.followers||0).toLocaleString();$('following-count').textContent=Number(d.following||0).toLocaleString();$('follow-button').hidden=own||!d.canFollow;$('follow-button').textContent=d.isFollowing?'Following · Click to unfollow':'Follow';$('follow-button').classList.toggle('secondary',!!d.isFollowing);}catch{}}
+ $('follow-button').addEventListener('click',async()=>{if(!profile?.username)return;const button=$('follow-button');button.disabled=true;try{const method=followState.isFollowing?'DELETE':'POST';const r=await fetch('/api/collector/follow?username='+encodeURIComponent(profile.username),{method,credentials:'include'}),d=await r.json();if(!r.ok||!d.ok){if(r.status===401){location.href='/account.html';return;}throw new Error('Could not update follow.');}followState=d;$('followers-count').textContent=Number(d.followers||0).toLocaleString();$('following-count').textContent=Number(d.following||0).toLocaleString();button.textContent=d.isFollowing?'Following · Click to unfollow':'Follow';button.classList.toggle('secondary',!!d.isFollowing);}catch(error){setStatus('view-status',error.message||'Could not update follow.');}finally{button.disabled=false;}});
  async function load(){
   try{
    if(viewUsername){
     const r=await fetch('/api/collector/profile?username='+encodeURIComponent(viewUsername),{cache:'no-store'}),d=await r.json();
     if(!r.ok||!d.ok)throw new Error('This collector profile could not be found or is private.');
-    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;showProfile(profile,profile.display_name);
+    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;showProfile(profile,profile.display_name);await loadFollowState(profile.username);
    }else{
     const r=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),d=await r.json();
     if(r.status===401){location.href='/account.html';return;}if(!r.ok||!d.ok)throw new Error('Could not load your collector profile. Apply the staging database migration if it has not been run.');
-    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);$('collector-signin').hidden=true;$('collector-logout').hidden=false
+    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);$('collector-signin').hidden=true;$('collector-logout').hidden=false;await loadFollowState(profile.username)
     if(!profile){$('handle').textContent='Profile not published yet';}
    }
    stats();render();
   }catch(e){setStatus('view-status',e.message||'Could not load the profile.');$('items').innerHTML='<div class="cp-empty">'+safe(e.message||'Could not load the profile.')+'</div>';}
  }
+ $('edit-bio').addEventListener('click',()=>{$('bio-input').value=profile?.bio||'';$('bio-editor').hidden=false;$('bio-input').focus();});
+ $('cancel-bio').addEventListener('click',()=>{$('bio-editor').hidden=true;setStatus('bio-status','');});
+ $('bio-editor').addEventListener('submit',async e=>{e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('bio-status','Saving bio…');try{const payload={username:profile.username,bio:$('bio-input').value,avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1};const r=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error==='bio_too_long'?'Bio must be 500 characters or fewer.':'Could not save bio. Please try again.');profile={...profile,...d.profile};$('bio-display').textContent=profile.bio||'Pokémon collector — add a bio to tell your story.';$('bio-editor').hidden=true;setStatus('view-status','Bio updated.');}catch(error){setStatus('bio-status',error.message||'Could not save bio.');}finally{button.disabled=false;}});
  $('collector-logout').addEventListener('click',async()=>{
   const button=$('collector-logout');button.disabled=true;button.textContent='Logging out…';
   try{const response=await fetch('/api/account/logout',{method:'POST',credentials:'include'});if(!response.ok)throw new Error('Please try logging out again.');location.href='/';}
