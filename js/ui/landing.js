@@ -96,7 +96,6 @@
       h(
         'div',
         { class: 'wrap site-nav-header__inner' },
-        navLink('Pokémon VIP', '#home'),
         h(
           'nav',
           {
