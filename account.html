@@ -66,6 +66,22 @@
 .membership-status{display:block;margin-top:10px;font-size:.9rem;color:#334a7c;overflow-wrap:anywhere}\n.membership-summary{margin-top:14px;padding:16px;border:2px solid #d5e0f2;border-radius:10px;background:#f7faff}\n.membership-summary h3{margin:0 0 12px;font-size:1.15rem}\n.membership-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}\n.membership-summary-item{padding:10px;background:#fff;border:1px solid #d5e0f2;border-radius:8px}\n.membership-summary-item span{display:block;font-size:.75rem;color:#5670a6;font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}\n.membership-summary-item strong{overflow-wrap:anywhere}\n.membership-cancel{margin-top:12px;width:100%;min-height:44px;cursor:pointer;background:#fff;color:#9a2525;border:2px solid #b83a3a;border-radius:8px;font:inherit;font-weight:900}\n.membership-cancel:disabled{opacity:.6;cursor:wait}\n@media(max-width:520px){.membership-summary-grid{grid-template-columns:1fr}}
 @media(max-width:520px){.dashboard-grid{grid-template-columns:1fr}.dashboard-card--wide{grid-column:auto}.dashboard-top{gap:10px}.account-avatar{flex-basis:48px;width:48px;height:48px;border-radius:13px}}
 
+
+/* Collapsible account settings */
+.settings-accordion{grid-column:1/-1;border:2px solid #cbd8ed;border-radius:12px;background:#fff;overflow:hidden}
+.settings-accordion>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 18px;background:#f7faff;color:#0b2a6b;cursor:pointer;font-weight:900;font-size:1.05rem}
+.settings-accordion>summary::-webkit-details-marker{display:none}
+.settings-accordion>summary:after{content:"+";display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border:2px solid #0b2a6b;border-radius:8px;font-size:1.35rem;line-height:1}
+.settings-accordion[open]>summary:after{content:"−";background:#ffd21f}
+.settings-accordion>summary:focus-visible{outline:3px solid #ffd21f;outline-offset:-4px}
+.settings-accordion .settings-accordion-copy{display:block;font-size:.84rem;font-weight:700;color:#5670a6;margin-top:4px}
+.settings-accordion-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:14px;border-top:1px solid #d5e0f2}
+.settings-accordion-panel>.dashboard-card{min-width:0}
+.settings-accordion-panel>.dashboard-card--wide{grid-column:1/-1}
+.settings-placeholder{border:2px dashed #cbd8ed;border-radius:10px;padding:16px;background:#f7faff;color:#334a7c;line-height:1.55}
+.settings-placeholder strong{display:block;color:#0b2a6b;margin-bottom:6px}
+@media(max-width:600px){.settings-accordion-panel{grid-template-columns:1fr}.settings-accordion-panel>.dashboard-card--wide{grid-column:auto}}
+
 </style>
 </head>
 <body>
@@ -518,6 +534,66 @@
  setMode('login');checkSession();
 })();
 </script>
+
+<script>
+/* Group the existing settings controls into the four requested click-to-open sections. */
+(function(){
+ function buildSettingsAccordions(){
+  const grid=document.querySelector('#dashboard .dashboard-grid');
+  if(!grid||grid.dataset.settingsAccordionsBuilt==='true')return;
+  const cards=[...grid.querySelectorAll(':scope > .dashboard-card')];
+  const cardByHeading=(heading)=>cards.find(card=>card.querySelector('h2')?.textContent.trim().toLowerCase()===heading.toLowerCase());
+  const account=cardByHeading('Account details');
+  const membershipLevel=cardByHeading('Membership level');
+  const membershipAccess=cardByHeading('One account, separate benefits');
+  const collection=cardByHeading('Collector profile');
+  const nearby=grid.querySelector('#nearby-collector-settings');
+  const publicProfile=grid.querySelector('#collector-profile-settings');
+  const vendor=cardByHeading('Vendor & events');
+  const makeSection=(title,description,id)=>{
+   const details=document.createElement('details');
+   details.className='settings-accordion';
+   details.id=id;
+   const summary=document.createElement('summary');
+   const label=document.createElement('span');
+   label.textContent=title;
+   const copy=document.createElement('span');
+   copy.className='settings-accordion-copy';
+   copy.textContent=description;
+   const textWrap=document.createElement('span');
+   textWrap.append(label,copy);
+   summary.append(textWrap);
+   details.append(summary);
+   const panel=document.createElement('div');
+   panel.className='settings-accordion-panel';
+   details.append(panel);
+   summary.addEventListener('click',function(){});
+   return {details,panel};
+  };
+  const personal=makeSection('Personal Details','Your account name, email, and profile information','settings-personal-details');
+  const security=makeSection('Password & Security','Account protection and sign-in security','settings-password-security');
+  const membership=makeSection('Membership','Your current level, billing plan, and membership actions','settings-membership');
+  const collectorSettings=makeSection('Collector Settings','Nearby matching, your collector profile, and collection tools','settings-collector');
+  if(account)personal.panel.append(account);
+  const securityCard=document.createElement('div');
+  securityCard.className='settings-placeholder';
+  securityCard.innerHTML='<strong>Password changes and two-factor authentication</strong><span>These controls need secure server-side setup before they can safely be enabled. No security setting is being changed by this preview.</span>';
+  security.panel.append(securityCard);
+  if(membershipLevel)membership.panel.append(membershipLevel);
+  if(membershipAccess)membership.panel.append(membershipAccess);
+  if(collection)collectorSettings.panel.append(collection);
+  if(nearby)collectorSettings.panel.append(nearby);
+  if(publicProfile)collectorSettings.panel.append(publicProfile);
+  const firstRemaining=vendor||cards.find(card=>grid.contains(card));
+  const sections=[personal.details,security.details,membership.details,collectorSettings.details];
+  if(firstRemaining)grid.insertBefore(sections[0],firstRemaining);else grid.append(sections[0]);
+  sections.slice(1).forEach(section=>grid.insertBefore(section,firstRemaining&&grid.contains(firstRemaining)?firstRemaining:null));
+  grid.dataset.settingsAccordionsBuilt='true';
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',buildSettingsAccordions);else buildSettingsAccordions();
+})();
+</script>
+
 <script src="/js/ui/site-nav.js"></script>
 </body>
 </html>
