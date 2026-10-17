@@ -34,7 +34,7 @@ export async function onRequestGet({ request, env }) {
   if (!account) return json({ ok: false, error: 'login_required' }, 401);
   try {
     const rows = await env.DB.prepare(`
-      SELECT o.id, o.proposer_account_id, o.recipient_account_id, o.status, o.message, o.offer_type, o.cash_amount_cents, o.created_at, o.updated_at,
+      SELECT o.id, o.proposer_account_id, o.recipient_account_id, o.status, o.message, o.offer_type, o.cash_amount_cents, o.created_at, o.updated_at, o.recipient_read_at,
         CASE WHEN o.proposer_account_id = ? THEN 'outgoing' ELSE 'incoming' END AS direction,
         pp.username AS proposer_username, rp.username AS recipient_username
       FROM collector_trade_offers o
@@ -74,6 +74,7 @@ export async function onRequestPost({ request, env }) {
   const cashAmount = Number(data.cash_amount);
   const cashAmountCents = Math.round(cashAmount * 100);
   if (!recipientUsername) return json({ ok: false, error: 'recipient_not_found' }, 400);
+  if (!message) return json({ ok: false, error: 'message_required' }, 400);
   if (offerType === 'cash' && (!Number.isFinite(cashAmount) || cashAmount <= 0 || cashAmount > 1000000 || !Number.isSafeInteger(cashAmountCents))) return json({ ok: false, error: 'invalid_cash_amount' }, 400);
   if (offerType === 'trade' && (!offering.length || !requesting.length || offering.length > 20 || requesting.length > 20)) return json({ ok: false, error: 'invalid_trade_items' }, 400);
   try {
@@ -116,11 +117,16 @@ export async function onRequestPatch({ request, env }) {
   let data;
   try { data = await request.json(); } catch { return json({ ok: false, error: 'bad_request' }, 400); }
   const id = Number(data.id), action = String(data.action || '');
-  if (!Number.isInteger(id) || id < 1 || !['accept', 'decline', 'cancel', 'complete'].includes(action)) return json({ ok: false, error: 'invalid_trade_action' }, 400);
+  if (!Number.isInteger(id) || id < 1 || !['accept', 'decline', 'cancel', 'complete', 'mark_read'].includes(action)) return json({ ok: false, error: 'invalid_trade_action' }, 400);
   try {
     const offer = await env.DB.prepare('SELECT * FROM collector_trade_offers WHERE id = ? LIMIT 1').bind(id).first();
     if (!offer) return json({ ok: false, error: 'trade_not_found' }, 404);
     const proposer = Number(offer.proposer_account_id), recipient = Number(offer.recipient_account_id), me = Number(account.id);
+    if (action === 'mark_read') {
+      if (me !== recipient) return json({ ok: false, error: 'trade_action_not_allowed' }, 403);
+      await env.DB.prepare('UPDATE collector_trade_offers SET recipient_read_at = COALESCE(recipient_read_at, CURRENT_TIMESTAMP) WHERE id = ?').bind(id).run();
+      return json({ ok: true, read: true });
+    }
     let next = '';
     if (action === 'accept' || action === 'decline') {
       if (me !== recipient || offer.status !== 'pending') return json({ ok: false, error: 'trade_action_not_allowed' }, 403);
