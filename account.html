@@ -78,7 +78,7 @@
 <button id="login-tab" type="button" aria-pressed="true">Log in</button>
 <button id="register-tab" type="button" aria-pressed="false">Sign up</button>
 </div>
-<form id="account-form" class="account-form">
+<form id="account-form" class="account-form" novalidate>
 <div id="type-section" hidden>
 <strong>Choose your account type</strong>
 <div class="account-types">
@@ -480,8 +480,21 @@
   }catch(e){}
  }
  form.addEventListener('submit',async event=>{
-  event.preventDefault();message.hidden=true;submit.disabled=true;submit.textContent='Please wait…';
-  const body={email:document.getElementById('email').value.trim(),password:password.value};
+  event.preventDefault();
+  message.hidden=true;
+  const emailInput=document.getElementById('email');
+  const emailValue=emailInput.value.trim();
+  if(!emailValue||!emailInput.validity.valid){
+   message.hidden=false;message.textContent='Please enter a valid email address.';emailInput.focus();return;
+  }
+  if(!password.value){
+   message.hidden=false;message.textContent='Please enter your password.';password.focus();return;
+  }
+  if(mode==='register'&&password.value.length<10){
+   message.hidden=false;message.textContent='Your password must be at least 10 characters long.';password.focus();return;
+  }
+  submit.disabled=true;submit.textContent='Please wait…';
+  const body={email:emailValue,password:password.value};
   if(mode==='register'){body.username=usernameInput.value.trim();body.display_name=body.username;body.account_type=form.querySelector('input[name="account_type"]:checked').value;}
   try{
    const response=await fetch(mode==='register'?'/api/account/register':'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)});
