@@ -1737,3 +1737,17 @@ img {
     transition: none !important;
   }
 }
+
+
+/* Site-wide typography cleanup: consistent, restrained sans-serif UI. */
+:root {
+  --font-display: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-body: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+}
+html, body, body * {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif !important;
+}
+body { font-weight: 400; line-height: 1.55; }
+h1, h2, h3, h4, h5, h6 { font-weight: 700 !important; letter-spacing: -0.02em; line-height: 1.25; }
+button, input, select, textarea { font: inherit; }
+button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; letter-spacing: 0; }
