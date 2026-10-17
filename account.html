@@ -598,6 +598,27 @@
   const sections=[personal.details,security.details,membership.details,collectorSettings.details];
   if(firstRemaining)grid.insertBefore(sections[0],firstRemaining);else grid.append(sections[0]);
   sections.slice(1).forEach(section=>grid.insertBefore(section,firstRemaining&&grid.contains(firstRemaining)?firstRemaining:null));
+
+  document.getElementById('personal-settings-form').addEventListener('submit',async event=>{
+   event.preventDefault();
+   const button=document.getElementById('save-personal-settings'),status=document.getElementById('personal-settings-status');
+   button.disabled=true;status.textContent='Saving personal details…';
+   try{
+    const response=await fetch('/api/account/settings',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({display_name:document.getElementById('settings-display-name').value,username:document.getElementById('settings-account-username').value,email:document.getElementById('settings-account-email').value,phone_number:document.getElementById('settings-account-phone').value})});
+    const result=await response.json();
+    if(!response.ok||!result.ok){
+     const errors={login_required:'Your session expired. Please log in again.',invalid_name:'Name must be 2–60 characters.',invalid_email:'Enter a valid email address.',invalid_username:'Username must be 3–24 letters, numbers, or underscores.',invalid_phone:'Check the phone number format.',email_already_registered:'That email is already used by another account.',username_taken:'That username is already taken.',collector_profile_missing:'Your collector profile is missing. Open your collection page once, then try again.',account_settings_migration_required:'The staging phone-number database migration must be applied first.'};
+     throw new Error(errors[result.error]||'Could not save personal details.');
+    }
+    document.getElementById('profile-name').textContent=result.account.display_name;
+    document.getElementById('profile-email').textContent=result.account.email;
+    document.getElementById('dashboard-heading').textContent='Welcome back, '+result.account.display_name+'!';
+    document.getElementById('settings-collector-username').value=result.account.username;
+    document.getElementById('view-collector-profile').href='/collector.html?user='+encodeURIComponent(result.account.username);
+    status.textContent='Personal details saved.';
+   }catch(error){status.textContent=error.message||'Could not save personal details.';}
+   finally{button.disabled=false;}
+  });
   grid.dataset.settingsAccordionsBuilt='true';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',buildSettingsAccordions);else buildSettingsAccordions();
