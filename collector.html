@@ -175,7 +175,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   if(sort==='name')cards.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
   if(sort==='set')cards.sort((a,b)=>String(a.set?.name||a.setName||'').localeCompare(String(b.set?.name||b.setName||'')));
   results.innerHTML=cards.map(card=>{
-   const image=card.image?String(card.image).replace(/\/$/,'')+'/low.webp':'';
+   const image=card.image?(card.customRgb?String(card.image):String(card.image).replace(/\/$/,'')+'/low.webp'):'';
    const setId=card.set?.id||String(card.id||'').slice(0,String(card.id||'').lastIndexOf('-'));
    const setRecord=catalogSets.find(s=>s.id===setId);
    const total=setRecord?.cardCount?.total||setRecord?.cardCount?.official||setRecord?.total;
@@ -209,9 +209,9 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    const normalized=query.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
    if(normalized.includes('mew')||normalized.includes('rgb')){
     const rgbCards=[
-     {id:'custom-rgb-mew-r',name:'Mew (R/RGB)',localId:'R/RGB',setName:'30th Celebration',customRgb:true},
-     {id:'custom-rgb-mew-g',name:'Mew (G/RGB)',localId:'G/RGB',setName:'30th Celebration',customRgb:true},
-     {id:'custom-rgb-mew-b',name:'Mew (B/RGB)',localId:'B/RGB',setName:'30th Celebration',customRgb:true}
+     {id:'custom-rgb-mew-r',name:'Mew (R/RGB)',localId:'R/RGB',setName:'30th Celebration',image:'https://billsarchive.com/assets/articles/rgb-mew-red.webp',customRgb:true},
+     {id:'custom-rgb-mew-g',name:'Mew (G/RGB)',localId:'G/RGB',setName:'30th Celebration',image:'https://billsarchive.com/assets/articles/rgb-mew-green.webp',customRgb:true},
+     {id:'custom-rgb-mew-b',name:'Mew (B/RGB)',localId:'B/RGB',setName:'30th Celebration',image:'https://billsarchive.com/assets/articles/rgb-mew-blue.webp',customRgb:true}
     ];
     for(const card of rgbCards)if(!setId||catalogSets.find(s=>s.id===setId)?.name==='30th Celebration')cards.push(card);
    }
@@ -224,8 +224,8 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  async function selectCatalogCard(id){
   if(id.startsWith('custom-rgb-mew-')){
    const variant=id.slice('custom-rgb-mew-'.length).toUpperCase(),number=variant+'/RGB';
-   $('product-name').value='Mew ('+number+')';$('product-type').value='card';$('set-name').value='30th Celebration';$('card-number').value=number;$('image-url').value='';
-   setStatus('catalog-status','Selected community-added RGB Mew variant '+number+'. TCGdex has no market price for this entry; add a verified estimate separately.');$('product-name').focus();return;
+   $('product-name').value='Mew ('+number+')';$('product-type').value='card';$('set-name').value='30th Celebration';$('card-number').value=number;$('image-url').value=({R:'https://billsarchive.com/assets/articles/rgb-mew-red.webp',G:'https://billsarchive.com/assets/articles/rgb-mew-green.webp',B:'https://billsarchive.com/assets/articles/rgb-mew-blue.webp'})[variant[0]]||'';
+   setStatus('catalog-status','Selected community-added RGB Mew variant '+number+'. The card image is from Bill’s Archive; market value still needs a trustworthy sales-data source.');$('product-name').focus();return;
   }
   const buttons=$('catalog-results').querySelectorAll('[data-card-id]');
   buttons.forEach(button=>button.disabled=true);
