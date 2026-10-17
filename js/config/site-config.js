@@ -69,17 +69,14 @@
       {
         title: 'Spot it',
         text: 'Find Pokémon products on a shelf, at the counter or online.',
-        icon: '👀'
       },
       {
         title: 'Report it',
         text: 'A few taps: where, what and when. Add photos if you can.',
-        icon: '📸'
       },
       {
         title: 'Crew gets pinged',
         text: 'Your report posts to the VIP Discord for everyone to see.',
-        icon: '🔔'
       }
     ],
 
