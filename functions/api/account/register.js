@@ -28,7 +28,7 @@ export async function onRequestPost({ request, env }) {
   if (![10,25,50,100].includes(searchRadius)) return json({ok:false,error:'invalid_radius'},400);
   let locationLat = null, locationLng = null;
   if (locationEnabled) {
-    if (!/^\\d{5}$/.test(locationZip)) return json({ok:false,error:'valid_us_zip_required'},400);
+    if (!/^\d{5}$/.test(locationZip)) return json({ok:false,error:'valid_us_zip_required'},400);
     try {
       const zipResponse = await fetch('https://api.zippopotam.us/us/' + locationZip, {headers:{accept:'application/json'}});
       if (!zipResponse.ok) return json({ok:false,error:'zip_not_found'},400);
