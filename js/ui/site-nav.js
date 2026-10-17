@@ -19,9 +19,10 @@
    {title:'Offer Inbox',description:'Cash offers and collection trades',href:'/inbox.html'},
    {title:'Account Settings',description:'Profile, privacy, and nearby matching',href:'/account.html#settings'}
   ]),
-  link('Report a Sighting','/#report')
+  link('Report a Sighting','/#report'),
+  link('Sign up / Log in','/account.html','site-nav__link account-nav-link')
  ]);
- var header=el('header',{class:'site-nav-header'},[el('div',{class:'wrap site-nav-header__inner'},[link('PokePrizePool','/','#'),nav,link('Sign up / Log in','/account.html','site-nav__link account-nav-link')])]);
+ var header=el('header',{class:'site-nav-header'},[el('div',{class:'wrap site-nav-header__inner'},[link('PokePrizePool','/'),nav])]);
  root.replaceChildren(header);
  fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){var a=root.querySelector('.account-nav-link');if(d&&d.ok&&d.authenticated){a.href='/collector.html';a.textContent='My Profile';a.setAttribute('aria-label','Open your collector profile');}}).catch(function(){});
  document.addEventListener('click',function(e){if(!root.contains(e.target)){root.querySelectorAll('.site-nav__toggle').forEach(function(b){b.setAttribute('aria-expanded','false');});root.querySelectorAll('.site-nav__menu').forEach(function(m){m.hidden=true;});}});
