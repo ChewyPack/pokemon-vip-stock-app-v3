@@ -3,6 +3,8 @@
 -- Apply once. This migration preserves existing collector profiles and items.
 
 ALTER TABLE collector_profiles ADD COLUMN location_zip TEXT NOT NULL DEFAULT '';
+ALTER TABLE collector_profiles ADD COLUMN location_lat REAL;
+ALTER TABLE collector_profiles ADD COLUMN location_lng REAL;
 ALTER TABLE collector_profiles ADD COLUMN location_enabled INTEGER NOT NULL DEFAULT 0 CHECK (location_enabled IN (0, 1));
 ALTER TABLE collector_profiles ADD COLUMN search_radius_miles INTEGER NOT NULL DEFAULT 25 CHECK (search_radius_miles IN (10, 25, 50, 100));
 
