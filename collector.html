@@ -69,6 +69,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 @media(max-width:520px){.cp-hero{align-items:flex-start;gap:15px;min-height:220px;padding:20px 16px}.cp-avatar{width:76px;height:76px;flex-basis:76px;border-radius:20px}.cp-hero h1{font-size:2rem}.cp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-items{grid-template-columns:1fr 1fr}.cp-item-image{height:210px;padding:10px 6px 6px}.cp-item-image img{max-height:190px}.cp-stat strong{font-size:1.35rem}}
 [hidden]{display:none!important}
  .cp-follow-list-trigger{border:0;background:transparent;padding:4px 0;font:inherit;text-align:left;cursor:pointer}.cp-follow-list-trigger:hover{text-decoration:underline;text-underline-offset:3px}.cp-follow-list-trigger:focus-visible{outline:2px solid #ffd21f;outline-offset:3px;border-radius:3px}.cp-follow-modal{position:fixed;inset:0;z-index:1000;background:#06132dbb;display:grid;place-items:center;padding:18px}.cp-follow-dialog{width:min(520px,100%);max-height:min(78vh,700px);overflow:auto;background:#fff;border-radius:16px;padding:18px;color:var(--navy);box-shadow:0 20px 60px #0004}.cp-follow-dialog-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.cp-follow-dialog h2{font:1.7rem Bangers,cursive;margin:0}.cp-follow-close{border:1px solid var(--line);background:#f3f6fc;border-radius:8px;padding:7px 11px;font:inherit;font-weight:900;cursor:pointer}.cp-follow-list{display:grid;gap:8px;margin-top:14px}.cp-follow-empty{padding:22px 10px;text-align:center;color:var(--muted)}
+.cp-match-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.cp-match-card{border:1px solid var(--line);border-radius:11px;padding:12px;background:#f9fbff;min-width:0}.cp-match-card h3{font-size:.98rem;margin:0 0 5px;overflow-wrap:anywhere}.cp-match-card p{font-size:.83rem;color:var(--muted);margin:4px 0;line-height:1.45}.cp-match-card a{font-weight:900;color:var(--blue)}.cp-match-pill{display:inline-block;background:#fff2ae;color:#654d00;border-radius:20px;padding:4px 8px;font-size:.78rem;font-weight:900}.cp-match-empty{padding:14px;border:1px dashed #b9c9e6;border-radius:10px;color:var(--muted);line-height:1.5}.cp-match-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.cp-match-header h2{margin-bottom:0}
 </style>
 </head>
 <body>
@@ -86,6 +87,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <div class="cp-stat"><span>Sealed products</span><strong id="stat-sealed">0</strong></div>
 <div class="cp-stat"><span>Estimated value</span><strong id="stat-value">Not set</strong></div>
 </div>
+<section id="wishlist-match-dashboard" class="cp-panel" style="margin:16px 0" hidden><div class="cp-match-header"><h2>🎯 Your Wishlist Matches</h2><a class="cp-btn secondary" href="/wishlist.html">Open trade inbox &amp; offers</a></div><p class="cp-status" id="wishlist-match-status">Checking your wishlist against other collectors’ collections…</p><div id="wishlist-match-results" class="cp-match-grid"></div></section>
 <div class="cp-layout">
 <aside id="owner-tools" class="cp-panel">
 <h2>Add to your lists</h2>
@@ -333,6 +335,19 @@ async function searchCollectors(query){
  $('block-confirm-modal').addEventListener('click',event=>{if(event.target===$('block-confirm-modal'))closeBlockModal();});
  $('block-confirm-yes').addEventListener('click',async()=>{if(!profile?.username)return;const button=$('block-confirm-yes');button.disabled=true;$('block-confirm-status').textContent='Blocking collector…';try{const r=await fetch('/api/collector/block',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:profile.username})}),d=await r.json();if(!r.ok||!d.ok){if(r.status===401){location.href='/account.html';return;}throw new Error(d.error==='block_migration_required'?'The staging block database table still needs to be created.':'Could not block this collector.');}closeBlockModal();$('profile-menu-wrap').hidden=true;$('follow-button').hidden=true;setStatus('view-status','Collector blocked. They have been removed from your follow list.');}catch(error){$('block-confirm-status').textContent=error.message||'Could not block this collector.';}finally{button.disabled=false;}});
  
+ async function loadWishlistMatchDashboard(){
+  const panel=$('wishlist-match-dashboard'),status=$('wishlist-match-status'),results=$('wishlist-match-results');
+  if(!own){panel.hidden=true;return;}
+  panel.hidden=false;status.textContent='Checking your wishlist against other collectors’ collections…';
+  try{
+   const response=await fetch('/api/collector/wishlist-matches',{credentials:'include',cache:'no-store'}),data=await response.json();
+   if(!response.ok||!data.ok){if(data.error==='wishlist_trades_migration_required')throw new Error('Wishlist matches are waiting for the staging database migration.');if(data.error==='login_required')throw new Error('Please sign in again to see your matches.');throw new Error('Could not load wishlist matches.');}
+   const matches=data.matches||[];
+   if(!matches.length){results.innerHTML='<div class="cp-match-empty">No matches yet. As collectors add items to their collections, matching wishlist items will appear here automatically. Add the exact card name, set, and card number for the best match.</div>';status.textContent=data.location_enabled?'Searching within '+Number(data.radius_miles)+' miles.':'Showing matches without distance filtering. Enable approximate-area matching in Settings to filter by mileage.';return;}
+   results.innerHTML=matches.map(m=>'<article class="cp-match-card"><h3>'+safe(m.wishlist_item.product_name)+'</h3><p>'+safe([m.wishlist_item.set_name,m.wishlist_item.card_number?'#'+m.wishlist_item.card_number:''].filter(Boolean).join(' · ')||'Pokémon TCG')+'</p><p><span class="cp-match-pill">'+Number(m.collectors_count)+' collector'+(m.collectors_count===1?'':'s')+' have this</span></p><p>'+(m.distance_available?Number(m.nearby_count)+' within '+Number(data.radius_miles)+' miles':'Distance filtering is off')+'</p>'+m.collectors.slice(0,5).map(z=>'<p><a href="/collector.html?user='+encodeURIComponent(z.username)+'">@'+safe(z.username)+'</a>'+(z.distance_miles!==null?' · about '+Number(z.distance_miles)+' mi':'')+'</p>').join('')+(m.collectors.length>5?'<p>and '+(m.collectors.length-5)+' more…</p>':'')+'<p><a href="/wishlist.html">Open trade tools →</a></p></article>').join('');
+   status.textContent='Matches update whenever you open your profile. '+(data.location_enabled?'Nearby radius: '+Number(data.radius_miles)+' miles.':'Enable approximate location in Settings to filter by distance.');
+  }catch(error){results.innerHTML='';status.textContent=error.message||'Could not load wishlist matches.';}
+ }
  async function load(){
   try{
    if(viewUsername){
@@ -342,7 +357,7 @@ async function searchCollectors(query){
    }else{
     const r=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),d=await r.json();
     if(r.status===401){location.href='/account.html';return;}if(!r.ok||!d.ok)throw new Error('Could not load your collector profile. Apply the staging database migration if it has not been run.');
-    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);$('collector-signin').hidden=true;$('collector-logout').hidden=false;await loadFollowState(profile.username)
+    own=true;profile=d.profile;items=d.items||[];showProfile(profile,d.account?.display_name);$('collector-signin').hidden=true;$('collector-logout').hidden=false;await loadFollowState(profile.username);await loadWishlistMatchDashboard()
     if(!profile){$('handle').textContent='Profile not published yet';}
    }
    stats();render();
