@@ -130,8 +130,7 @@
       <div class="account-detail"><span>Member since</span><strong id="profile-created">—</strong></div>
       <span id="profile-name" hidden></span><span id="profile-email" hidden></span>
       <form id="personal-settings-form" class="settings-profile-form">
-        <label>Display name<input id="settings-display-name" maxlength="60" required autocomplete="name"></label>
-        <label>Collector username<input id="settings-account-username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" required autocomplete="username"></label>
+        <label>Username<input id="settings-account-username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" required autocomplete="username"></label>
         <label>Email address<input id="settings-account-email" type="email" maxlength="254" required autocomplete="email"></label>
         <label>Phone number (optional)<input id="settings-account-phone" type="tel" maxlength="30" autocomplete="tel" placeholder="Your phone number"></label>
         <button class="btn btn--primary" id="save-personal-settings" type="submit">Save personal details</button>
@@ -185,20 +184,13 @@
         </section>
       </div>
     </article>
-    <article class="dashboard-card">
-      <p class="dashboard-eyebrow">Your collection</p>
-      <h2>Collector profile</h2>
-      <p>Create a public collector profile, showcase cards and sealed products, track your collection, and build a wishlist of what you’re hunting.</p>
-      <div class="dashboard-actions"><a class="btn btn--primary" href="/collector.html">Open collection &amp; wishlist</a><a class="btn btn--primary" href="/inbox.html"> Offer inbox</a><a class="btn btn--ghost" href="#nearby-collector-settings"> Nearby settings</a></div>
-    </article>
     <article class="dashboard-card dashboard-card--wide" id="nearby-collector-settings"><p class="dashboard-eyebrow">Collector discovery</p><h2> Nearby collector settings</h2><p>Share only a ZIP-code-based approximate area. Your ZIP code is private; other collectors see approximate mileage, not your address or ZIP code.</p><form id="nearby-location-form" class="settings-profile-form"><label>US ZIP code<input id="settings-location-zip" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" placeholder="e.g. 02903"></label><label>Search radius<select id="settings-location-radius"><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></label><label style="display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px"><input id="settings-location-enabled" type="checkbox" style="width:18px;min-height:18px"> Include my approximate area in nearby matches</label><button id="save-location-settings" class="btn btn--primary" type="submit">Save location settings</button><p id="nearby-location-status" class="settings-profile-status" role="status" aria-live="polite"></p></form><p class="settings-profile-help">If you enabled nearby matching during signup, your saved area and radius appear here. Turn it off anytime to stop using distance matching.</p></article>
 <article class="dashboard-card dashboard-card--wide" id="collector-profile-settings">
       <p class="dashboard-eyebrow">Public collector profile</p>
       <h2>Edit your profile</h2>
       <p>Manage the bio, profile picture, cover photo, and visibility shown on your public collector page.</p>
       <form id="collector-profile-form" class="settings-profile-form">
-        <label>Collector username<input id="settings-collector-username" readonly aria-describedby="settings-username-help"></label>
-        <small id="settings-username-help" class="settings-profile-help">Your username is used for your public profile link and cannot be changed here.</small>
+        <input id="settings-collector-username" type="hidden" aria-hidden="true">
         <label>Bio (up to 500 characters)<textarea id="settings-collector-bio" maxlength="500" placeholder="What do you collect? What's your chase card?"></textarea></label>
         <div class="settings-image-grid">
           <div class="settings-image-picker"><span>Profile photo</span><label class="settings-image-button settings-image-button--avatar" id="avatar-upload-tile" for="settings-avatar-file"><span id="avatar-upload-preview">Card<span class="settings-upload-hint">Click to upload photo</span></span><input id="settings-avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Upload profile photo"></label><input id="settings-collector-avatar" type="text" placeholder="Or paste an HTTPS image URL"><small class="settings-image-help">JPG, PNG, WebP or GIF. Image is resized before saving.</small></div>
@@ -337,10 +329,9 @@
      vendor:'Your account is set to Vendor. Vendor profile publishing and verification are separate steps.',
      organizer:'Your account is set to Event Organizer. Event listings and organizer approval are separate steps.'
     };
-    document.getElementById('dashboard-heading').textContent='Welcome back, '+(a.display_name||'collector')+'!';
+    document.getElementById('dashboard-heading').textContent='Welcome back, '+(a.username||a.display_name||'collector')+'!';
     document.getElementById('profile-name').textContent=a.display_name||'—';
     document.getElementById('profile-email').textContent=a.email||'—';
-    document.getElementById('settings-display-name').value=a.display_name||'';
     document.getElementById('settings-account-email').value=a.email||'';
     document.getElementById('settings-account-phone').value=a.phone_number||'';
     const created=a.created_at?new Date(a.created_at):null;
@@ -581,10 +572,10 @@
    summary.addEventListener('click',function(){});
    return {details,panel};
   };
-  const personal=makeSection('Personal Details','Your account name, email, and profile information','settings-personal-details');
+  const personal=makeSection('Personal Details','Your username and contact details','settings-personal-details');
   const security=makeSection('Password & Security','Account protection and sign-in security','settings-password-security');
   const membership=makeSection('Membership','Your current level, billing plan, and membership actions','settings-membership');
-  const collectorSettings=makeSection('Collector Settings','Nearby matching, your collector profile, and collection tools','settings-collector');
+  const collectorSettings=makeSection('Collector Settings','Nearby matching and your public collector profile','settings-collector');
   if(account)personal.panel.append(account);
   const securityCard=document.createElement('article');
   securityCard.className='dashboard-card dashboard-card--wide';
@@ -592,7 +583,6 @@
   security.panel.append(securityCard);
   if(membershipLevel)membership.panel.append(membershipLevel);
   if(membershipAccess)membership.panel.append(membershipAccess);
-  if(collection)collectorSettings.panel.append(collection);
   if(nearby)collectorSettings.panel.append(nearby);
   if(publicProfile)collectorSettings.panel.append(publicProfile);
   const firstRemaining=vendor||cards.find(card=>grid.contains(card));
@@ -605,15 +595,15 @@
    const button=document.getElementById('save-personal-settings'),status=document.getElementById('personal-settings-status');
    button.disabled=true;status.textContent='Saving personal details…';
    try{
-    const response=await fetch('/api/account/settings',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({display_name:document.getElementById('settings-display-name').value,username:document.getElementById('settings-account-username').value,email:document.getElementById('settings-account-email').value,phone_number:document.getElementById('settings-account-phone').value})});
+    const response=await fetch('/api/account/settings',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({display_name:document.getElementById('settings-account-username').value,username:document.getElementById('settings-account-username').value,email:document.getElementById('settings-account-email').value,phone_number:document.getElementById('settings-account-phone').value})});
     const result=await response.json();
     if(!response.ok||!result.ok){
-     const errors={login_required:'Your session expired. Please log in again.',invalid_name:'Name must be 2–60 characters.',invalid_email:'Enter a valid email address.',invalid_username:'Username must be 3–24 letters, numbers, or underscores.',invalid_phone:'Check the phone number format.',email_already_registered:'That email is already used by another account.',username_taken:'That username is already taken.',collector_profile_missing:'Your collector profile is missing. Open your collection page once, then try again.',account_settings_migration_required:'The staging phone-number database migration must be applied first.'};
+     const errors={login_required:'Your session expired. Please log in again.',invalid_name:'Username must be at least 3 characters.',invalid_email:'Enter a valid email address.',invalid_username:'Username must be 3–24 letters, numbers, or underscores.',invalid_phone:'Check the phone number format.',email_already_registered:'That email is already used by another account.',username_taken:'That username is already taken.',collector_profile_missing:'Your collector profile is missing. Open your collection page once, then try again.',account_settings_migration_required:'The staging phone-number database migration must be applied first.'};
      throw new Error(errors[result.error]||'Could not save personal details.');
     }
     document.getElementById('profile-name').textContent=result.account.display_name;
     document.getElementById('profile-email').textContent=result.account.email;
-    document.getElementById('dashboard-heading').textContent='Welcome back, '+result.account.display_name+'!';
+    document.getElementById('dashboard-heading').textContent='Welcome back, '+result.account.username+'!';
     document.getElementById('settings-collector-username').value=result.account.username;
     document.getElementById('view-collector-profile').href='/collector.html?user='+encodeURIComponent(result.account.username);
     status.textContent='Personal details saved.';
