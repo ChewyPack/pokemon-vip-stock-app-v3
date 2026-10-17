@@ -363,7 +363,7 @@
       const manageOptionsButton=document.getElementById('manage-membership-options');
       const changeOptions=document.getElementById('membership-change-options');
       manageOptionsButton.hidden=false;
-      manageOptionsButton.addEventListener('click',()=>{changeOptions.hidden=!changeOptions.hidden;manageOptionsButton.textContent=changeOptions.hidden?'Change membership':'Hide plan options';});
+      manageOptionsButton.addEventListener('click',()=>{if(m.cancel_at_period_end)return;changeOptions.hidden=!changeOptions.hidden;manageOptionsButton.textContent=changeOptions.hidden?'Change membership':'Hide plan options';});
       cancelButton.hidden=Boolean(m.cancel_at_period_end);
       if(m.cancel_at_period_end){
         tierSelect.disabled=true;intervalSelect.disabled=true;
