@@ -22,6 +22,21 @@ export async function onRequestPost({ request, env }) {
   const username = typeof data.username === 'string' ? data.username.trim() : '';
   const bio = typeof data.bio === 'string' ? data.bio.trim() : '';
   const avatarUrl = typeof data.avatar_url === 'string' ? data.avatar_url.trim() : '';
+  const locationEnabled = data.location_enabled === true;
+  const locationZip = typeof data.location_zip === 'string' ? data.location_zip.trim() : '';
+  const searchRadius = Number(data.search_radius_miles || 25);
+  if (![10,25,50,100].includes(searchRadius)) return json({ok:false,error:'invalid_radius'},400);
+  let locationLat = null, locationLng = null;
+  if (locationEnabled) {
+    if (!/^\\d{5}$/.test(locationZip)) return json({ok:false,error:'valid_us_zip_required'},400);
+    try {
+      const zipResponse = await fetch('https://api.zippopotam.us/us/' + locationZip, {headers:{accept:'application/json'}});
+      if (!zipResponse.ok) return json({ok:false,error:'zip_not_found'},400);
+      const zipData = await zipResponse.json(), place = zipData.places?.[0];
+      locationLat = Number(place?.latitude); locationLng = Number(place?.longitude);
+      if (!Number.isFinite(locationLat) || !Number.isFinite(locationLng)) return json({ok:false,error:'zip_lookup_failed'},502);
+    } catch (error) { console.error('Signup ZIP lookup failed:', error); return json({ok:false,error:'zip_lookup_unavailable'},502); }
+  }
   if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) return json({ ok:false, error:'invalid_username' }, 400);
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok:false, error:'invalid_email' }, 400);
   if (!ACCOUNT_TYPES.has(accountType)) return json({ ok:false, error:'invalid_account_type' }, 400);
@@ -34,7 +49,7 @@ export async function onRequestPost({ request, env }) {
     const expiresAt = Date.now() + SESSION_DAYS * 86400000;
     const results = await env.DB.batch([
       env.DB.prepare('INSERT INTO accounts (display_name,email,account_type,password_salt,password_hash,session_token_hash,session_expires_at) VALUES (?,?,?,?,?,?,?)').bind(displayName,email,accountType,b64(salt),hash,tokenHash,expiresAt),
-      env.DB.prepare('INSERT INTO collector_profiles (account_id,username,bio,avatar_url,is_public) SELECT id,?,?,?,1 FROM accounts WHERE email=? COLLATE NOCASE').bind(username,bio,avatarUrl,email)
+      env.DB.prepare('INSERT INTO collector_profiles (account_id,username,bio,avatar_url,is_public,location_zip,location_lat,location_lng,location_enabled,search_radius_miles) SELECT id,?,?,?,1,?,?,?,?,? FROM accounts WHERE email=? COLLATE NOCASE').bind(username,bio,avatarUrl,locationEnabled?locationZip:'',locationLat,locationLng,locationEnabled?1:0,searchRadius,email)
     ]);
     if (!results[0]?.meta || results[0].meta.changes !== 1 || !results[1]?.meta || results[1].meta.changes !== 1) throw new Error('Account and collector profile creation did not complete');
     return json({ ok:true, account:{ display_name:displayName, email, account_type:accountType, username }, note:'Account type does not grant VIP, vendor verification, or organizer privileges.' }, 201, { 'Set-Cookie':cookie(token,expiresAt) });
