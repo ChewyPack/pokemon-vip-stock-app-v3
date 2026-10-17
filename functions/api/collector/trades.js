@@ -34,7 +34,7 @@ export async function onRequestGet({ request, env }) {
   if (!account) return json({ ok: false, error: 'login_required' }, 401);
   try {
     const rows = await env.DB.prepare(`
-      SELECT o.id, o.proposer_account_id, o.recipient_account_id, o.status, o.message, o.created_at, o.updated_at,
+      SELECT o.id, o.proposer_account_id, o.recipient_account_id, o.status, o.message, o.offer_type, o.cash_amount_cents, o.created_at, o.updated_at,
         CASE WHEN o.proposer_account_id = ? THEN 'outgoing' ELSE 'incoming' END AS direction,
         pp.username AS proposer_username, rp.username AS recipient_username
       FROM collector_trade_offers o
@@ -67,37 +67,43 @@ export async function onRequestPost({ request, env }) {
   let data;
   try { data = await request.json(); } catch { return json({ ok: false, error: 'bad_request' }, 400); }
   const recipientUsername = typeof data.recipient_username === 'string' ? data.recipient_username.trim() : '';
+  const offerType = data.offer_type === 'cash' ? 'cash' : 'trade';
   const offering = Array.isArray(data.offering) ? data.offering : [];
   const requesting = Array.isArray(data.requesting) ? data.requesting : [];
   const message = typeof data.message === 'string' ? data.message.trim().slice(0, 500) : '';
-  if (!recipientUsername || !offering.length || !requesting.length || offering.length > 20 || requesting.length > 20) return json({ ok: false, error: 'invalid_trade_items' }, 400);
+  const cashAmount = Number(data.cash_amount);
+  const cashAmountCents = Math.round(cashAmount * 100);
+  if (!recipientUsername) return json({ ok: false, error: 'recipient_not_found' }, 400);
+  if (offerType === 'cash' && (!Number.isFinite(cashAmount) || cashAmount <= 0 || cashAmount > 1000000 || !Number.isSafeInteger(cashAmountCents))) return json({ ok: false, error: 'invalid_cash_amount' }, 400);
+  if (offerType === 'trade' && (!offering.length || !requesting.length || offering.length > 20 || requesting.length > 20)) return json({ ok: false, error: 'invalid_trade_items' }, 400);
   try {
     const recipient = await env.DB.prepare('SELECT account_id, username FROM collector_profiles WHERE username = ? COLLATE NOCASE AND is_public = 1 LIMIT 1').bind(recipientUsername).first();
     if (!recipient) return json({ ok: false, error: 'recipient_not_found' }, 404);
     if (Number(recipient.account_id) === Number(account.id)) return json({ ok: false, error: 'cannot_trade_self' }, 400);
     if (await blocksEitherWay(env.DB, account.id, recipient.account_id)) return json({ ok: false, error: 'collector_unavailable' }, 403);
-    const validate = async (ids, ownerId, side) => {
-      const normalized = ids.map(item => ({ id: Number(item.id), quantity: Number(item.quantity || 1) }));
-      if (normalized.some(item => !Number.isInteger(item.id) || item.id < 1 || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 9999)) return null;
-      if (new Set(normalized.map(item => item.id)).size !== normalized.length) return null;
-      for (const item of normalized) {
-        const row = await env.DB.prepare('SELECT id, account_id, list_type, quantity, is_tradeable FROM collector_items WHERE id = ? LIMIT 1').bind(item.id).first();
-        if (!row || Number(row.account_id) !== Number(ownerId)) return null;
-        if (side === 'offering' && (row.list_type !== 'collection' || Number(row.is_tradeable) !== 1)) return null;
-        if (side === 'requesting' && row.list_type !== 'collection') return null;
-        if (item.quantity > Number(row.quantity)) return null;
-      }
-      return normalized;
-    };
-    const validOffering = await validate(offering, account.id, 'offering');
-    const validRequesting = await validate(requesting, recipient.account_id, 'requesting');
-    if (!validOffering || !validRequesting) return json({ ok: false, error: 'invalid_or_unavailable_items' }, 400);
-    const created = await env.DB.prepare('INSERT INTO collector_trade_offers (proposer_account_id, recipient_account_id, message) VALUES (?, ?, ?)').bind(account.id, recipient.account_id, message).run();
+    let validOffering = [], validRequesting = [];
+    if (offerType === 'trade') {
+      const validate = async (ids, ownerId) => {
+        const normalized = ids.map(item => ({ id: Number(item.id), quantity: Number(item.quantity || 1) }));
+        if (normalized.some(item => !Number.isInteger(item.id) || item.id < 1 || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 9999)) return null;
+        if (new Set(normalized.map(item => item.id)).size !== normalized.length) return null;
+        for (const item of normalized) {
+          const row = await env.DB.prepare('SELECT id, account_id, list_type, quantity FROM collector_items WHERE id = ? LIMIT 1').bind(item.id).first();
+          if (!row || Number(row.account_id) !== Number(ownerId) || row.list_type !== 'collection') return null;
+          if (item.quantity > Number(row.quantity)) return null;
+        }
+        return normalized;
+      };
+      validOffering = await validate(offering, account.id);
+      validRequesting = await validate(requesting, recipient.account_id);
+      if (!validOffering || !validRequesting) return json({ ok: false, error: 'invalid_or_unavailable_items' }, 400);
+    }
+    const created = await env.DB.prepare('INSERT INTO collector_trade_offers (proposer_account_id, recipient_account_id, message, offer_type, cash_amount_cents) VALUES (?, ?, ?, ?, ?)').bind(account.id, recipient.account_id, message, offerType, offerType === 'cash' ? cashAmountCents : null).run();
     const offerId = Number(created.meta?.last_row_id);
     if (!offerId) return json({ ok: false, error: 'trade_create_failed' }, 500);
     for (const item of validOffering) await env.DB.prepare('INSERT INTO collector_trade_offer_items (offer_id, collector_item_id, side, quantity) VALUES (?, ?, ?, ?)').bind(offerId, item.id, 'offering', item.quantity).run();
     for (const item of validRequesting) await env.DB.prepare('INSERT INTO collector_trade_offer_items (offer_id, collector_item_id, side, quantity) VALUES (?, ?, ?, ?)').bind(offerId, item.id, 'requesting', item.quantity).run();
-    return json({ ok: true, offer_id: offerId, status: 'pending' }, 201);
+    return json({ ok: true, offer_id: offerId, status: 'pending', offer_type: offerType }, 201);
   } catch (error) {
     console.error('Trade offer create failed:', error);
     return json({ ok: false, error: 'trade_create_failed' }, 500);
