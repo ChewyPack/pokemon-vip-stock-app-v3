@@ -585,9 +585,9 @@
   const membership=makeSection('Membership','Your current level, billing plan, and membership actions','settings-membership');
   const collectorSettings=makeSection('Collector Settings','Nearby matching, your collector profile, and collection tools','settings-collector');
   if(account)personal.panel.append(account);
-  const securityCard=document.createElement('div');
-  securityCard.className='settings-placeholder';
-  securityCard.innerHTML='<strong>Password changes and two-factor authentication</strong><span>These controls need secure server-side setup before they can safely be enabled. No security setting is being changed by this preview.</span>';
+  const securityCard=document.createElement('article');
+  securityCard.className='dashboard-card dashboard-card--wide';
+  securityCard.innerHTML='<p class="dashboard-eyebrow">Sign-in security</p><h2>Change password</h2><p>Confirm your current password before saving a new one. Use at least 10 characters.</p><form id="change-password-form" class="settings-profile-form"><label>Current password<input id="settings-current-password" type="password" autocomplete="current-password" required maxlength="128"></label><label>New password<input id="settings-new-password" type="password" autocomplete="new-password" required minlength="10" maxlength="128"></label><label>Confirm new password<input id="settings-confirm-password" type="password" autocomplete="new-password" required minlength="10" maxlength="128"></label><button id="save-password-settings" class="btn btn--primary" type="submit">Change password</button><p id="password-settings-status" class="settings-profile-status" role="status" aria-live="polite"></p></form><div class="settings-placeholder" style="margin-top:14px"><strong>Two-factor authentication (2FA)</strong><span>Not available yet. I’m leaving this disabled until authenticator setup, verification, recovery codes, and login enforcement are implemented together.</span></div>';
   security.panel.append(securityCard);
   if(membershipLevel)membership.panel.append(membershipLevel);
   if(membershipAccess)membership.panel.append(membershipAccess);
