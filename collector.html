@@ -13,8 +13,8 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-nav{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}
 .cp-brand{font:2rem Bangers,cursive;color:var(--blue);text-decoration:none}
 .cp-nav a:last-child{font-weight:900;color:var(--blue)}
-.cp-hero{position:relative;background:linear-gradient(120deg,#07194d,#123d8c);background-size:cover;background-position:center;color:#fff;border-radius:18px;padding:clamp(20px,4vw,38px);display:flex;align-items:center;gap:20px;box-shadow:0 8px 24px #07194d20;min-height:190px;overflow:hidden}.cp-hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#07194df2,#07194db0);pointer-events:none}.cp-hero>*{position:relative;z-index:1}
-.cp-avatar{width:88px;height:88px;flex:0 0 88px;border-radius:24px;border:3px solid var(--yellow);background:#fff;color:var(--blue);display:grid;place-items:center;overflow:hidden;font-size:2.2rem;font-weight:900}
+.cp-hero{position:relative;background:linear-gradient(120deg,#07194d,#123d8c);background-size:cover;background-position:center;color:#fff;border-radius:18px;padding:clamp(22px,4vw,42px);display:flex;align-items:center;gap:22px;box-shadow:0 8px 24px #07194d20;min-height:245px;overflow:hidden}.cp-hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#07194df2,#07194db0);pointer-events:none}.cp-hero>*{position:relative;z-index:1}
+.cp-avatar{width:104px;height:104px;flex:0 0 104px;border-radius:27px;border:3px solid var(--yellow);background:#fff;color:var(--blue);display:grid;place-items:center;overflow:hidden;font-size:2.2rem;font-weight:900}
 .cp-avatar img{width:100%;height:100%;object-fit:cover}.cp-avatar-edit{padding:0;cursor:pointer;font-family:inherit}.cp-avatar-edit:focus-visible,.cp-cover-edit:focus-visible{outline:3px solid #ffd21f;outline-offset:3px}.cp-cover-edit{position:absolute;right:16px;bottom:14px;z-index:3;border:1px solid #ffffff88;border-radius:9px;padding:8px 11px;background:#07194ddd;color:#fff;font:inherit;font-weight:900;cursor:pointer}.cp-cover-edit[hidden]{display:none!important}
 .cp-hero h1{font:2.5rem/1 Bangers,cursive;margin:0 0 8px;overflow-wrap:anywhere}
 .cp-hero p{margin:0;color:#dbe8ff;line-height:1.5}
@@ -65,7 +65,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-catalog-result small{color:var(--muted);margin-top:3px}
 .cp-catalog-status{font-size:.82rem;color:var(--muted);margin:8px 0 0;line-height:1.4}
 @media(max-width:820px){.cp-layout{grid-template-columns:1fr}.cp-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:520px){.cp-hero{align-items:flex-start;gap:13px}.cp-avatar{width:64px;height:64px;flex-basis:64px;border-radius:18px}.cp-hero h1{font-size:2rem}.cp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-items{grid-template-columns:1fr 1fr}.cp-item-image{height:210px;padding:10px 6px 6px}.cp-item-image img{max-height:190px}.cp-stat strong{font-size:1.35rem}}
+@media(max-width:520px){.cp-hero{align-items:flex-start;gap:15px;min-height:220px;padding:20px 16px}.cp-avatar{width:76px;height:76px;flex-basis:76px;border-radius:20px}.cp-hero h1{font-size:2rem}.cp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-items{grid-template-columns:1fr 1fr}.cp-item-image{height:210px;padding:10px 6px 6px}.cp-item-image img{max-height:190px}.cp-stat strong{font-size:1.35rem}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -176,7 +176,12 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   if(sort==='set')cards.sort((a,b)=>String(a.set?.name||a.setName||'').localeCompare(String(b.set?.name||b.setName||'')));
   results.innerHTML=cards.map(card=>{
    const image=card.image?String(card.image).replace(/\/$/,'')+'/low.webp':'';
-   return '<button class="cp-catalog-result" type="button" data-card-id="'+safe(card.id)+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">🃏</span>')+'<span><strong>'+safe(card.name||'Unknown card')+'</strong><small>'+safe(card.set?.name||card.setName||catalogSets.find(s=>s.id===String(card.id||'').slice(0,String(card.id||'').lastIndexOf('-')))?.name||'Set not listed')+(card.customRgb?' · Community-added (not in TCGdex)':'')+' · Card #'+safe(card.localId||card.id)+' · '+safe(card.id)+'</small></span></button>';
+   const setId=card.set?.id||String(card.id||'').slice(0,String(card.id||'').lastIndexOf('-'));
+   const setRecord=catalogSets.find(s=>s.id===setId);
+   const total=setRecord?.cardCount?.total||setRecord?.cardCount?.official||setRecord?.total;
+   const local=String(card.localId||card.id||'');
+   const numberLabel=card.customRgb?local:(total&&/^\d+$/.test(local)?local+'/'+total:local);
+   return '<button class="cp-catalog-result" type="button" data-card-id="'+safe(card.id)+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">🃏</span>')+'<span><strong>'+safe(card.name||'Unknown card')+'</strong><small>'+safe(card.set?.name||card.setName||catalogSets.find(s=>s.id===String(card.id||'').slice(0,String(card.id||'').lastIndexOf('-')))?.name||'Set not listed')+(card.customRgb?' · Community-added (not in TCGdex)':'')+' · Card #'+safe(numberLabel)+' · '+safe(card.id)+'</small></span></button>';
   }).join('');
   setStatus('catalog-status','Showing '+cards.length+' matching catalog results. Choose the exact printing you own.');
  }
@@ -232,9 +237,14 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    $('product-name').value=card.name||'';
    $('product-type').value='card';
    $('set-name').value=card.set?.name||'';
-   $('card-number').value=card.localId||'';
+   let cardNumber=String(card.localId||'');
+   const setId=card.set?.id||String(card.id||'').slice(0,String(card.id||'').lastIndexOf('-'));
+   if(setId&&/^\d+$/.test(cardNumber)){
+    try{const setResponse=await fetch(TCGDEX+'/sets/'+encodeURIComponent(setId),{headers:{Accept:'application/json'}});if(setResponse.ok){const setDetails=await setResponse.json();const total=setDetails.cardCount?.total||setDetails.cardCount?.official;if(total)cardNumber=cardNumber+'/'+total;}}catch{}
+   }
+   $('card-number').value=cardNumber;
    $('image-url').value=card.image?String(card.image).replace(/\/$/,'')+'/high.webp':'';
-   setStatus('catalog-status','Selected '+(card.name||'card')+(card.set?.name?' — '+card.set.name:'')+'. Confirm the printing and condition before adding it.');
+   setStatus('catalog-status','Selected '+(card.name||'card')+(card.set?.name?' — '+card.set.name:'')+'. Card number includes the set total when the catalog provides it. Confirm the printing and condition before adding it.');
    $('product-name').focus();
   }catch(error){setStatus('catalog-status','Could not load that card. Please choose another result or enter details manually.');}
   finally{buttons.forEach(button=>button.disabled=false);}
