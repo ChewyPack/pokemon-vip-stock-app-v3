@@ -619,6 +619,25 @@
    }catch(error){status.textContent=error.message||'Could not save personal details.';}
    finally{button.disabled=false;}
   });
+
+  document.getElementById('change-password-form').addEventListener('submit',async event=>{
+   event.preventDefault();
+   const button=document.getElementById('save-password-settings'),status=document.getElementById('password-settings-status');
+   const current=document.getElementById('settings-current-password').value,newPassword=document.getElementById('settings-new-password').value,confirm=document.getElementById('settings-confirm-password').value;
+   if(newPassword!==confirm){status.textContent='The new password and confirmation do not match.';return;}
+   if(newPassword.length<10){status.textContent='Use at least 10 characters for your new password.';return;}
+   button.disabled=true;status.textContent='Changing password…';
+   try{
+    const response=await fetch('/api/account/change-password',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:current,new_password:newPassword})});
+    const result=await response.json();
+    if(!response.ok||!result.ok){
+     const errors={login_required:'Your session expired. Please log in again.',current_password_incorrect:'Your current password was not correct.',password_requirements:'Your new password must be 10–128 characters.',new_password_must_differ:'Choose a new password different from your current one.'};
+     throw new Error(errors[result.error]||'Could not change password.');
+    }
+    document.getElementById('change-password-form').reset();status.textContent='Password changed successfully.';
+   }catch(error){status.textContent=error.message||'Could not change password.';}
+   finally{button.disabled=false;}
+  });
   grid.dataset.settingsAccordionsBuilt='true';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',buildSettingsAccordions);else buildSettingsAccordions();
