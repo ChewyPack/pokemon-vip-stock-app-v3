@@ -69,8 +69,8 @@
 </style>
 </head>
 <body>
+<div id="site-navigation"></div>
 <main class="account-wrap">
-<a class="account-brand" href="/">PokePrizePool</a>
 <section class="account-panel">
 <h1 id="heading">Join the PokePrizePool community</h1>
 <p class="account-intro">One account for your place in the hobby. Choose the account type that best describes how you’ll use PokePrizePool.</p>
@@ -166,7 +166,7 @@
       <p class="dashboard-eyebrow">Your collection</p>
       <h2>Collector profile</h2>
       <p>Create a public collector profile, showcase cards and sealed products, track your collection, and build a wishlist of what you’re hunting.</p>
-      <div class="dashboard-actions"><a class="btn btn--primary" href="/collector.html">Open collection &amp; wishlist</a></div>
+      <div class="dashboard-actions"><a class="btn btn--primary" href="/collector.html">Open collection &amp; wishlist</a><a class="btn btn--primary" href="/inbox.html">📬 Offer inbox</a><a class="btn btn--ghost" href="#nearby-collector-settings">📍 Nearby settings</a></div>
     </article>
     <article class="dashboard-card dashboard-card--wide" id="nearby-collector-settings"><p class="dashboard-eyebrow">Collector discovery</p><h2>📍 Nearby collector settings</h2><p>Share only a ZIP-code-based approximate area. Your ZIP code is private; other collectors see approximate mileage, not your address or ZIP code.</p><form id="nearby-location-form" class="settings-profile-form"><label>US ZIP code<input id="settings-location-zip" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" placeholder="e.g. 02903"></label><label>Search radius<select id="settings-location-radius"><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></label><label style="display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px"><input id="settings-location-enabled" type="checkbox" style="width:18px;min-height:18px"> Include my approximate area in nearby matches</label><button id="save-location-settings" class="btn btn--primary" type="submit">Save location settings</button><p id="nearby-location-status" class="settings-profile-status" role="status" aria-live="polite"></p></form><p class="settings-profile-help">If you enabled nearby matching during signup, your saved area and radius appear here. Turn it off anytime to stop using distance matching.</p></article>
 <article class="dashboard-card dashboard-card--wide" id="collector-profile-settings">
@@ -518,5 +518,6 @@
  setMode('login');checkSession();
 })();
 </script>
+<script src="/js/ui/site-nav.js"></script>
 </body>
 </html>
