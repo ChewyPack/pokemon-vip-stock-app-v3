@@ -7,7 +7,7 @@ async function currentAccount(request,env){const token=cookie(request,COOKIE);if
 export async function onRequestGet({request,env}){
  if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
  const account=await currentAccount(request,env);if(!account)return json({ok:false,error:'login_required'},401);
- try{const result=await env.DB.prepare('SELECT id,list_type,product_type,product_name,set_name,card_number,condition,quantity,notes,image_url,estimated_value_cents,created_at FROM collector_items WHERE account_id=? ORDER BY created_at DESC LIMIT 500').bind(account.id).all();return json({ok:true,items:result.results||[]});}
+ try{const result=await env.DB.prepare('SELECT id,list_type,product_type,product_name,set_name,card_number,condition,quantity,notes,image_url,estimated_value_cents,is_tradeable,created_at FROM collector_items WHERE account_id=? ORDER BY created_at DESC LIMIT 500').bind(account.id).all();return json({ok:true,items:result.results||[]});}
  catch(error){console.error('Collector items read failed:',error);return json({ok:false,error:'items_read_failed'},500);}
 }
 export async function onRequestPost({request,env}){
