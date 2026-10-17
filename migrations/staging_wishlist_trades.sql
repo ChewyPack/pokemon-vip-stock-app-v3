@@ -43,3 +43,10 @@ CREATE TABLE IF NOT EXISTS collector_trade_offer_items (
 
 CREATE INDEX IF NOT EXISTS idx_collector_trade_offer_items_offer
   ON collector_trade_offer_items(offer_id, side);
+
+CREATE TABLE IF NOT EXISTS collector_trade_completions (
+  offer_id INTEGER NOT NULL REFERENCES collector_trade_offers(id) ON DELETE CASCADE,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  confirmed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (offer_id, account_id)
+);
