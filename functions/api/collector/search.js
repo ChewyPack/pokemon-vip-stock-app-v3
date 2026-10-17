@@ -69,6 +69,13 @@ export async function onRequestGet({ request, env }) {
           instr(lower(p.username), lower(?)) > 0
           OR instr(lower(COALESCE(a.display_name, '')), lower(?)) > 0
         )
+        AND (
+          ? IS NULL OR NOT EXISTS (
+            SELECT 1 FROM collector_blocks b
+            WHERE (b.blocker_account_id = ? AND b.blocked_account_id = p.account_id)
+               OR (b.blocker_account_id = p.account_id AND b.blocked_account_id = ?)
+          )
+        )
       ORDER BY
         CASE WHEN lower(p.username) = lower(?) THEN 0
              WHEN lower(COALESCE(a.display_name, '')) = lower(?) THEN 1
@@ -83,7 +90,10 @@ export async function onRequestGet({ request, env }) {
       query,
       query,
       query,
-      query
+      query,
+      viewer?.id ?? null,
+      viewer?.id ?? null,
+      viewer?.id ?? null
     ).all();
 
     const results = (result.results || []).map(profile => ({
