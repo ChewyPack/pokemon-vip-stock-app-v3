@@ -413,7 +413,6 @@ async function searchCollectors(query){
  $('make-offer-close').addEventListener('click',()=>$('make-offer-modal').hidden=true);$('make-offer-cancel').addEventListener('click',()=>$('make-offer-modal').hidden=true);
  $('make-offer-modal').addEventListener('click',event=>{if(event.target===$('make-offer-modal'))$('make-offer-modal').hidden=true;});
  $('make-offer-form').addEventListener('submit',submitOffer);
- $('inbox-list').addEventListener('click',actOnOffer);
  
  
  load();
