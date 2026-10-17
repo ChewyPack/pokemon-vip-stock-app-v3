@@ -144,44 +144,40 @@
       <p id="account-type-description" style="margin-top:12px">Your current membership level and access.</p>
     </article>
     <article class="dashboard-card dashboard-card--wide">
-      <p class="dashboard-eyebrow">Membership &amp; access</p>
-      <h2>One account, separate benefits</h2>
-      <p>Your website sign-in, paid membership, and vendor/event-organizer verification are separate. Payment alone does not approve a vendor profile or event listing.</p>
-      <ul>
-        <li><strong>Website account:</strong> your sign-in and account type.</li>
-        <li><strong>Paid membership:</strong> Collector+, Vendor, or Event Organizer billing status.</li>
-        <li><strong>Vendor / organizer verification:</strong> separate approval for business or event features.</li>
-      </ul>
+      <p class="dashboard-eyebrow">Membership</p>
+      <h2>Your membership</h2>
       <div class="membership-checkout">
-        <strong>Choose a paid membership</strong>
-        <p style="margin:6px 0 12px">Checkout opens Stripe Test Mode in staging. Your membership activates after the verified webhook confirms your subscription.</p>
-        <label for="membership-tier">Membership
-          <select id="membership-tier">
-            <option value="collector_plus">Collector+ — $5/month or $50/year</option>
-            <option value="vendor">Vendor — $15/month or $150/year</option>
-            <option value="organizer">Event Organizer — $25/month or $320/year</option>
-          </select>
-        </label>
-        <label for="membership-interval">Billing
-          <select id="membership-interval">
-            <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
-          </select>
-        </label>
-        <button id="start-membership-checkout" class="btn btn--primary" type="button">Continue to Stripe Test Checkout</button>
-        <p id="membership-checkout-status" class="membership-status" role="status" aria-live="polite" hidden></p>
         <section id="membership-summary" class="membership-summary" aria-labelledby="membership-summary-title" hidden>
-          <h3 id="membership-summary-title">Your membership details</h3>
+          <h3 id="membership-summary-title">Membership details</h3>
           <div class="membership-summary-grid">
-            <div class="membership-summary-item"><span>Benefits tier active now</span><strong id="membership-detail-tier">—</strong></div>
-            <div class="membership-summary-item"><span>Current billing tier</span><strong id="membership-detail-billing-tier">—</strong></div>
-            <div class="membership-summary-item"><span>Billing plan</span><strong id="membership-detail-interval">—</strong></div>
+            <div class="membership-summary-item"><span>Current plan</span><strong id="membership-detail-tier">—</strong></div>
+            <div class="membership-summary-item"><span>Billing</span><strong id="membership-detail-interval">—</strong></div>
             <div class="membership-summary-item"><span>Price</span><strong id="membership-detail-price">—</strong></div>
-            <div class="membership-summary-item"><span>Paid-through date</span><strong id="membership-detail-period-end">—</strong></div>
+            <div class="membership-summary-item"><span>Renews / paid through</span><strong id="membership-detail-period-end">—</strong></div>
           </div>
           <p id="membership-cancel-note" class="account-note" style="margin:12px 0 0" hidden></p>
           <button id="cancel-membership" class="membership-cancel" type="button" hidden>Cancel membership at period end</button>
         </section>
+        <p id="membership-checkout-status" class="membership-status" role="status" aria-live="polite" hidden></p>
+        <button id="manage-membership-options" class="btn" type="button" hidden>Change membership</button>
+        <div id="membership-change-options" hidden>
+          <strong>Choose a plan</strong>
+          <p style="margin:6px 0 12px">Select the membership and billing period you want. Any change will be explained before it is submitted.</p>
+          <label for="membership-tier">Membership
+            <select id="membership-tier">
+              <option value="collector_plus">Collector+ — $5/month or $50/year</option>
+              <option value="vendor">Vendor — $15/month or $150/year</option>
+              <option value="organizer">Event Organizer — $25/month or $320/year</option>
+            </select>
+          </label>
+          <label for="membership-interval">Billing
+            <select id="membership-interval">
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </label>
+          <button id="start-membership-checkout" class="btn btn--primary" type="button">Continue</button>
+        </div>
       </div>
     </article>
     <article class="dashboard-card dashboard-card--wide" id="nearby-collector-settings"><p class="dashboard-eyebrow">Collector discovery</p><h2> Nearby collector settings</h2><p>Share only a ZIP-code-based approximate area. Your ZIP code is private; other collectors see approximate mileage, not your address or ZIP code.</p><form id="nearby-location-form" class="settings-profile-form"><label>US ZIP code<input id="settings-location-zip" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" placeholder="e.g. 02903"></label><label>Search radius<select id="settings-location-radius"><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></label><label style="display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px"><input id="settings-location-enabled" type="checkbox" style="width:18px;min-height:18px"> Include my approximate area in nearby matches</label><button id="save-location-settings" class="btn btn--primary" type="submit">Save location settings</button><p id="nearby-location-status" class="settings-profile-status" role="status" aria-live="polite"></p></form><p class="settings-profile-help">If you enabled nearby matching during signup, your saved area and radius appear here. Turn it off anytime to stop using distance matching.</p></article>
@@ -356,15 +352,18 @@
       const tier=m.billing_tier||m.tier||'collector_plus';
       const interval=m.interval==='yearly'?'yearly':'monthly';
       membershipStatus.hidden=false;
-      membershipStatus.textContent='Active paid membership: '+(membershipLabels[m.entitlement_tier||tier]||m.entitlement_tier||tier)+' benefits. Your Stripe subscription is verified.';
+      membershipStatus.textContent=(m.entitlement_tier&&m.entitlement_tier!==tier)?'Your '+(membershipLabels[m.entitlement_tier]||m.entitlement_tier)+' benefits are active. Your current billed plan is '+(membershipLabels[tier]||tier)+'.':'Your membership is active.';
       membershipSummary.hidden=false;
-      document.getElementById('membership-detail-tier').textContent=membershipLabels[m.entitlement_tier||tier]||m.entitlement_tier||tier;
-      document.getElementById('membership-detail-billing-tier').textContent=membershipLabels[m.billing_tier||tier]||m.billing_tier||tier;
+      document.getElementById('membership-detail-tier').textContent=membershipLabels[m.billing_tier||tier]||m.billing_tier||tier;
       document.getElementById('membership-detail-interval').textContent=interval==='yearly'?'Annual':'Monthly';
       document.getElementById('membership-detail-price').textContent=(prices[tier]||prices.collector_plus)[interval];
       const periodEnd=m.current_period_end?new Date(Number(m.current_period_end)*1000):null;
       document.getElementById('membership-detail-period-end').textContent=periodEnd&&!Number.isNaN(periodEnd.getTime())?periodEnd.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}):'Not available yet';
       tierSelect.value=m.billing_tier||tier;intervalSelect.value=interval;
+      const manageOptionsButton=document.getElementById('manage-membership-options');
+      const changeOptions=document.getElementById('membership-change-options');
+      manageOptionsButton.hidden=false;
+      manageOptionsButton.addEventListener('click',()=>{changeOptions.hidden=!changeOptions.hidden;manageOptionsButton.textContent=changeOptions.hidden?'Change membership':'Hide plan options';});
       cancelButton.hidden=Boolean(m.cancel_at_period_end);
       if(m.cancel_at_period_end){
         tierSelect.disabled=true;intervalSelect.disabled=true;
@@ -372,24 +371,29 @@
         checkoutButton.textContent='Resume membership renewal';
         cancelNote.hidden=false;
         cancelNote.textContent='Cancellation is scheduled. Your paid membership remains active until the paid-through date shown above. Resume renewal before scheduling a plan change.';
-        membershipStatus.textContent='Active paid membership: '+(membershipLabels[tier]||tier)+'. Cancellation is scheduled; access remains active through the paid-through date.';
+        membershipStatus.textContent='Your membership is set to end on the paid-through date shown above.';
+        manageOptionsButton.textContent='Resume membership renewal';
+        manageOptionsButton.addEventListener('click',()=>checkoutButton.click());
       }else{
         const hasScheduledChange=Boolean(m.scheduled_tier&&m.scheduled_interval&&m.scheduled_at);
         tierSelect.disabled=hasScheduledChange;intervalSelect.disabled=hasScheduledChange;
         checkoutButton.disabled=hasScheduledChange;
         checkoutButton.textContent=hasScheduledChange?'Change scheduled for next renewal':'Schedule change for next renewal';
+        if(hasScheduledChange){manageOptionsButton.textContent='Plan change scheduled';manageOptionsButton.disabled=true;}
         cancelNote.hidden=!hasScheduledChange;
         if(hasScheduledChange){
           const scheduledDate=new Date(Number(m.scheduled_at)*1000);
           const scheduledTier=membershipLabels[m.scheduled_tier]||m.scheduled_tier;
           const scheduledInterval=m.scheduled_interval==='yearly'?'Annual':'Monthly';
-          cancelNote.textContent='Plan change scheduled for '+(Number.isNaN(scheduledDate.getTime())?'your next renewal':scheduledDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+scheduledTier+' · '+scheduledInterval+'. Your current paid-tier benefits remain active until this change takes effect at renewal. Your current price stays in place until then. If you cancel before renewal, this planned change will be removed.';
+          cancelNote.textContent='Your plan will change on '+(Number.isNaN(scheduledDate.getTime())?'your next renewal':scheduledDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}))+': '+scheduledTier+' · '+scheduledInterval+'. Your current plan and price stay in place until then.';
         }
       }
     } else {
       membershipSummary.hidden=true;
       tierSelect.disabled=false;intervalSelect.disabled=false;
-      checkoutButton.disabled=false;checkoutButton.textContent='Continue to Stripe Test Checkout';
+      checkoutButton.disabled=false;checkoutButton.textContent='Continue';
+      document.getElementById('membership-change-options').hidden=false;
+      document.getElementById('manage-membership-options').hidden=true;
     }
     cancelButton.addEventListener('click',async()=>{
       if(!window.confirm('Cancel this membership at the end of the current billing period? You will keep access until the paid-through date, and the subscription will not renew.')) return;
@@ -438,7 +442,7 @@
          const errors={upgrade_preview_expired:'The upgrade quote expired. Please try again to get a fresh amount.',upgrade_payment_failed:'Stripe could not complete the immediate payment. Your existing membership remains unchanged; try another payment method or contact support.',upgrade_apply_failed:'Stripe could not apply the upgrade. Your existing membership has not been confirmed as changed.',change_already_scheduled:'This subscription already has a scheduled change. Resolve that schedule before upgrading.'};
          throw new Error(errors[applied.error]||'The upgrade could not be completed. Please check your current membership before trying again.');
         }
-        status.hidden=false;status.textContent='Upgrade submitted. Refreshing your verified membership details…';
+        status.hidden=false;status.textContent='Upgrade submitted. Refreshing your membership details…';
         window.location.reload();
        }catch(error){
         status.hidden=false;status.textContent=error.message||'Could not complete the upgrade.';
