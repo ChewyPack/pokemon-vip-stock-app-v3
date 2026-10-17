@@ -131,12 +131,6 @@
             { title: 'Offer Inbox', description: 'Manage cash offers and collection trades', href: '/inbox.html' },
             { title: 'Account Settings', description: 'Profile, privacy, and nearby matching', href: '/account.html#nearby-collector-settings' }
           ]),
-          dropdown('Community', [
-            { title: 'Discord Community', href: '/community-discord.html' },
-            { title: 'Collector Resources', href: '/community-resources.html' },
-            { title: 'VIP Badge Collection', href: '/vip-badges.html' },
-            { title: 'Member Support', href: '/community-support.html' }
-          ])
         ),
         navLink('Report a Sighting', '#report'),
         h('a', {
