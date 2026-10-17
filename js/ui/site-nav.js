@@ -17,7 +17,7 @@
   dropdown('Collectors',[
    {title:'Collector Profiles',description:'Browse your profile and collections',href:'/collector.html'},
    {title:'Offer Inbox',description:'Cash offers and collection trades',href:'/inbox.html'},
-   {title:'Account Settings',description:'Profile, privacy, and nearby matching',href:'/account.html#settings'}
+   {title:'Account Settings',description:'Profile, privacy, and nearby matching',href:'/account.html#nearby-collector-settings'}
   ]),
   link('Report a Sighting','/#report'),
   link('Sign up / Log in','/account.html','site-nav__link account-nav-link')
