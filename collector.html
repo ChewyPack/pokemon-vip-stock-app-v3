@@ -143,7 +143,9 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   profile=p;const hero=$('profile-hero');if(hero)hero.style.backgroundImage=p?.cover_url?'url("'+String(p.cover_url).replace(/["\\\\]/g,'')+'"), linear-gradient(120deg,#07194d,#123d8c)':'';
   
   $('handle').textContent=p?.username?'@'+p.username:'Create your collector handle';
-  $('display-name').textContent=accountName||p?.display_name||p?.username||'Collector Profile';
+  const displayName=String(accountName||p?.display_name||p?.username||'Collector Profile').trim();
+  $('display-name').textContent=displayName;
+  $('display-name').hidden=!!p?.username&&displayName.toLowerCase()===String(p.username).trim().toLowerCase();
   $('bio-display').textContent=p?.bio||'Pokémon collector — add a bio to tell your story.';
   $('edit-bio').hidden=!own;$('bio-editor').hidden=true;$('bio-input').value=p?.bio||'';
   if(p?.avatar_url)$('avatar').innerHTML='<img src="'+safe(p.avatar_url)+'" alt="Profile photo">';else $('avatar').textContent='🃏';
