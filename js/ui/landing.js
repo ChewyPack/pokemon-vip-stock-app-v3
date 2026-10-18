@@ -141,7 +141,12 @@
             { title: 'Events', description: 'Shows, trade nights, and releases', href: '/events.html' },
             { title: 'Instant Cash Out', description: 'Explore collection cash-out options', href: '/instant-cash-out.html' }
           ]),
-          navLink('Alerts', '/alerts.html'),
+          dropdown('Alerts', [
+            { title: 'Live Stock', description: 'View live stock alerts', href: '/alerts.html' },
+            { title: 'Target', description: 'Target stock alerts', href: '/alerts.html?retailer=target' },
+            { title: 'Walmart', description: 'Walmart stock alerts', href: '/alerts.html?retailer=walmart' },
+            { title: 'BestBuy', description: 'Best Buy stock alerts', href: '/alerts.html?retailer=bestbuy' }
+          ]),
           navLink('Line Services', '/line-services.html'),
           dropdown('Shop', [
             {
