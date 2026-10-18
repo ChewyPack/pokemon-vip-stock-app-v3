@@ -95,9 +95,17 @@ export async function onRequestGet({ request, env }) {
       return json({ ok: true, story });
     }
 
-    const rows = await env.DB.prepare(
-      'SELECT slug, title, excerpt, image_url, category, published_at FROM poke_report_stories WHERE status = \'published\' ORDER BY published_at DESC, id DESC LIMIT 100'
-    ).all();
+    const categoryFilter = cleanText(url.searchParams.get('category') || '', 40);
+    let rows;
+    if (['News', 'Updates', 'Market Intelligence', 'Events'].includes(categoryFilter)) {
+      rows = await env.DB.prepare(
+        'SELECT slug, title, excerpt, image_url, category, published_at FROM poke_report_stories WHERE status = \'published\' AND category = ? ORDER BY published_at DESC, id DESC LIMIT 100'
+      ).bind(categoryFilter).all();
+    } else {
+      rows = await env.DB.prepare(
+        'SELECT slug, title, excerpt, image_url, category, published_at FROM poke_report_stories WHERE status = \'published\' ORDER BY published_at DESC, id DESC LIMIT 100'
+      ).all();
+    }
     return json({ ok: true, stories: rows.results || [] });
   } catch (error) {
     console.error('Poke Report story read failed:', error);
