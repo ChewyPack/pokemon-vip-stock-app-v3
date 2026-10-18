@@ -27,59 +27,89 @@
     }, label);
   }
 
+  function closeMenus(nav, keepMenu) {
+    nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
+      var shouldKeep = keepMenu && (menu === keepMenu || menu.contains(keepMenu));
+      menu.hidden = !shouldKeep;
+    });
+    nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+      var controlled = nav.querySelector('#' + button.getAttribute('aria-controls'));
+      button.setAttribute('aria-expanded', String(!!controlled && !controlled.hidden));
+    });
+  }
+
+  function makeMenuItem(item, nav) {
+    if (item.children && item.children.length) {
+      var submenuId = 'nav-sub-' + item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      var toggle = h('button', {
+        class: 'site-nav__item site-nav__submenu-toggle',
+        type: 'button',
+        'aria-expanded': 'false',
+        'aria-controls': submenuId
+      },
+        h('span', { class: 'site-nav__item-title' }, item.title),
+        h('span', { class: 'site-nav__submenu-arrow', 'aria-hidden': 'true' }, '›')
+      );
+      var submenu = h('div', {
+        class: 'site-nav__menu site-nav__submenu',
+        id: submenuId,
+        hidden: true
+      }, item.children.map(function (child) { return makeMenuItem(child, nav); }));
+      var wrapper = h('div', { class: 'site-nav__nested-dropdown' }, toggle, submenu);
+
+      toggle.addEventListener('click', function (event) {
+        event.stopPropagation();
+        var wasOpen = toggle.getAttribute('aria-expanded') === 'true';
+        nav.querySelectorAll('.site-nav__submenu-toggle').forEach(function (other) {
+          other.setAttribute('aria-expanded', 'false');
+        });
+        nav.querySelectorAll('.site-nav__submenu').forEach(function (other) {
+          other.hidden = true;
+        });
+        if (!wasOpen) {
+          toggle.setAttribute('aria-expanded', 'true');
+          submenu.hidden = false;
+        }
+      });
+      return wrapper;
+    }
+
+    return h('a', {
+      class: 'site-nav__item',
+      href: item.href
+    },
+      h('span', { class: 'site-nav__item-title' }, item.title),
+      item.description ? h('span', { class: 'site-nav__item-description' }, item.description) : null
+    );
+  }
+
   function dropdown(label, items) {
     var menuId = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
     var button = h('button', {
       class: 'site-nav__toggle',
       type: 'button',
       'aria-expanded': 'false',
       'aria-controls': menuId
     }, label + ' ▾');
-
-    var menu = h(
-      'div',
-      {
-        class: 'site-nav__menu',
-        id: menuId,
-        hidden: true
-      },
-      items.map(function (item) {
-        return h(
-          'a',
-          {
-            class: 'site-nav__item',
-            href: item.href
-          },
-          h('span', { class: 'site-nav__item-title' }, item.title),
-          item.description
-            ? h('span', { class: 'site-nav__item-description' }, item.description)
-            : null
-        );
-      })
-    );
-
-    var wrapper = h(
-      'div',
-      { class: 'site-nav__dropdown' },
-      button,
-      menu
-    );
+    var menu = h('div', {
+      class: 'site-nav__menu',
+      id: menuId,
+      hidden: true
+    }, items.map(function (item) { return makeMenuItem(item); }));
+    var wrapper = h('div', { class: 'site-nav__dropdown' }, button, menu);
 
     button.addEventListener('click', function () {
       var isOpen = button.getAttribute('aria-expanded') === 'true';
-
-      var allButtons = document.querySelectorAll('.site-nav__toggle');
-      var allMenus = document.querySelectorAll('.site-nav__menu');
-
-      allButtons.forEach(function (otherButton) {
+      var nav = wrapper.closest('.site-nav');
+      nav.querySelectorAll('.site-nav__toggle').forEach(function (otherButton) {
         otherButton.setAttribute('aria-expanded', 'false');
       });
-
-      allMenus.forEach(function (otherMenu) {
+      nav.querySelectorAll('.site-nav__menu').forEach(function (otherMenu) {
         otherMenu.hidden = true;
       });
-
+      nav.querySelectorAll('.site-nav__submenu-toggle').forEach(function (otherButton) {
+        otherButton.setAttribute('aria-expanded', 'false');
+      });
       if (!isOpen) {
         button.setAttribute('aria-expanded', 'true');
         menu.hidden = false;
@@ -102,45 +132,47 @@
             class: 'site-nav',
             'aria-label': 'Main navigation'
           },
-          navLink('Home', '#home'),
+          navLink('Home', '/'),
           dropdown('Poke Report', [
-            {
-              title: 'Report a Sighting',
-              description: 'Submit an in-store stock report',
-              href: '#report'
-            },
-            {
-              title: 'News & Exclusives',
-              description: 'Pokémon news and hobby updates',
-              href: '/news.html'
-            },
-            {
-              title: 'Market Intelligence',
-              description: 'Market trends and product insights',
-              href: '/market-intelligence.html'
-            },
-            {
-              title: 'Events Calendar',
-              description: 'Shows, trade nights, and releases',
-              href: '/events.html'
-            },
+            { title: 'News', description: 'Pokémon news and hobby coverage', href: '/news.html' },
+            { title: 'Updates', description: 'Platform updates and announcements', href: '/updates.html' },
+            { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
+            { title: 'Events', description: 'Shows, trade nights, and releases', href: '/events.html' },
+            { title: 'Instant Cash Out', description: 'Explore collection cash-out options', href: '/instant-cash-out.html' }
           ]),
-          dropdown('Collectors', [
-            { title: 'Collector Profiles', description: 'Browse collector profiles and collections', href: '/collector.html' },
-            { title: 'Offer Inbox', description: 'Manage cash offers and collection trades', href: '/inbox.html' },
-            { title: 'Account Settings', description: 'Profile, privacy, and nearby matching', href: '/account.html#nearby-collector-settings' }
+          navLink('Line Services', '/line-services.html'),
+          dropdown('Shop', [
+            {
+              title: 'Cards',
+              children: [
+                { title: 'Sealed', href: '/shop.html?category=sealed' },
+                { title: 'Slabs', href: '/shop.html?category=slabs' },
+                { title: 'Singles', href: '/shop.html?category=singles' }
+              ]
+            },
+            {
+              title: 'Merch',
+              children: [
+                { title: 'Clothing', href: '/shop.html?category=clothing' },
+                { title: 'Plushies', href: '/shop.html?category=plushies' },
+                { title: 'Other', href: '/shop.html?category=other' }
+              ]
+            }
           ]),
-        ),
-        navLink('Report a Sighting', '#report'),
-        h('a', {
-          class: 'site-nav__link account-nav-link',
-          href: '/account.html',
-          id: 'account-nav-link'
-        }, 'Sign up / Log in')
+          dropdown('Resources', [
+            { title: 'Securing Product', href: '/resources/securing-product.html' },
+            { title: 'Spotting Fakes', href: '/resources/spotting-fakes.html' },
+            { title: 'Pricing Cards', href: '/resources/pricing-cards.html' }
+          ]),
+          h('a', {
+            class: 'site-nav__link account-nav-link',
+            href: '/account.html',
+            id: 'account-nav-link'
+          }, 'Sign up / Log in')
+        )
       )
     );
 
-    // Signed-in users get a direct Profile button that opens their collector profile.
     fetch('/api/account/me', { credentials: 'include', cache: 'no-store' })
       .then(function (response) { return response.ok ? response.json() : null; })
       .then(function (data) {
@@ -156,25 +188,19 @@
 
     document.addEventListener('click', function (event) {
       if (!nav.contains(event.target)) {
-        nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+        nav.querySelectorAll('.site-nav__toggle, .site-nav__submenu-toggle').forEach(function (button) {
           button.setAttribute('aria-expanded', 'false');
         });
-
-        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-          menu.hidden = true;
-        });
+        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) { menu.hidden = true; });
       }
     });
 
     nav.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
-        nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+        nav.querySelectorAll('.site-nav__toggle, .site-nav__submenu-toggle').forEach(function (button) {
           button.setAttribute('aria-expanded', 'false');
         });
-
-        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-          menu.hidden = true;
-        });
+        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) { menu.hidden = true; });
       }
     });
 
