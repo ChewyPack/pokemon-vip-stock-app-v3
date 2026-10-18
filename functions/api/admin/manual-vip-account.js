@@ -37,7 +37,7 @@ function getCookie(request, name) {
 
 function b64(bytes) {
   return btoa(String.fromCharCode(...new Uint8Array(bytes)))
-    .replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/,'');
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/,'');
 }
 
 async function sha256(value) {
@@ -89,7 +89,7 @@ export async function onRequestPost({ request, env }) {
   if (displayName.length < 2 || displayName.length > 60) {
     return json({ ok: false, error: 'invalid_display_name' }, 400);
   }
-  if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json({ ok: false, error: 'invalid_email' }, 400);
   }
   if (!VIP_ALLOWLIST.has(email)) {
