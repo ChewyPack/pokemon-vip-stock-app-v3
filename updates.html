@@ -1,0 +1,374 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Updates | PokePrizePool</title>
+  <meta
+    name="description"
+    content="PokePrizePool platform updates and announcements."
+  >
+
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    html {
+      min-height: 100%;
+      background: #07142e;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: #fff;
+      background-color: #07142e;
+      background-image:
+        linear-gradient(
+          rgba(3, 10, 29, 0.76),
+          rgba(3, 10, 29, 0.88)
+        ),
+        url("/assets/backgrounds/vip-collage.jpg");
+      background-position: center center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: scroll;
+    }
+
+    .news-page {
+      min-height: 100vh;
+      background: transparent;
+    }
+
+    .news-content {
+      position: relative;
+      z-index: 1;
+      width: min(1000px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 70px;
+    }
+
+    .news-content h1 {
+      margin: 0;
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: 0.03em;
+      text-shadow: 3px 3px 0 #0b2a6b;
+    }
+
+    .news-empty {
+      margin-top: 24px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      background: rgba(5, 15, 40, 0.68);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .news-empty p {
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    .news-story-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+    .news-story-card{overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(5,15,40,.78)}
+    .news-story-card img{display:block;width:100%;max-height:240px;aspect-ratio:16/9;object-fit:cover;background:#0b204a}
+    .news-story-card__body{padding:18px}
+    .news-story-meta{font-size:.82rem;color:#b9c9e8;text-transform:uppercase;letter-spacing:.08em}
+    .news-story-card h2{font-size:1.35rem;line-height:1.25;margin:10px 0;color:#fff}
+    .news-story-card p{line-height:1.65;color:#e0e8f7;white-space:pre-line}
+    .news-read-link{display:inline-block;margin-top:8px;color:#9ec7ff;font-weight:700;text-decoration:underline}
+    .news-article-content{white-space:pre-line;line-height:1.85;font-size:1.04rem;color:#edf3ff}
+    .news-article-image{display:block;width:100%;max-height:480px;object-fit:cover;border-radius:12px;margin:22px 0}
+    .news-back-link{display:inline-block;margin:0 0 18px;color:#a8caff}
+\n    /* Keep the shared navigation above the page content. */
+    #news-navigation {
+      position: relative;
+      z-index: 100;
+    }
+
+    @media (max-width: 560px) {
+      .news-content {
+        padding-top: 28px;
+      }
+
+      .news-empty {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="news-page">
+    <div id="news-navigation"></div>
+
+    <section
+      class="news-content"
+      aria-labelledby="news-title"
+    >
+      <h1 id="news-title">Updates</h1>
+
+      <div id="news-stories">
+        <div class="news-empty">
+          <p>Loading the latest stories…</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var root = document.getElementById('news-navigation');
+
+      if (!root) {
+        return;
+      }
+
+      function make(tag, attrs, children) {
+        var node = document.createElement(tag);
+
+        Object.keys(attrs || {}).forEach(function (key) {
+          if (key === 'class') {
+            node.className = attrs[key];
+          } else {
+            node.setAttribute(key, attrs[key]);
+          }
+        });
+
+        (children || []).forEach(function (child) {
+          if (child) {
+            node.appendChild(child);
+          }
+        });
+
+        return node;
+      }
+
+      function textElement(tag, attrs, value) {
+        var node = make(tag, attrs);
+        node.textContent = value;
+        return node;
+      }
+
+      function link(label, href) {
+        return textElement('a', {
+          class: 'site-nav__link',
+          href: href
+        }, label);
+      }
+
+      function closeDropdowns(header) {
+        header.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+          button.setAttribute('aria-expanded', 'false');
+        });
+
+        header.querySelectorAll('.site-nav__menu').forEach(function (menu) {
+          menu.hidden = true;
+        });
+      }
+
+      function dropdown(label, items) {
+        var id = 'news-nav-' +
+          label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+        var button = textElement('button', {
+          class: 'site-nav__toggle',
+          type: 'button',
+          'aria-expanded': 'false',
+          'aria-controls': id
+        }, label + ' ▾');
+
+        var menu = make('div', {
+          class: 'site-nav__menu',
+          id: id
+        });
+
+        menu.hidden = true;
+
+        items.forEach(function (item) {
+          var children = [
+            textElement('span', {
+              class: 'site-nav__item-title'
+            }, item.title)
+          ];
+
+          if (item.description) {
+            children.push(
+              textElement('span', {
+                class: 'site-nav__item-description'
+              }, item.description)
+            );
+          }
+
+          menu.appendChild(
+            make('a', {
+              class: 'site-nav__item',
+              href: item.href
+            }, children)
+          );
+        });
+
+        button.addEventListener('click', function () {
+          var opening =
+            button.getAttribute('aria-expanded') !== 'true';
+
+          closeDropdowns(root);
+
+          if (opening) {
+            button.setAttribute('aria-expanded', 'true');
+            menu.hidden = false;
+          }
+        });
+
+        return make('div', {
+          class: 'site-nav__dropdown'
+        }, [button, menu]);
+      }
+
+      /*
+       * Keep the same navigation structure as Home:
+       * the brand is outside the nav, and the CTA is
+       * the final direct child inside the nav.
+       */
+      var nav = make('nav', {
+        class: 'site-nav',
+        'aria-label': 'Main navigation'
+      }, [
+        link('Home', '/'),
+
+        dropdown('Poke Report', [
+          { title: 'News', description: 'Pokémon news and hobby coverage', href: '/news.html' },
+          { title: 'Updates', description: 'Platform updates and announcements', href: '/updates.html' },
+          { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
+          { title: 'Events', description: 'Shows, trade nights, and releases', href: '/events.html' },
+          { title: 'Instant Cash Out', description: 'Explore collection cash-out options', href: '/instant-cash-out.html' }
+        ]),
+
+        link('Alerts', '/alerts.html'),
+        link('Line Services', '/line-services.html'),
+
+        dropdown('Shop', [
+          { title: 'Sealed Cards', description: 'Sealed Pokémon products', href: '/shop.html?category=sealed' },
+          { title: 'Slabs', description: 'Graded cards', href: '/shop.html?category=slabs' },
+          { title: 'Singles', description: 'Individual cards', href: '/shop.html?category=singles' },
+          { title: 'Clothing', description: 'PokePrizePool clothing', href: '/shop.html?category=clothing' },
+          { title: 'Plushies', description: 'Pokémon plushies', href: '/shop.html?category=plushies' },
+          { title: 'Other Merch', description: 'More merchandise', href: '/shop.html?category=other' }
+        ]),
+
+        link('Giveaways', '/giveaways.html'),
+        link('Chat', '/chat.html'),
+
+        dropdown('Resources', [
+          { title: 'Securing Product', href: '/resources/securing-product.html' },
+          { title: 'Spotting Fakes', href: '/resources/spotting-fakes.html' },
+          { title: 'Pricing Cards', href: '/resources/pricing-cards.html' }
+        ]),
+
+        textElement('a', {
+          class: 'site-nav__link account-nav-link',
+          href: '/account.html',
+          id: 'news-account-nav-link'
+        }, 'Sign up / Log in')
+      ]);
+
+      var header = make('header', {
+        class: 'site-nav-header'
+      }, [
+        make('div', {
+          class: 'wrap site-nav-header__inner'
+        }, [
+          nav
+        ])
+      ]);
+
+      root.appendChild(header);
+
+      fetch('/api/account/me', {
+        credentials: 'include',
+        cache: 'no-store'
+      }).then(function (response) {
+        return response.ok ? response.json() : null;
+      }).then(function (data) {
+        var accountLink = header.querySelector('#news-account-nav-link');
+        if (accountLink && data && data.ok && data.authenticated) {
+          accountLink.href = '/collector.html';
+          accountLink.textContent = 'Profile';
+          accountLink.setAttribute('aria-label', 'Open your collector profile');
+          if (data.account && data.account.is_admin) {
+            var editorLink = textElement('a', {
+              class: 'site-nav__link',
+              href: '/news-admin.html'
+            }, 'Manage News');
+            header.querySelector('.site-nav').appendChild(editorLink);
+          }
+        }
+      }).catch(function () {
+        /* Keep the sign-in link available if account status cannot be checked. */
+      });
+
+      document.addEventListener('click', function (event) {
+        if (!header.contains(event.target)) {
+          closeDropdowns(header);
+        }
+      });
+
+      header.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          closeDropdowns(header);
+        }
+      });
+    })();
+  </script>
+  <script>
+    (function(){
+      'use strict';
+      var container=document.getElementById('news-stories');
+      var heading=document.getElementById('news-title');
+      if(!container||!heading)return;
+      function add(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
+      function dateLabel(value){if(!value)return '';var d=new Date(value);return isNaN(d.getTime())?value:d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});}
+      function api(url){return fetch(url,{credentials:'omit',cache:'no-store'}).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok||!d.ok)throw new Error(d.error||'Could not load stories');return d;});});}
+      function renderList(stories){
+        container.replaceChildren();
+        if(!stories.length){container.appendChild(add('p','', 'No stories have been published yet. Check back soon.'));return;}
+        var grid=add('div','news-story-list');
+        stories.forEach(function(story){
+          var card=add('article','news-story-card');
+          if(story.image_url){var img=add('img','');img.src=story.image_url;img.alt='';img.loading='lazy';img.onerror=function(){img.remove();};card.appendChild(img);}
+          var body=add('div','news-story-card__body');
+          body.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
+          body.appendChild(add('h2','',story.title));
+          if(story.excerpt)body.appendChild(add('p','',story.excerpt));
+          var link=add('a','news-read-link','Read story →');link.href='/updates.html?story='+encodeURIComponent(story.slug);body.appendChild(link);
+          card.appendChild(body);grid.appendChild(card);
+        });
+        container.appendChild(grid);
+      }
+      function renderStory(story){
+        heading.textContent=story.title;
+        container.replaceChildren();
+        var back=add('a','news-back-link','← All Updates');back.href='/updates.html';container.appendChild(back);
+        container.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
+        if(story.image_url){var img=add('img','news-article-image');img.src=story.image_url;img.alt='';img.onerror=function(){img.remove();};container.appendChild(img);}
+        if(story.excerpt)container.appendChild(add('p','',story.excerpt));
+        container.appendChild(add('div','news-article-content',story.content));
+      }
+      var slug=new URLSearchParams(location.search).get('story');
+      if(slug){
+        api('/api/news?slug='+encodeURIComponent(slug)).then(function(data){renderStory(data.story);}).catch(function(){heading.textContent='Updates';container.replaceChildren(add('p','', 'That update could not be found or is no longer published.'),Object.assign(add('a','news-back-link','← Back to Updates'),{href:'/updates.html'}));});
+      }else{
+        api('/api/news?category=Updates').then(function(data){renderList(data.stories||[]);}).catch(function(){container.replaceChildren(add('p','', 'We could not load the latest stories right now. Please try again soon.'));});
+      }
+    })();
+  </script>
+</body>
+</html>
