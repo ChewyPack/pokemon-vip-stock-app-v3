@@ -59,11 +59,12 @@
 
       toggle.addEventListener('click', function (event) {
         event.stopPropagation();
+        var currentNav = wrapper.closest('.site-nav');
         var wasOpen = toggle.getAttribute('aria-expanded') === 'true';
-        nav.querySelectorAll('.site-nav__submenu-toggle').forEach(function (other) {
+        currentNav.querySelectorAll('.site-nav__submenu-toggle').forEach(function (other) {
           other.setAttribute('aria-expanded', 'false');
         });
-        nav.querySelectorAll('.site-nav__submenu').forEach(function (other) {
+        currentNav.querySelectorAll('.site-nav__submenu').forEach(function (other) {
           other.hidden = true;
         });
         if (!wasOpen) {
@@ -140,6 +141,7 @@
             { title: 'Events', description: 'Shows, trade nights, and releases', href: '/events.html' },
             { title: 'Instant Cash Out', description: 'Explore collection cash-out options', href: '/instant-cash-out.html' }
           ]),
+          navLink('Alerts', '/alerts.html'),
           navLink('Line Services', '/line-services.html'),
           dropdown('Shop', [
             {
