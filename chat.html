@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06174A">
+<title>Community Chat | PokePrizePool</title>
+<meta name="description" content="Chat Pokémon with the PokePrizePool collector community in real time.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+:root{--chat-navy:#07194d;--chat-blue:#174b9b;--chat-yellow:#ffd21f;--chat-line:#d7e2f4;--chat-muted:#63749a}
+body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
+.chat-wrap{width:min(1260px,calc(100% - 28px));margin:24px auto 60px}
+.chat-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:0 0 18px}
+.chat-eyebrow{font-size:.76rem;letter-spacing:.13em;text-transform:uppercase;font-weight:900;color:#5872a5;margin:0 0 5px}
+.chat-hero h1{font:400 clamp(2.2rem,5vw,3.3rem)/.98 Bangers,cursive;letter-spacing:.03em;margin:0;color:var(--chat-navy)}
+.chat-hero p{margin:8px 0 0;color:#53668f;max-width:65ch;line-height:1.5}
+.chat-live{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;padding:9px 12px;border:1px solid var(--chat-line);border-radius:999px;background:#fff;font-size:.82rem;font-weight:900}
+.chat-live:before{content:"";width:9px;height:9px;border-radius:50%;background:#e7a323;box-shadow:0 0 0 3px #e7a32320}
+.chat-live[data-state="connected"]:before{background:#20a568;box-shadow:0 0 0 3px #20a56820}
+.chat-live[data-state="error"]:before{background:#d43e48;box-shadow:0 0 0 3px #d43e4820}
+.chat-layout{display:grid;grid-template-columns:255px minmax(0,1fr);gap:14px;align-items:stretch;min-height:650px}
+.chat-sidebar,.chat-main{background:#fff;border:1px solid var(--chat-line);border-radius:17px;box-shadow:0 8px 24px #07194d0c;min-width:0;overflow:hidden}
+.chat-sidebar{padding:14px}
+.chat-side-head{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 12px}
+.chat-side-head strong{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:#7182a5}
+.chat-community-pill{font-size:.7rem;font-weight:900;color:#17386c;background:#edf3ff;border-radius:999px;padding:5px 8px}
+.chat-channel-list{display:grid;gap:5px}
+.chat-channel{width:100%;display:flex;align-items:center;gap:9px;text-align:left;padding:11px 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:#294779;font:800 .92rem Nunito,system-ui,sans-serif;cursor:pointer;min-width:0}
+.chat-channel:hover{background:#f3f7ff}
+.chat-channel[aria-current="true"]{background:#eaf1ff;border-color:#c7d7f5;color:#0b2a6b;box-shadow:inset 3px 0 0 var(--chat-yellow)}
+.chat-channel-icon{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:8px;background:#f0f4fc;color:#204a91;font-weight:900}
+.chat-channel[aria-current="true"] .chat-channel-icon{background:var(--chat-yellow)}
+.chat-channel-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.chat-unread{min-width:20px;height:20px;display:grid;place-items:center;padding:0 5px;border-radius:999px;background:#e73c50;color:#fff;font-size:.7rem;font-weight:900}
+.chat-rules{margin-top:20px;padding:12px;border-radius:11px;background:#f7f9ff;border:1px solid #e3eaf7;color:#63749a;font-size:.78rem;line-height:1.55}
+.chat-rules strong{display:block;color:#274477;margin-bottom:4px}
+.chat-main{display:flex;flex-direction:column;min-height:650px}
+.chat-room-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 20px;border-bottom:1px solid #e3eaf7;background:linear-gradient(90deg,#fff,#f8faff)}
+.chat-room-title{display:flex;align-items:center;gap:11px;min-width:0}
+.chat-room-hash{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:#fff2ae;color:#17386c;font-size:1.65rem;font-weight:900}
+.chat-room-title h2{margin:0;font-size:1.13rem;font-weight:900;overflow-wrap:anywhere}
+.chat-room-title p{margin:3px 0 0;color:var(--chat-muted);font-size:.82rem;line-height:1.35}
+.chat-room-count{font-size:.8rem;color:#60749d;font-weight:900;white-space:nowrap}
+.chat-history{flex:1;min-height:350px;max-height:calc(100vh - 360px);overflow-y:auto;padding:18px 20px 12px;scroll-behavior:smooth}
+.chat-history-status{text-align:center;color:#7484a5;font-size:.86rem;padding:20px 8px}
+.chat-message{display:flex;gap:11px;padding:10px 8px;border-radius:11px;margin:0 0 3px;min-width:0}
+.chat-message:hover{background:#f8faff}
+.chat-avatar{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#174b9b,#07194d);color:#fff;font-size:.85rem;font-weight:900;text-transform:uppercase}
+.chat-message-body{min-width:0;flex:1}
+.chat-message-meta{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 3px}
+.chat-message-name{font-weight:900;color:#14376f;font-size:.9rem;overflow-wrap:anywhere}
+.chat-message-username{color:#7b8cad;font-size:.76rem;font-weight:800}
+.chat-message-time{color:#8795b0;font-size:.72rem}
+.chat-message-text{font-size:.92rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;color:#283e68}
+.chat-message-deleted{color:#8795b0;font-style:italic}
+.chat-message-actions{float:right;opacity:0;transition:opacity .15s}
+.chat-message:hover .chat-message-actions,.chat-message:focus-within .chat-message-actions{opacity:1}
+.chat-delete{border:1px solid #e3b9bd;background:#fff;color:#a32e38;border-radius:7px;padding:3px 7px;font:800 .72rem Nunito,system-ui,sans-serif;cursor:pointer}
+.chat-composer-wrap{padding:13px 16px 15px;border-top:1px solid #e3eaf7;background:#fbfcff}
+.chat-composer{display:flex;align-items:flex-end;gap:10px;padding:9px;border:1px solid #c9d7ef;border-radius:13px;background:#fff;box-shadow:0 2px 0 #e5ebf7}
+.chat-composer:focus-within{border-color:#5379bd;box-shadow:0 0 0 3px #174b9b12}
+.chat-composer textarea{display:block;flex:1;min-width:0;resize:vertical;max-height:180px;min-height:42px;border:0;outline:0;padding:10px 7px;background:transparent;color:#0b2a6b;font:600 .94rem/1.45 Nunito,system-ui,sans-serif}
+.chat-composer textarea::placeholder{color:#8796b2}
+.chat-send{min-height:42px;padding:0 17px;border:2px solid #07194d;border-radius:9px;background:var(--chat-yellow);color:#07194d;font:900 .9rem Nunito,system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 0 #07194d}
+.chat-send:hover{filter:brightness(.97);transform:translateY(-1px)}
+.chat-send:disabled{opacity:.55;cursor:wait;transform:none}
+.chat-composer-hint{display:flex;justify-content:space-between;gap:12px;margin:8px 3px 0;color:#8190ac;font-size:.75rem}
+.chat-alert{margin:0 0 12px;padding:12px 14px;border-radius:10px;background:#fff5d8;border:1px solid #ead27a;color:#6b5306;font-size:.87rem;line-height:1.5}
+.chat-alert[hidden]{display:none}
+.chat-gate{max-width:650px;margin:40px auto;padding:clamp(22px,5vw,38px);border:2px solid #17386c;border-radius:18px;background:#fff;box-shadow:7px 7px 0 #07194d;text-align:center}
+.chat-gate h2{font:400 2rem Bangers,cursive;margin:0 0 8px}
+.chat-gate p{color:#5b6e94;line-height:1.6}
+.chat-gate a{display:inline-flex;align-items:center;justify-content:center;min-height:45px;padding:10px 18px;border-radius:9px;background:#ffd21f;border:2px solid #07194d;color:#07194d;text-decoration:none;font-weight:900}
+.chat-mobile-channels{display:none}
+@media(max-width:760px){
+ .chat-hero{align-items:flex-start;flex-direction:column;gap:12px}
+ .chat-layout{grid-template-columns:1fr;min-height:unset}
+ .chat-sidebar{padding:10px}
+ .chat-side-head{margin:2px 2px 8px}
+ .chat-channel-list{display:flex;overflow-x:auto;gap:7px;padding-bottom:3px}
+ .chat-channel{width:auto;flex:0 0 auto;padding:8px 10px;border-color:#e4ebf7;background:#fbfcff}
+ .chat-channel-icon{flex-basis:24px;width:24px;height:24px}
+ .chat-rules{display:none}
+ .chat-main{min-height:65vh}
+ .chat-history{min-height:330px;max-height:58vh;padding:12px 9px}
+ .chat-room-head{padding:13px}
+ .chat-room-count{display:none}
+ .chat-composer-wrap{padding:10px}
+ .chat-message{gap:8px;padding:9px 5px}
+ .chat-avatar{flex-basis:34px;width:34px;height:34px;border-radius:10px}
+ .chat-message-actions{opacity:1}
+}
+@media(max-width:430px){.chat-send{padding:0 12px}.chat-room-hash{flex-basis:36px;width:36px;height:36px}.chat-room-title h2{font-size:1rem}.chat-composer-hint{font-size:.7rem}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="chat-wrap">
+  <header class="chat-hero">
+    <div><p class="chat-eyebrow">The collector community</p><h1>PokePrizePool Chat</h1><p>Real-time conversation with collectors. Share finds, talk market, show off your collection, and help each other out.</p></div>
+    <div class="chat-live" id="chat-connection" data-state="connecting" role="status" aria-live="polite">Connecting…</div>
+  </header>
+  <div id="chat-gate" class="chat-gate" hidden>
+    <h2 id="chat-gate-title">Sign in to join the conversation</h2>
+    <p id="chat-gate-copy">Community Chat is available to every registered PokePrizePool account. Sign in or create your free account to participate.</p>
+    <a href="/account.html">Sign in / Create account</a>
+  </div>
+  <section class="chat-layout" id="chat-app" aria-label="Community chat" hidden>
+    <aside class="chat-sidebar">
+      <div class="chat-side-head"><strong>Channels</strong><span class="chat-community-pill">COMMUNITY</span></div>
+      <nav class="chat-channel-list" id="chat-channels" aria-label="Chat channels"></nav>
+      <div class="chat-rules"><strong>Keep it collector-friendly</strong>Be respectful. No spam, scams, harassment, or sharing private information. Never post passwords or payment details. Report concerns to the PokePrizePool team.</div>
+    </aside>
+    <section class="chat-main" aria-label="Selected channel">
+      <header class="chat-room-head">
+        <div class="chat-room-title"><div class="chat-room-hash" aria-hidden="true">#</div><div><h2 id="chat-room-name">general</h2><p id="chat-room-description">Loading channel…</p></div></div>
+        <div class="chat-room-count" id="chat-online-count">Community chat</div>
+      </header>
+      <div id="chat-alert" class="chat-alert" hidden></div>
+      <div class="chat-history" id="chat-history" role="log" aria-live="polite" aria-relevant="additions text"><div class="chat-history-status">Loading messages…</div></div>
+      <div class="chat-composer-wrap">
+        <form class="chat-composer" id="chat-form">
+          <textarea id="chat-input" rows="1" maxlength="1200" placeholder="Message #general" aria-label="Write a message" required></textarea>
+          <button class="chat-send" id="chat-send" type="submit">Send ↗</button>
+        </form>
+        <div class="chat-composer-hint"><span>Enter to send · Shift + Enter for a new line</span><span id="chat-char-count">0 / 1,200</span></div>
+      </div>
+    </section>
+  </section>
+</main>
+<script src="/js/ui/site-nav.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const state={account:null,channels:[],channelId:null,messages:new Map(),unread:{},socket:null,retry:1000,retryTimer:null,online:null,loading:false};
+const icons={general:'✦',restocks:'⚡',market:'↗',trades:'⇄',help:'?'}; 
+function api(url,options={}){return fetch(url,{credentials:'include',cache:'no-store',...options,headers:{'content-type':'application/json',...(options.headers||{})}}).then(async r=>{let d={};try{d=await r.json()}catch{}if(r.status===401){showGate();throw new Error('login_required')}if(!r.ok)throw new Error(d.message||friendly(d.error)||'Something went wrong.');return d;});}
+function friendly(code){return ({chat_realtime_not_configured:'Real-time chat has not been configured on staging yet.',rate_limited:'Please slow down before sending another message.',message_length:'Messages must be between 1 and 1,200 characters.',channel_not_found:'That channel is not available.',chat_messages_read_failed:'Could not load messages.',chat_message_send_failed:'Could not send that message.'})[code]||code||'Something went wrong.';}
+function showGate(title,copy){$('chat-app').hidden=true;$('chat-gate').hidden=false;if(title)$('chat-gate-title').textContent=title;if(copy)$('chat-gate-copy').textContent=copy;}
+function showApp(){$('chat-gate').hidden=true;$('chat-app').hidden=false;}
+function alertBox(message){const el=$('chat-alert');el.textContent=message;el.hidden=!message;}
+function setConnection(label,status){$('chat-connection').textContent=label;$('chat-connection').dataset.state=status;}
+function currentChannel(){return state.channels.find(c=>Number(c.id)===Number(state.channelId));}
+function renderChannels(){
+ const root=$('chat-channels');root.replaceChildren();
+ state.channels.forEach(c=>{
+  const b=document.createElement('button');b.type='button';b.className='chat-channel';b.dataset.id=c.id;b.setAttribute('aria-current',String(Number(c.id)===Number(state.channelId)));
+  const icon=document.createElement('span');icon.className='chat-channel-icon';icon.textContent=icons[c.slug]||'#';
+  const name=document.createElement('span');name.className='chat-channel-name';name.textContent=c.name;
+  b.append(icon,name);
+  const unread=Number(state.unread[c.id]||0);if(unread){const badge=document.createElement('span');badge.className='chat-unread';badge.textContent=unread>99?'99+':String(unread);b.appendChild(badge);}
+  b.addEventListener('click',()=>selectChannel(Number(c.id)));root.appendChild(b);
+ });
+}
+function initials(name){return String(name||'C').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'C';}
+function timeLabel(value){const d=new Date((value||'').replace(' ','T')+'Z');if(Number.isNaN(d.getTime()))return '';return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}
+function renderMessage(m){
+ if(!m||!m.id||Number(m.channel_id)!==Number(state.channelId))return;
+ const root=$('chat-history');const old=root.querySelector('[data-message-id="'+Number(m.id)+'"]');if(old)old.remove();
+ const empty=root.querySelector('.chat-history-status');if(empty)empty.remove();
+ const article=document.createElement('article');article.className='chat-message';article.dataset.messageId=m.id;
+ const avatar=document.createElement('div');avatar.className='chat-avatar';avatar.textContent=initials(m.display_name);
+ const body=document.createElement('div');body.className='chat-message-body';
+ const meta=document.createElement('div');meta.className='chat-message-meta';
+ const name=document.createElement('span');name.className='chat-message-name';name.textContent=m.display_name||'Collector';meta.appendChild(name);
+ if(m.username){const user=document.createElement('span');user.className='chat-message-username';user.textContent='@'+m.username;meta.appendChild(user);}
+ const time=document.createElement('time');time.className='chat-message-time';time.textContent=timeLabel(m.created_at);time.dateTime=m.created_at||'';meta.appendChild(time);
+ if(m.mine||state.account?.is_admin){const actions=document.createElement('span');actions.className='chat-message-actions';const del=document.createElement('button');del.type='button';del.className='chat-delete';del.textContent='Delete';del.setAttribute('aria-label','Delete message');del.addEventListener('click',()=>deleteMessage(m.id));actions.appendChild(del);meta.appendChild(actions);}
+ const text=document.createElement('div');text.className='chat-message-text'+(m.deleted?' chat-message-deleted':'');text.textContent=m.deleted?'Message deleted':m.body||'';
+ body.append(meta,text);article.append(avatar,body);root.appendChild(article);
+}
+function renderMessages(messages){const root=$('chat-history');root.replaceChildren();if(!messages.length){const empty=document.createElement('div');empty.className='chat-history-status';empty.textContent='No messages yet. Be the first to say hello!';root.appendChild(empty);return;}messages.forEach(renderMessage);root.scrollTop=root.scrollHeight;}
+async function selectChannel(id){
+ state.channelId=id;state.unread[id]=0;renderChannels();const c=currentChannel();if(!c)return;
+ $('chat-room-name').textContent=c.name;$('chat-room-description').textContent=c.description||'Community conversation';$('chat-input').placeholder='Message #'+c.slug;$('chat-history').innerHTML='<div class="chat-history-status">Loading messages…</div>';alertBox('');
+ try{const d=await api('/api/chat/messages?channel='+encodeURIComponent(id));state.messages.set(id,d.messages||[]);renderMessages(d.messages||[]);if(d.realtime_ready===false)alertBox('Messages can be read, but live delivery is not configured. Ask the site administrator to finish the staging setup.');}
+ catch(e){$('chat-history').innerHTML='';const msg=document.createElement('div');msg.className='chat-history-status';msg.textContent=e.message;$('chat-history').appendChild(msg);if(e.message.includes('not configured'))alertBox(e.message);}
+}
+function receive(event){
+ if(event.type==='connected'){state.retry=1000;setConnection('Live · connected','connected');alertBox('');return;}
+ if(event.type==='pong')return;
+ if(event.type==='presence'){state.online=Number(event.online||0);$('chat-online-count').textContent=state.online+' online';return;}
+ if(event.type==='message'&&event.message){const m=event.message;const arr=state.messages.get(Number(m.channel_id))||[];if(!arr.some(x=>Number(x.id)===Number(m.id))){arr.push(m);state.messages.set(Number(m.channel_id),arr.slice(-100));}
+  if(Number(m.channel_id)===Number(state.channelId)){renderMessage(m);const root=$('chat-history');root.scrollTop=root.scrollHeight;}
+  else if(Number(m.account_id)!==Number(state.account?.id)){state.unread[m.channel_id]=Number(state.unread[m.channel_id]||0)+1;renderChannels();}
+ }
+ if(event.type==='delete'){const id=Number(event.id);const arr=state.messages.get(Number(event.channel_id))||[];const m=arr.find(x=>Number(x.id)===id);if(m){m.deleted=true;m.body='';}if(Number(event.channel_id)===Number(state.channelId))renderMessages(arr);}
+}
+function connect(){
+ if(state.socket&&(state.socket.readyState===WebSocket.OPEN||state.socket.readyState===WebSocket.CONNECTING))return;
+ const proto=location.protocol==='https:'?'wss:':'ws:';const ws=new WebSocket(proto+'//'+location.host+'/api/chat/socket');state.socket=ws;setConnection('Connecting…','connecting');
+ ws.addEventListener('open',()=>{state.retry=1000;setConnection('Live · connecting','connecting');});
+ ws.addEventListener('message',e=>{try{receive(JSON.parse(e.data));}catch{}});
+ ws.addEventListener('error',()=>setConnection('Reconnecting…','error'));
+ ws.addEventListener('close',()=>{setConnection('Reconnecting…','error');if(state.retryTimer)clearTimeout(state.retryTimer);state.retryTimer=setTimeout(connect,state.retry);state.retry=Math.min(state.retry*2,15000);});
+}
+async function sendMessage(event){
+ event.preventDefault();if(state.loading)return;const input=$('chat-input');const body=input.value.trim();if(!body||!state.channelId)return;
+ state.loading=true;$('chat-send').disabled=true;alertBox('');
+ try{const d=await api('/api/chat/messages',{method:'POST',body:JSON.stringify({channel_id:state.channelId,body})});input.value='';updateCount();const arr=state.messages.get(Number(state.channelId))||[];if(!arr.some(m=>Number(m.id)===Number(d.message.id))){arr.push(d.message);state.messages.set(Number(state.channelId),arr.slice(-100));renderMessage(d.message);$('chat-history').scrollTop=$('chat-history').scrollHeight;}if(d.realtime===false)alertBox('Your message was saved, but live delivery is temporarily unavailable. Other members may not see it until they refresh.');}
+ catch(e){alertBox(e.message);}
+ finally{state.loading=false;$('chat-send').disabled=false;input.focus();}
+}
+async function deleteMessage(id){if(!confirm('Delete this message for everyone?'))return;try{const d=await api('/api/chat/messages',{method:'DELETE',body:JSON.stringify({id:Number(id)})});const m=[...state.messages.values()].flat().find(x=>Number(x.id)===Number(id));if(m){m.deleted=true;m.body='';}if(d.realtime===false)alertBox('Message deleted, but live delivery is temporarily unavailable.');renderMessages(state.messages.get(Number(state.channelId))||[]);}catch(e){alertBox(e.message);}}
+function updateCount(){$('chat-char-count').textContent=$('chat-input').value.length.toLocaleString()+' / 1,200';}
+async function start(){
+ try{const d=await api('/api/chat/channels');state.account=d.account;state.channels=d.channels||[];if(!state.channels.length)throw new Error('No chat channels are available yet. Apply the staging chat database migration first.');showApp();state.channelId=Number(state.channels[0].id);renderChannels();await selectChannel(state.channelId);connect();}
+ catch(e){if(e.message==='login_required')return;showGate('Community Chat is almost ready',e.message);$('chat-gate-copy').textContent=e.message;}
+}
+$('chat-form').addEventListener('submit',sendMessage);$('chat-input').addEventListener('input',updateCount);$('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chat-form').requestSubmit();}});
+window.addEventListener('beforeunload',()=>{if(state.retryTimer)clearTimeout(state.retryTimer);if(state.socket)state.socket.close();});
+start();
+})();
+</script>
+</body>
+</html>
