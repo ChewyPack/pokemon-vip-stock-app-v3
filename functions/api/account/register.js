@@ -19,7 +19,7 @@ export async function onRequestPost({ request, env }) {
   const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
   const password = typeof data.password === 'string' ? data.password : '';
   const rawPhone = typeof data.phone_number === 'string' ? data.phone_number.trim() : '';
-  const phoneDigits = rawPhone.replace(/\\D/g, '');
+  const phoneDigits = rawPhone.replace(/\D/g, '');
   const phoneNumber = rawPhone.startsWith('+') && phoneDigits.length >= 10 && phoneDigits.length <= 15
     ? '+' + phoneDigits
     : phoneDigits.length === 10
