@@ -51,6 +51,27 @@
     .mi-change{display:block;color:#5ee3ad;font-size:.82rem;margin-top:3px}
     .mi-change.down{color:#ff8d9c}
     .mi-empty{padding:20px;border:1px dashed #35435a;border-radius:12px;color:#9aa8bd;line-height:1.6;background:rgba(8,13,23,.5)}
+    .mi-artist-spotlight{grid-column:1/-1;overflow:hidden;position:relative}
+    .mi-artist-topline,.mi-hype-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .mi-artist-date,.mi-hype-status{font-size:.75rem;color:#a5f3e6;border:1px solid #315e62;background:rgba(53,132,124,.12);border-radius:999px;padding:6px 9px}
+    .mi-artist-feature{display:flex;align-items:center;gap:16px;margin:20px 0}
+    .mi-artist-monogram{display:grid;place-items:center;flex:0 0 76px;width:76px;height:76px;border-radius:18px;background:linear-gradient(145deg,#1b4c58,#17263c);border:1px solid #397b7a;color:#a5f3e6;font-size:1.4rem;font-weight:800}
+    .mi-artist-eyebrow{margin:0 0 4px;color:#6ce6d0;text-transform:uppercase;letter-spacing:.1em;font-size:.72rem;font-weight:800}
+    .mi-artist-feature h4{margin:0;font-size:1.55rem;line-height:1.2}
+    .mi-artist-style,.mi-artist-bio{color:#a6b3c8;line-height:1.65}
+    .mi-artist-style{margin:6px 0 0}
+    .mi-artist-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+    .mi-artist-facts>div{padding:14px;border:1px solid #26364d;border-radius:10px;background:#0c1421}
+    .mi-artist-facts strong{display:block;margin-top:7px;line-height:1.45;font-size:.95rem}
+    .mi-artist-cardlist{margin-top:16px}
+    .mi-artist-cardlist ul{padding-left:20px;color:#dce6f7;line-height:1.8}
+    .mi-hype-meter{margin-top:18px;padding:16px;border:1px solid #2b3c54;border-radius:12px;background:#0b1320}
+    .mi-hype-heading strong{font-size:1rem}
+    .mi-hype-track{display:flex;gap:5px;margin:13px 0 10px}
+    .mi-hype-track span{height:7px;flex:1;border-radius:99px;background:#27364a}
+    .mi-hype-meter p,.mi-artist-footnote{color:#91a0b9;font-size:.84rem;line-height:1.6;margin:0}
+    .mi-artist-footnote{margin-top:13px}
+    @media(max-width:600px){.mi-artist-facts{grid-template-columns:1fr}.mi-artist-feature{align-items:flex-start}.mi-artist-monogram{flex-basis:60px;width:60px;height:60px;border-radius:14px}}
     .mi-grade-tool{grid-column:1/-1}
     .mi-grade-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
     .mi-grade-fields label{display:flex;flex-direction:column;gap:7px;color:#dce6f7;font-size:.9rem;font-weight:700}
@@ -259,7 +280,16 @@
         </div>
         <p class="mi-grade-disclaimer">Important: PSA considers the entire card and its own grading standards. Hidden print defects, dents, altered surfaces, damage, and grader judgment can change the result. This tool does not inspect an uploaded image and cannot predict an actual grade.</p>
       </article>
-      <article class="mi-note"><h3>Artist spotlight & hype meter</h3><p>An artist spotlight and descriptive hype meter can combine grading velocity, card value, price movement, and community discussion. Treat this as a sentiment/attention indicator, not a forecast or guaranteed signal.</p></article>
+      <article class="mi-note mi-artist-spotlight" id="artist-spotlight">
+        <div class="mi-artist-topline"><span class="mi-label">Rotating collector feature</span><span id="artist-rotation-date" class="mi-artist-date">Daily artist rotation</span></div>
+        <h3>Artist Spotlight & Collector Hype</h3>
+        <div class="mi-artist-feature"><div class="mi-artist-monogram" id="artist-monogram" aria-hidden="true">MA</div><div><p class="mi-artist-eyebrow">Featured Pokémon TCG illustrator</p><h4 id="artist-name">Mitsuhiro Arita</h4><p id="artist-style" class="mi-artist-style">Expressive character art and memorable scenes.</p></div></div>
+        <p id="artist-bio" class="mi-artist-bio">A rotating look at the artists behind memorable Pokémon cards, with an emphasis on artwork and collector interest.</p>
+        <div class="mi-artist-facts"><div><span class="mi-label">Known for</span><strong id="artist-known-for">Iconic early-era artwork</strong></div><div><span class="mi-label">Collector angle</span><strong id="artist-collector-angle">Nostalgia and recognizable character art</strong></div></div>
+        <div class="mi-artist-cardlist"><span class="mi-label">Cards to explore</span><ul id="artist-card-examples"><li>Charizard · Base Set</li></ul></div>
+        <div class="mi-hype-meter"><div class="mi-hype-heading"><strong>Collector hype meter</strong><span class="mi-hype-status">Qualitative watch</span></div><div class="mi-hype-track" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><p>No numeric hype score is shown: verified artist-level price movement, grading velocity, and community discussion data are not connected yet.</p></div>
+        <p class="mi-artist-footnote">The featured artist rotates automatically by day. Confirm the illustrator credit for the exact card printing before researching prices. This editorial spotlight is not a price forecast.</p>
+      </article>
       <article class="mi-note"><h3>Card hype tracker</h3><p>A card hype tracker can combine grading submissions, submission growth relative to the graded base, seven-day price movement, and total graded supply. Treat rapid attention as a prompt to investigate liquidity and supply, not proof of sustainable demand.</p></article>
       <article class="mi-note"><h3>Cheap SIR / hyper-rare research</h3><p>A useful research board can cover English SIR, Hyper Rare, and Mega Hyper Rare cards across Scarlet & Violet and Mega-era sets, using graded-price references where available. Confirm current prices and missing values before comparing cards.</p></article>
       <article class="mi-note"><h3>Promos & regional exclusives</h3><p>Promo galleries use set/population identification and price references; regional-exclusive coverage is described as verified releases with market presence, not a guaranteed exhaustive checklist. Confirm release details before treating an item as region-exclusive.</p></article>
@@ -275,6 +305,24 @@
     <div class="market-note">PokePrizePool Market Intelligence is built for collectors who want to understand the Pokémon TCG market beyond the latest price tag. Track singles gaining or losing value, monitor graded-card population growth, and follow sealed product price movements in one place. The goal is to make market trends easier to spot, separate meaningful movement from day to day noise, and give collectors a clearer picture of what may be worth a closer look. Market data is a research tool, not a guarantee. Always verify current prices and recent sales before making a purchase or trade.</div>
         <a class="market-home" href="/">← Back to PokePrizePool</a>
   </main>
+
+  <script>
+    (function () {
+      var artists = [
+        {name:'Mitsuhiro Arita',initials:'MA',style:'Expressive character art, dramatic poses, and memorable scenes that helped define early Pokémon TCG artwork.',bio:'A long-running Pokémon TCG illustrator closely associated with some of the game’s most recognizable early cards.',known:'Iconic early-era Pokémon artwork',angle:'Nostalgia and recognizable character art',cards:['Charizard · Base Set (illustrator credit: Mitsuhiro Arita)','Compare other Arita-illustrated printings by set and rarity']},
+        {name:'Tomokazu Komiya',initials:'TK',style:'Distinctive loose linework and unusual compositions with a playful, immediately recognizable feel.',bio:'Komiya’s singular visual style stands apart from traditional character portraits, making illustrator credit an interesting collecting theme.',known:'Unconventional, expressive compositions',angle:'Art-style collecting and distinctive illustration',cards:['Look for Komiya-illustrated cards across multiple eras','Confirm the artist credit on each exact printing before comparing prices']},
+        {name:'Kawayoo',initials:'KW',style:'Dynamic character-focused illustrations that emphasize movement, energy, and visual impact.',bio:'Explore how pose, action, and character presentation shape a card’s visual identity across different Pokémon and sets.',known:'Dynamic Pokémon illustrations',angle:'Character appeal and standout poses',cards:['Browse Kawayoo-illustrated Pokémon TCG cards','Compare artwork variants featuring the same Pokémon']},
+        {name:'Shinji Kanda',initials:'SK',style:'Highly detailed, kinetic compositions that reward a closer look at the full illustration.',bio:'Kanda’s artwork is a frequent point of conversation among collectors who value elaborate scenes and distinctive visual storytelling.',known:'Detailed, high-impact full-art scenes',angle:'Artwork-led demand and collector conversation',cards:['Giratina V · Lost Origin alternate art','Verify the illustrator credit and exact variant before researching market history']},
+        {name:'Akira Egawa',initials:'AE',style:'Polished, atmospheric illustrations with dramatic lighting and carefully rendered characters.',bio:'Egawa’s work highlights how composition and atmosphere can become part of a card’s appeal beyond Pokémon or rarity alone.',known:'Atmospheric character and full-art work',angle:'Visual storytelling and artwork preference',cards:['Browse Akira Egawa-illustrated Pokémon TCG cards','Compare the same artist across different rarities and sets']}
+      ];
+      var artist = artists[Math.floor(Date.now()/86400000)%artists.length];
+      function setText(id,value){var el=document.getElementById(id);if(el)el.textContent=value;}
+      setText('artist-name',artist.name);setText('artist-monogram',artist.initials);setText('artist-style',artist.style);setText('artist-bio',artist.bio);setText('artist-known-for',artist.known);setText('artist-collector-angle',artist.angle);
+      setText('artist-rotation-date','Daily rotation · '+new Date().toLocaleDateString(undefined,{month:'short',day:'numeric'}));
+      var list=document.getElementById('artist-card-examples');
+      if(list){list.textContent='';artist.cards.forEach(function(card){var item=document.createElement('li');item.textContent=card;list.appendChild(item);});}
+    })();
+  </script>
 
   <script>
     (function () {
