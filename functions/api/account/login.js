@@ -17,7 +17,7 @@ export async function onRequestPost({request,env}) {
   const password=typeof data.password==='string'?data.password:'';
   if(!email||!password||email.length>254||password.length>128)return json({ok:false,error:'invalid_credentials'},400);
   try {
-    const account=await env.DB.prepare('SELECT id,display_name,email,account_type,password_salt,password_hash FROM accounts WHERE email=? COLLATE NOCASE LIMIT 1').bind(email).first();
+    const account=await env.DB.prepare('SELECT id,display_name,email,account_type,is_admin,password_salt,password_hash FROM accounts WHERE email=? COLLATE NOCASE LIMIT 1').bind(email).first();
     if(!account)return json({ok:false,error:'invalid_credentials'},401);
     let saltText=account.password_salt.replace(/-/g,'+').replace(/_/g,'/');
     saltText += '='.repeat((4-saltText.length%4)%4);
@@ -27,7 +27,7 @@ export async function onRequestPost({request,env}) {
     const tokenHash=await sha256(token);
     const expiresAt=Date.now()+SESSION_DAYS*86400000;
     await env.DB.prepare('UPDATE accounts SET session_token_hash=?,session_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(tokenHash,expiresAt,account.id).run();
-    return json({ok:true,account:{display_name:account.display_name,email:account.email,account_type:account.account_type}},200,{'Set-Cookie':cookie(token,expiresAt)});
+    return json({ok:true,account:{display_name:account.display_name,email:account.email,account_type:account.account_type,is_admin:Number(account.is_admin||0)===1}},200,{'Set-Cookie':cookie(token,expiresAt)});
   }catch(error){console.error('Account login failed:',error);return json({ok:false,error:'login_failed'},500);}
 }
 export async function onRequest(){return json({ok:false,error:'method_not_allowed'},405);}
