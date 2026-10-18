@@ -27,6 +27,21 @@ export async function onRequestPost({request,env}) {
     const tokenHash=await sha256(token);
     const expiresAt=Date.now()+SESSION_DAYS*86400000;
     await env.DB.prepare('UPDATE accounts SET session_token_hash=?,session_expires_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(tokenHash,expiresAt,account.id).run();
+
+    // Idempotently ensure this account follows the admin profile. Keep this
+    // best-effort so a missing profile/follow table never blocks login.
+    try {
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO collector_follows (follower_account_id, followed_account_id)
+         SELECT ?, target.account_id
+         FROM collector_profiles AS target
+         WHERE lower(target.username) = lower('PikaChewy')
+           AND target.account_id <> ?`
+      ).bind(account.id, account.id).run();
+    } catch (followError) {
+      console.error('Automatic admin-profile follow was skipped:', followError);
+    }
+
     return json({ok:true,account:{display_name:account.display_name,email:account.email,account_type:account.account_type,is_admin:Number(account.is_admin||0)===1}},200,{'Set-Cookie':cookie(token,expiresAt)});
   }catch(error){console.error('Account login failed:',error);return json({ok:false,error:'login_failed'},500);}
 }
