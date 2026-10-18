@@ -11,6 +11,9 @@
  * Cloudflare D1 binding:
  *   DB -> pokemon-vip-members
  *
+ * Access:
+ *   No paid membership or vip_session cookie is required to submit a report.
+ *
  * Environment variables:
  *   DISCORD_WEBHOOK_URL       required
  *   DISCORD_ALERT_ROLE_ID     optional
@@ -34,8 +37,6 @@ const MAX_PHOTOS = 5;
 const WEBHOOK_PREFIX =
   /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//;
 
-const SESSION_COOKIE = 'vip_session';
-
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -44,69 +45,6 @@ function json(body, status = 200) {
       'cache-control': 'no-store'
     }
   });
-}
-
-function getCookie(request, name) {
-  const header = request.headers.get('Cookie') || '';
-
-  for (const part of header.split(';')) {
-    const trimmed = part.trim();
-
-    if (trimmed.startsWith(name + '=')) {
-      return trimmed.substring(name.length + 1);
-    }
-  }
-
-  return '';
-}
-
-function base64Url(bytes) {
-  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
-
-async function sha256(value) {
-  return crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(value)
-  );
-}
-
-async function getActiveMember(request, env) {
-  const token = getCookie(request, SESSION_COOKIE);
-
-  if (!token) {
-    return null;
-  }
-
-  const hashBuffer = await sha256(token);
-  const tokenHash = base64Url(hashBuffer);
-
-  const result = await env.DB.prepare(
-    `SELECT id, name, email, membership_status,
-            membership_type, session_expires_at
-     FROM users
-     WHERE session_token_hash = ?
-       AND membership_status = 'active'
-     LIMIT 1`
-  )
-    .bind(tokenHash)
-    .first();
-
-  if (!result) {
-    return null;
-  }
-
-  if (
-    !result.session_expires_at ||
-    Number(result.session_expires_at) < Date.now()
-  ) {
-    return null;
-  }
-
-  return result;
 }
 
 async function postToDiscord(webhookUrl, payload, photos) {
@@ -210,26 +148,9 @@ function makeStoreDetails(report) {
 
 export async function onRequestPost({ request, env }) {
   /*
-   * MEMBERSHIP CHECK
-   * Only active members with a valid session can submit reports.
+   * POKE REPORT IS OPEN TO USERS WITHOUT A PAID MEMBERSHIP.
+   * Keep Discord webhook notifications enabled; they are independent of the paywall.
    */
-  try {
-    const member = await getActiveMember(request, env);
-
-    if (!member) {
-      return json({
-        ok: false,
-        error: 'membership_required'
-      }, 403);
-    }
-  } catch (error) {
-    console.error('Membership check error:', error);
-
-    return json({
-      ok: false,
-      error: 'membership_check_failed'
-    }, 500);
-  }
 
   const alertUrl = env.DISCORD_WEBHOOK_URL || '';
 
