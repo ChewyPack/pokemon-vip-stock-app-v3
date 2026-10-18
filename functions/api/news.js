@@ -63,9 +63,7 @@ async function requireAdmin(request, env) {
 }
 
 function makeSlug(value) {
-  return String(value || '').toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
-    .replace(/^-+|-+$/g, '').slice(0, 90);
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
 }
 
 function cleanText(value, max) {
