@@ -125,6 +125,10 @@
     </div>
     <div class="account-avatar" aria-hidden="true">Card</div>
   </div>
+  <div id="admin-access-banner" role="status" style="display:block;margin:0 0 20px;padding:14px 16px;border:2px solid #d6a900;border-radius:10px;background:#fff8d5;color:#634b00;line-height:1.5" hidden>
+    <strong>Administrator access is enabled.</strong>
+    Your administrator privileges do not require a paid subscription. Your existing Stripe billing plan and any scheduled plan change are unchanged.
+  </div>
   <div class="dashboard-grid">
     <article class="dashboard-card">
       <p class="dashboard-eyebrow">Profile</p>
@@ -324,6 +328,8 @@
      loadCollectorSettings();
      loadNearbyLocation();
     const a=d.account||{},m=d.membership||{},labels={free:'Collector (Free)',collector:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
+    const adminBanner=document.getElementById('admin-access-banner');
+    if(adminBanner) adminBanner.hidden=!a.is_admin;
     const descriptions={
      free:'Your free website account is ready. You can keep exploring PokePrizePool as new community features arrive.',
      collector:'Your account is set for Collector+. The paid membership must be activated through verified Stripe checkout.',
