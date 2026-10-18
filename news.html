@@ -75,7 +75,18 @@
       line-height: 1.6;
     }
 
-    /* Keep the shared navigation above the page content. */
+    .news-story-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+    .news-story-card{overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(5,15,40,.78)}
+    .news-story-card img{display:block;width:100%;max-height:240px;aspect-ratio:16/9;object-fit:cover;background:#0b204a}
+    .news-story-card__body{padding:18px}
+    .news-story-meta{font-size:.82rem;color:#b9c9e8;text-transform:uppercase;letter-spacing:.08em}
+    .news-story-card h2{font-size:1.35rem;line-height:1.25;margin:10px 0;color:#fff}
+    .news-story-card p{line-height:1.65;color:#e0e8f7;white-space:pre-line}
+    .news-read-link{display:inline-block;margin-top:8px;color:#9ec7ff;font-weight:700;text-decoration:underline}
+    .news-article-content{white-space:pre-line;line-height:1.85;font-size:1.04rem;color:#edf3ff}
+    .news-article-image{display:block;width:100%;max-height:480px;object-fit:cover;border-radius:12px;margin:22px 0}
+    .news-back-link{display:inline-block;margin:0 0 18px;color:#a8caff}
+\n    /* Keep the shared navigation above the page content. */
     #news-navigation {
       position: relative;
       z-index: 100;
@@ -306,6 +317,48 @@
           closeDropdowns(header);
         }
       });
+    })();
+  </script>
+  <script>
+    (function(){
+      'use strict';
+      var container=document.getElementById('news-stories');
+      var heading=document.getElementById('news-title');
+      if(!container||!heading)return;
+      function add(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
+      function dateLabel(value){if(!value)return '';var d=new Date(value);return isNaN(d.getTime())?value:d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});}
+      function api(url){return fetch(url,{credentials:'omit',cache:'no-store'}).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok||!d.ok)throw new Error(d.error||'Could not load stories');return d;});});}
+      function renderList(stories){
+        container.replaceChildren();
+        if(!stories.length){container.appendChild(add('p','', 'No stories have been published yet. Check back soon.'));return;}
+        var grid=add('div','news-story-list');
+        stories.forEach(function(story){
+          var card=add('article','news-story-card');
+          if(story.image_url){var img=add('img','');img.src=story.image_url;img.alt='';img.loading='lazy';img.onerror=function(){img.remove();};card.appendChild(img);}
+          var body=add('div','news-story-card__body');
+          body.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
+          body.appendChild(add('h2','',story.title));
+          if(story.excerpt)body.appendChild(add('p','',story.excerpt));
+          var link=add('a','news-read-link','Read story →');link.href='/news.html?story='+encodeURIComponent(story.slug);body.appendChild(link);
+          card.appendChild(body);grid.appendChild(card);
+        });
+        container.appendChild(grid);
+      }
+      function renderStory(story){
+        heading.textContent=story.title;
+        container.replaceChildren();
+        var back=add('a','news-back-link','← All News');back.href='/news.html';container.appendChild(back);
+        container.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
+        if(story.image_url){var img=add('img','news-article-image');img.src=story.image_url;img.alt='';img.onerror=function(){img.remove();};container.appendChild(img);}
+        if(story.excerpt)container.appendChild(add('p','',story.excerpt));
+        container.appendChild(add('div','news-article-content',story.content));
+      }
+      var slug=new URLSearchParams(location.search).get('story');
+      if(slug){
+        api('/api/news?slug='+encodeURIComponent(slug)).then(function(data){renderStory(data.story);}).catch(function(){heading.textContent='News';container.replaceChildren(add('p','', 'That story could not be found or is no longer published.'),Object.assign(add('a','news-back-link','← Back to News'),{href:'/news.html'}));});
+      }else{
+        api('/api/news').then(function(data){renderList(data.stories||[]);}).catch(function(){container.replaceChildren(add('p','', 'We could not load the latest stories right now. Please try again soon.'));});
+      }
     })();
   </script>
 </body>
