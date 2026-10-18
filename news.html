@@ -83,8 +83,11 @@
     .news-story-card h2{font-size:1.35rem;line-height:1.25;margin:10px 0;color:#fff}
     .news-story-card p{line-height:1.65;color:#e0e8f7;white-space:pre-line}
     .news-read-link{display:inline-block;margin-top:8px;color:#9ec7ff;font-weight:700;text-decoration:underline}
-    .news-article-content{white-space:pre-line;line-height:1.85;font-size:1.04rem;color:#edf3ff}
-    .news-article-image{display:block;width:100%;max-height:480px;object-fit:cover;border-radius:12px;margin:22px 0}
+    .news-article-panel{margin-top:8px;padding:clamp(20px,4vw,36px);border-radius:14px;background:#fff;color:#202633;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+    .news-article-panel .news-story-meta{color:#5d687a}
+    .news-article-panel p{color:#303847;line-height:1.75}
+    .news-article-content{white-space:pre-line;line-height:1.85;font-size:1.04rem;color:#202633}
+    .news-article-image{display:block;width:100%;max-height:480px;object-fit:cover;border-radius:10px;margin:22px 0}
     .news-back-link{display:inline-block;margin:0 0 18px;color:#a8caff}
 \n    /* Keep the shared navigation above the page content. */
     #news-navigation {
@@ -357,10 +360,12 @@
         heading.textContent=story.title;
         container.replaceChildren();
         var back=add('a','news-back-link','← All News');back.href='/news.html';container.appendChild(back);
-        container.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
-        if(story.image_url){var img=add('img','news-article-image');img.src=story.image_url;img.alt='';img.onerror=function(){img.remove();};container.appendChild(img);}
-        if(story.excerpt)container.appendChild(add('p','',story.excerpt));
-        container.appendChild(add('div','news-article-content',story.content));
+        var panel=add('article','news-article-panel');
+        panel.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
+        if(story.image_url){var img=add('img','news-article-image');img.src=story.image_url;img.alt='';img.onerror=function(){img.remove();};panel.appendChild(img);}
+        if(story.excerpt)panel.appendChild(add('p','',story.excerpt));
+        panel.appendChild(add('div','news-article-content',story.content));
+        container.appendChild(panel);
       }
       var slug=new URLSearchParams(location.search).get('story');
       if(slug){
