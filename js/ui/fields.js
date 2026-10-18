@@ -445,7 +445,7 @@
     var pick = h(
       'label',
       { class: 'dropzone', for: 'f-photos' },
-      h('span', { class: 'dropzone__icon', 'aria-hidden': 'true' }, '📷'),
+      h('span', { class: 'dropzone__icon', 'aria-hidden': 'true' }, ''),
       h('span', { class: 'dropzone__title' }, 'Add photos'),
       h(
         'span',

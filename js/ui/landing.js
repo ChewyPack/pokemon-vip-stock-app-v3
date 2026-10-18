@@ -96,7 +96,6 @@
       h(
         'div',
         { class: 'wrap site-nav-header__inner' },
-        navLink('Pokémon VIP', '#home'),
         h(
           'nav',
           {
@@ -125,33 +124,35 @@
               description: 'Shows, trade nights, and releases',
               href: '/events.html'
             },
-            {
-              title: 'Vendor Directory',
-              description: 'Discover vendors and their specialties',
-              href: '/vendors.html'
-            }
           ]),
-          dropdown('Shop', [
-            { title: 'Sealed Products', href: '/shop-sealed.html' },
-            { title: 'Raw Singles', href: '/shop-singles.html' },
-            { title: 'Graded Cards', href: '/shop-slabs.html' },
-            { title: 'Merchandise', href: '/shop-merch.html' }
+          dropdown('Collectors', [
+            { title: 'Collector Profiles', description: 'Browse collector profiles and collections', href: '/collector.html' },
+            { title: 'Offer Inbox', description: 'Manage cash offers and collection trades', href: '/inbox.html' },
+            { title: 'Account Settings', description: 'Profile, privacy, and nearby matching', href: '/account.html#nearby-collector-settings' }
           ]),
-          dropdown('Giveaways', [
-            { title: 'My Entries', href: '/giveaway-entries.html' },
-            { title: 'Giveaway Rules', href: '/giveaway-rules.html' },
-            { title: 'Live Draws & Videos', href: '/giveaway-live.html' }
-          ]),
-          dropdown('Community', [
-            { title: 'Discord Community', href: '/community-discord.html' },
-            { title: 'Collector Resources', href: '/community-resources.html' },
-            { title: 'VIP Badge Collection', href: '/vip-badges.html' },
-            { title: 'Member Support', href: '/community-support.html' }
-          ])
         ),
-        navLink('Report a Sighting', '#report')
+        navLink('Report a Sighting', '#report'),
+        h('a', {
+          class: 'site-nav__link account-nav-link',
+          href: '/account.html',
+          id: 'account-nav-link'
+        }, 'Sign up / Log in')
       )
     );
+
+    // Signed-in users get a direct Profile button that opens their collector profile.
+    fetch('/api/account/me', { credentials: 'include', cache: 'no-store' })
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) {
+        var accountLink = nav.querySelector('#account-nav-link');
+        if (!accountLink || !data || !data.ok || !data.authenticated) return;
+        accountLink.href = '/collector.html';
+        accountLink.textContent = 'Profile';
+        accountLink.setAttribute('aria-label', 'Open your collector profile');
+      })
+      .catch(function (error) {
+        console.warn('Could not refresh account navigation:', error);
+      });
 
     document.addEventListener('click', function (event) {
       if (!nav.contains(event.target)) {
