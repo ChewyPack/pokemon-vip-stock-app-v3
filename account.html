@@ -338,13 +338,15 @@
     const created=a.created_at?new Date(a.created_at):null;
     document.getElementById('profile-created').textContent=created&&!Number.isNaN(created.getTime())?created.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'PokePrizePool member';
     const membershipLabels={free:'Collector (Free)',collector_plus:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
-    const displayedTier=m.status==='active'?(membershipLabels[m.entitlement_tier||m.tier]||m.entitlement_tier||m.tier):(labels[a.account_type]||'Free');
+    const displayedTier=a.is_admin?'Administrator':(m.status==='active'?(membershipLabels[m.entitlement_tier||m.tier]||m.entitlement_tier||m.tier):(labels[a.account_type]||'Free'));
     document.getElementById('account-type-badge').textContent=displayedTier;
-    document.getElementById('account-type-description').textContent=m.status==='active'
-      ? 'Your current tier benefits are active. Vendor and event-organizer verification are handled separately.'
-      : (a.account_type==='free'
-        ? 'Your free website account is ready. Paid membership benefits activate after verified Stripe checkout.'
-        : (descriptions[a.account_type]||descriptions.free));
+    document.getElementById('account-type-description').textContent=a.is_admin
+      ? 'Administrator access is enabled. All site features are unlocked without a subscription.'
+      : (m.status==='active'
+        ? 'Your current tier benefits are active. Vendor and event-organizer verification are handled separately.'
+        : (a.account_type==='free'
+          ? 'Your free website account is ready. Paid membership benefits activate after verified Stripe checkout.'
+          : (descriptions[a.account_type]||descriptions.free)));
     const prices={collector_plus:{monthly:'$5/month',yearly:'$50/year'},vendor:{monthly:'$15/month',yearly:'$150/year'},organizer:{monthly:'$25/month',yearly:'$320/year'}};
     const membershipStatus=document.getElementById('membership-checkout-status');
     const membershipSummary=document.getElementById('membership-summary');
@@ -399,6 +401,16 @@
       checkoutButton.disabled=false;checkoutButton.textContent='Continue';
       document.getElementById('membership-change-options').hidden=false;
       document.getElementById('manage-membership-options').hidden=true;
+    }
+    if(a.is_admin && m.status!=='active'){
+      membershipStatus.hidden=false;
+      membershipStatus.textContent='Administrator access is enabled. No subscription is required.';
+      membershipSummary.hidden=true;
+      document.getElementById('membership-change-options').hidden=true;
+      document.getElementById('manage-membership-options').hidden=true;
+      checkoutButton.hidden=true;
+      cancelButton.hidden=true;
+      cancelNote.hidden=true;
     }
     cancelButton.addEventListener('click',async()=>{
       if(!window.confirm('Cancel this membership at the end of the current billing period? You will keep access until the paid-through date, and the subscription will not renew.')) return;
