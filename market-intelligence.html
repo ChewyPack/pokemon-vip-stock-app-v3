@@ -281,14 +281,14 @@
         <p class="mi-grade-disclaimer">Important: PSA considers the entire card and its own grading standards. Hidden print defects, dents, altered surfaces, damage, and grader judgment can change the result. This tool does not inspect an uploaded image and cannot predict an actual grade.</p>
       </article>
       <article class="mi-note mi-artist-spotlight" id="artist-spotlight">
-        <div class="mi-artist-topline"><span class="mi-label">Rotating collector feature</span><span id="artist-rotation-date" class="mi-artist-date">Daily rotation</span></div>
+        <div class="mi-artist-topline"><span class="mi-label">Rotating collector feature</span><span id="artist-rotation-date" class="mi-artist-date">Snapshot · Oct 18, 2026</span></div>
         <h3>Artist Spotlight & Collector Hype</h3>
-        <div class="mi-artist-feature"><div class="mi-artist-monogram" id="artist-monogram" aria-hidden="true">MI</div><div><p class="mi-artist-eyebrow">Featured illustrator · market-linked research</p><h4 id="artist-name">Artist research spotlight</h4><p id="artist-style" class="mi-artist-style">Artist coverage will be tied to cards in the tracked market snapshot, not a separate, unrelated list.</p></div></div>
-        <p id="artist-bio" class="mi-artist-bio">The market page currently reports 2,986 tracked products and 7-day movers, with separate 7- and 30-day price windows where available. The visible snapshot does not currently include illustrator credits for each tracked card, so artist-level totals cannot yet be calculated reliably.</p>
-        <div class="mi-artist-facts"><div><span class="mi-label">Market snapshot</span><strong>October 18, 2026 · 2,986 tracked products</strong></div><div><span class="mi-label">Available signals</span><strong>7-day movers and separately sourced 30-day context</strong></div></div>
-        <div class="mi-artist-cardlist"><span class="mi-label">What will qualify an artist for a spotlight</span><ul id="artist-card-examples"><li>Confirmed illustrator credits for exact card printings represented in the tracked snapshot</li><li>Matched card-level price changes from the same comparison window</li><li>Population or community signals only when a dated, attributable source is available</li></ul></div>
-        <div class="mi-hype-meter"><div class="mi-hype-heading"><strong>Collector hype meter</strong><span class="mi-hype-status">Awaiting artist-level matches</span></div><div class="mi-hype-track" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><p id="artist-hype-note">No artist hype rating is assigned yet. The current page data is product-level; it must be matched to verified illustrator credits before price movement can be attributed to an artist. No score will be inferred from unrelated cards.</p></div>
-        <p class="mi-artist-footnote">Spotlight rotation is designed to use the same dated market snapshot shown above. Until illustrator credits are added and matched, this area shows the matching status rather than presenting generic artist profiles as if they were derived from PokePrizePool data.</p>
+        <div class="mi-artist-feature"><div class="mi-artist-monogram" id="artist-monogram" aria-hidden="true">5G</div><div><p class="mi-artist-eyebrow">Featured illustrator · matched to market movers</p><h4 id="artist-name">5ban Graphics</h4><p id="artist-style" class="mi-artist-style">Digital studio artwork with bold, polished full-card compositions.</p></div></div>
+        <p id="artist-bio" class="mi-artist-bio">This spotlight uses exact card printings that appear in PokePrizePool’s October 18 market snapshot and have a verified illustrator credit. It is a small matched sample—not a claim about the artist’s entire catalogue or a standalone artist index.</p>
+        <div class="mi-artist-facts"><div><span class="mi-label">Market snapshot</span><strong>October 18, 2026 · 2,986 tracked products</strong></div><div><span class="mi-label">Matched cards in visible movers</span><strong id="artist-match-count">2 verified printings</strong></div></div>
+        <div class="mi-artist-cardlist"><span class="mi-label">Matched cards · PokePrizePool snapshot</span><ul id="artist-card-examples"><li>Meowth ex · 107/088, Perfect Order — +21.0% over 7 days (<a href="https://www.tcgdex.net/database/me-mega-evolution/me03-perfect-order/107-meowth-ex" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li><li>Zacian V · 30th Classic Collection — +71.3% over 7 days (<a href="https://www.illudex.com/card/30th-c-028" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li></ul></div>
+        <div class="mi-hype-meter"><div class="mi-hype-heading"><strong>Collector hype meter</strong><span id="artist-hype-status" class="mi-hype-status">Early signal · limited sample</span></div><div id="artist-hype-track" class="mi-hype-track" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><p id="artist-hype-note">The matched cards show price movement in the supplied snapshot, but two cards are not enough to claim broad artist-level demand. This is a research flag, not a numerical hype score or buy/sell signal.</p></div>
+        <p class="mi-artist-footnote">Artist credits are verified against linked card references; price changes come from the dated PokePrizePool snapshot above. The spotlight rotates among matched artists only. No price movement is attributed to an artist unless the exact printing and credit match.</p>
       </article>
       <article class="mi-note"><h3>Card hype tracker</h3><p>A card hype tracker can combine grading submissions, submission growth relative to the graded base, seven-day price movement, and total graded supply. Treat rapid attention as a prompt to investigate liquidity and supply, not proof of sustainable demand.</p></article>
       <article class="mi-note"><h3>Cheap SIR / hyper-rare research</h3><p>A useful research board can cover English SIR, Hyper Rare, and Mega Hyper Rare cards across Scarlet & Violet and Mega-era sets, using graded-price references where available. Confirm current prices and missing values before comparing cards.</p></article>
@@ -308,10 +308,64 @@
 
   <script>
     (function () {
+      // Only include cards present in this page's dated market snapshot and with a checked illustrator credit.
+      var artists = [
+        {
+          name: '5ban Graphics',
+          monogram: '5G',
+          style: 'Digital studio artwork with bold, polished full-card compositions.',
+          bio: 'This spotlight links two exact printings from the October 18 PokePrizePool movers snapshot to verified illustrator credits. The sample is useful for further research, but it is too small to represent the artist’s full body of work or prove artist-wide demand.',
+          matches: [
+            { label: 'Meowth ex · 107/088, Perfect Order — +21.0% over 7 days', url: 'https://www.tcgdex.net/database/me-mega-evolution/me03-perfect-order/107-meowth-ex', source: 'illustrator reference' },
+            { label: 'Zacian V · 30th Classic Collection — +71.3% over 7 days', url: 'https://www.illudex.com/card/30th-c-028', source: 'illustrator reference' }
+          ],
+          note: 'Two matched cards show positive 7-day movement in this snapshot. That is an early research flag only: it does not prove artist-level demand, liquidity, or future performance.'
+        },
+        {
+          name: 'mashu',
+          monogram: 'M',
+          style: 'Illustration-led Pokémon artwork with a distinctive, character-focused finish.',
+          bio: 'One exact printing in the October 18 PokePrizePool movers snapshot is matched to a verified illustrator credit. Because the current matched sample is one card, this is a card-level observation—not a claim that the illustrator’s catalogue is broadly gaining.',
+          matches: [
+            { label: 'Bulbasaur · 133/132, Mega Evolution — +23.9% over 7 days', url: 'https://pokedreams.com/tcg/cards/me01-133', source: 'illustrator reference' }
+          ],
+          note: 'The matched Bulbasaur printing shows positive 7-day movement in this snapshot. One card is not enough to infer wider artist demand, so this remains a limited research flag.'
+        }
+      ];
+      var name = document.getElementById('artist-name');
+      if (!name) return;
+      var now = new Date();
+      var dayNumber = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
+      var artist = artists[((dayNumber % artists.length) + artists.length) % artists.length];
       var rotation = document.getElementById('artist-rotation-date');
-      if (rotation) {
-        rotation.textContent = 'Snapshot · Oct 18, 2026';
+      var monogram = document.getElementById('artist-monogram');
+      var style = document.getElementById('artist-style');
+      var bio = document.getElementById('artist-bio');
+      var count = document.getElementById('artist-match-count');
+      var examples = document.getElementById('artist-card-examples');
+      var note = document.getElementById('artist-hype-note');
+      if (rotation) rotation.textContent = 'Snapshot · Oct 18, 2026';
+      if (monogram) monogram.textContent = artist.monogram;
+      name.textContent = artist.name;
+      if (style) style.textContent = artist.style;
+      if (bio) bio.textContent = artist.bio;
+      if (count) count.textContent = artist.matches.length + (artist.matches.length === 1 ? ' verified printing' : ' verified printings');
+      if (examples) {
+        examples.replaceChildren();
+        artist.matches.forEach(function (match) {
+          var item = document.createElement('li');
+          item.appendChild(document.createTextNode(match.label + ' ('));
+          var link = document.createElement('a');
+          link.href = match.url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = match.source;
+          item.appendChild(link);
+          item.appendChild(document.createTextNode(')'));
+          examples.appendChild(item);
+        });
       }
+      if (note) note.textContent = artist.note;
     })();
   </script>
 
