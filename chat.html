@@ -171,7 +171,7 @@ function renderMessage(m){
  const name=document.createElement('span');name.className='chat-message-name';name.textContent=m.display_name||'Collector';meta.appendChild(name);
  if(m.username){const user=document.createElement('span');user.className='chat-message-username';user.textContent='@'+m.username;meta.appendChild(user);}
  const time=document.createElement('time');time.className='chat-message-time';time.textContent=timeLabel(m.created_at);time.dateTime=m.created_at||'';meta.appendChild(time);
- if(m.mine||state.account?.is_admin){const actions=document.createElement('span');actions.className='chat-message-actions';const del=document.createElement('button');del.type='button';del.className='chat-delete';del.textContent='Delete';del.setAttribute('aria-label','Delete message');del.addEventListener('click',()=>deleteMessage(m.id));actions.appendChild(del);meta.appendChild(actions);}
+ if(m.mine||Number(m.account_id)===Number(state.account?.id)||state.account?.is_admin){const actions=document.createElement('span');actions.className='chat-message-actions';const del=document.createElement('button');del.type='button';del.className='chat-delete';del.textContent='Delete';del.setAttribute('aria-label','Delete message');del.addEventListener('click',()=>deleteMessage(m.id));actions.appendChild(del);meta.appendChild(actions);}
  const text=document.createElement('div');text.className='chat-message-text'+(m.deleted?' chat-message-deleted':'');text.textContent=m.deleted?'Message deleted':m.body||'';
  body.append(meta,text);article.append(avatar,body);root.appendChild(article);
 }
