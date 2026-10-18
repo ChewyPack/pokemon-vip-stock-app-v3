@@ -1,6 +1,21 @@
 const COOKIE = 'collector_session';
 const PBKDF2_ITERATIONS = 100000;
 
+// Explicit allowlist from the verified active VIP cohort. This endpoint is
+// intentionally limited to these ten staging migration targets.
+const VIP_ALLOWLIST = new Map([
+  ['beelou17@hotmail.com', 'Jennifer Hopgood'],
+  ['ryanmello1028@gmail.com', 'Ryan Mello'],
+  ['papitopaz7@gmail.com', 'Jaylen Paz'],
+  ['lilkcheshier@gmail.com', 'Kyle Cheshier'],
+  ['cameronmorin4@gmail.com', 'Cameron Morin'],
+  ['troyandmickayla@gmail.com', 'Troy Macfarland'],
+  ['bigjohn062388@gmail.com', 'John Arraial'],
+  ['nacamara@gmail.com', 'Nicole Camara'],
+  ['james_whalen15@yahoo.com', 'James Whalen'],
+  ['baejea@gmail.com', 'Baeli Carroll']
+]);
+
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -22,7 +37,7 @@ function getCookie(request, name) {
 
 function b64(bytes) {
   return btoa(String.fromCharCode(...new Uint8Array(bytes)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/,'');
+    .replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/,'');
 }
 
 async function sha256(value) {
@@ -41,10 +56,9 @@ async function passwordHash(password, salt) {
 async function requireAdmin(request, env) {
   const token = getCookie(request, COOKIE);
   if (!token) return null;
-  const tokenHash = await sha256(token);
   const account = await env.DB.prepare(
     'SELECT id, is_admin, session_expires_at FROM accounts WHERE session_token_hash = ? LIMIT 1'
-  ).bind(tokenHash).first();
+  ).bind(await sha256(token)).first();
   if (!account || Number(account.is_admin || 0) !== 1 ||
       !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) {
     return null;
@@ -55,7 +69,6 @@ async function requireAdmin(request, env) {
 export async function onRequestPost({ request, env }) {
   if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
 
-  // This endpoint is intended for same-origin use from the staging admin page.
   const origin = request.headers.get('Origin');
   if (!origin || origin !== new URL(request.url).origin) {
     return json({ ok: false, error: 'same_origin_request_required' }, 403);
@@ -76,8 +89,14 @@ export async function onRequestPost({ request, env }) {
   if (displayName.length < 2 || displayName.length > 60) {
     return json({ ok: false, error: 'invalid_display_name' }, 400);
   }
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
     return json({ ok: false, error: 'invalid_email' }, 400);
+  }
+  if (!VIP_ALLOWLIST.has(email)) {
+    return json({ ok: false, error: 'email_not_in_verified_vip_list' }, 403);
+  }
+  if (displayName.toLowerCase() !== VIP_ALLOWLIST.get(email).toLowerCase()) {
+    return json({ ok: false, error: 'name_email_mismatch' }, 400);
   }
   if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) {
     return json({ ok: false, error: 'invalid_username' }, 400);
@@ -100,32 +119,33 @@ export async function onRequestPost({ request, env }) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const saltText = b64(salt);
     const hash = await passwordHash(password, salt);
-    const created = await env.DB.prepare(
-      `INSERT INTO accounts (
-        display_name, email, account_type, password_salt, password_hash,
-        membership_tier, membership_entitlement_tier, membership_status,
-        membership_source, membership_interval
-      ) VALUES (?, ?, 'collector', ?, ?, 'collector_plus', 'collector_plus',
-        'active', 'legacy_vip_manual', 'monthly')`
-    ).bind(displayName, email, saltText, hash).run();
 
-    if (!created.meta || created.meta.changes !== 1) {
-      throw new Error('Account insert did not create exactly one row');
+    // One D1 batch keeps account + profile creation together. No session is
+    // created for the member, and no Stripe API call or billing mutation occurs.
+    const results = await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO accounts (
+          display_name, email, account_type, password_salt, password_hash,
+          membership_tier, membership_entitlement_tier, membership_status,
+          membership_source, membership_interval
+        ) VALUES (?, ?, 'collector', ?, ?, 'collector_plus', 'collector_plus',
+          'active', 'legacy_vip_manual', 'monthly')`
+      ).bind(displayName, email, saltText, hash),
+      env.DB.prepare(
+        `INSERT INTO collector_profiles (account_id, username, bio, avatar_url, is_public)
+         SELECT id, ?, '', '', 1 FROM accounts WHERE email = ? COLLATE NOCASE`
+      ).bind(username, email)
+    ]);
+
+    if (!results[0]?.meta || results[0].meta.changes !== 1 ||
+        !results[1]?.meta || results[1].meta.changes !== 1) {
+      throw new Error('Account and collector profile were not both created');
     }
 
     const account = await env.DB.prepare(
       'SELECT id FROM accounts WHERE email = ? COLLATE NOCASE LIMIT 1'
     ).bind(email).first();
-    if (!account) throw new Error('Created account could not be found');
-
-    const profileResult = await env.DB.prepare(
-      `INSERT INTO collector_profiles (account_id, username, bio, avatar_url, is_public)
-       VALUES (?, ?, '', '', 1)`
-    ).bind(account.id, username).run();
-
-    if (!profileResult.meta || profileResult.meta.changes !== 1) {
-      throw new Error('Collector profile insert did not create exactly one row');
-    }
+    if (!account) throw new Error('Created account could not be verified');
 
     return json({
       ok: true,
@@ -140,7 +160,7 @@ export async function onRequestPost({ request, env }) {
         membership_status: 'active',
         membership_source: 'legacy_vip_manual'
       },
-      note: 'Created in the currently bound database only. No Stripe customer or subscription was changed or linked.'
+      note: 'Staging account only. No Stripe customer or subscription was changed or linked.'
     }, 201);
   } catch (error) {
     const message = String(error && error.message || '').toLowerCase();
