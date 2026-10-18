@@ -20,7 +20,7 @@ function getCookie(request, name) {
 
 function base64Url(bytes) {
   return btoa(String.fromCharCode(...new Uint8Array(bytes)))
-    .replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+    .split('+').join('-').split('/').join('_').replace(/=+$/, '');
 }
 
 async function sha256(value) {
@@ -63,8 +63,8 @@ async function requireAdmin(request, env) {
 }
 
 function makeSlug(value) {
-  return String(value || '').toLowerCase().normalize('NFKD')
-    .replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')
+  return String(value || '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
     .replace(/^-+|-+$/g, '').slice(0, 90);
 }
 
