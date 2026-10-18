@@ -81,22 +81,18 @@ export async function onRequestPost({ request, env }) {
   try { data = await request.json(); }
   catch { return json({ ok: false, error: 'bad_request' }, 400); }
 
-  const displayName = typeof data.display_name === 'string' ? data.display_name.trim() : '';
   const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
   const username = typeof data.username === 'string' ? data.username.trim() : '';
+  // The Collector username is the single public-facing name; keep the legacy
+  // accounts.display_name column populated with that same value for compatibility.
+  const displayName = username;
   const password = typeof data.password === 'string' ? data.password : '';
 
-  if (displayName.length < 2 || displayName.length > 60) {
-    return json({ ok: false, error: 'invalid_display_name' }, 400);
-  }
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json({ ok: false, error: 'invalid_email' }, 400);
   }
   if (!VIP_ALLOWLIST.has(email)) {
     return json({ ok: false, error: 'email_not_in_verified_vip_list' }, 403);
-  }
-  if (displayName.toLowerCase() !== VIP_ALLOWLIST.get(email).toLowerCase()) {
-    return json({ ok: false, error: 'name_email_mismatch' }, 400);
   }
   if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) {
     return json({ ok: false, error: 'invalid_username' }, 400);
