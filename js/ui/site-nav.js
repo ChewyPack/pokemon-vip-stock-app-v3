@@ -11,19 +11,39 @@
   var inboxBadge=el('span',{class:'site-nav__inbox-badge',hidden:'hidden','aria-live':'polite'});
  inbox.appendChild(inboxImage);inbox.appendChild(inboxBadge);
  var nav=el('nav',{class:'site-nav','aria-label':'Main navigation'},[
-  link('Home','/#home'),
+  link('Home','/'),
   dropdown('Poke Report',[
    {title:'Report a Sighting',description:'Submit an in-store stock report',href:'/#report'},
    {title:'News & Exclusives',description:'Pokémon news and hobby updates',href:'/news.html'},
    {title:'Market Intelligence',description:'Market trends and product insights',href:'/market-intelligence.html'},
    {title:'Events Calendar',description:'Shows, trade nights, and releases',href:'/events.html'}
   ]),
-  dropdown('Collectors',[
-   {title:'Collector Profiles',description:'Browse your profile and collections',href:'/collector.html'},
-   {title:'Offer Inbox',description:'Cash offers and collection trades',href:'/inbox.html'},
-   {title:'Account Settings',description:'Profile, privacy, and nearby matching',href:'/account.html#nearby-collector-settings'}
+  dropdown('Alerts',[
+   {title:'Live Stock',description:'View live stock alerts',href:'/alerts.html'},
+   {title:'Target',description:'Target stock alerts',href:'/alerts.html?retailer=target'},
+   {title:'Walmart',description:'Walmart stock alerts',href:'/alerts.html?retailer=walmart'},
+   {title:'BestBuy',description:'Best Buy stock alerts',href:'/alerts.html?retailer=bestbuy'}
   ]),
-  link('Report a Sighting','/#report'),
+  link('Line Services','/line-services.html'),
+  dropdown('Shop',[
+   {title:'Shop All',description:'Browse the PokePrizePool shop',href:'/shop.html'},
+   {title:'Sealed Cards',description:'Sealed Pokémon products',href:'/shop.html?category=sealed'},
+   {title:'Slabs',description:'Graded cards',href:'/shop.html?category=slabs'},
+   {title:'Singles',description:'Individual cards',href:'/shop.html?category=singles'},
+   {title:'Clothing',description:'PokePrizePool clothing',href:'/shop.html?category=clothing'},
+   {title:'Plushies',description:'Pokémon plushies',href:'/shop.html?category=plushies'},
+   {title:'Other Merch',description:'More merchandise',href:'/shop.html?category=other'}
+  ]),
+  link('Giveaways','/giveaways.html'),
+  link('Chat','/chat.html'),
+  dropdown('Resources',[
+   {title:'Collector Profiles',description:'Browse collector profiles and collections',href:'/collector.html'},
+   {title:'Offer Inbox',description:'Cash offers and collection trades',href:'/inbox.html'},
+   {title:'Account Settings',description:'Profile and privacy settings',href:'/account.html#nearby-collector-settings'},
+   {title:'News & Exclusives',description:'Pokémon news and hobby updates',href:'/news.html'},
+   {title:'Events Calendar',description:'Shows, trade nights, and releases',href:'/events.html'},
+   {title:'Market Intelligence',description:'Pokémon TCG market trends',href:'/market-intelligence.html'}
+  ]),
   link('Sign up / Log in','/account.html','site-nav__link account-nav-link'),
   inbox
  ]);
