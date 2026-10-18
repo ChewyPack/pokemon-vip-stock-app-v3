@@ -284,11 +284,11 @@
         <div class="mi-artist-topline"><span class="mi-label">Rotating collector feature</span><span id="artist-rotation-date" class="mi-artist-date">Snapshot · Oct 18, 2026</span></div>
         <h3>Artist Spotlight & Collector Hype</h3>
         <div class="mi-artist-feature"><div class="mi-artist-monogram" id="artist-monogram" aria-hidden="true">5G</div><div><p class="mi-artist-eyebrow">Featured illustrator · matched to market movers</p><h4 id="artist-name">5ban Graphics</h4><p id="artist-style" class="mi-artist-style">Digital studio artwork with bold, polished full-card compositions.</p></div></div>
-        <p id="artist-bio" class="mi-artist-bio">This spotlight uses exact card printings that appear in PokePrizePool’s October 18 market snapshot and have a verified illustrator credit. It is a small matched sample—not a claim about the artist’s entire catalogue or a standalone artist index.</p>
+        <p id="artist-bio" class="mi-artist-bio">This spotlight links exact printings in the October 18 PokePrizePool movers snapshot to verified illustrator credits. It is a matched sample—not a claim about the artist’s entire catalogue or a standalone artist index.</p>
         <div class="mi-artist-facts"><div><span class="mi-label">Market snapshot</span><strong>October 18, 2026 · 2,986 tracked products</strong></div><div><span class="mi-label">Matched cards in visible movers</span><strong id="artist-match-count">2 verified printings</strong></div></div>
-        <div class="mi-artist-cardlist"><span class="mi-label">Matched cards · PokePrizePool snapshot</span><ul id="artist-card-examples"><li>Meowth ex · 107/088, Perfect Order — +21.0% over 7 days (<a href="https://www.tcgdex.net/database/me-mega-evolution/me03-perfect-order/107-meowth-ex" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li><li>Zacian V · 30th Classic Collection — +71.3% over 7 days (<a href="https://www.illudex.com/card/30th-c-028" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li></ul></div>
-        <div class="mi-hype-meter"><div class="mi-hype-heading"><strong>Collector hype meter</strong><span id="artist-hype-status" class="mi-hype-status">Early signal · limited sample</span></div><div id="artist-hype-track" class="mi-hype-track" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><p id="artist-hype-note">The matched cards show price movement in the supplied snapshot, but two cards are not enough to claim broad artist-level demand. This is a research flag, not a numerical hype score or buy/sell signal.</p></div>
-        <p class="mi-artist-footnote">Artist credits are verified against linked card references; price changes come from the dated PokePrizePool snapshot above. The spotlight rotates among matched artists only. No price movement is attributed to an artist unless the exact printing and credit match.</p>
+        <div class="mi-artist-cardlist"><span class="mi-label">Matched cards · PokePrizePool snapshot</span><ul id="artist-card-examples"><li>Meowth ex · 107/088, Perfect Order — +21.0% over 7 days (<a href="https://www.tcgdex.net/database/me-mega-evolution/me03-perfect-order/107-meowth-ex" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li><li>Zacian V · 30th Classic Collection — +71.3% over 7 days (<a href="https://pooka.app/card/en-me55c-138/Zacian%20V" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li></ul></div>
+        <div class="mi-hype-meter"><div class="mi-hype-heading"><strong>Collector hype meter</strong><span id="artist-hype-status" class="mi-hype-status">Early signal · limited sample</span></div><div id="artist-hype-track" class="mi-hype-track" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><p id="artist-hype-note">Matched cards show movement in the supplied snapshot, but this small sample is not enough to claim broad artist-level demand. This is a research flag, not a numerical hype score or buy/sell signal.</p></div>
+        <p class="mi-artist-footnote">Artist credits are checked against linked card references; price changes come from the dated PokePrizePool snapshot. The spotlight rotates among matched artists only. No price movement is attributed to an artist unless the exact printing and credit match.</p>
       </article>
       <article class="mi-note"><h3>Card hype tracker</h3><p>A card hype tracker can combine grading submissions, submission growth relative to the graded base, seven-day price movement, and total graded supply. Treat rapid attention as a prompt to investigate liquidity and supply, not proof of sustainable demand.</p></article>
       <article class="mi-note"><h3>Cheap SIR / hyper-rare research</h3><p>A useful research board can cover English SIR, Hyper Rare, and Mega Hyper Rare cards across Scarlet & Violet and Mega-era sets, using graded-price references where available. Confirm current prices and missing values before comparing cards.</p></article>
@@ -308,28 +308,53 @@
 
   <script>
     (function () {
-      // Only include cards present in this page's dated market snapshot and with a checked illustrator credit.
+      // Manual, source-checked matches only: each card also appears in this page's dated market movers.
       var artists = [
         {
-          name: '5ban Graphics',
-          monogram: '5G',
+          name: '5ban Graphics', monogram: '5G',
           style: 'Digital studio artwork with bold, polished full-card compositions.',
-          bio: 'This spotlight links two exact printings from the October 18 PokePrizePool movers snapshot to verified illustrator credits. The sample is useful for further research, but it is too small to represent the artist’s full body of work or prove artist-wide demand.',
+          bio: 'Two exact printings from the October 18 PokePrizePool movers snapshot are matched to verified illustrator credits. This is a small sample, not a measure of the illustrator’s complete catalogue.',
           matches: [
-            { label: 'Meowth ex · 107/088, Perfect Order — +21.0% over 7 days', url: 'https://www.tcgdex.net/database/me-mega-evolution/me03-perfect-order/107-meowth-ex', source: 'illustrator reference' },
-            { label: 'Zacian V · 30th Classic Collection — +71.3% over 7 days', url: 'https://www.illudex.com/card/30th-c-028', source: 'illustrator reference' }
+            { label: 'Meowth ex · 107/088, Perfect Order — +21.0% over 7 days', url: 'https://www.tcgdex.net/database/me-mega-evolution/me03-perfect-order/107-meowth-ex' },
+            { label: 'Zacian V · 30th Celebration Classic Collection — +71.3% over 7 days', url: 'https://pooka.app/card/en-me55c-138/Zacian%20V' }
           ],
-          note: 'Two matched cards show positive 7-day movement in this snapshot. That is an early research flag only: it does not prove artist-level demand, liquidity, or future performance.'
+          note: 'Both matched printings show positive 7-day movement in this snapshot. That is an early research flag only; two cards cannot prove artist-wide demand, liquidity, or future performance.'
         },
         {
-          name: 'mashu',
-          monogram: 'M',
-          style: 'Illustration-led Pokémon artwork with a distinctive, character-focused finish.',
-          bio: 'One exact printing in the October 18 PokePrizePool movers snapshot is matched to a verified illustrator credit. Because the current matched sample is one card, this is a card-level observation—not a claim that the illustrator’s catalogue is broadly gaining.',
+          name: 'mashu', monogram: 'M',
+          style: 'Expressive Pokémon illustration with a polished, character-focused composition.',
+          bio: 'One exact printing in the October 18 PokePrizePool movers snapshot is matched to a verified illustrator credit. This observation applies to the card shown, not the illustrator’s whole catalogue.',
           matches: [
-            { label: 'Bulbasaur · 133/132, Mega Evolution — +23.9% over 7 days', url: 'https://pokedreams.com/tcg/cards/me01-133', source: 'illustrator reference' }
+            { label: 'Bulbasaur · 133/132, Mega Evolution — +23.9% over 7 days', url: 'https://pokedreams.com/tcg/cards/me01-133' }
           ],
-          note: 'The matched Bulbasaur printing shows positive 7-day movement in this snapshot. One card is not enough to infer wider artist demand, so this remains a limited research flag.'
+          note: 'The matched Bulbasaur printing shows positive 7-day movement. One card is not enough to infer wider artist demand, so this remains a limited research flag.'
+        },
+        {
+          name: 'Tonji Matsuno', monogram: 'TM',
+          style: 'Detailed illustration work with a strong sense of character and scene.',
+          bio: 'The market snapshot includes an exact Steelix illustration rare printing with a verified illustrator credit. The market change shown is for this printing only; no broader artist-level trend is implied.',
+          matches: [
+            { label: 'Steelix · 150/132, Mega Evolution — +20.6% over 7 days', url: 'https://pokedreams.com/tcg/cards/me01-150' }
+          ],
+          note: 'Steelix shows positive 7-day movement in the snapshot. A single matched card is a prompt to investigate, not evidence of sustained demand for all cards by this illustrator.'
+        },
+        {
+          name: 'Yuu Nishida', monogram: 'YN',
+          style: 'Trainer-card illustration with a clear, character-led visual style.',
+          bio: 'The featured printing is matched to the illustrator credit listed for the exact Phantasmal Flames card. This is a card-level market observation from PokePrizePool’s dated snapshot.',
+          matches: [
+            { label: 'Dawn · 118/094, Phantasmal Flames — +17.9% over 7 days', url: 'https://www.tcgcollector.com/cards/51576/dawn-phantasmal-flames-118-094' }
+          ],
+          note: 'The matched Dawn printing shows positive 7-day movement. A single card cannot establish artist-wide momentum or indicate that the move will continue.'
+        },
+        {
+          name: 'Souichirou Gunjima', monogram: 'SG',
+          style: 'Dynamic Pokémon illustration with a sharp, action-oriented feel.',
+          bio: 'The tracked movers include Radiant Greninja from Astral Radiance, whose exact printing is matched to a verified illustrator credit. The listed price movement is for that card, not the artist’s catalogue as a whole.',
+          matches: [
+            { label: 'Radiant Greninja · Astral Radiance — +19.7% over 7 days', url: 'https://pokedreams.com/tcg/cards/swsh10-046' }
+          ],
+          note: 'The matched Radiant Greninja printing shows positive 7-day movement. Treat this as a limited card-level signal, not proof of artist-wide demand.'
         }
       ];
       var name = document.getElementById('artist-name');
@@ -359,7 +384,7 @@
           link.href = match.url;
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
-          link.textContent = match.source;
+          link.textContent = 'illustrator reference';
           item.appendChild(link);
           item.appendChild(document.createTextNode(')'));
           examples.appendChild(item);
