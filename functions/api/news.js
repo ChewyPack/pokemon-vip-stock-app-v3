@@ -125,7 +125,7 @@ export async function onRequestPost({ request, env }) {
   if (!content) return json({ ok: false, error: 'content_required' }, 400);
   if (!slug) return json({ ok: false, error: 'valid_slug_required' }, 400);
   if (!['News', 'Updates', 'Market Intelligence', 'Events'].includes(category)) return json({ ok: false, error: 'invalid_category' }, 400);
-  if (imageUrl && !/^https:\\/\\//i.test(imageUrl)) return json({ ok: false, error: 'image_must_use_https_url' }, 400);
+  if (imageUrl && !imageUrl.toLowerCase().startsWith('https://')) return json({ ok: false, error: 'image_must_use_https_url' }, 400);
 
   try {
     await ensureTable(env);
