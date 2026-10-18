@@ -301,6 +301,13 @@
           accountLink.href = '/collector.html';
           accountLink.textContent = 'Profile';
           accountLink.setAttribute('aria-label', 'Open your collector profile');
+          if (data.account && data.account.is_admin) {
+            var editorLink = textElement('a', {
+              class: 'site-nav__link',
+              href: '/news-admin.html'
+            }, 'Manage News');
+            header.querySelector('.site-nav').appendChild(editorLink);
+          }
         }
       }).catch(function () {
         /* Keep the sign-in link available if account status cannot be checked. */
