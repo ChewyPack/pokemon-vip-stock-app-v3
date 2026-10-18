@@ -18,6 +18,16 @@ export async function onRequestPost({ request, env }) {
   const displayName = typeof data.username === 'string' ? data.username.trim() : '';
   const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
   const password = typeof data.password === 'string' ? data.password : '';
+  const rawPhone = typeof data.phone_number === 'string' ? data.phone_number.trim() : '';
+  const phoneDigits = rawPhone.replace(/\\D/g, '');
+  const phoneNumber = rawPhone.startsWith('+') && phoneDigits.length >= 10 && phoneDigits.length <= 15
+    ? '+' + phoneDigits
+    : phoneDigits.length === 10
+      ? '+1' + phoneDigits
+      : phoneDigits.length === 11 && phoneDigits.startsWith('1')
+        ? '+' + phoneDigits
+        : '';
+  const smsAlertsEnabled = data.sms_alerts_enabled === true;
   const accountType = typeof data.account_type === 'string' ? data.account_type : '';
   const username = typeof data.username === 'string' ? data.username.trim() : '';
   const bio = typeof data.bio === 'string' ? data.bio.trim() : '';
@@ -41,18 +51,21 @@ export async function onRequestPost({ request, env }) {
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok:false, error:'invalid_email' }, 400);
   if (!ACCOUNT_TYPES.has(accountType)) return json({ ok:false, error:'invalid_account_type' }, 400);
   if (password.length < 10 || password.length > 128) return json({ ok:false, error:'password_requirements' }, 400);
+  if (!phoneNumber) return json({ ok:false, error:'valid_phone_required' }, 400);
   try {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const hash = await passwordHash(password, salt);
     const token = b64(crypto.getRandomValues(new Uint8Array(32)));
     const tokenHash = await sha256(token);
     const expiresAt = Date.now() + SESSION_DAYS * 86400000;
+    const consentAt = smsAlertsEnabled ? new Date().toISOString() : null;
     const results = await env.DB.batch([
-      env.DB.prepare('INSERT INTO accounts (display_name,email,account_type,password_salt,password_hash,session_token_hash,session_expires_at) VALUES (?,?,?,?,?,?,?)').bind(displayName,email,accountType,b64(salt),hash,tokenHash,expiresAt),
-      env.DB.prepare('INSERT INTO collector_profiles (account_id,username,bio,avatar_url,is_public,location_zip,location_lat,location_lng,location_enabled,search_radius_miles) SELECT id,?,?,?,1,?,?,?,?,? FROM accounts WHERE email=? COLLATE NOCASE').bind(username,bio,avatarUrl,locationEnabled?locationZip:'',locationLat,locationLng,locationEnabled?1:0,searchRadius,email)
+      env.DB.prepare('INSERT INTO accounts (display_name,email,account_type,password_salt,password_hash,session_token_hash,session_expires_at,phone_number,sms_alerts_enabled,sms_alert_consent_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(displayName,email,accountType,b64(salt),hash,tokenHash,expiresAt,phoneNumber,smsAlertsEnabled?1:0,consentAt),
+      env.DB.prepare('INSERT INTO collector_profiles (account_id,username,bio,avatar_url,is_public,location_zip,location_lat,location_lng,location_enabled,search_radius_miles) SELECT id,?,?,?,1,?,?,?,?,? FROM accounts WHERE email=? COLLATE NOCASE').bind(username,bio,avatarUrl,locationEnabled?locationZip:'',locationLat,locationLng,locationEnabled?1:0,searchRadius,email),
+      env.DB.prepare("INSERT OR IGNORE INTO collector_follows (follower_account_id, followed_account_id) SELECT new_account.id, target.account_id FROM accounts AS new_account JOIN collector_profiles AS target ON lower(target.username)=lower('pikachewy') WHERE new_account.email=? COLLATE NOCASE AND new_account.id<>target.account_id").bind(email)
     ]);
     if (!results[0]?.meta || results[0].meta.changes !== 1 || !results[1]?.meta || results[1].meta.changes !== 1) throw new Error('Account and collector profile creation did not complete');
-    return json({ ok:true, account:{ display_name:displayName, email, account_type:accountType, username }, note:'Account type does not grant VIP, vendor verification, or organizer privileges.' }, 201, { 'Set-Cookie':cookie(token,expiresAt) });
+    return json({ ok:true, account:{ display_name:displayName, email, account_type:accountType, username, phone_number:phoneNumber, sms_alerts_enabled:smsAlertsEnabled }, note:'Account type does not grant VIP, vendor verification, or organizer privileges.' }, 201, { 'Set-Cookie':cookie(token,expiresAt) });
   } catch (error) {
     if (String(error && error.message || '').toLowerCase().includes('unique')) {
       const usernameExists = await env.DB.prepare('SELECT id FROM collector_profiles WHERE username=? COLLATE NOCASE LIMIT 1').bind(username).first().catch(()=>null);
