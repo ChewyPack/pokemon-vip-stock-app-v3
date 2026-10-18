@@ -21,7 +21,6 @@ button{width:100%;margin-top:22px;padding:12px;border:0;border-radius:8px;backgr
 <h2>Create one VIP account</h2>
 <p>Use the member's exact existing VIP email. Choose a unique password; do not reuse your own.</p>
 <form id="vipForm">
-<label for="displayName">Member display name</label><input id="displayName" autocomplete="off" maxlength="60" required>
 <label for="email">VIP email address</label><input id="email" type="email" autocomplete="off" maxlength="254" required>
 <label for="username">Collector username</label><input id="username" autocomplete="off" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" required>
 <label for="password">Account password (10+ characters)</label><input id="password" type="password" autocomplete="new-password" minlength="10" maxlength="128" required>
@@ -34,11 +33,12 @@ button{width:100%;margin-top:22px;padding:12px;border:0;border-radius:8px;backgr
 const form=document.getElementById('vipForm'),button=document.getElementById('submit'),result=document.getElementById('result');
 form.addEventListener('submit',async event=>{
 event.preventDefault();button.disabled=true;result.className='';result.textContent='Checking admin session…';
-const payload={display_name:document.getElementById('displayName').value.trim(),email:document.getElementById('email').value.trim(),username:document.getElementById('username').value.trim(),password:document.getElementById('password').value};
+const username=document.getElementById('username').value.trim();
+const payload={display_name:username,email:document.getElementById('email').value.trim(),username,password:document.getElementById('password').value};
 try{
 const response=await fetch('/api/admin/manual-vip-account',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});
 const data=await response.json();
-if(!response.ok||!data.ok){const messages={admin_login_required:'Log in to staging with your PikaChewy admin account first.',email_already_registered:'That email already has a staging account. Nothing was overwritten.',username_taken:'That username is already in use.',email_or_username_already_registered:'That email or username is already in use. Nothing was overwritten.',email_not_in_verified_vip_list:'This email is not in the verified VIP migration list.',name_email_mismatch:'Use the verified member name that matches this email address.',invalid_email:'Enter a valid email address.',invalid_username:'Use 3–24 letters, numbers, or underscores.',password_requirements:'Choose a password from 10 to 128 characters.'};throw new Error(messages[data.error]||('Setup failed: '+(data.error||'unknown_error')));}
+if(!response.ok||!data.ok){const messages={admin_login_required:'Log in to staging with your PikaChewy admin account first.',email_already_registered:'That email already has a staging account. Nothing was overwritten.',username_taken:'That username is already in use.',email_or_username_already_registered:'That email or username is already in use. Nothing was overwritten.',email_not_in_verified_vip_list:'This email is not in the verified VIP migration list.',invalid_email:'Enter a valid email address.',invalid_username:'Use 3–24 letters, numbers, or underscores.',password_requirements:'Choose a password from 10 to 128 characters.'};throw new Error(messages[data.error]||('Setup failed: '+(data.error||'unknown_error')));}
 result.className='ok';result.textContent='Created staging account #'+data.account.id+' for '+data.account.email+'. Collector+ entitlement is active in staging only. No Stripe subscription was changed or linked. Log out and test this account next.';form.reset();
 }catch(error){result.className='err';result.textContent=error instanceof Error?error.message:'Something went wrong.';}finally{button.disabled=false;}
 });
