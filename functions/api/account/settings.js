@@ -24,7 +24,7 @@ export async function onRequestPost({request,env}){
   const profile=await env.DB.prepare('SELECT account_id FROM collector_profiles WHERE account_id=? LIMIT 1').bind(account.id).first();
   if(!profile)return json({ok:false,error:'collector_profile_missing'},409);
   await env.DB.batch([
-   env.DB.prepare('UPDATE accounts SET display_name=?,email=?,phone_number=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(displayName,email,phone,account.id),
+   env.DB.prepare('UPDATE accounts SET display_name=?,email=?,phone_number=?,sms_alerts_enabled=CASE WHEN phone_number<>? THEN 0 ELSE sms_alerts_enabled END,sms_alert_consent_at=CASE WHEN phone_number<>? THEN NULL ELSE sms_alert_consent_at END,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(displayName,email,phone,phone,phone,account.id),
    env.DB.prepare('UPDATE collector_profiles SET username=?,updated_at=CURRENT_TIMESTAMP WHERE account_id=?').bind(username,account.id)
   ]);
   return json({ok:true,account:{display_name:displayName,email,phone_number:phone,username}});
