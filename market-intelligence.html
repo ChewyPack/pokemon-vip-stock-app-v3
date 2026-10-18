@@ -82,57 +82,82 @@
       </div>
     </header>
 
-    <div class="mi-section-heading">
-      <div><h2>Market at a glance</h2><p>Snapshot from Pokémon Predictor · source dataset dated October 17, 2026</p></div>
-    </div>
-    <section class="mi-stats" aria-label="Market overview">
-      <article class="mi-stat"><span class="mi-label">Tracked products screened</span><strong>2,989</strong><small>Source-reported coverage on the referenced snapshot.</small></article>
-      <article class="mi-stat"><span class="mi-label">Price window</span><strong>7 days</strong><small>Movers shown only when the source’s consistency checks pass.</small></article>
-      <article class="mi-stat"><span class="mi-label">Data status</span><strong>External source</strong><small>These are source-reported figures, not a PokePrizePool-owned live feed.</small></article>
-    </section>
 
     <div class="mi-section-heading">
-      <div><h2>Verified movers</h2><p>Example source snapshot. Prices and rankings can change with the next data refresh.</p></div>
+      <div><h2>Market at a glance</h2><p>Multiple source snapshots · October 18, 2026 · check each source for its latest refresh</p></div>
     </div>
+    <section class="mi-stats" aria-label="Market overview">
+      <article class="mi-stat"><span class="mi-label">Predictor coverage</span><strong>2,989</strong><small>Products screened in the cited Pokémon Predictor snapshot dated October 14, 2026.</small></article>
+      <article class="mi-stat"><span class="mi-label">Price windows</span><strong>7 / 30 days</strong><small>Short-term card movers and separately sourced longer-term index context.</small></article>
+      <article class="mi-stat"><span class="mi-label">Data status</span><strong>Source dated</strong><small>Figures below retain their source and snapshot dates. This page is not a live API feed.</small></article>
+    </section>
+
+    <div class="mi-section-heading"><div><h2>Singles market movers</h2><p>All available rows from the referenced source snapshots are shown here; no artificial top-five cap.</p></div></div>
     <nav class="mi-tabs" aria-label="Market categories">
-      <a class="active" href="#singles">Singles</a><a href="#slabs">Slabs</a><a href="#sealed">Sealed</a><a href="#watchlist">Collector watchlist</a>
+      <a class="active" href="#singles">Singles</a><a href="#slabs">Graded & population</a><a href="#sealed">Sealed</a><a href="#research">Research tools</a><a href="#watchlist">Collector watchlist</a>
     </nav>
     <section id="singles" class="mi-movers" aria-label="Singles market movers">
       <article class="mi-panel">
-        <h3>Top gainers</h3><p class="mi-subtitle">7-day movers · Pokémon Predictor snapshot</p>
-        <div class="mi-mover"><span class="mi-rank">01</span><div><div class="mi-name">Arceus VSTAR</div><div class="mi-product">30th Celebration Classic Collection · Holofoil</div></div><div class="mi-price">$9.82<span class="mi-change">+31.5%</span></div></div>
-        <div class="mi-mover"><span class="mi-rank">02</span><div><div class="mi-name">Solgaleo GX</div><div class="mi-product">30th Celebration Classic Collection · Holofoil</div></div><div class="mi-price">$7.53<span class="mi-change">+24.9%</span></div></div>
-        <div class="mi-mover"><span class="mi-rank">03</span><div><div class="mi-name">Inteleon VMAX · 079/264</div><div class="mi-product">Prize Pack Series Cards · Holofoil</div></div><div class="mi-price">$150.00<span class="mi-change">+20.0%</span></div></div>
-        <div class="mi-mover"><span class="mi-rank">04</span><div><div class="mi-name">Zacian V</div><div class="mi-product">30th Celebration Classic Collection · Holofoil</div></div><div class="mi-price">$7.74<span class="mi-change">+19.6%</span></div></div>
-        <p class="mi-subtitle" style="margin:14px 0 0">Only four qualifying rows were visible in the referenced source snapshot; no fifth mover has been invented.</p>
+        <h3>Verified gainers</h3><p class="mi-subtitle">7-day movement · Pokémon Predictor snapshot dated October 18, 2026</p>
+        <div class="mi-mover"><span class="mi-rank">01</span><div><div class="mi-name">Zacian V</div><div class="mi-product">ME: 30th Celebration Classic Collection · Holofoil</div></div><div class="mi-price">$11.08<span class="mi-change">+71.3%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">02</span><div><div class="mi-name">Arceus VSTAR</div><div class="mi-product">ME: 30th Celebration Classic Collection · Holofoil</div></div><div class="mi-price">$11.54<span class="mi-change">+54.5%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">03</span><div><div class="mi-name">Hop’s Snorlax · 117/159</div><div class="mi-product">Prize Pack Series Cards · Cosmos Holo</div></div><div class="mi-price">$8.20<span class="mi-change">+36.7%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">04</span><div><div class="mi-name">Bulbasaur · 133/132</div><div class="mi-product">ME01 Mega Evolution</div></div><div class="mi-price">$17.93<span class="mi-change">+23.9%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">05</span><div><div class="mi-name">Meowth ex · 107/088</div><div class="mi-product">ME03 Perfect Order</div></div><div class="mi-price">$12.11<span class="mi-change">+21.0%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">06</span><div><div class="mi-name">Steelix · 150/132</div><div class="mi-product">ME01 Mega Evolution</div></div><div class="mi-price">$6.33<span class="mi-change">+20.6%</span></div></div>
+        <p class="mi-subtitle" style="margin:14px 0 0">Source: Pokémon Predictor homepage snapshot. Values are a dated research capture, not guaranteed current quotes.</p>
       </article>
       <article class="mi-panel">
-        <h3>Top decliners</h3><p class="mi-subtitle">7-day movers · verified rows only</p>
-        <div class="mi-empty">The referenced snapshot did not provide enough verified decliners to fill a top-five list. We’ll leave this section unfilled until the source provides qualifying data rather than pad it with unreliable price swings.</div>
-        <p class="mi-subtitle" style="margin:14px 0 0"><a href="https://pokemonpredictor.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">Check the current movers on Pokémon Predictor ↗</a></p>
+        <h3>Verified decliners</h3><p class="mi-subtitle">7-day movement · Pokémon Predictor snapshot dated October 18, 2026</p>
+        <div class="mi-mover"><span class="mi-rank">01</span><div><div class="mi-name">Marnie’s Grimmsnarl ex · 136/182</div><div class="mi-product">Prize Pack Series Cards</div></div><div class="mi-price">$3.18<span class="mi-change down">−51.3%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">02</span><div><div class="mi-name">Lapras · 131/128</div><div class="mi-product">ME: 30th Celebration</div></div><div class="mi-price">$4.34<span class="mi-change down">−39.9%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">03</span><div><div class="mi-name">Pikachu ex · 109</div><div class="mi-product">30th Celebration · Mega Evolution Promo</div></div><div class="mi-price">$211.99<span class="mi-change down">−29.3%</span></div></div>
+        <p class="mi-subtitle" style="margin:14px 0 0">The source also showed a sealed Delta Reign Sleeved Booster Pack at −37.7%; it is listed under sealed below, not counted as a single.</p>
       </article>
     </section>
 
-    <div class="mi-section-heading" id="slabs"><div><h2>Slabs</h2><p>Graded cards need apples-to-apples comparisons.</p></div></div>
-    <section class="mi-panel">
-      <div class="mi-empty">Slab rankings are not populated yet. We will compare the same card printing, grading company, and grade — for example, PSA 10 against PSA 10 — and identify the price source. PSA population changes can help explain supply, but do not by themselves predict price.</div>
-      <div class="mi-actions"><a class="mi-button" href="https://pokemonpredictor.com/" target="_blank" rel="noopener noreferrer">Explore population and grading tools ↗</a></div>
-    </section>
-
-    <div class="mi-section-heading" id="sealed"><div><h2>Sealed market</h2><p>Booster boxes, ETBs, bundles, collections, tins, and packs are tracked separately.</p></div></div>
-    <section class="mi-panel">
-      <div class="mi-empty">Sealed prices and seven-day movers should be pulled from the current source snapshot before publishing a ranked list. Listing floors can be misleading when listings contain foreign-language product or accessories, so we’ll prioritize clearly labeled market values and verify unusually large moves.</div>
-      <div class="mi-actions"><a class="mi-button" href="https://pokemonpredictor.com/" target="_blank" rel="noopener noreferrer">Open sealed market snapshot ↗</a></div>
-    </section>
-
-    <div class="mi-section-heading" id="watchlist"><div><h2>Collector watchlist</h2><p>Signals to investigate — not automatic buy or sell calls.</p></div></div>
+    <div class="mi-section-heading" id="slabs"><div><h2>Graded cards & population signals</h2><p>Price, grade, and supply are different signals and should not be conflated.</p></div></div>
     <section class="mi-bottom-grid">
-      <article class="mi-note"><h3>What to keep an eye on</h3><ul><li>Whether a price move persists across multiple daily snapshots.</li><li>Whether market, low, and mid prices move in the same direction.</li><li>PSA population growth and the pace of new graded supply.</li><li>Restock reports with timestamps, location, product counts, and firsthand evidence.</li></ul></article>
-      <article class="mi-note"><h3>What to consider selling</h3><p>We won’t label a card “sell now” from percentage movement alone. Before making a decision, compare recent completed sales, your cost basis, fees, shipping, condition, and how quickly the item is actually selling.</p><p>Market data is informational, not a guarantee of future prices or sale proceeds.</p></article>
+      <article class="mi-note"><h3>Graded-price coverage</h3><p>Pokémon Predictor identifies PriceCharting as its graded-price reference where shown. No complete, verified PSA 10 / PSA 9 ranking was available in the cited snapshot, so this page does not invent one. Compare the same printing, grading company, grade, and sale basis before drawing conclusions.</p><p><a href="https://pokemonpredictor.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">Open graded-card research ↗</a></p></article>
+      <article class="mi-note"><h3>PSA population alerts</h3><p>Predictor methodology describes alerts for established cards with at least 200 existing graded copies and at least 50 new gradings in the trailing 30 days, ranked by growth relative to the prior base. No card-level alert rows are reproduced here without a dated source table.</p><p><a href="https://pokemonpredictor.com/methodology/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">Read the population rules ↗</a></p></article>
     </section>
 
-    <div class="market-note"><strong>Data transparency:</strong> Pokémon Predictor states that its price snapshots come from TCGplayer aggregate market data through tcgcsv, population information is tracked from PSA data by GemRate, and graded price references come from PriceCharting where labeled. This page links to that source for research; it does not claim an official partnership or a live API integration. <a href="https://pokemonpredictor.com/methodology/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">Read source methodology ↗</a></div>
-    <a class="market-home" href="/">← Back to PokePrizePool</a>
+    <div class="mi-section-heading" id="sealed"><div><h2>Sealed market</h2><p>Separate sealed-product snapshots · prices may vary by condition, language, and listing quality.</p></div></div>
+    <section class="mi-movers">
+      <article class="mi-panel">
+        <h3>7-day sealed gainers</h3><p class="mi-subtitle">Pokéfin snapshot dated October 18, 2026</p>
+        <div class="mi-mover"><span class="mi-rank">01</span><div><div class="mi-name">Unified Minds Booster Box</div><div class="mi-product">Sealed product</div></div><div class="mi-price">$3,322.55<span class="mi-change">+11.1%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">02</span><div><div class="mi-name">Generations ETB</div><div class="mi-product">Elite Trainer Box</div></div><div class="mi-price">$3,123.99<span class="mi-change">+7.8%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">03</span><div><div class="mi-name">Journey Together Booster Bundle</div><div class="mi-product">Booster bundle</div></div><div class="mi-price">$43.35<span class="mi-change">+5.4%</span></div></div>
+      </article>
+      <article class="mi-panel">
+        <h3>7-day sealed decliners</h3><p class="mi-subtitle">Pokéfin snapshot dated October 18, 2026</p>
+        <div class="mi-mover"><span class="mi-rank">01</span><div><div class="mi-name">Chaos Rising Booster Bundle</div><div class="mi-product">Booster bundle</div></div><div class="mi-price">$33.35<span class="mi-change down">−12.6%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">02</span><div><div class="mi-name">151 Ultra-Premium Collection</div><div class="mi-product">Ultra-premium collection</div></div><div class="mi-price">$780.03<span class="mi-change down">−10.1%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">03</span><div><div class="mi-name">30th Celebration ETB</div><div class="mi-product">Elite Trainer Box</div></div><div class="mi-price">$127.44<span class="mi-change down">−9.8%</span></div></div>
+        <p class="mi-subtitle" style="margin:14px 0 0">Another Predictor snapshot listed a Delta Reign Sleeved Booster Pack at $20.40, −37.7% over seven days. Separate sources can differ; verify current values before acting.</p>
+      </article>
+    </section>
+    <div class="market-note"><strong>Longer-term context:</strong> Hoard’s October 16 snapshot reported its singles index down 9.13% over 30 days while its sealed index was up 3.51%. This is a different provider and index methodology, not directly comparable to individual card moves. <a href="https://hoard.cards/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">Check Hoard ↗</a></div>
+
+    <div class="mi-section-heading" id="research"><div><h2>More research signals</h2><p>Coverage beyond a movers leaderboard.</p></div></div>
+    <section class="mi-bottom-grid">
+      <article class="mi-note"><h3>Grading ROI calculator</h3><p>Estimate outcomes using grading fees, selling costs, expected grade distribution, and grade-specific resale values. Population-based PSA 10 odds can overstate the chance of a random raw copy receiving a 10; use assumptions conservatively.</p></article>
+      <article class="mi-note"><h3>Artist spotlight & hype meter</h3><p>Predictor describes an artist spotlight and a descriptive hype meter combining grading velocity (35%), card value (25%), price heat (20%), and forum chatter (20%). It is a sentiment/attention indicator, not a forecast or guaranteed signal.</p></article>
+      <article class="mi-note"><h3>Card hype tracker</h3><p>Predictor’s stated mix uses grading submissions (45%), submission growth relative to base (20%), seven-day price movement (25%), and graded base (10%). Treat rapid attention as a prompt to investigate liquidity and supply, not proof of sustainable demand.</p></article>
+      <article class="mi-note"><h3>Cheap SIR / hyper-rare research</h3><p>Predictor describes a board covering English SIR, Hyper Rare, and Mega Hyper Rare cards across Scarlet & Violet and Mega-era sets, using PriceCharting values and excluding cards without PSA 10 prices. Check the current board for its full list.</p></article>
+      <article class="mi-note"><h3>Promos & regional exclusives</h3><p>Promo galleries use set/population identification and price references; regional-exclusive coverage is described as verified releases with market presence, not a guaranteed exhaustive checklist. Confirm release details before treating an item as region-exclusive.</p></article>
+      <article class="mi-note"><h3>Market data quality checks</h3><p>Predictor says it screens out stale rows, requires market / low / mid values to move in the same direction for movers, and excludes cases where market price is less than 70% of listing low. These filters reduce obvious anomalies but do not eliminate all risk.</p></article>
+    </section>
+
+    <div class="mi-section-heading" id="watchlist"><div><h2>Collector watchlist & field intelligence</h2><p>Signals to investigate — not automatic buy or sell calls.</p></div></div>
+    <section class="mi-bottom-grid">
+      <article class="mi-note"><h3>What to monitor</h3><ul><li>Whether price movement persists across multiple daily snapshots.</li><li>Recent completed sales, sales volume, spread, and listing depth—not just the lowest ask.</li><li>PSA population growth and the pace of new graded supply.</li><li>Artist / card attention alongside actual price and liquidity.</li><li>Set release calendars, promo distribution, regional exclusives, and restock patterns.</li><li>PokePrizePool firsthand reports with timestamps, store location, quantities, and photos where available.</li></ul></article>
+      <article class="mi-note"><h3>Before selling or buying</h3><p>We will not label a card “buy now” or “sell now” from a percentage move alone. Compare recent completed sales, cost basis, fees, shipping, condition, and actual sell-through. High percentage moves on thinly traded cards can reverse quickly.</p><p>Market data is informational, not a guarantee of future prices or sale proceeds.</p></article>
+    </section>
+
+    <div class="market-note"><strong>Sources & transparency:</strong> Pokémon Predictor says its daily price snapshots use TCGplayer aggregate data through tcgcsv, PSA population information via GemRate, and PriceCharting for graded references where labeled. Sealed figures above come from a separate Pokéfin snapshot; the 30-day index context comes from Hoard. Dates and providers are shown to avoid mixing them into a single index. No official partnership or live API connection is claimed. Figures are historical research captures and should be rechecked before publication or a transaction. <a href="https://pokemonpredictor.com/methodology/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">Predictor methodology ↗</a> · <a href="https://pokemonpredictor.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">Predictor homepage ↗</a> · <a href="https://pokefinance.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">Pokéfin ↗</a></div>
+        <a class="market-home" href="/">← Back to PokePrizePool</a>
   </main>
 
   <script>
