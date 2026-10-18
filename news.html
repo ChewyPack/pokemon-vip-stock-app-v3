@@ -366,7 +366,7 @@
       if(slug){
         api('/api/news?slug='+encodeURIComponent(slug)).then(function(data){renderStory(data.story);}).catch(function(){heading.textContent='News';container.replaceChildren(add('p','', 'That story could not be found or is no longer published.'),Object.assign(add('a','news-back-link','← Back to News'),{href:'/news.html'}));});
       }else{
-        api('/api/news').then(function(data){renderList(data.stories||[]);}).catch(function(){container.replaceChildren(add('p','', 'We could not load the latest stories right now. Please try again soon.'));});
+        api('/api/news?category=News').then(function(data){renderList(data.stories||[]);}).catch(function(){container.replaceChildren(add('p','', 'We could not load the latest stories right now. Please try again soon.'));});
       }
     })();
   </script>
