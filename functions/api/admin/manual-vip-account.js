@@ -120,8 +120,8 @@ export async function onRequestPost({ request, env }) {
     const saltText = b64(salt);
     const hash = await passwordHash(password, salt);
 
-    // One D1 batch keeps account + profile creation together. No session is
-    // created for the member, and no Stripe API call or billing mutation occurs.
+    // Create the account and public profile together, then automatically follow
+    // the admin profile (PikaChewy) when it exists. This never touches Stripe.
     const results = await env.DB.batch([
       env.DB.prepare(
         `INSERT INTO accounts (
@@ -134,7 +134,16 @@ export async function onRequestPost({ request, env }) {
       env.DB.prepare(
         `INSERT INTO collector_profiles (account_id, username, bio, avatar_url, is_public)
          SELECT id, ?, '', '', 1 FROM accounts WHERE email = ? COLLATE NOCASE`
-      ).bind(username, email)
+      ).bind(username, email),
+      env.DB.prepare(
+        `INSERT OR IGNORE INTO collector_follows (follower_account_id, followed_account_id)
+         SELECT new_account.id, target.account_id
+         FROM accounts AS new_account
+         JOIN collector_profiles AS new_profile ON new_profile.account_id = new_account.id
+         JOIN collector_profiles AS target ON lower(target.username) = lower('PikaChewy')
+         WHERE new_account.email = ? COLLATE NOCASE
+           AND new_account.id <> target.account_id`
+      ).bind(email)
     ]);
 
     if (!results[0]?.meta || results[0].meta.changes !== 1 ||
@@ -146,6 +155,8 @@ export async function onRequestPost({ request, env }) {
       'SELECT id FROM accounts WHERE email = ? COLLATE NOCASE LIMIT 1'
     ).bind(email).first();
     if (!account) throw new Error('Created account could not be verified');
+
+    const autoFollowCreated = Number(results[2]?.meta?.changes || 0) > 0;
 
     return json({
       ok: true,
@@ -160,7 +171,10 @@ export async function onRequestPost({ request, env }) {
         membership_status: 'active',
         membership_source: 'legacy_vip_manual'
       },
-      note: 'Staging account only. No Stripe customer or subscription was changed or linked.'
+      auto_followed_admin: autoFollowCreated,
+      note: autoFollowCreated
+        ? 'Staging account only. Automatically followed PikaChewy. No Stripe customer or subscription was changed or linked.'
+        : 'Staging account only. PikaChewy profile was not found or was already followed. No Stripe customer or subscription was changed or linked.'
     }, 201);
   } catch (error) {
     const message = String(error && error.message || '').toLowerCase();
