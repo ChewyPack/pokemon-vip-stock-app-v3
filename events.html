@@ -708,15 +708,42 @@
             title: 'Events Calendar',
             description: 'Shows, trade nights, and releases',
             href: '/events.html'
-          },
-          ]),
-          dropdown('Collectors', [
-            { title: 'Collector Profiles', description: 'Browse collector profiles and collections', href: '/collector.html' },
-            { title: 'Offer Inbox', description: 'Manage cash offers and collection trades', href: '/inbox.html' },
-            { title: 'Account Settings', description: 'Profile, privacy, and nearby matching', href: '/account.html#nearby-collector-settings' }
-          ]),
+          }
+        ]),
 
-        link('Report a Sighting', '/#report')
+        link('Alerts', '/alerts.html'),
+        link('Line Services', '/line-services.html'),
+
+        dropdown('Shop', [
+          {
+            title: 'Giveaways',
+            description: 'View current giveaways',
+            href: '/giveaways.html'
+          }
+        ]),
+
+        link('Giveaways', '/giveaways.html'),
+        link('Chat', '/chat.html'),
+
+        dropdown('Resources', [
+          {
+            title: 'News & Exclusives',
+            description: 'Pokémon news and hobby updates',
+            href: '/news.html'
+          },
+          {
+            title: 'Events Calendar',
+            description: 'Shows, trade nights, and releases',
+            href: '/events.html'
+          },
+          {
+            title: 'Market Intelligence',
+            description: 'Pokémon TCG market trends',
+            href: '/market-intelligence.html'
+          }
+        ]),
+
+        link('Profile', '/collector.html')
       ]);
 
       var header = make('header', {
