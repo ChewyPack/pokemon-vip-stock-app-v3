@@ -287,6 +287,7 @@
         <p id="artist-bio" class="mi-artist-bio">This spotlight links exact printings in the October 18 PokePrizePool movers snapshot to verified illustrator credits. It is a matched sample—not a claim about the artist’s entire catalogue or a standalone artist index.</p>
         <div class="mi-artist-facts"><div><span class="mi-label">Market snapshot</span><strong>October 18, 2026 · 2,986 tracked products</strong></div><div><span class="mi-label">Matched cards in visible movers</span><strong id="artist-match-count">2 verified printings</strong></div></div>
         <div class="mi-artist-cardlist"><span class="mi-label">Matched cards · PokePrizePool snapshot</span><ul id="artist-card-examples"><li>Meowth ex · 107/088, Perfect Order — +21.0% over 7 days (<a href="https://www.tcgdex.net/database/me-mega-evolution/me03-perfect-order/107-meowth-ex" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li><li>Zacian V · 30th Classic Collection — +71.3% over 7 days (<a href="https://pooka.app/card/en-me55c-138/Zacian%20V" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li></ul></div>
+        <div class="mi-hype-meter" id="artist-population-check"><div class="mi-hype-heading"><strong>PSA population cross-check</strong><span id="artist-population-status" class="mi-hype-status">Exact-printing match only</span></div><p id="artist-population-note">Comparing the featured card printings against the PSA population alerts in this snapshot.</p><ul id="artist-population-results"></ul><p class="mi-artist-footnote">Only the same card and printing count as a match. No match in this short alert list does not mean a card has no PSA population; it means this snapshot has no directly comparable alert.</p></div>
         <div class="mi-hype-meter"><div class="mi-hype-heading"><strong>Collector hype meter</strong><span id="artist-hype-status" class="mi-hype-status">Early signal · limited sample</span></div><div id="artist-hype-track" class="mi-hype-track" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><p id="artist-hype-note">Matched cards show movement in the supplied snapshot, but this small sample is not enough to claim broad artist-level demand. This is a research flag, not a numerical hype score or buy/sell signal.</p></div>
         <p class="mi-artist-footnote">Artist credits are checked against linked card references; price changes come from the dated PokePrizePool snapshot. The spotlight rotates among matched artists only. No price movement is attributed to an artist unless the exact printing and credit match.</p>
       </article>
@@ -391,6 +392,41 @@
         });
       }
       if (note) note.textContent = artist.note;
+      // Cross-check against the actual rendered PSA alert table. Require card name and set/card number where available.
+      var popStatus = document.getElementById('artist-population-status');
+      var popNote = document.getElementById('artist-population-note');
+      var popResults = document.getElementById('artist-population-results');
+      var popRows = Array.prototype.slice.call(document.querySelectorAll('#slabs table tbody tr'));
+      var popMatches = [];
+      artist.matches.forEach(function (match) {
+        var label = match.label.toLowerCase();
+        var cardPart = label.split('—')[0].trim();
+        var namePart = cardPart.split(' · ')[0].trim();
+        var numberMatch = cardPart.match(/\b\d{1,3}\/\d{2,3}\b/);
+        var setPart = cardPart.indexOf(',') >= 0 ? cardPart.split(',').slice(1).join(',').trim() : '';
+        popRows.forEach(function (row) {
+          var rowText = row.textContent.toLowerCase();
+          var sameName = rowText.indexOf(namePart) >= 0;
+          var sameNumber = numberMatch && rowText.indexOf(numberMatch[0]) >= 0;
+          var sameSet = setPart && rowText.indexOf(setPart) >= 0;
+          if (sameName && sameNumber && sameSet) popMatches.push({ card: match.label, data: row.textContent.trim() });
+        });
+      });
+      if (popStatus && popNote && popResults) {
+        popResults.replaceChildren();
+        if (popMatches.length) {
+          popStatus.textContent = popMatches.length + ' exact match' + (popMatches.length === 1 ? '' : 'es');
+          popNote.textContent = 'Exact card, number, and set matches found in the displayed PSA population alerts:';
+          popMatches.forEach(function (entry) {
+            var li = document.createElement('li');
+            li.textContent = entry.card + ' — ' + entry.data;
+            popResults.appendChild(li);
+          });
+        } else {
+          popStatus.textContent = 'No exact match in alerts';
+          popNote.textContent = 'None of this spotlight’s featured printings matches the card name, number, and set in the 12 PSA population alerts displayed on this page. This is a coverage gap in the current alert list—not evidence that these cards have zero graded copies or no population growth.';
+        }
+      }
     })();
   </script>
 
