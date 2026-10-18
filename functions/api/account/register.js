@@ -61,10 +61,15 @@ export async function onRequestPost({ request, env }) {
     const consentAt = smsAlertsEnabled ? new Date().toISOString() : null;
     const results = await env.DB.batch([
       env.DB.prepare('INSERT INTO accounts (display_name,email,account_type,password_salt,password_hash,session_token_hash,session_expires_at,phone_number,sms_alerts_enabled,sms_alert_consent_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(displayName,email,accountType,b64(salt),hash,tokenHash,expiresAt,phoneNumber,smsAlertsEnabled?1:0,consentAt),
-      env.DB.prepare('INSERT INTO collector_profiles (account_id,username,bio,avatar_url,is_public,location_zip,location_lat,location_lng,location_enabled,search_radius_miles) SELECT id,?,?,?,1,?,?,?,?,? FROM accounts WHERE email=? COLLATE NOCASE').bind(username,bio,avatarUrl,locationEnabled?locationZip:'',locationLat,locationLng,locationEnabled?1:0,searchRadius,email),
-      env.DB.prepare("INSERT OR IGNORE INTO collector_follows (follower_account_id, followed_account_id) SELECT new_account.id, target.account_id FROM accounts AS new_account JOIN collector_profiles AS target ON lower(target.username)=lower('pikachewy') WHERE new_account.email=? COLLATE NOCASE AND new_account.id<>target.account_id").bind(email)
+      env.DB.prepare('INSERT INTO collector_profiles (account_id,username,bio,avatar_url,is_public,location_zip,location_lat,location_lng,location_enabled,search_radius_miles) SELECT id,?,?,?,1,?,?,?,?,? FROM accounts WHERE email=? COLLATE NOCASE').bind(username,bio,avatarUrl,locationEnabled?locationZip:'',locationLat,locationLng,locationEnabled?1:0,searchRadius,email)
     ]);
     if (!results[0]?.meta || results[0].meta.changes !== 1 || !results[1]?.meta || results[1].meta.changes !== 1) throw new Error('Account and collector profile creation did not complete');
+    // Following the admin profile is best-effort so a missing follow migration cannot break signup.
+    try {
+      await env.DB.prepare("INSERT OR IGNORE INTO collector_follows (follower_account_id, followed_account_id) SELECT new_account.id, target.account_id FROM accounts AS new_account JOIN collector_profiles AS target ON lower(target.username)=lower('pikachewy') WHERE new_account.email=? COLLATE NOCASE AND new_account.id<>target.account_id").bind(email).run();
+    } catch (followError) {
+      console.error('Automatic admin-profile follow was skipped; check collector_follows migration:', followError);
+    }
     return json({ ok:true, account:{ display_name:displayName, email, account_type:accountType, username, phone_number:phoneNumber, sms_alerts_enabled:smsAlertsEnabled }, note:'Account type does not grant VIP, vendor verification, or organizer privileges.' }, 201, { 'Set-Cookie':cookie(token,expiresAt) });
   } catch (error) {
     if (String(error && error.message || '').toLowerCase().includes('unique')) {
