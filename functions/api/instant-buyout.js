@@ -26,7 +26,12 @@ export async function onRequestGet({request,env}){
    ? 'SELECT r.*,a.display_name,a.email FROM instant_buyout_requests r JOIN accounts a ON a.id=r.account_id ORDER BY r.created_at DESC LIMIT 200'
    : 'SELECT * FROM instant_buyout_requests WHERE account_id=? ORDER BY created_at DESC LIMIT 100';
   const result=admin?await env.DB.prepare(sql).all():await env.DB.prepare(sql).bind(account.id).all();
-  return json({ok:true,is_admin:admin,requests:(result.results||[]).map(row=>shape(row,admin))});
+  let vendorCommerce=[];
+  if(admin){
+   const vendors=await env.DB.prepare("SELECT a.id,a.display_name,a.email,COALESCE(v.ticket_sales_approved,0) AS ticket_sales_approved,COALESCE(v.booth_sales_approved,0) AS booth_sales_approved,COALESCE(v.review_notes,'') AS review_notes FROM accounts a LEFT JOIN vendor_commerce_approvals v ON v.account_id=a.id WHERE a.membership_status='active' AND (a.membership_entitlement_tier='vendor' OR a.membership_tier='vendor') ORDER BY a.display_name COLLATE NOCASE").all();
+   vendorCommerce=(vendors.results||[]);
+  }
+  return json({ok:true,is_admin:admin,requests:(result.results||[]).map(row=>shape(row,admin)),vendor_commerce:vendorCommerce});
  }catch(error){console.error('Instant Buyout load failed',error);return json({ok:false,error:'instant_buyout_unavailable'},500);}
 }
 export async function onRequestPost({request,env}){
@@ -45,6 +50,15 @@ export async function onRequestPost({request,env}){
    const created=await env.DB.prepare('INSERT INTO instant_buyout_requests (account_id,category,title,details,quantity,condition_notes,photo_urls,asking_price_cents) VALUES (?,?,?,?,?,?,?,?)')
     .bind(account.id,category,title,details,quantity,condition,photos.join('\n'),asking).run();
    return json({ok:true,id:Number(created.meta?.last_row_id),status:'submitted'},201);
+  }
+  if(action==='admin_vendor_approval'){
+   if(Number(account.is_admin)!==1)return json({ok:false,error:'admin_required'},403);
+   const vendorId=Number(d.account_id),ticket=d.ticket_sales_approved===true||d.ticket_sales_approved===1,booth=d.booth_sales_approved===true||d.booth_sales_approved===1,reviewNotes=clean(d.review_notes,1000);
+   if(!Number.isInteger(vendorId)||vendorId<1)return json({ok:false,error:'invalid_vendor'},400);
+   const target=await env.DB.prepare("SELECT id FROM accounts WHERE id=? AND membership_status='active' AND (membership_entitlement_tier='vendor' OR membership_tier='vendor') LIMIT 1").bind(vendorId).first();
+   if(!target)return json({ok:false,error:'vendor_not_found'},404);
+   await env.DB.prepare("INSERT INTO vendor_commerce_approvals (account_id,ticket_sales_approved,booth_sales_approved,reviewed_by_account_id,review_notes,reviewed_at,updated_at) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON CONFLICT(account_id) DO UPDATE SET ticket_sales_approved=excluded.ticket_sales_approved,booth_sales_approved=excluded.booth_sales_approved,reviewed_by_account_id=excluded.reviewed_by_account_id,review_notes=excluded.review_notes,reviewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP").bind(vendorId,ticket?1:0,booth?1:0,account.id,reviewNotes).run();
+   return json({ok:true});
   }
   if(action==='admin_update'){
    if(Number(account.is_admin)!==1)return json({ok:false,error:'admin_required'},403);
