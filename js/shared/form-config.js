@@ -3,7 +3,7 @@
  * POKEMON VIP REPORT FORM CONFIGURATION
  *
  * Rhode Island store directory starter list.
- * Massachusetts can be populated later.
+ * New England state directory. Use the manual branch option when a location is not listed.
  *
  * Branch values are stable IDs; labels are shown to members.
  * "manual" lets members enter a store not listed in the directory.
@@ -22,14 +22,23 @@
     'Walmart',
     'Target',
     'GameStop',
+    'Best Buy',
+    'Barnes & Noble',
+    'Costco',
+    "Sam's Club",
+    "BJ's Wholesale Club",
+    'Meijer',
+    'Kroger',
     'Dollar General',
-    'CVS',
-    'Walgreens',
+    'Dollar Tree',
     'Family Dollar',
     'Five Below',
+    'CVS',
+    'Walgreens',
     "Dick's Sporting Goods",
+    'Books-A-Million',
     'Local Card Shop',
-    'Other'
+    'Other / independent retailer'
   ];
 
   var products = [
@@ -176,7 +185,11 @@
       Other: []
     },
 
-    MA: {}
+    CT: {},
+    ME: {},
+    MA: {},
+    NH: {},
+    VT: {}
   };
 
   var config = {
@@ -191,8 +204,12 @@
     },
 
     states: [
+      { value: 'CT', label: 'Connecticut' },
+      { value: 'ME', label: 'Maine' },
+      { value: 'MA', label: 'Massachusetts' },
+      { value: 'NH', label: 'New Hampshire' },
       { value: 'RI', label: 'Rhode Island' },
-      { value: 'MA', label: 'Massachusetts' }
+      { value: 'VT', label: 'Vermont' }
     ],
 
     retailers: retailers,
@@ -261,8 +278,12 @@
         label: 'State',
         required: true,
         options: [
+          { value: 'CT', label: 'Connecticut' },
+          { value: 'ME', label: 'Maine' },
+          { value: 'MA', label: 'Massachusetts' },
+          { value: 'NH', label: 'New Hampshire' },
           { value: 'RI', label: 'Rhode Island' },
-          { value: 'MA', label: 'Massachusetts' }
+          { value: 'VT', label: 'Vermont' }
         ]
       },
       {
