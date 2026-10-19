@@ -12,7 +12,7 @@
  *   DB -> pokemon-vip-members
  *
  * Access:
- *   No paid membership or vip_session cookie is required to submit a report.
+ *   Requires a signed-in account with an active, verified paid membership.
  *
  * Notifications:
  *   Saved reports fan out to the in-site inbox and opted-in browser push subscriptions.
