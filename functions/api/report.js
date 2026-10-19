@@ -14,10 +14,9 @@
  * Access:
  *   No paid membership or vip_session cookie is required to submit a report.
  *
- * Environment variables:
- *   DISCORD_WEBHOOK_URL       required
- *   DISCORD_ALERT_ROLE_ID     optional
- *   DISCORD_LOG_WEBHOOK_URL   optional
+ * Notifications:
+ *   Saved reports fan out to the in-site inbox and opted-in browser push subscriptions.
+ *   VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY enable browser push delivery.
  *
  * IMPORTANT:
  * The existing reports table does not contain a product_type column.
