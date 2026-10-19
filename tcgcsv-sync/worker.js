@@ -129,21 +129,20 @@ async function sync(db) {
         return db.prepare(`
           INSERT INTO tcgcsv_products(
             product_id, category_id, group_id, name, clean_name, image_url, product_url,
-            product_type, card_number, rarity, extended_data_json, raw_json, last_seen_sync
-          ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            product_type, card_number, rarity, extended_data_json, last_seen_sync
+          ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(product_id) DO UPDATE SET
             category_id=excluded.category_id, group_id=excluded.group_id, name=excluded.name,
             clean_name=excluded.clean_name, image_url=excluded.image_url, product_url=excluded.product_url,
             product_type=excluded.product_type, card_number=excluded.card_number, rarity=excluded.rarity,
-            extended_data_json=excluded.extended_data_json, raw_json=excluded.raw_json,
-            last_seen_sync=excluded.last_seen_sync
+            extended_data_json=excluded.extended_data_json, last_seen_sync=excluded.last_seen_sync
         `).bind(
           Number(product.productId), Number(product.categoryId || categoryId), Number(product.groupId || groupId),
           String(product.name || 'Unknown product'), product.cleanName || null,
           product.imageUrl || null, product.url || null, productType(product),
           extendedValue(ext, 'Number', 'Card Number') || null,
           extendedValue(ext, 'Rarity') || null,
-          safeJson(ext), safeJson(product), sourceTimestamp
+          safeJson(ext), sourceTimestamp
         );
       });
       await batches(db, productStatements, 40);
@@ -165,6 +164,7 @@ async function sync(db) {
       ));
       await batches(db, priceStatements, 75);
       pricesSaved += priceStatements.length;
+      await db.prepare(`INSERT OR IGNORE INTO tcgcsv_price_history(product_id, subtype_name, source_timestamp, low_price, mid_price, high_price, market_price, direct_low_price, recorded_at) SELECT p.product_id, p.subtype_name, ?, p.low_price, p.mid_price, p.high_price, p.market_price, p.direct_low_price, ? FROM tcgcsv_prices p JOIN tcgcsv_products product ON product.product_id=p.product_id WHERE product.group_id=? AND p.last_seen_sync=?`).bind(sourceTimestamp, new Date().toISOString(), groupId, sourceTimestamp).run();
       groupsProcessed += 1;
     }
 
