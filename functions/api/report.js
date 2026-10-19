@@ -146,7 +146,7 @@ function makeStoreDetails(report) {
   };
 }
 
-async function handleLineReport(data, env) {
+async function handleLineReport(data, env, form) {
   const alertUrl = env.DISCORD_WEBHOOK_URL || '';
   if (!WEBHOOK_PREFIX.test(alertUrl)) {
     return json({ ok: false, error: 'not_configured' }, 500);
@@ -185,6 +185,47 @@ async function handleLineReport(data, env) {
     return json({ ok: false, error: 'invalid', errors }, 422);
   }
 
+  // Optional photo evidence is processed using the same limits as stock reports.
+  const files = form.getAll('photos').filter(function (file) {
+    return typeof file !== 'string' && file.size > 0;
+  });
+
+  if (files.length > MAX_PHOTOS) {
+    return json({ ok: false, error: 'too_many_photos' }, 422);
+  }
+
+  let totalPhotoBytes = 0;
+  const photos = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      return json({ ok: false, error: 'bad_photo' }, 422);
+    }
+
+    if (file.size > MAX_PHOTO_BYTES) {
+      return json({ ok: false, error: 'photo_too_large' }, 413);
+    }
+
+    totalPhotoBytes += file.size;
+    if (totalPhotoBytes > MAX_TOTAL_PHOTO_BYTES) {
+      return json({ ok: false, error: 'photo_too_large' }, 413);
+    }
+
+    const extension = file.type === 'image/png'
+      ? 'png'
+      : file.type === 'image/webp'
+        ? 'webp'
+        : 'jpg';
+
+    photos.push({ file, name: 'line-photo' + (i + 1) + '.' + extension });
+  }
+
+  const photoNames = photos.map(function (photo) {
+    return photo.name;
+  });
+
   const store = makeStoreDetails(data);
   const stockedByLabels = {
     vendor: 'Vendor',
@@ -214,12 +255,13 @@ async function handleLineReport(data, env) {
         branch_id, store_town, store_address, product_name, quantity_text,
         shelf_price, msrp, report_type, line_count, stocked_by
       ) VALUES (
-        ?, ?, '', NULL, NULL, '', '', ?, 'Line report', '', ?, '', ?,
+        ?, ?, '', NULL, NULL, '', ?, ?, 'Line report', '', ?, '', ?,
         ?, ?, ?, '', ?, NULL, NULL, 'line', ?, ?
       )
     `).bind(
       report.retailer,
       report.location,
+      photoNames.join(', '),
       'Line report — ' + report.lineCount + ' people; stocked by ' + report.stockedByLabel,
       report.lineSeenAt,
       report.state,
@@ -254,8 +296,8 @@ async function handleLineReport(data, env) {
   };
 
   const logUrl = env.DISCORD_LOG_WEBHOOK_URL || '';
-  const sends = [postToDiscord(alertUrl, payload, [])];
-  if (WEBHOOK_PREFIX.test(logUrl)) sends.push(postToDiscord(logUrl, payload, []));
+  const sends = [postToDiscord(alertUrl, payload, photos)];
+  if (WEBHOOK_PREFIX.test(logUrl)) sends.push(postToDiscord(logUrl, payload, photos));
 
   try {
     const responses = await Promise.all(sends);
@@ -341,7 +383,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (data.reportType === 'line') {
-    return handleLineReport(data, env);
+    return handleLineReport(data, env, form);
   }
 
   const result = validate.validateAll(
