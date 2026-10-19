@@ -76,6 +76,11 @@ async function sync(db) {
   await db.prepare(
     "UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1"
   ).run();
+  await db.batch([
+    db.prepare('DELETE FROM tcgcsv_groups_staging'),
+    db.prepare('DELETE FROM tcgcsv_products_staging'),
+    db.prepare('DELETE FROM tcgcsv_prices_staging')
+  ]);
 
   try {
     const categoriesPayload = await getJson(SOURCE + '/categories');
@@ -187,7 +192,6 @@ async function sync(db) {
         ON CONFLICT(product_id, subtype_name) DO UPDATE SET low_price=excluded.low_price, mid_price=excluded.mid_price,
           high_price=excluded.high_price, market_price=excluded.market_price, direct_low_price=excluded.direct_low_price,
           last_seen_sync=excluded.last_seen_sync`),
-      db.prepare('DELETE FROM tcgcsv_products WHERE category_id = ? AND NOT EXISTS (SELECT 1 FROM tcgcsv_products_staging s WHERE s.product_id = tcgcsv_products.product_id)').bind(POKEMON_CATEGORY_ID),
       db.prepare('DELETE FROM tcgcsv_prices WHERE NOT EXISTS (SELECT 1 FROM tcgcsv_prices_staging s WHERE s.product_id = tcgcsv_prices.product_id AND s.subtype_name = tcgcsv_prices.subtype_name)'),
       db.prepare('DELETE FROM tcgcsv_groups WHERE category_id = ? AND NOT EXISTS (SELECT 1 FROM tcgcsv_groups_staging s WHERE s.group_id = tcgcsv_groups.group_id)').bind(POKEMON_CATEGORY_ID),
       db.prepare(`INSERT OR IGNORE INTO tcgcsv_price_history(product_id, subtype_name, source_timestamp, low_price, mid_price, high_price, market_price, direct_low_price, recorded_at)
