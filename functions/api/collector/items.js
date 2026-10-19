@@ -23,8 +23,10 @@ export async function onRequestPost({request,env}){
  const notes=typeof data.notes==='string'?data.notes.trim():'';
  const image=typeof data.image_url==='string'?data.image_url.trim():'';
  const quantity=Number(data.quantity||1);
- const value=data.estimated_value===undefined||data.estimated_value===null||data.estimated_value===''?null:Number(data.estimated_value);\n const catalogProductId=data.tcgcsv_product_id===undefined||data.tcgcsv_product_id===null||data.tcgcsv_product_id===''?null:Number(data.tcgcsv_product_id);
- if(!name||name.length>160||setName.length>120||number.length>40||condition.length>60||notes.length>500)return json({ok:false,error:'invalid_item'},400);\n if(catalogProductId!==null&&(!Number.isInteger(catalogProductId)||catalogProductId<1))return json({ok:false,error:'invalid_catalog_product'},400);
+ const value=data.estimated_value===undefined||data.estimated_value===null||data.estimated_value===''?null:Number(data.estimated_value);
+ const catalogProductId=data.tcgcsv_product_id===undefined||data.tcgcsv_product_id===null||data.tcgcsv_product_id===''?null:Number(data.tcgcsv_product_id);
+ if(!name||name.length>160||setName.length>120||number.length>40||condition.length>60||notes.length>500)return json({ok:false,error:'invalid_item'},400);
+ if(catalogProductId!==null&&(!Number.isInteger(catalogProductId)||catalogProductId<1))return json({ok:false,error:'invalid_catalog_product'},400);
  if(!Number.isInteger(quantity)||quantity<1||quantity>9999)return json({ok:false,error:'invalid_quantity'},400);
  if(image.length>500||(image&&!/^https:\/\//i.test(image)))return json({ok:false,error:'invalid_image_url'},400);
  if(value!==null&&(!Number.isFinite(value)||value<0||value>100000000))return json({ok:false,error:'invalid_estimated_value'},400);
