@@ -227,6 +227,7 @@ async function handleLineReport(data, env) {
       report.storeTown,
       report.storeAddress,
       report.lineCount,
+      report.lineCount,
       report.stockedBy
     ).run();
   } catch (error) {
