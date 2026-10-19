@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06174A">
+<title>Notifications | PokePrizePool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+body{margin:0;min-height:100vh;background:#eef3ff;color:#07194d;font-family:Nunito,system-ui,sans-serif}
+.notify-main{width:min(1000px,calc(100% - 28px));margin:28px auto 70px}
+.notify-hero,.notify-panel{background:#fff;border:2px solid #d5e0f2;border-radius:16px;padding:clamp(17px,3vw,27px);margin-bottom:16px;box-shadow:0 5px 18px #07194d0a}
+.notify-hero{border:3px solid #0b2a6b;box-shadow:6px 6px 0 #07194d}
+.notify-hero h1{font:400 clamp(2rem,5vw,3rem)/1 Bangers,cursive;color:#0b2a6b;margin:0 0 9px}
+.notify-hero p,.muted{color:#53658a;line-height:1.55}
+.notify-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.notify-btn{border:2px solid #0b2a6b;border-radius:9px;padding:10px 14px;background:#eaf4ff;color:#0b2a6b;font:900  .95rem Nunito,system-ui,sans-serif;cursor:pointer;min-height:42px}
+.notify-btn.primary{background:#ffd21f}.notify-btn:disabled{opacity:.55;cursor:wait}
+.notify-status{min-height:24px;line-height:1.5;color:#31517f;white-space:pre-wrap}
+.notify-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.notify-field{border:1px solid #d5e0f2;border-radius:10px;padding:13px;background:#f7faff}
+.notify-field h3{font-size:.92rem;margin:0 0 10px}
+.notify-checks{display:flex;gap:9px 14px;flex-wrap:wrap}
+.notify-checks label{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:.9rem}
+.notify-list{display:grid;gap:10px;margin-top:14px}
+.notify-card{padding:15px;border:1px solid #d5e0f2;border-radius:11px;background:#fff}
+.notify-card.unread{border-left:5px solid #ef233c;background:#fffdfd}
+.notify-card h3{margin:0 0 5px;font-size:1.02rem;overflow-wrap:anywhere}
+.notify-card p{margin:5px 0;color:#405782;line-height:1.5;overflow-wrap:anywhere}
+.notify-card small{color:#6b7b9b}.notify-card a{color:#174b9b;font-weight:900}
+.notify-empty{padding:24px;text-align:center;border:2px dashed #b9c9e6;border-radius:12px;color:#53658a;line-height:1.6}
+@media(max-width:620px){.notify-settings{grid-template-columns:1fr}.notify-main{margin-top:18px}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="notify-main">
+<header class="notify-hero"><h1>Collector Alerts</h1><p>Get PokePrizePool stock and store-line updates in your site inbox, with optional browser push notifications when you're away from the site.</p></header>
+<section class="notify-panel">
+<div class="notify-row"><div><h2>Browser push notifications</h2><p class="muted">Allow this browser to show alerts from PokePrizePool. You can turn this off any time.</p></div><button class="notify-btn primary" id="push-toggle" type="button">Enable browser alerts</button></div>
+<p id="notify-status" class="notify-status" role="status" aria-live="polite">Loading your notification settings…</p>
+</section>
+<section class="notify-panel">
+<div class="notify-row"><div><h2>Alert preferences</h2><p class="muted">Choose the reports you want to see. Leaving a filter empty means all states or retailers.</p></div><button class="notify-btn" id="save-prefs" type="button">Save preferences</button></div>
+<div class="notify-settings">
+<div class="notify-field"><h3>Delivery and report types</h3><div class="notify-checks">
+<label><input type="checkbox" id="in-app" checked> In-site inbox</label>
+<label><input type="checkbox" id="stock-alerts" checked> Stock reports</label>
+<label><input type="checkbox" id="line-alerts" checked> Store line reports</label>
+</div></div>
+<div class="notify-field"><h3>States</h3><div class="notify-checks" id="state-options">
+<label><input type="checkbox" value="RI"> Rhode Island</label><label><input type="checkbox" value="MA"> Massachusetts</label><label><input type="checkbox" value="CT"> Connecticut</label><label><input type="checkbox" value="NH"> New Hampshire</label><label><input type="checkbox" value="ME"> Maine</label><label><input type="checkbox" value="VT"> Vermont</label><label><input type="checkbox" value="NY"> New York</label><label><input type="checkbox" value="NJ"> New Jersey</label>
+</div></div>
+<div class="notify-field"><h3>Retailers</h3><div class="notify-checks" id="retailer-options">
+<label><input type="checkbox" value="Walmart"> Walmart</label><label><input type="checkbox" value="Target"> Target</label><label><input type="checkbox" value="Best Buy"> Best Buy</label><label><input type="checkbox" value="GameStop"> GameStop</label><label><input type="checkbox" value="Costco"> Costco</label><label><input type="checkbox" value="Pokemon Center"> Pokémon Center</label><label><input type="checkbox" value="Other"> Other</label>
+</div></div>
+</div>
+</section>
+<section class="notify-panel">
+<div class="notify-row"><div><h2>Your notifications</h2><p class="muted" id="unread-count">Loading inbox…</p></div><button class="notify-btn" id="read-all" type="button">Mark all as read</button></div>
+<div class="notify-list" id="notify-list"><div class="notify-empty">Loading notifications…</div></div>
+</section>
+</main>
+<script src="/js/ui/site-nav.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+let state={notifications:[],preferences:{},vapid_public_key:''};
+const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(method='GET',body){const r=await fetch('/api/notifications',{method,credentials:'include',cache:'no-store',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const d=await r.json().catch(()=>({ok:false,error:'bad_response'}));if(r.status===401){location.href='/account.html';throw new Error('Please sign in to your collector account.');}if(!r.ok||!d.ok)throw new Error(d.error||'Notification request failed.');return d;}
+function selected(container){return Array.from(document.querySelectorAll('#'+container+' input:checked')).map(x=>x.value);}
+function setSelected(container,values){const wanted=new Set(values||[]);document.querySelectorAll('#'+container+' input').forEach(x=>x.checked=wanted.has(x.value));}
+function render(){const p=state.preferences||{};$('in-app').checked=p.in_app_enabled!==false;$('stock-alerts').checked=p.stock_alerts_enabled!==false;$('line-alerts').checked=p.line_alerts_enabled!==false;setSelected('state-options',p.states);setSelected('retailer-options',p.retailers);
+const subscribed=!!p.browser_push_enabled&&('Notification'in window)&&Notification.permission==='granted';
+$('push-toggle').textContent=subscribed?'Disable browser alerts':'Enable browser alerts';
+$('unread-count').textContent=Number(state.unread||0)+' unread notification'+(Number(state.unread||0)===1?'':'s');
+const items=state.notifications||[];if(!items.length){$('notify-list').innerHTML='<div class="notify-empty">Your inbox is clear. New stock and line reports will appear here when they match your preferences.</div>';return;}
+$('notify-list').innerHTML=items.map(n=>{let extra='';try{const d=JSON.parse(n.data_json||'{}');extra=[d.state,d.retailer,d.location].filter(Boolean).join(' · ');}catch(_){}return '<article class="notify-card '+(!n.read_at?'unread':'')+'"><div class="notify-row"><h3>'+safe(n.title)+'</h3>'+(!n.read_at?'<button class="notify-btn" data-read="'+Number(n.id)+'" type="button">Mark read</button>':'')+'</div><p>'+safe(n.body)+'</p>'+(extra?'<p><small>'+safe(extra)+'</small></p>':'')+'<p><small>'+safe(n.created_at||'')+'</small> · <a href="'+safe(n.url||'/market-intelligence.html')+'">Open update</a></p></article>';}).join('');}
+async function reload(){try{state=await api();render();$('notify-status').textContent='Notification settings loaded.';}catch(e){$('notify-status').textContent=e.message;$('notify-list').innerHTML='';}}
+function b64urlToBytes(s){const pad='='.repeat((4-s.length%4)%4);return Uint8Array.from(atob((s+pad).replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));}
+async function togglePush(){const b=$('push-toggle');b.disabled=true;try{if(state.preferences.browser_push_enabled&&'serviceWorker'in navigator&&'PushManager'in window){const reg=await navigator.serviceWorker.getRegistration('/');const sub=reg&&await reg.pushManager.getSubscription();await api('POST',{action:'unsubscribe',endpoint:sub?sub.endpoint:undefined});if(sub)await sub.unsubscribe();$('notify-status').textContent='Browser alerts disabled for this account.';}else{if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))throw new Error('This browser does not support web push notifications. Try the latest Chrome, Edge, or Firefox.');if(!state.vapid_public_key)throw new Error('Browser push is not configured yet. An administrator needs to add the VAPID keys to the Preview environment.');const permission=await Notification.requestPermission();if(permission!=='granted')throw new Error('Browser permission was not granted. Change site notification permissions in your browser to enable alerts.');const reg=await navigator.serviceWorker.register('/service-worker.js');await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64urlToBytes(state.vapid_public_key)});await api('POST',{action:'subscribe',subscription:sub.toJSON()});$('notify-status').textContent='Browser alerts enabled on this device.';}await reload();}catch(e){$('notify-status').textContent=e.message;}finally{b.disabled=false;}}
+$('push-toggle').addEventListener('click',togglePush);
+$('save-prefs').addEventListener('click',async()=>{const b=$('save-prefs');b.disabled=true;try{state=await api('POST',{action:'preferences',in_app_enabled:$('in-app').checked,stock_alerts_enabled:$('stock-alerts').checked,line_alerts_enabled:$('line-alerts').checked,states:selected('state-options'),retailers:selected('retailer-options')});render();$('notify-status').textContent='Preferences saved.';}catch(e){$('notify-status').textContent=e.message;}finally{b.disabled=false;}});
+$('read-all').addEventListener('click',async()=>{try{state=await api('PATCH',{action:'read_all'});render();}catch(e){$('notify-status').textContent=e.message;}});
+$('notify-list').addEventListener('click',async e=>{const b=e.target.closest('[data-read]');if(!b)return;try{state=await api('PATCH',{action:'read',id:Number(b.dataset.read)});render();}catch(err){$('notify-status').textContent=err.message;}});
+reload();
+})();
+</script>
+</body>
+</html>
