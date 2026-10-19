@@ -429,7 +429,7 @@ async function searchCollectors(query){
   try{const response=await fetch('/api/account/logout',{method:'POST',credentials:'include'});if(!response.ok)throw new Error('Please try logging out again.');location.href='/';}
   catch(error){setStatus('view-status',error.message||'Could not log out.');button.disabled=false;button.textContent='Log out';}
  });
- $('product-name').addEventListener('input',()=>{if(selectedCatalogProductName&&$('product-name').value.trim()!==selectedCatalogProductName){selectedCatalogProductId=null;selectedCatalogProductName='';}});
+ ['product-name','set-name','card-number'].forEach(id=>$(id).addEventListener('input',()=>{if(selectedCatalogProductId!==null){selectedCatalogProductId=null;selectedCatalogProductName='';}}));
  $('item-form').addEventListener('submit',async e=>{
   e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Adding item…');
   const value=$('estimated-value').value;
