@@ -254,17 +254,21 @@
   function text(field, ctx) {
     var id = 'f-' + field.id;
     var isPrice = field.type === 'price';
+    var isNumber = field.type === 'number';
 
     var input = h('input', {
       class: 'input' + (isPrice ? ' input--price' : ''),
-      type: 'text',
+      type: isNumber ? 'number' : 'text',
+      min: isNumber ? field.min : null,
+      max: isNumber ? field.max : null,
+      step: isNumber ? '1' : null,
       id: id,
       name: field.id,
       value: ctx.get(field.id) || '',
       placeholder: field.placeholder || '',
       maxlength: field.maxLength || ctx.limits.textMax,
       autocomplete: field.autocomplete || 'off',
-      inputmode: isPrice ? 'decimal' : null,
+      inputmode: isPrice ? 'decimal' : isNumber ? 'numeric' : null,
       enterkeyhint: 'next',
       'aria-describedby': field.hint ? 'hint-' + field.id : null,
       oninput: function () {
@@ -633,6 +637,7 @@
           return select(field, ctx);
 
         case 'text':
+        case 'number':
         case 'price':
           return text(field, ctx);
 
