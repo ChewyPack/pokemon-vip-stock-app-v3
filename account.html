@@ -100,10 +100,10 @@
 <div class="account-types">
 <label class="type-card"><input type="radio" name="account_type" value="free" checked><span class="type-icon"></span><span class="type-title">Collector</span><span class="type-copy">Create a free account and explore the community.</span><span class="type-price">Free</span></label>
 <label class="type-card"><input type="radio" name="account_type" value="collector"><span class="type-icon">Card</span><span class="type-title">Collector+</span><span class="type-copy">Paid collector membership. Benefits are unlocked after verified checkout.</span><span class="type-price">$5/month · $50/year</span></label>
-<label class="type-card"><input type="radio" name="account_type" value="vendor"><span class="type-icon"></span><span class="type-title">Vendor</span><span class="type-copy">Build a vendor profile and increase visibility. Verification may be required.</span><span class="type-price">$15/month · $150/year</span></label>
-<label class="type-card"><input type="radio" name="account_type" value="organizer"><span class="type-icon"></span><span class="type-title">Event Organizer</span><span class="type-copy">For people hosting shows, trade nights, or community events.</span><span class="type-price">$25/month · $320/year</span></label>
+<label class="type-card"><input type="radio" name="account_type" value="vendor"><span class="type-icon"></span><span class="type-title">Vendor+</span><span class="type-copy">Vendor tools, shop profile, event listings, show appearances, and booth locations in one membership.</span><span class="type-price">$15/month · $150/year</span></label>
+
 </div>
-<p class="account-note">Selecting Vendor or Event Organizer requests that account type; it does not automatically verify your business or grant publishing/admin privileges. Collector+ is $5/month or $50/year; Vendor is $15/month or $150/year; Event Organizer is $25/month or $320/year. Paid benefits unlock only after Stripe verifies payment. Event listings are planned at $5 each. These prices apply to staging only.</p>
+<p class="account-note">Vendor+ includes vendor tools and event-organizer features. Account type does not automatically grant admin privileges or guarantee verification. Collector+ is $5/month or $50/year; Vendor+ is $15/month or $150/year. Paid benefits unlock only after Stripe verifies payment. These prices apply to staging only.</p>
 </div>
 <label class="field-label" id="username-label" hidden>Collector username<input id="username" name="username" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" placeholder="e.g. PokeChris"><small>3–24 letters, numbers, or underscores. This becomes your public profile link.</small></label>
 <div id="signup-location-section" hidden style="display:grid;gap:10px;padding:14px;border:1px solid #c4d3ee;border-radius:10px;background:#f7faff"><strong> Find collectors nearby (optional)</strong><p class="account-note" style="margin:0">Add a ZIP code and opt in to approximate-area matching. Your ZIP code stays private; other collectors see approximate mileage only. You can change this anytime in Settings.</p><label class="field-label">US ZIP code (optional)<input id="signup-location-zip" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" placeholder="e.g. 02903"></label><label class="field-label" style="display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px"><input id="signup-location-enabled" type="checkbox" style="width:18px;min-height:18px"> Include my approximate area in nearby matches</label><label class="field-label">Search radius<select id="signup-location-radius"><option value="10">10 miles</option><option value="25" selected>25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></label></div>
@@ -172,8 +172,7 @@
           <label for="membership-tier">Membership
             <select id="membership-tier">
               <option value="collector_plus">Collector+ — $5/month or $50/year</option>
-              <option value="vendor">Vendor — $15/month or $150/year</option>
-              <option value="organizer">Event Organizer — $25/month or $320/year</option>
+              <option value="vendor">Vendor+ — $15/month or $150/year</option>
             </select>
           </label>
           <label for="membership-interval">Billing
@@ -327,7 +326,7 @@
     loginTab.hidden=true;registerTab.hidden=true;
      loadCollectorSettings();
      loadNearbyLocation();
-    const a=d.account||{},m=d.membership||{},labels={free:'Collector (Free)',collector:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
+    const a=d.account||{},m=d.membership||{},labels={free:'Collector (Free)',collector:'Collector+',vendor:'Vendor+',organizer:'Event Organizer (legacy plan)'};
     const adminBanner=document.getElementById('admin-access-banner');
     if(adminBanner) adminBanner.hidden=!a.is_admin;
     const descriptions={
@@ -343,7 +342,7 @@
     document.getElementById('settings-account-phone').value=a.phone_number||'';
     const created=a.created_at?new Date(a.created_at):null;
     document.getElementById('profile-created').textContent=created&&!Number.isNaN(created.getTime())?created.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'PokePrizePool member';
-    const membershipLabels={free:'Collector (Free)',collector_plus:'Collector+',vendor:'Vendor',organizer:'Event Organizer'};
+    const membershipLabels={free:'Collector (Free)',collector_plus:'Collector+',vendor:'Vendor+',organizer:'Event Organizer (legacy plan)'};
     const displayedTier=a.is_admin?'Administrator':(m.status==='active'?(membershipLabels[m.entitlement_tier||m.tier]||m.entitlement_tier||m.tier):(labels[a.account_type]||'Free'));
     document.getElementById('account-type-badge').textContent=displayedTier;
     document.getElementById('account-type-description').textContent=a.is_admin
@@ -353,7 +352,7 @@
         : (a.account_type==='free'
           ? 'Your free website account is ready. Paid membership benefits activate after verified Stripe checkout.'
           : (descriptions[a.account_type]||descriptions.free)));
-    const prices={collector_plus:{monthly:'$5/month',yearly:'$50/year'},vendor:{monthly:'$15/month',yearly:'$150/year'},organizer:{monthly:'$25/month',yearly:'$320/year'}};
+    const prices={collector_plus:{monthly:'$5/month',yearly:'$50/year'},vendor:{monthly:'$15/month',yearly:'$150/year'},organizer:{monthly:'$25/month (legacy)',yearly:'$320/year (legacy)'}};
     const membershipStatus=document.getElementById('membership-checkout-status');
     const membershipSummary=document.getElementById('membership-summary');
     const tierSelect=document.getElementById('membership-tier');
@@ -438,7 +437,7 @@
      const button=document.getElementById('start-membership-checkout'),status=document.getElementById('membership-checkout-status');
      button.disabled=true;status.hidden=true;
      if(m.status==='active'&&!m.cancel_at_period_end){
-      const tierRank={collector_plus:1,vendor:2,organizer:3};
+      const tierRank={collector_plus:1,vendor:2};
       const selectedTier=tierSelect.value;
       const selectedInterval=intervalSelect.value;
       const isUpgrade=(tierRank[selectedTier]||0)>(tierRank[m.tier||'collector_plus']||0);
@@ -478,7 +477,7 @@
        const response=await fetch('/api/account/change-membership',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({tier:tierSelect.value,interval:intervalSelect.value})});
        const result=await response.json();
        if(!response.ok||!result.ok){
-        const errors={login_required:'Please log in again before changing your membership.',membership_not_active:'There is no active paid membership to change.',cancellation_scheduled:'Your membership is scheduled to cancel. Resume renewal first, then schedule a plan change.',change_already_scheduled:'A plan change is already scheduled for this subscription.',same_plan_selected:'Choose a different membership tier or billing period.',choose_vendor_account_type:'To select Vendor, your website account type must be Vendor.',choose_organizer_account_type:'To select Event Organizer, your website account type must be Event Organizer.',choose_collector_account_type:'Use a Collector account for Collector+.',subscription_verification_failed:'We could not verify this staging subscription safely. No plan change was made.',unsupported_subscription_items:'This subscription has an unsupported billing setup and needs manual review.',subscription_requires_manual_review:'This subscription has billing settings that need manual review.',subscription_has_discounts_manual_review:'This subscription has a discount attached and needs manual review before changing plans.',subscription_has_pending_setup_manual_review:'This subscription has a pending payment setup and needs manual review before changing plans.',billing_period_unavailable:'We could not confirm the next renewal date. No plan change was made.',stripe_test_key_not_configured:'Staging Test Mode Stripe key is not configured.'};
+        const errors={login_required:'Please log in again before changing your membership.',membership_not_active:'There is no active paid membership to change.',cancellation_scheduled:'Your membership is scheduled to cancel. Resume renewal first, then schedule a plan change.',change_already_scheduled:'A plan change is already scheduled for this subscription.',same_plan_selected:'Choose a different membership tier or billing period.',choose_vendor_account_type:'To select Vendor+, your website account type must be Vendor+.',choose_collector_account_type:'Use a Collector account for Collector+.',subscription_verification_failed:'We could not verify this staging subscription safely. No plan change was made.',unsupported_subscription_items:'This subscription has an unsupported billing setup and needs manual review.',subscription_requires_manual_review:'This subscription has billing settings that need manual review.',subscription_has_discounts_manual_review:'This subscription has a discount attached and needs manual review before changing plans.',subscription_has_pending_setup_manual_review:'This subscription has a pending payment setup and needs manual review before changing plans.',billing_period_unavailable:'We could not confirm the next renewal date. No plan change was made.',stripe_test_key_not_configured:'Staging Test Mode Stripe key is not configured.'};
         if(result.error==='subscription_requires_manual_review'&&Array.isArray(result.reasons)&&result.reasons.length){
           const reasonLabels={application_fee:'application fee',automatic_tax:'automatic tax',billing_thresholds:'billing thresholds',collection_method:'non-standard payment collection',phase_default_payment_method:'phase-specific payment method',phase_default_source:'phase-specific payment source',default_tax_rates:'default tax rates',phase_description:'custom invoice description',additional_invoice_items:'additional invoice items',on_behalf_of:'on-behalf-of account setting',transfer_data:'transfer settings',trial_end:'trial settings',phase_discounts:'phase-specific discounts'};
           const details=[...new Set(result.reasons.map(reason=>reasonLabels[reason]||reason.replace(/_/g,' ')))].join(', ');
@@ -514,7 +513,7 @@
       const response=await fetch('/api/account/checkout',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({tier:document.getElementById('membership-tier').value,interval:document.getElementById('membership-interval').value})});
       const result=await response.json();
       if(!response.ok||!result.ok){
-       const messages={stripe_test_key_not_configured:'Staging Test Mode Stripe key has not been configured yet.',login_required:'Please log in again before checkout.',membership_already_active:'Your account already has an active paid membership.',choose_vendor_account_type:'Choose Vendor as your account type first.',choose_organizer_account_type:'Choose Event Organizer as your account type first.',choose_collector_account_type:'Use a Collector account for Collector+.'};
+       const messages={stripe_test_key_not_configured:'Staging Test Mode Stripe key has not been configured yet.',login_required:'Please log in again before checkout.',membership_already_active:'Your account already has an active paid membership.',choose_vendor_account_type:'Choose Vendor+ as your account type first.',choose_collector_account_type:'Use a Collector account for Collector+.'};
        throw new Error(messages[result.error]||'Could not start checkout. Please try again.');
       }
       window.location.href=result.url;
