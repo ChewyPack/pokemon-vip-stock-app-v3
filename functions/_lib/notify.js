@@ -34,7 +34,7 @@ export async function notifyReport(env, report) {
   const body = line
     ? String(report.lineCount || '?') + ' people in line' + (report.location ? ' at ' + report.location : '')
     : String(report.productName || report.product || 'Product update') + (report.location ? ' at ' + report.location : '');
-  const url = '/market-intelligence.html';
+  const url = '/notifications.html';
   let inAppCreated = 0, pushAttempted = 0, pushDelivered = 0, pushFailed = 0;
 
   for (let offset = 0; offset < accounts.length; offset += 50) {
