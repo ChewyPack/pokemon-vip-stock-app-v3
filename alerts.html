@@ -22,14 +22,14 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
 .alerts-btn:disabled{opacity:.65;cursor:wait}
 .alerts-summary{color:#c1d0e9;font-size:.9rem;margin-left:auto}
 .alerts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.alert-card{border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:18px;background:rgba(5,15,40,.78);backdrop-filter:blur(4px);min-width:0}
+.alert-card{border:1px solid #d8deea;border-radius:14px;padding:18px;background:#fff;color:#182235;box-shadow:0 5px 20px rgba(0,0,0,.16);min-width:0}
 .alert-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.alert-retailer{font-weight:900;font-size:1.1rem}
-.alert-meta{color:#c5d3eb;line-height:1.55}
-.alert-time{color:#b9c9e8;font-size:.82rem;text-align:right}
-.alert-product{font-size:1.25rem;font-weight:900;margin:13px 0 8px;overflow-wrap:anywhere}
-.alert-price{color:#a5f3e6;font-size:1.25rem;font-weight:900;margin-top:12px}
-.alert-notes{border-top:1px solid rgba(255,255,255,.16);margin-top:13px;padding-top:12px;color:#d1ddef;white-space:pre-wrap;overflow-wrap:anywhere}
+.alert-retailer{font-weight:900;font-size:1.1rem;color:#111827}
+.alert-meta{color:#374151;line-height:1.55}
+.alert-time{color:#4b5563;font-size:.82rem;text-align:right}
+.alert-product{font-size:1.25rem;font-weight:900;margin:13px 0 8px;overflow-wrap:anywhere;color:#111827}
+.alert-price{color:#087f6b;font-size:1.25rem;font-weight:900;margin-top:12px}
+.alert-notes{border-top:1px solid #e5e7eb;margin-top:13px;padding-top:12px;color:#1f2937;white-space:pre-wrap;overflow-wrap:anywhere}
 .alert-empty,.alert-notice{border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:20px;background:rgba(5,15,40,.68);color:#d3def2;line-height:1.65}
 .alert-notice{margin-top:16px;font-size:.9rem}
 .alert-search-hint{color:#b9c9e8;font-size:.9rem;margin:-5px 0 18px}
@@ -95,7 +95,7 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
  const feed=document.getElementById('feed'), retailer=document.getElementById('retailer'), state=document.getElementById('state'), search=document.getElementById('search'), summary=document.getElementById('summary'), refresh=document.getElementById('refresh'), hint=document.getElementById('search-hint');
  const params=new URLSearchParams(location.search); const requested=params.get('retailer'); if(requested){const option=Array.from(retailer.options).find(o=>o.value===requested.toLowerCase());if(option)retailer.value=option.value;}
  function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
- function dateLabel(value){if(!value)return 'Time not provided';const d=new Date(value);return Number.isNaN(d.getTime())?value:d.toLocaleString();}
+ function dateLabel(value){if(!value)return 'Time not provided';let raw=String(value).trim();if(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(raw)){raw=raw.replace(' ','T')+'Z';}const d=new Date(raw);return Number.isNaN(d.getTime())?value:d.toLocaleString();}
  function render(items){if(!items.length){feed.innerHTML='<div class="alert-empty">No matching reports found. Try a different search, retailer, or state.</div>';return;}
  feed.innerHTML=items.map(r=>'<article class="alert-card"><div class="alert-card-head"><div><div class="alert-retailer">'+esc(r.retailer)+'</div><div class="alert-meta">'+esc(r.location)+(r.state?' · '+esc(r.state):'')+'</div></div><div class="alert-time">Reported<br>'+esc(dateLabel(r.createdAt))+'</div></div><div class="alert-product">'+esc(r.product)+'</div><div class="alert-meta">'+(r.quantity?'Quantity reported: '+esc(r.quantity)+'<br>':'')+(r.productLocated?'Location in store: '+esc(r.productLocated)+'<br>':'')+'</div>'+(r.price!=null?'<div class="alert-price">'+esc(Number(r.price).toLocaleString('en-US',{style:'currency',currency:'USD'}))+' <span style="font-size:.78rem;font-weight:600;color:#c5d3eb">'+esc(r.priceType||'')+'</span></div>':'')+(r.notes?'<div class="alert-notes">'+esc(r.notes)+'</div>':'')+'</article>').join('');}
  async function load(){refresh.disabled=true;summary.textContent='Refreshing…';const q=new URLSearchParams();if(retailer.value)q.set('retailer',retailer.value);if(state.value)q.set('state',state.value);if(search.value.trim())q.set('search',search.value.trim());
