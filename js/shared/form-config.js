@@ -602,7 +602,7 @@
         type: 'number',
         label: 'How many people are in line?',
         required: true,
-        min: 0,
+        min: 1,
         max: 500,
         placeholder: 'Enter the number of people'
       },
