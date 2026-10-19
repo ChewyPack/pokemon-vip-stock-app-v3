@@ -7,7 +7,7 @@ async function currentAccount(request,env){const token=cookie(request,COOKIE);if
 export async function onRequestGet({request,env}){
  if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
  const account=await currentAccount(request,env);if(!account)return json({ok:false,error:'login_required'},401);
- try{const result=await env.DB.prepare('SELECT id,list_type,product_type,product_name,set_name,card_number,condition,quantity,notes,image_url,estimated_value_cents,is_tradeable,created_at FROM collector_items WHERE account_id=? ORDER BY created_at DESC LIMIT 500').bind(account.id).all();return json({ok:true,items:result.results||[]});}
+ try{const result=await env.DB.prepare('SELECT i.id,i.list_type,i.product_type,i.product_name,i.set_name,i.card_number,i.condition,i.quantity,i.notes,i.image_url,i.estimated_value_cents,i.is_tradeable,i.created_at,c.tcgcsv_product_id FROM collector_items i LEFT JOIN collector_item_catalog c ON c.item_id=i.id WHERE i.account_id=? ORDER BY i.created_at DESC LIMIT 500').bind(account.id).all();return json({ok:true,items:result.results||[]});}
  catch(error){console.error('Collector items read failed:',error);return json({ok:false,error:'items_read_failed'},500);}
 }
 export async function onRequestPost({request,env}){
@@ -23,8 +23,8 @@ export async function onRequestPost({request,env}){
  const notes=typeof data.notes==='string'?data.notes.trim():'';
  const image=typeof data.image_url==='string'?data.image_url.trim():'';
  const quantity=Number(data.quantity||1);
- const value=data.estimated_value===undefined||data.estimated_value===null||data.estimated_value===''?null:Number(data.estimated_value);
- if(!name||name.length>160||setName.length>120||number.length>40||condition.length>60||notes.length>500)return json({ok:false,error:'invalid_item'},400);
+ const value=data.estimated_value===undefined||data.estimated_value===null||data.estimated_value===''?null:Number(data.estimated_value);\n const catalogProductId=data.tcgcsv_product_id===undefined||data.tcgcsv_product_id===null||data.tcgcsv_product_id===''?null:Number(data.tcgcsv_product_id);
+ if(!name||name.length>160||setName.length>120||number.length>40||condition.length>60||notes.length>500)return json({ok:false,error:'invalid_item'},400);\n if(catalogProductId!==null&&(!Number.isInteger(catalogProductId)||catalogProductId<1))return json({ok:false,error:'invalid_catalog_product'},400);
  if(!Number.isInteger(quantity)||quantity<1||quantity>9999)return json({ok:false,error:'invalid_quantity'},400);
  if(image.length>500||(image&&!/^https:\/\//i.test(image)))return json({ok:false,error:'invalid_image_url'},400);
  if(value!==null&&(!Number.isFinite(value)||value<0||value>100000000))return json({ok:false,error:'invalid_estimated_value'},400);
@@ -38,7 +38,7 @@ export async function onRequestDelete({request,env}){
  const account=await currentAccount(request,env);if(!account)return json({ok:false,error:'login_required'},401);
  const id=Number(new URL(request.url).searchParams.get('id'));
  if(!Number.isInteger(id)||id<1)return json({ok:false,error:'invalid_item_id'},400);
- try{const result=await env.DB.prepare('DELETE FROM collector_items WHERE id=? AND account_id=?').bind(id,account.id).run();if(!result.meta?.changes)return json({ok:false,error:'item_not_found'},404);return json({ok:true});}
+ try{await env.DB.prepare('DELETE FROM collector_item_catalog WHERE item_id=?').bind(id).run();const result=await env.DB.prepare('DELETE FROM collector_items WHERE id=? AND account_id=?').bind(id,account.id).run();if(!result.meta?.changes)return json({ok:false,error:'item_not_found'},404);return json({ok:true});}
  catch(error){console.error('Collector item delete failed:',error);return json({ok:false,error:'item_delete_failed'},500);}
 }
 export async function onRequest(){return json({ok:false,error:'method_not_allowed'},405);}
