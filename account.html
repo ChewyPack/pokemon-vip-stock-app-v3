@@ -79,6 +79,15 @@
 .settings-accordion-panel>.dashboard-card{min-width:0}
 .settings-accordion-panel>.dashboard-card--wide{grid-column:1/-1}
 .settings-placeholder{border:2px dashed #cbd8ed;border-radius:10px;padding:16px;background:#f7faff;color:#334a7c;line-height:1.55}
+.alert-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.alert-settings-field{min-width:0;border:1px solid #d5e0f2;border-radius:10px;padding:13px;background:#f7faff}
+.alert-settings-field--wide{grid-column:1/-1}
+.alert-settings-field h3{font-size:.95rem;margin:0 0 10px}
+.alert-settings-checks{display:flex;gap:9px 14px;flex-wrap:wrap}
+.alert-settings-checks label{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:.88rem}
+.alert-settings-checks input{accent-color:#0b2a6b}
+@media(max-width:600px){.alert-settings-grid{grid-template-columns:1fr}.alert-settings-field--wide{grid-column:auto}}
+
 .settings-placeholder strong{display:block;color:#0b2a6b;margin-bottom:6px}
 @media(max-width:600px){.settings-accordion-panel{grid-template-columns:1fr}.settings-accordion-panel>.dashboard-card--wide{grid-column:auto}}
 
@@ -604,6 +613,34 @@
   const security=makeSection('Password & Security','Account protection and sign-in security','settings-password-security');
   const membership=makeSection('Membership','Your current plan, billing, and membership actions','settings-membership');
   const collectorSettings=makeSection('Collector Settings','Nearby collector matching preferences','settings-collector');
+  const alertSettings=makeSection('Alert Preferences','Stock reports, store-line reports, and browser push notifications','settings-alert-preferences');
+  alertSettings.panel.innerHTML=`
+   <article class="dashboard-card dashboard-card--wide">
+    <p class="dashboard-eyebrow">Report alerts</p><h2>Alert preferences</h2>
+    <p>Choose which stock and store-line reports you want to receive. Leaving States or Retailers empty means all states or retailers.</p>
+    <div class="alert-settings-grid">
+     <section class="alert-settings-field"><h3>Delivery and report types</h3><div class="alert-settings-checks">
+      <label><input type="checkbox" id="settings-alert-in-app" checked> In-site inbox</label>
+      <label><input type="checkbox" id="settings-alert-stock" checked> Stock reports</label>
+      <label><input type="checkbox" id="settings-alert-line" checked> Store line reports</label>
+     </div></section>
+     <section class="alert-settings-field"><h3>States</h3><div class="alert-settings-checks" id="settings-alert-states">
+      <label><input type="checkbox" value="RI"> Rhode Island</label><label><input type="checkbox" value="MA"> Massachusetts</label><label><input type="checkbox" value="CT"> Connecticut</label><label><input type="checkbox" value="NH"> New Hampshire</label><label><input type="checkbox" value="ME"> Maine</label><label><input type="checkbox" value="VT"> Vermont</label><label><input type="checkbox" value="NY"> New York</label><label><input type="checkbox" value="NJ"> New Jersey</label>
+     </div></section>
+     <section class="alert-settings-field alert-settings-field--wide"><h3>Retailers</h3><div class="alert-settings-checks" id="settings-alert-retailers">
+      <label><input type="checkbox" value="Walmart"> Walmart</label><label><input type="checkbox" value="Target"> Target</label><label><input type="checkbox" value="GameStop"> GameStop</label><label><input type="checkbox" value="Best Buy"> Best Buy</label><label><input type="checkbox" value="Barnes &amp; Noble"> Barnes &amp; Noble</label><label><input type="checkbox" value="Costco"> Costco</label><label><input type="checkbox" value="Sam's Club"> Sam's Club</label><label><input type="checkbox" value="BJ's Wholesale Club"> BJ's Wholesale Club</label><label><input type="checkbox" value="Meijer"> Meijer</label><label><input type="checkbox" value="Kroger"> Kroger</label><label><input type="checkbox" value="Dollar General"> Dollar General</label><label><input type="checkbox" value="Dollar Tree"> Dollar Tree</label><label><input type="checkbox" value="Family Dollar"> Family Dollar</label><label><input type="checkbox" value="Five Below"> Five Below</label><label><input type="checkbox" value="CVS"> CVS</label><label><input type="checkbox" value="Walgreens"> Walgreens</label><label><input type="checkbox" value="Dick's Sporting Goods"> Dick's Sporting Goods</label><label><input type="checkbox" value="Books-A-Million"> Books-A-Million</label><label><input type="checkbox" value="Local Card Shop"> Local Card Shop</label><label><input type="checkbox" value="Other / independent retailer"> Other / independent retailer</label>
+     </div></section>
+    </div>
+    <div class="dashboard-actions"><button id="settings-alert-save" class="btn btn--primary" type="button">Save alert preferences</button></div>
+    <p id="settings-alert-status" class="settings-profile-status" role="status" aria-live="polite">Loading alert preferences…</p>
+   </article>
+   <article class="dashboard-card dashboard-card--wide">
+    <p class="dashboard-eyebrow">Browser notifications</p><h2>Browser push notifications</h2>
+    <p>Allow this browser to show PokePrizePool alerts even when you are not viewing the site. This setting applies to this browser and device.</p>
+    <div class="dashboard-actions"><button id="settings-alert-push" class="btn" type="button">Enable browser alerts</button></div>
+    <p id="settings-push-status" class="settings-profile-status" role="status" aria-live="polite">Checking browser notification settings…</p>
+   </article>`;
+
   if(account)personal.panel.append(account);
   const securityCard=document.createElement('article');
   securityCard.className='dashboard-card dashboard-card--wide';
@@ -615,9 +652,73 @@
   if(nearby)collectorSettings.panel.append(nearby);
 
   const firstRemaining=vendor||cards.find(card=>grid.contains(card));
-  const sections=[personal.details,security.details,collectorSettings.details,membership.details];
+  const sections=[personal.details,security.details,collectorSettings.details,alertSettings.details,membership.details];
   if(firstRemaining)grid.insertBefore(sections[0],firstRemaining);else grid.append(sections[0]);
   sections.slice(1).forEach(section=>grid.insertBefore(section,firstRemaining&&grid.contains(firstRemaining)?firstRemaining:null));
+
+
+  // Alert preferences and browser push live in Settings; the notification inbox remains on its own page.
+  (function(){
+   const $=id=>document.getElementById(id);
+   let alertState={preferences:{},vapid_public_key:''};
+   const alertApi=async(method='GET',body)=>{
+    const response=await fetch('/api/notifications',{method,credentials:'include',cache:'no-store',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+    const data=await response.json().catch(()=>({ok:false,error:'Could not read the notification settings response.'}));
+    if(response.status===401)throw new Error('Your session expired. Please log in again.');
+    if(!response.ok||!data.ok)throw new Error(data.error||'Could not load notification settings.');
+    return data;
+   };
+   const checkedValues=id=>Array.from(document.querySelectorAll('#'+id+' input:checked')).map(input=>input.value);
+   const applyChecks=(id,values)=>{const selected=new Set(values||[]);document.querySelectorAll('#'+id+' input').forEach(input=>input.checked=selected.has(input.value));};
+   const b64urlToBytes=value=>{const pad='='.repeat((4-value.length%4)%4);return Uint8Array.from(atob((value+pad).replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));};
+   function renderAlertSettings(){
+    const p=alertState.preferences||{};
+    $('settings-alert-in-app').checked=p.in_app_enabled!==false;
+    $('settings-alert-stock').checked=p.stock_alerts_enabled!==false;
+    $('settings-alert-line').checked=p.line_alerts_enabled!==false;
+    applyChecks('settings-alert-states',p.states);
+    applyChecks('settings-alert-retailers',p.retailers);
+    const subscribed=!!p.browser_push_enabled&&('Notification'in window)&&Notification.permission==='granted';
+    $('settings-alert-push').textContent=subscribed?'Disable browser alerts':'Enable browser alerts';
+    $('settings-push-status').textContent=subscribed?'Browser push notifications are enabled on this device.':'Browser push notifications are not enabled on this device.';
+   }
+   async function loadAlertSettings(){
+    try{alertState=await alertApi();renderAlertSettings();$('settings-alert-status').textContent='Alert preferences loaded.';}
+    catch(error){$('settings-alert-status').textContent=error.message;$('settings-push-status').textContent=error.message;}
+   }
+   $('settings-alert-save').addEventListener('click',async()=>{
+    const button=$('settings-alert-save');button.disabled=true;$('settings-alert-status').textContent='Saving preferences…';
+    try{
+     alertState=await alertApi('POST',{action:'preferences',in_app_enabled:$('settings-alert-in-app').checked,stock_alerts_enabled:$('settings-alert-stock').checked,line_alerts_enabled:$('settings-alert-line').checked,states:checkedValues('settings-alert-states'),retailers:checkedValues('settings-alert-retailers')});
+     renderAlertSettings();$('settings-alert-status').textContent='Alert preferences saved.';
+    }catch(error){$('settings-alert-status').textContent=error.message;}finally{button.disabled=false;}
+   });
+   $('settings-alert-push').addEventListener('click',async()=>{
+    const button=$('settings-alert-push');button.disabled=true;
+    try{
+     if(alertState.preferences.browser_push_enabled&&'serviceWorker'in navigator&&'PushManager'in window){
+      const registration=await navigator.serviceWorker.getRegistration('/');
+      const subscription=registration&&await registration.pushManager.getSubscription();
+      await alertApi('POST',{action:'unsubscribe',endpoint:subscription?subscription.endpoint:undefined});
+      if(subscription)await subscription.unsubscribe();
+      $('settings-push-status').textContent='Browser alerts disabled for this account.';
+     }else{
+      if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))throw new Error('This browser does not support web push. Try the latest Chrome, Edge, or Firefox.');
+      if(!alertState.vapid_public_key)throw new Error('Browser push is not configured yet. Please contact an administrator.');
+      const permission=await Notification.requestPermission();
+      if(permission!=='granted')throw new Error('Browser permission was not granted. Change this site’s notification permission in your browser to enable alerts.');
+      const registration=await navigator.serviceWorker.register('/service-worker.js');
+      await navigator.serviceWorker.ready;
+      let subscription=await registration.pushManager.getSubscription();
+      if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64urlToBytes(alertState.vapid_public_key)});
+      await alertApi('POST',{action:'subscribe',subscription:subscription.toJSON()});
+      $('settings-push-status').textContent='Browser alerts enabled on this device.';
+     }
+     await loadAlertSettings();
+    }catch(error){$('settings-push-status').textContent=error.message;}finally{button.disabled=false;}
+   });
+   loadAlertSettings();
+  })();
 
   document.getElementById('personal-settings-form').addEventListener('submit',async event=>{
    event.preventDefault();
