@@ -599,16 +599,12 @@
       },
       {
         id: 'lineCount',
-        type: 'select',
+        type: 'number',
         label: 'How many people are in line?',
         required: true,
-        options: [
-          { value: '0-5', label: '0–5 people' },
-          { value: '6-10', label: '6–10 people' },
-          { value: '11-20', label: '11–20 people' },
-          { value: '21-50', label: '21–50 people' },
-          { value: '51+', label: '51+ people' }
-        ]
+        min: 0,
+        max: 500,
+        placeholder: 'Enter the number of people'
       },
       {
         id: 'lineSeenAt',
