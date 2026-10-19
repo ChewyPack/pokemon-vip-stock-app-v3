@@ -60,3 +60,5 @@ Save the settings and trigger a fresh deployment of `feature/collector-account-l
 - Browser push is optional; the in-site inbox does not require browser permission.
 - Uploaded report photos are currently attached to the report request for validation, while the existing report table records photo filenames; persistent image storage is a separate follow-up.
 - This setup is not production-ready until the staging checklist passes and the same schema/configuration is planned separately for Production.
+
+- After updating Preview environment variables, trigger a new Preview deployment so the running build picks up the VAPID configuration.
