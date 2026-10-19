@@ -49,7 +49,7 @@ export async function onRequestGet({ request, env }) {
     const groupId = /^\\d+$/.test(groupIdRaw) ? Number(groupIdRaw) : null;
     const limitRaw = Number(url.searchParams.get('limit') || 30);
     const limit = Number.isInteger(limitRaw) ? Math.min(50, Math.max(1, limitRaw)) : 30;
-    const likeQuery = '%' + query.replace(/[\\%_]/g, '\\$&') + '%';
+    const likeQuery = '%' + query + '%';
 
     let typeClause = '';
     const binds = [query, query, query, likeQuery];
@@ -79,13 +79,13 @@ export async function onRequestGet({ request, env }) {
             instr(lower(p.name), lower(?)) > 0
             OR instr(lower(COALESCE(p.clean_name, '')), lower(?)) > 0
             OR instr(lower(COALESCE(p.card_number, '')), lower(?)) > 0
-            OR lower(p.name) LIKE lower(?) ESCAPE '\\\\'
+            OR lower(p.name) LIKE lower(?)
           )
           ${typeClause}
           ${setClause}
         ORDER BY
           CASE WHEN lower(p.name) = lower(?) THEN 0
-               WHEN lower(p.name) LIKE lower(?) || '%' THEN 1
+               WHEN instr(lower(p.name), lower(?)) = 1 THEN 1
                ELSE 2 END,
           p.name COLLATE NOCASE
         LIMIT ?
