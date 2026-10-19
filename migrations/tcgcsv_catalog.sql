@@ -66,3 +66,15 @@ CREATE INDEX IF NOT EXISTS idx_tcgcsv_prices_product
 
 CREATE INDEX IF NOT EXISTS idx_tcgcsv_prices_market
   ON tcgcsv_prices(market_price);
+
+-- Link member-owned and wishlisted items to the exact shared catalog record.
+-- This preserves exact printing identity for collection/wishlist matching.
+CREATE TABLE IF NOT EXISTS collector_item_catalog (
+  item_id INTEGER PRIMARY KEY,
+  tcgcsv_product_id INTEGER NOT NULL,
+  FOREIGN KEY (item_id) REFERENCES collector_items(id) ON DELETE CASCADE,
+  FOREIGN KEY (tcgcsv_product_id) REFERENCES tcgcsv_products(product_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_collector_item_catalog_product
+  ON collector_item_catalog(tcgcsv_product_id);
