@@ -822,7 +822,7 @@
         var info = {
           report: result.clean,
           demo: !!out.demo,
-          alerted: !!out.alerted || result.clean.stillThere === 'Yes'
+          alerted: !!out.alerted
         };
 
         setBusy(false);
