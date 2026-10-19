@@ -1,7 +1,7 @@
 (function(){
   'use strict';
   var reportPages = ['/', '/index.html', '/news.html', '/updates.html', '/market-intelligence.html', '/events.html', '/instant-buyout.html'];
-  var currentPath = location.pathname.replace(/\\/$/, '') || '/';
+  var currentPath = location.pathname.replace(/\/$/, '') || '/';
   if (reportPages.indexOf(currentPath) === -1) return;
   if(document.getElementById('pokereport-sidebar')) return;
   var links=[
