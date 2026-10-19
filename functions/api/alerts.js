@@ -78,6 +78,9 @@ export async function onRequestGet({ request, env }) {
       retailer: row.store || 'Store',
       location: row.location || [row.store_town, row.store_address].filter(Boolean).join(' — ') || 'Location not provided',
       state: row.state || '',
+      productType: String(row.product || '').includes(' — ')
+        ? String(row.product).split(' — ')[0].trim()
+        : '',
       product: row.product_name || row.product || 'Pokémon product',
       quantity: row.quantity_text || (row.quantity != null ? String(row.quantity) : ''),
       price: row.shelf_price != null ? row.shelf_price : row.price,
