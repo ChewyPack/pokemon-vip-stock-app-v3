@@ -76,13 +76,14 @@ async function sync(db) {
   await db.prepare(
     "UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1"
   ).run();
-  await db.batch([
-    db.prepare('DELETE FROM tcgcsv_groups_staging'),
-    db.prepare('DELETE FROM tcgcsv_products_staging'),
-    db.prepare('DELETE FROM tcgcsv_prices_staging')
-  ]);
 
   try {
+    await db.batch([
+      db.prepare('DELETE FROM tcgcsv_groups_staging'),
+      db.prepare('DELETE FROM tcgcsv_products_staging'),
+      db.prepare('DELETE FROM tcgcsv_prices_staging')
+    ]);
+
     const categoriesPayload = await getJson(SOURCE + '/categories');
     if (categoriesPayload?.success === false) throw new Error('TCGCSV categories response reported failure.');
     const pokemon = (categoriesPayload?.results || []).find(item =>
