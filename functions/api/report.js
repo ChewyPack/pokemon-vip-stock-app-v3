@@ -26,16 +26,13 @@
 
 import formConfig from '../../js/shared/form-config.js';
 import validate from '../../js/shared/validate.js';
-import { buildAlert } from '../discord.js';
+import { notifyReport } from '../_lib/notify.js';
 
 const MAX_BODY_BYTES = 14 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
 const MAX_TOTAL_PHOTO_BYTES = 9 * 1024 * 1024;
 const MIN_FILL_MS = 3000;
 const MAX_PHOTOS = 5;
-
-const WEBHOOK_PREFIX =
-  /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//;
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -44,40 +41,6 @@ function json(body, status = 200) {
       'content-type': 'application/json',
       'cache-control': 'no-store'
     }
-  });
-}
-
-async function postToDiscord(webhookUrl, payload, photos) {
-  const url =
-    webhookUrl +
-    (webhookUrl.includes('?') ? '&' : '?') +
-    'wait=true';
-
-  if (!photos.length) {
-    return fetch(url, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-  }
-
-  const body = new FormData();
-
-  body.append('payload_json', JSON.stringify(payload));
-
-  photos.forEach(function (photo, index) {
-    body.append(
-      'files[' + index + ']',
-      photo.file,
-      photo.name
-    );
-  });
-
-  return fetch(url, {
-    method: 'POST',
-    body
   });
 }
 
@@ -147,10 +110,6 @@ function makeStoreDetails(report) {
 }
 
 async function handleLineReport(data, env, form) {
-  const alertUrl = env.DISCORD_WEBHOOK_URL || '';
-  if (!WEBHOOK_PREFIX.test(alertUrl)) {
-    return json({ ok: false, error: 'not_configured' }, 500);
-  }
 
   const errors = {};
   ['state', 'retailer', 'branch'].forEach(function (id) {
@@ -281,58 +240,16 @@ async function handleLineReport(data, env, form) {
     return json({ ok: false, error: 'database_error' }, 500);
   }
 
-  const roleId = env.DISCORD_ALERT_ROLE_ID || '';
-  const payload = {
-    content: roleId ? '<@&' + roleId + '> **STORE LINE REPORT**' : '**STORE LINE REPORT**',
-    allowed_mentions: roleId ? { roles: [roleId] } : { parse: [] },
-    embeds: [{
-      title: 'Queue observed at ' + report.retailer,
-      color: 15158332,
-      fields: [
-        { name: 'Location', value: report.location || 'Location unavailable', inline: false },
-        { name: 'People in line', value: report.lineCount, inline: true },
-        { name: 'Who stocked?', value: report.stockedByLabel, inline: true },
-        { name: 'Observed at', value: new Date(report.lineSeenAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }), inline: false },
-        ...(lineNotes ? [{ name: 'Additional notes', value: lineNotes.slice(0, 1024), inline: false }] : [])
-      ],
-      footer: { text: 'PokePrizePool Stock Intelligence • Line report' },
-      timestamp: new Date().toISOString()
-    }]
-  };
-
-  const logUrl = env.DISCORD_LOG_WEBHOOK_URL || '';
-  const sends = [postToDiscord(alertUrl, payload, photos)];
-  if (WEBHOOK_PREFIX.test(logUrl)) sends.push(postToDiscord(logUrl, payload, photos));
-
   try {
-    const responses = await Promise.all(sends);
-    if (responses.some(function (response) { return !response.ok; })) {
-      console.error('Discord rejected a line report alert:', responses.map(function (response) { return response.status; }));
-      return json({ ok: true, alerted: false, warning: 'discord_rejected' });
-    }
+    const delivery = await notifyReport(env, report);
+    return json({ ok: true, alerted: delivery.inAppCreated > 0 || delivery.pushDelivered > 0, delivery });
   } catch (error) {
-    console.error('Discord connection error for line report:', error);
-    return json({ ok: true, alerted: false, warning: 'discord_unreachable' });
+    console.error('Line report notification fan-out failed after report was saved:', error);
+    return json({ ok: true, alerted: false, warning: 'notification_delivery_failed' });
   }
-
-  return json({ ok: true, alerted: true });
 }
 
 export async function onRequestPost({ request, env }) {
-  /*
-   * POKE REPORT IS OPEN TO USERS WITHOUT A PAID MEMBERSHIP.
-   * Keep Discord webhook notifications enabled; they are independent of the paywall.
-   */
-
-  const alertUrl = env.DISCORD_WEBHOOK_URL || '';
-
-  if (!WEBHOOK_PREFIX.test(alertUrl)) {
-    return json({
-      ok: false,
-      error: 'not_configured'
-    }, 500);
-  }
-
   const declared = Number(
     request.headers.get('content-length') || 0
   );
@@ -559,99 +476,16 @@ export async function onRequestPost({ request, env }) {
   }
 
   /*
-   * BUILD DISCORD ALERT.
-   * The current alert builder receives compatibility fields above.
+   * Reports are stored before notification delivery. Push failures must not
+   * make a successful database write look like a failed report submission.
    */
-  let alert;
-
   try {
-    alert = buildAlert(report, {
-      roleId: env.DISCORD_ALERT_ROLE_ID || '',
-      photoNames
-    });
+    const delivery = await notifyReport(env, report);
+    return json({ ok: true, alerted: delivery.inAppCreated > 0 || delivery.pushDelivered > 0, delivery });
   } catch (error) {
-    console.error('Discord alert build error:', error);
-
-    // The report has already been saved. Do not report it as unsaved.
-    return json({
-      ok: true,
-      alerted: false,
-      warning: 'alert_build_failed'
-    });
+    console.error('Stock report notification fan-out failed after report was saved:', error);
+    return json({ ok: true, alerted: false, warning: 'notification_delivery_failed' });
   }
-
-  const sends = [];
-
-  // Main alert channel: only reports marked as still in stock.
-  if (alert.inStock) {
-    sends.push(postToDiscord(alertUrl, alert.payload, photos));
-  }
-
-  // Optional log channel: all valid reports.
-  const logUrl = env.DISCORD_LOG_WEBHOOK_URL || '';
-
-  if (WEBHOOK_PREFIX.test(logUrl)) {
-    try {
-      const log = buildAlert(report, {
-        roleId: '',
-        photoNames
-      });
-
-      sends.push(postToDiscord(logUrl, log.payload, photos));
-    } catch (error) {
-      console.error('Discord log alert build error:', error);
-    }
-  }
-
-  let responses;
-
-  try {
-    responses = await Promise.all(sends);
-  } catch (error) {
-    console.error('Discord connection error:', error);
-
-    // D1 already contains the report. Return success to prevent accidental
-    // duplicate submissions when only Discord delivery failed.
-    return json({
-      ok: true,
-      alerted: false,
-      warning: 'discord_unreachable'
-    });
-  }
-
-  if (responses.some(function (response) {
-    return response.status === 429;
-  })) {
-    console.error('Discord rate limit reached after report was saved.');
-
-    return json({
-      ok: true,
-      alerted: false,
-      warning: 'discord_rate_limited'
-    });
-  }
-
-  if (responses.some(function (response) {
-    return !response.ok;
-  })) {
-    console.error(
-      'Discord rejected an alert after report was saved:',
-      responses.map(function (response) {
-        return response.status;
-      })
-    );
-
-    return json({
-      ok: true,
-      alerted: false,
-      warning: 'discord_rejected'
-    });
-  }
-
-  return json({
-    ok: true,
-    alerted: !!alert.inStock
-  });
 }
 
 export async function onRequest() {
