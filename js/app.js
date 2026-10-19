@@ -72,9 +72,13 @@
       h(
         'div',
         { class: 'notice' },
-        info && info.alerted
-          ? 'Your report was submitted and the item is still there.'
-          : 'Your stock report was submitted successfully.'
+        info && info.report && info.report.reportType === 'line'
+          ? (info.alerted
+            ? 'Your line report was submitted and sent to the Stock Intelligence alert channel.'
+            : 'Your line report was saved, but the alert could not be delivered.')
+          : (info && info.alerted
+            ? 'Your report was submitted and the item is still there.'
+            : 'Your stock report was submitted successfully.')
       ),
 
       h(
