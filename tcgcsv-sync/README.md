@@ -40,7 +40,8 @@ Do not share the secret or put it in browser-side code.
 
 ## Current scope and limitations
 
-- Imports Pokémon product catalog records, sets/groups, and per-variant TCGplayer market prices.\n- Stores immutable price snapshots per TCGCSV source build in `tcgcsv_price_history` for later trend charts.
+- Imports Pokémon product catalog records, sets/groups, and per-variant TCGplayer market prices.
+- Stores immutable price snapshots per TCGCSV source build in `tcgcsv_price_history` for later trend charts.
 - Card/single vs sealed classification is inferred from TCGCSV extended fields (card number or rarity means single); review edge cases as part of testing.
 - TCGCSV does not supply a complete graded-slab catalog. Graded items should reference their underlying raw card and store grading company/grade separately in PokePrizePool.
 - No price archive is downloaded.
