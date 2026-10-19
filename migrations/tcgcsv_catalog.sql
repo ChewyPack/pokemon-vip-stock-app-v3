@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS tcgcsv_products (
   card_number TEXT,
   rarity TEXT,
   extended_data_json TEXT,
-  raw_json TEXT NOT NULL,
   last_seen_sync TEXT NOT NULL
 );
 
@@ -78,3 +77,23 @@ CREATE TABLE IF NOT EXISTS collector_item_catalog (
 
 CREATE INDEX IF NOT EXISTS idx_collector_item_catalog_product
   ON collector_item_catalog(tcgcsv_product_id);
+
+-- One immutable snapshot per source build and printing variant for market trends.
+CREATE TABLE IF NOT EXISTS tcgcsv_price_history (
+  product_id INTEGER NOT NULL,
+  subtype_name TEXT NOT NULL DEFAULT 'Normal',
+  source_timestamp TEXT NOT NULL,
+  low_price REAL,
+  mid_price REAL,
+  high_price REAL,
+  market_price REAL,
+  direct_low_price REAL,
+  recorded_at TEXT NOT NULL,
+  PRIMARY KEY (product_id, subtype_name, source_timestamp)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tcgcsv_price_history_product_time
+  ON tcgcsv_price_history(product_id, source_timestamp);
+
+CREATE INDEX IF NOT EXISTS idx_tcgcsv_price_history_time
+  ON tcgcsv_price_history(source_timestamp);
