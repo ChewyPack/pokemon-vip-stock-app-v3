@@ -198,11 +198,12 @@
         { value: 'best-buy-ct-manchester', label: 'Manchester — 120 Slater St, Manchester, CT 06042' },
         { value: 'best-buy-ct-meriden', label: 'Meriden — 470 Lewis Ave, Ste 1234, Meriden, CT 06451' },
         { value: 'best-buy-ct-newington', label: 'Newington — 3377 Berlin Tpke, Newington, CT 06111' },
-        { value: 'best-buy-ct-north-haven', label: 'North Haven — 470 Universal Dr N, North Haven, CT 06473' },
+        { value: 'best-buy-ct-north-haven', label: 'North Haven — 398 Universal Dr N, North Haven, CT 06473' },
         { value: 'best-buy-ct-norwalk', label: 'Norwalk — 330 Connecticut Ave, Ste 4, Norwalk, CT 06854' },
         { value: 'best-buy-ct-trumbull', label: 'Trumbull — 5065 Main St, Trumbull, CT 06611' },
         { value: 'best-buy-ct-wallingford', label: 'Wallingford — 911 N Colony Rd, Wallingford, CT 06492' },
-        { value: 'best-buy-ct-waterford', label: 'Waterford — 915 Hartford Tpke, Waterford, CT 06385' },
+        { value: 'best-buy-ct-waterbury', label: 'Waterbury — 295 Union St, Waterbury, CT 06706' },
+        { value: 'best-buy-ct-waterford', label: 'Waterford — 913 Hartford Tpke, Waterford, CT 06385' },
         { value: 'best-buy-ct-west-hartford', label: 'West Hartford — 1501 New Britain Ave, West Hartford, CT 06110' },
         { value: 'best-buy-ct-west-simsbury', label: 'West Simsbury — 44A Albany Tpke, West Simsbury, CT 06092' }
       ],
@@ -309,7 +310,7 @@
         { value: 'best-buy-ma-millbury', label: 'Millbury — 70 Worcester Providence Tpke, Millbury, MA 01527' },
         { value: 'best-buy-ma-north-attleboro', label: 'North Attleboro — 1337 S Washington St, North Attleboro, MA 02760' },
         { value: 'best-buy-ma-north-dartmouth', label: 'North Dartmouth — 27 Faunce Corner Rd, North Dartmouth, MA 02747' },
-        { value: 'best-buy-ma-plymouth', label: 'Plymouth — 15 Long Pond Rd, Plymouth, MA 02360' },
+        { value: 'best-buy-ma-plymouth', label: 'Plymouth — 228 Colony Place Rd, Plymouth, MA 02360' },
         { value: 'best-buy-ma-saugus', label: 'Saugus — 1201 Broadway, Saugus, MA 01906' },
         { value: 'best-buy-ma-seekonk', label: 'Seekonk — 41 Commerce Way, Seekonk, MA 02771' },
         { value: 'best-buy-ma-watertown', label: 'Watertown — 550 Arsenal St, Ste 2, Watertown, MA 02472' }
