@@ -5,7 +5,7 @@ This Worker downloads only the Pokémon category (TCGplayer category ID 3), stor
 ## Safety first
 
 - Do not point this Worker at the production D1 database.
-- Apply `migrations/tcgcsv_catalog.sql` to `pokemon-vip-members-staging` before the first sync.
+- Apply the existing collector schema migrations first if they have not already been applied, then apply `migrations/tcgcsv_catalog.sql` to `pokemon-vip-members-staging` before the first sync.
 - In `wrangler.toml`, replace `REPLACE_WITH_STAGING_D1_DATABASE_ID` with the ID for the staging database only.
 - Keep the Worker name ending in `-staging`.
 
@@ -40,7 +40,7 @@ Do not share the secret or put it in browser-side code.
 
 ## Current scope and limitations
 
-- Imports Pokémon product catalog records, sets/groups, and per-variant TCGplayer market prices.
+- Imports Pokémon product catalog records, sets/groups, and per-variant TCGplayer market prices.\n- Stores immutable price snapshots per TCGCSV source build in `tcgcsv_price_history` for later trend charts.
 - Card/single vs sealed classification is inferred from TCGCSV extended fields (card number or rarity means single); review edge cases as part of testing.
 - TCGCSV does not supply a complete graded-slab catalog. Graded items should reference their underlying raw card and store grading company/grade separately in PokePrizePool.
 - No price archive is downloaded.
