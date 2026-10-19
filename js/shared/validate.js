@@ -91,6 +91,14 @@
         return valid ? '' : 'Pick one of the available options.';
       }
 
+      case 'number': {
+        var number = Number(v);
+        if (!Number.isInteger(number)) return 'Enter a whole number.';
+        if (field.min !== undefined && number < field.min) return 'Enter at least ' + field.min + '.';
+        if (field.max !== undefined && number > field.max) return 'Enter no more than ' + field.max + '.';
+        return '';
+      }
+
       case 'text': {
         if (field.minLength && v.length < field.minLength) {
           return 'Use at least ' + field.minLength + ' characters.';
@@ -140,6 +148,10 @@
 
     if (field.type === 'price') {
       return normalizePrice(v);
+    }
+
+    if (field.type === 'number') {
+      return v === '' ? '' : String(Number(v));
     }
 
     if (field.type === 'datetime') {
