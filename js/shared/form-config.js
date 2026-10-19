@@ -531,7 +531,8 @@
           'retailer',
           'branch',
           'storeTown',
-          'storeAddress'
+          'storeAddress',
+          'reportType'
         ]
       },
       {
@@ -574,7 +575,58 @@
       }
     ],
 
+    lineSteps: [
+      {
+        id: 'line',
+        title: 'Report the line',
+        label: 'Line details',
+        description: 'Help collectors understand the queue at this location.',
+        blurb: 'Share what you observed so the community can track demand and store activity.',
+        fields: ['lineCount', 'lineSeenAt', 'stockedBy']
+      }
+    ],
+
     fields: [
+      {
+        id: 'reportType',
+        type: 'choice',
+        label: 'What are you reporting?',
+        required: true,
+        options: [
+          { value: 'stock', label: 'Stock', description: 'Report Pokémon product availability.' },
+          { value: 'line', label: 'Line', description: 'Report a queue at the store.' }
+        ]
+      },
+      {
+        id: 'lineCount',
+        type: 'select',
+        label: 'How many people are in line?',
+        required: true,
+        options: [
+          { value: '0-5', label: '0–5 people' },
+          { value: '6-10', label: '6–10 people' },
+          { value: '11-20', label: '11–20 people' },
+          { value: '21-50', label: '21–50 people' },
+          { value: '51+', label: '51+ people' }
+        ]
+      },
+      {
+        id: 'lineSeenAt',
+        type: 'datetime',
+        label: 'Date and time observed',
+        required: true
+      },
+      {
+        id: 'stockedBy',
+        type: 'choice',
+        label: 'Who stocked the product?',
+        required: true,
+        options: [
+          { value: 'vendor', label: 'Vendor' },
+          { value: 'store_employees', label: 'Store employees' },
+          { value: 'unknown', label: 'Not sure' }
+        ]
+      },
       {
         id: 'state',
         type: 'select',
