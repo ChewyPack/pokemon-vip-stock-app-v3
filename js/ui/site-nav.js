@@ -16,7 +16,8 @@
    {title:'Report a Sighting',description:'Submit an in-store stock report',href:'/#report'},
    {title:'News & Exclusives',description:'Pokémon news and hobby updates',href:'/news.html'},
    {title:'Market Intelligence',description:'Market trends and product insights',href:'/market-intelligence.html'},
-   {title:'Events Calendar',description:'Shows, trade nights, and releases',href:'/events.html'}
+   {title:'Events Calendar',description:'Shows, trade nights, and releases',href:'/events.html'},
+   {title:'Instant Buyout',description:'Request an offer for cards, sealed product, slabs, or a collection',href:'/instant-buyout.html'}
   ]),
   dropdown('Alerts',[
    {title:'Live Stock',description:'View live stock alerts',href:'/alerts.html'},
