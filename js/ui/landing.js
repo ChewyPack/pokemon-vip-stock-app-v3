@@ -136,7 +136,7 @@
           navLink('Home', '/'),
           dropdown('Poke Report', [
             { title: 'Report a Sighting', description: 'Submit an in-store stock report', href: '/#report' },
-            { title: 'News & Exclusives', description: 'Pokémon news and hobby coverage', href: '/news.html' },
+            { title: 'News & Exclusives', description: 'Pokémon news and hobby updates', href: '/news.html' },
             { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
             { title: 'Events Calendar', description: 'Shows, trade nights, and releases', href: '/events.html' },
             { title: 'Instant Buyout', description: 'Request an offer for cards, sealed product, slabs, or a collection', href: '/instant-buyout.html' }
@@ -149,29 +149,23 @@
           ]),
           navLink('Line Services', '/line-services.html'),
           dropdown('Shop', [
-            {
-              title: 'Cards',
-              children: [
-                { title: 'Sealed', href: '/shop.html?category=sealed' },
-                { title: 'Slabs', href: '/shop.html?category=slabs' },
-                { title: 'Singles', href: '/shop.html?category=singles' }
-              ]
-            },
-            {
-              title: 'Merch',
-              children: [
-                { title: 'Clothing', href: '/shop.html?category=clothing' },
-                { title: 'Plushies', href: '/shop.html?category=plushies' },
-                { title: 'Other', href: '/shop.html?category=other' }
-              ]
-            }
+            { title: 'Shop All', description: 'Browse the PokePrizePool shop', href: '/shop.html' },
+            { title: 'Sealed Cards', description: 'Sealed Pokémon products', href: '/shop.html?category=sealed' },
+            { title: 'Slabs', description: 'Graded cards', href: '/shop.html?category=slabs' },
+            { title: 'Singles', description: 'Individual cards', href: '/shop.html?category=singles' },
+            { title: 'Clothing', description: 'PokePrizePool clothing', href: '/shop.html?category=clothing' },
+            { title: 'Plushies', description: 'Pokémon plushies', href: '/shop.html?category=plushies' },
+            { title: 'Other Merch', description: 'More merchandise', href: '/shop.html?category=other' }
           ]),
           navLink('Giveaways', '/giveaways.html'),
           navLink('Chat', '/chat.html'),
           dropdown('Resources', [
-            { title: 'Securing Product', href: '/resources/securing-product.html' },
-            { title: 'Spotting Fakes', href: '/resources/spotting-fakes.html' },
-            { title: 'Pricing Cards', href: '/resources/pricing-cards.html' }
+            { title: 'Collector Profiles', description: 'Browse collector profiles and collections', href: '/collector.html' },
+            { title: 'Offer Inbox', description: 'Cash offers and collection trades', href: '/inbox.html' },
+            { title: 'Account Settings', description: 'Profile and privacy settings', href: '/account.html#nearby-collector-settings' },
+            { title: 'News & Exclusives', description: 'Pokémon news and hobby updates', href: '/news.html' },
+            { title: 'Events Calendar', description: 'Shows, trade nights, and releases', href: '/events.html' },
+            { title: 'Market Intelligence', description: 'Pokémon TCG market trends', href: '/market-intelligence.html' }
           ]),
           h('a', {
             class: 'site-nav__link account-nav-link',
