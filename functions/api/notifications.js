@@ -26,6 +26,21 @@ async function currentAccount(request, env) {
   if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) return null;
   return account;
 }
+function allowedPushEndpoint(value) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    return url.protocol === 'https:' && (
+      host === 'fcm.googleapis.com' ||
+      host === 'updates.push.services.mozilla.com' ||
+      host === 'push.services.mozilla.com' ||
+      host.endsWith('.push.services.mozilla.com') ||
+      host === 'web.push.apple.com' ||
+      host.endsWith('.notify.windows.com') ||
+      host === 'push.opera.com'
+    );
+  } catch (_) { return false; }
+}
 function safeArray(value, max = 30) {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.map(v => String(v).trim()).filter(Boolean))].slice(0, max);
@@ -82,7 +97,7 @@ export async function onRequestPost({ request, env }) {
 
     if (data.action === 'subscribe') {
       const sub = data.subscription;
-      if (!sub || typeof sub.endpoint !== 'string' || !sub.endpoint.startsWith('https://') ||
+      if (!sub || typeof sub.endpoint !== 'string' || !allowedPushEndpoint(sub.endpoint) ||
           !sub.keys || typeof sub.keys.p256dh !== 'string' || typeof sub.keys.auth !== 'string') {
         return json({ ok: false, error: 'invalid_subscription' }, 422);
       }
