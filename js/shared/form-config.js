@@ -267,7 +267,6 @@
         { value: 'walmart-ma-worcester', label: 'Worcester — 25 Tobias Boland Way, MA 01607' },
         { value: 'walmart-ma-north-dartmouth', label: 'North Dartmouth — 506 State Rd, MA 02747' },
         { value: 'walmart-ma-fall-river', label: 'Fall River — 638 Quequechan St, MA 02721' },
-        { value: 'walmart-ma-hudson', label: 'Hudson — 254 Lowell Rd, NH 03051' },
         { value: 'walmart-ma-north-oxford', label: 'North Oxford — 742 Main St, MA 01537' },
         { value: 'walmart-ma-lunenburg', label: 'Lunenburg — 301 Massachusetts Ave, MA 01462' }
       ],
@@ -327,6 +326,7 @@
 
     NH: {
       Walmart: [
+        { value: 'walmart-nh-hudson', label: 'Hudson — 254 Lowell Rd, NH 03051' },
         { value: 'walmart-nh-amherst', label: 'Amherst — 85 State Route 101A, NH 03031' },
         { value: 'walmart-nh-concord', label: 'Concord — 344 Loudon Rd, NH 03301' },
         { value: 'walmart-nh-derry', label: 'Derry — 11 Ashleigh Dr, NH 03038' },
