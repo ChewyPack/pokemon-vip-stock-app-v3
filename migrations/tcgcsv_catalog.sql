@@ -97,3 +97,42 @@ CREATE INDEX IF NOT EXISTS idx_tcgcsv_price_history_product_time
 
 CREATE INDEX IF NOT EXISTS idx_tcgcsv_price_history_time
   ON tcgcsv_price_history(source_timestamp);
+
+-- Temporary import tables keep the last successful live catalog visible until a
+-- complete daily sync succeeds. They are cleared/rebuilt for every changed source build.
+CREATE TABLE IF NOT EXISTS tcgcsv_groups_staging (
+  group_id INTEGER PRIMARY KEY,
+  category_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  abbreviation TEXT,
+  published_on TEXT,
+  modified_on TEXT,
+  last_seen_sync TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tcgcsv_products_staging (
+  product_id INTEGER PRIMARY KEY,
+  category_id INTEGER NOT NULL,
+  group_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  clean_name TEXT,
+  image_url TEXT,
+  product_url TEXT,
+  product_type TEXT NOT NULL DEFAULT 'single',
+  card_number TEXT,
+  rarity TEXT,
+  extended_data_json TEXT,
+  last_seen_sync TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tcgcsv_prices_staging (
+  product_id INTEGER NOT NULL,
+  subtype_name TEXT NOT NULL DEFAULT 'Normal',
+  low_price REAL,
+  mid_price REAL,
+  high_price REAL,
+  market_price REAL,
+  direct_low_price REAL,
+  last_seen_sync TEXT NOT NULL,
+  PRIMARY KEY (product_id, subtype_name)
+);
