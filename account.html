@@ -708,6 +708,9 @@
    $('settings-alert-push').addEventListener('click',async()=>{
     const button=$('settings-alert-push');button.disabled=true;
     try{
+     // Refresh server state at click time so stale in-memory state cannot falsely report a missing key.
+     alertState=await alertApi();
+     renderAlertSettings();
      if(alertState.preferences.browser_push_enabled&&'serviceWorker'in navigator&&'PushManager'in window){
       const registration=await navigator.serviceWorker.getRegistration('/');
       const subscription=registration&&await registration.pushManager.getSubscription();
