@@ -14,10 +14,11 @@ async function vendorAccount(request,env){
  return {account};
 }
 async function getData(account,env){
+ const commerceApproval=await env.DB.prepare('SELECT ticket_sales_approved,booth_sales_approved,review_notes,reviewed_at FROM vendor_commerce_approvals WHERE account_id=? LIMIT 1').bind(account.id).first();
  const shop=await env.DB.prepare('SELECT id,shop_name,logo_url,cover_url,logo_key,cover_key,bio,website_url,social_links,updated_at FROM vendor_profiles WHERE account_id=? LIMIT 1').bind(account.id).first();
  const events=await env.DB.prepare('SELECT id,event_name,event_date,venue_name,venue_address,booth_location,notes,created_at,updated_at FROM vendor_events WHERE account_id=? ORDER BY event_date ASC,id DESC').bind(account.id).all();
  const inventory=await env.DB.prepare('SELECT i.id,i.event_id,i.item_name,i.category,i.quantity_hint,i.notes,i.price_cents,i.condition_label,i.image_key,i.is_for_sale,i.listing_status,i.created_at,i.updated_at,e.event_name FROM vendor_inventory i LEFT JOIN vendor_events e ON e.id=i.event_id AND e.account_id=i.account_id WHERE i.account_id=? ORDER BY i.created_at DESC').bind(account.id).all();
- return json({ok:true,shop:shop||{shop_name:'',logo_url:'',cover_url:'',logo_key:'',cover_key:'',bio:'',website_url:'',social_links:''},events:events.results||[],inventory:inventory.results||[]});
+ return json({ok:true,shop:shop||{shop_name:'',logo_url:'',cover_url:'',logo_key:'',cover_key:'',bio:'',website_url:'',social_links:''},events:events.results||[],inventory:inventory.results||[],commerce_approval:{ticket_sales_approved:Number(commerceApproval?.ticket_sales_approved||0)===1,booth_sales_approved:Number(commerceApproval?.booth_sales_approved||0)===1,review_notes:commerceApproval?.review_notes||'',reviewed_at:commerceApproval?.reviewed_at||null}});
 }
 export async function onRequestGet({request,env}){try{const auth=await vendorAccount(request,env);if(auth.error)return auth.error;return await getData(auth.account,env);}catch(error){console.error('Vendor tools load failed',error);return json({ok:false,error:'vendor_tools_unavailable'},500);}}
 export async function onRequestPost({request,env}){
