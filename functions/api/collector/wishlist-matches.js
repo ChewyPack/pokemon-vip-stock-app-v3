@@ -45,9 +45,10 @@ export async function onRequestGet({ request, env }) {
     const radius = [10, 25, 50, 100].includes(Number(viewer?.search_radius_miles))
       ? Number(viewer.search_radius_miles) : 25;
     const wants = await env.DB.prepare(`
-      SELECT id, product_type, product_name, set_name, card_number, image_url
-      FROM collector_items
-      WHERE account_id = ? AND list_type = 'wishlist'
+      SELECT i.id, i.product_type, i.product_name, i.set_name, i.card_number, i.image_url, c.tcgcsv_product_id
+      FROM collector_items i
+      LEFT JOIN collector_item_catalog c ON c.item_id = i.id
+      WHERE i.account_id = ? AND i.list_type = 'wishlist'
       ORDER BY created_at DESC LIMIT 500
     `).bind(account.id).all();
     const wishlist = wants.results || [];
@@ -55,9 +56,10 @@ export async function onRequestGet({ request, env }) {
 
     const owned = await env.DB.prepare(`
       SELECT i.id AS item_id, i.account_id, i.product_type, i.product_name, i.set_name,
-             i.card_number, i.condition, i.quantity, i.image_url,
+             i.card_number, i.condition, i.quantity, i.image_url, c.tcgcsv_product_id,
              p.username, p.avatar_url, p.location_lat, p.location_lng, p.location_enabled
       FROM collector_items i
+      LEFT JOIN collector_item_catalog c ON c.item_id = i.id
       JOIN collector_profiles p ON p.account_id = i.account_id
       WHERE i.list_type = 'collection'
         AND i.account_id <> ?
@@ -72,9 +74,10 @@ export async function onRequestGet({ request, env }) {
     const matches = wishlist.map(want => {
       const same = (owned.results || []).filter(item =>
         String(item.product_type).toLowerCase() === String(want.product_type).toLowerCase() &&
-        String(item.product_name).trim().toLowerCase() === String(want.product_name).trim().toLowerCase() &&
+        ((want.tcgcsv_product_id != null && item.tcgcsv_product_id != null && Number(item.tcgcsv_product_id) === Number(want.tcgcsv_product_id)) ||
+         ((want.tcgcsv_product_id == null || item.tcgcsv_product_id == null) && String(item.product_name).trim().toLowerCase() === String(want.product_name).trim().toLowerCase() &&
         String(item.set_name || '').trim().toLowerCase() === String(want.set_name || '').trim().toLowerCase() &&
-        String(item.card_number || '').trim().toLowerCase() === String(want.card_number || '').trim().toLowerCase()
+        String(item.card_number || '').trim().toLowerCase() === String(want.card_number || '').trim().toLowerCase()))
       ).map(item => {
         const hasDistance = Number(viewer?.location_enabled) === 1 &&
           Number(item.location_enabled) === 1 &&
@@ -97,7 +100,7 @@ export async function onRequestGet({ request, env }) {
       const visible = locationEnabled ? same.filter(item => item.within_radius) : same;
       return {
         wishlist_item: {
-          id: Number(want.id), product_type: want.product_type,
+          id: Number(want.id), product_type: want.product_type, tcgcsv_product_id: want.tcgcsv_product_id || null,
           product_name: want.product_name, set_name: want.set_name,
           card_number: want.card_number, image_url: want.image_url || ''
         },
