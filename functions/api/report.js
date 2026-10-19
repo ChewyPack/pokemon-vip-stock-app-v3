@@ -227,6 +227,7 @@ async function handleLineReport(data, env, form) {
   });
 
   const store = makeStoreDetails(data);
+  const lineNotes = String(data.lineNotes || '').trim().slice(0, 1000);
   const stockedByLabels = {
     vendor: 'Vendor',
     store_employees: 'Store employees',
@@ -262,7 +263,10 @@ async function handleLineReport(data, env, form) {
       report.retailer,
       report.location,
       photoNames.join(', '),
-      'Line report — ' + report.lineCount + ' people; stocked by ' + report.stockedByLabel,
+      [
+        'Line report — ' + report.lineCount + ' people; stocked by ' + report.stockedByLabel,
+        lineNotes ? 'Additional notes: ' + lineNotes : ''
+      ].filter(Boolean).join('\\n'),
       report.lineSeenAt,
       report.state,
       report.branch,
@@ -288,7 +292,8 @@ async function handleLineReport(data, env, form) {
         { name: 'Location', value: report.location || 'Location unavailable', inline: false },
         { name: 'People in line', value: report.lineCount, inline: true },
         { name: 'Who stocked?', value: report.stockedByLabel, inline: true },
-        { name: 'Observed at', value: new Date(report.lineSeenAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }), inline: false }
+        { name: 'Observed at', value: new Date(report.lineSeenAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }), inline: false },
+        ...(lineNotes ? [{ name: 'Additional notes', value: lineNotes.slice(0, 1024), inline: false }] : [])
       ],
       footer: { text: 'PokePrizePool Stock Intelligence • Line report' },
       timestamp: new Date().toISOString()
