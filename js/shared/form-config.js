@@ -170,7 +170,11 @@
       GameStop: [
         { value: 'gamestop-cranston-parkade', label: 'Cranston — 286 Garfield Ave, Ste 18' },
         { value: 'gamestop-warwick-cowesett', label: 'Warwick — 300 Quaker Ln, Ste C17' },
-        { value: 'gamestop-providence-place', label: 'Providence — 45 Providence Place' }
+        { value: 'gamestop-providence-place', label: 'Providence — 45 Providence Place' },
+        { value: 'gamestop-ri-smithfield', label: 'Smithfield — 371 Putnam Pike, Ste 190, Smithfield, RI 02917' },
+        { value: 'gamestop-ri-woonsocket', label: 'Woonsocket — 1500 Diamond Hill Rd, Unit G, Woonsocket, RI 02895' },
+        { value: 'gamestop-ri-cranston-chapel-view', label: 'Cranston Chapel View — 1000 Chapel View Blvd, Ste 112, Cranston, RI 02920' },
+        { value: 'gamestop-ri-coventry', label: 'Coventry — 672 Centre of New England Blvd, Coventry, RI 02816' }
       ],
 
       "Dick's Sporting Goods": [
@@ -211,6 +215,16 @@
         { value: 'five-below-ct-new-milford', label: 'New Milford — 169 Danbury Rd, Suite E2, New Milford, CT 06776' },
         { value: 'five-below-ct-north-haven', label: 'North Haven — 410 Universal Dr N, #02A, North Haven, CT 06473' },
         { value: 'five-below-ct-cromwell', label: 'Cromwell — 51 Shunpike Rd, Suite 01, Cromwell, CT 06416' }
+      ],
+      GameStop: [
+        { value: 'gamestop-ct-milford', label: 'Milford — 1201 Boston Post Rd, Ste 2074, Milford, CT 06460' },
+        { value: 'gamestop-ct-norwalk', label: 'Norwalk — 360 Connecticut Ave, Ste 6, Norwalk, CT 06854' },
+        { value: 'gamestop-ct-bristol', label: 'Bristol — 641 Farmington Ave, Ste 4, Bristol, CT 06010' },
+        { value: 'gamestop-ct-new-britain', label: 'New Britain — 707 Farmington Ave, Ste 110, New Britain, CT 06053' },
+        { value: 'gamestop-ct-hartford', label: 'Hartford — 69 William Shorty Campbell St, Ste 305, Hartford, CT 06106' },
+        { value: 'gamestop-ct-willimantic', label: 'Willimantic — 95 Storrs Rd, Ste 28, Willimantic, CT 06226' },
+        { value: 'gamestop-ct-stamford', label: 'Stamford — 2391 Summer St, Stamford, CT 06905' },
+        { value: 'gamestop-ct-rocky-hill', label: 'Rocky Hill — 80 Town Line Rd, Rocky Hill, CT 06067' }
       ],
       Target: [
         { value: 'target-ct-ansonia-20-w-main-st', label: 'Ansonia — 20 W Main St, CT' },
@@ -261,6 +275,9 @@
       ],
       'Five Below': [
         { value: 'five-below-me-bangor', label: 'Bangor — 480 Stillwater Ave, Suite C, Bangor, ME 04401' }
+      ],
+      GameStop: [
+        { value: 'gamestop-me-bangor', label: 'Bangor — 496 Stillwater Ave, Bldg D, Bangor, ME 04401' }
       ],
       Target: [
         { value: 'target-me-auburn-603-center-st', label: 'Auburn — 603 Center St, ME' },
@@ -336,6 +353,18 @@
         { value: 'five-below-ma-raynham', label: 'Raynham — 266 New State Hwy, Unit 17, Raynham, MA 02767' },
         { value: 'five-below-ma-stoughton', label: 'Stoughton — 1334 Park St, Stoughton, MA 02072' }
       ],
+      GameStop: [
+        { value: 'gamestop-ma-dedham', label: 'Dedham — 336 Providence Hwy, Ste B, Dedham, MA 02026' },
+        { value: 'gamestop-ma-braintree', label: 'Braintree — 117 Pearl St, Ste 15, Braintree, MA 02184' },
+        { value: 'gamestop-ma-braintree-south-shore-plaza', label: 'Braintree South Shore Plaza — 250 Granite St, Braintree, MA 02184' },
+        { value: 'gamestop-ma-walpole', label: 'Walpole — 108 Providence Hwy, Ste C, Walpole, MA 02032' },
+        { value: 'gamestop-ma-natick', label: 'Natick — 1245 Worcester St, Ste 1030, Natick, MA 01760' },
+        { value: 'gamestop-ma-methuen', label: 'Methuen — 90 Pleasant Valley St, Unit 4, Methuen, MA 01844' },
+        { value: 'gamestop-ma-methuen-merrimac-plaza', label: 'Methuen Merrimac Plaza — 184 Haverhill St, Methuen, MA 01844' },
+        { value: 'gamestop-ma-malden', label: 'Malden — 44 Broadway, Ste A110, Malden, MA 02148' },
+        { value: 'gamestop-ma-burlington', label: 'Burlington — 75 Middlesex Tpke, Ste 2067, Burlington, MA 01803' },
+        { value: 'gamestop-ma-brockton', label: 'Brockton — 715 Crescent St, Ste 6, Brockton, MA 02302' }
+      ],
       Target: [
         { value: 'target-ma-abington-385-centre-ave', label: 'Abington — 385 Centre Ave, MA' },
         { value: 'target-ma-boston-860-commonwealth-ave', label: 'Boston — 860 Commonwealth Ave, MA' },
@@ -410,6 +439,16 @@
         { value: 'best-buy-nh-newington', label: 'Newington — 45 Gosling Rd, Ste 15, Newington, NH 03801' },
         { value: 'best-buy-nh-salem', label: 'Salem — 290 S Broadway, Unit E, Salem, NH 03079' },
         { value: 'best-buy-nh-west-lebanon', label: 'West Lebanon — 285 Plainfield Rd, West Lebanon, NH 03784' }
+      ],
+      GameStop: [
+        { value: 'gamestop-nh-manchester-mall-of-new-hampshire', label: 'Manchester Mall of New Hampshire — 1500 S Willow St, Space S125, Manchester, NH 03103' },
+        { value: 'gamestop-nh-newington', label: 'Newington — 50 Fox Run Rd, Ste 12, Newington, NH 03801' },
+        { value: 'gamestop-nh-salem', label: 'Salem — 99 Rockingham Park Blvd, Space E261, Salem, NH 03079' },
+        { value: 'gamestop-nh-manchester-t-j-maxx-plaza', label: 'Manchester T.J. Maxx Plaza — 114 March Ave, Manchester, NH 03103' },
+        { value: 'gamestop-nh-seabrook', label: 'Seabrook — 700 Lafayette Rd, Ste 703, Seabrook, NH 03874' },
+        { value: 'gamestop-nh-plaistow', label: 'Plaistow — 4 Plaistow Rd, Ste 9, Plaistow, NH 03865' },
+        { value: 'gamestop-nh-littleton', label: 'Littleton — 562 Meadow St, Littleton, NH 03561' },
+        { value: 'gamestop-nh-amherst', label: 'Amherst — 124 State Route 101A, Space 26, Amherst, NH 03031' }
       ],
       Target: [
         { value: 'target-nh-bedford-220-s-river-rd', label: 'Bedford — 220 S River Rd, NH' },
