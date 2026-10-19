@@ -40,7 +40,7 @@ export async function onRequestGet({ request, env }) {
     const state = String(url.searchParams.get('state') || '').trim().toUpperCase();
     const search = String(url.searchParams.get('search') || '').trim().slice(0, 120);
     const limit = Math.min(100, Math.max(10, Number(url.searchParams.get('limit') || 60)));
-    const pattern = '%' + search.replace(/[\\%_]/g, '\\$&') + '%';
+    const pattern = '%' + search + '%';
 
     // Current alerts age out after 24 hours. A non-empty search queries the
     // saved report history so older sightings remain discoverable.
