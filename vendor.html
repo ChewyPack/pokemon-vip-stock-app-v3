@@ -11,7 +11,7 @@
 <div id="site-navigation"></div>
 <main class="vendor-wrap"><section class="vendor-panel">
 <div class="vendor-top"><div><p class="dashboard-eyebrow">PokePrizePool for Vendors</p><h1>Vendor Dashboard</h1><p class="vendor-muted">Manage your shop, show schedule, booth locations, and featured inventory in one place.</p></div><a class="btn" href="/account.html">Account settings</a></div>
-<p id="vendor-access-note" class="vendor-banner" hidden></p><p id="vendor-page-status" class="vendor-status" role="status" aria-live="polite">Loading vendor tools…</p>
+<p id="vendor-access-note" class="vendor-banner" hidden></p><p id="vendor-commerce-approval" class="vendor-banner" hidden></p><p id="vendor-page-status" class="vendor-status" role="status" aria-live="polite">Loading vendor tools…</p>
 <div id="vendor-workspace" class="vendor-grid" hidden>
 <section class="vendor-section vendor-section--wide"><h2>Shop profile</h2><p class="vendor-muted">Create the public-facing details collectors can use to recognize and find your shop.</p>
 <form id="vendor-shop-form" class="vendor-form">
@@ -42,6 +42,13 @@ function dateLabel(v){if(!v)return '';const d=new Date(v+'T12:00:00');return Num
 async function api(payload){const r=await fetch('/api/vendor',{method:payload?'POST':'GET',credentials:'include',headers:payload?{'Content-Type':'application/json'}:undefined,body:payload?JSON.stringify(payload):undefined,cache:'no-store'});const d=await r.json();if(!r.ok||!d.ok){const errors={login_required:'Please sign in to continue.',vendor_membership_required:'Vendor tools require an active Vendor membership.',vendor_tools_unavailable:'Vendor tools are not ready yet. Confirm the staging vendor database migration has been applied.'};throw new Error(errors[d.error]||'Could not save your changes.');}return d;}
 function render(d){
  state=d;
+ const approval=d.commerce_approval||{};
+ const ticketApproved=approval.ticket_sales_approved===true;
+ const boothApproved=approval.booth_sales_approved===true;
+ const approvalBox=$('vendor-commerce-approval');
+ approvalBox.hidden=false;
+ approvalBox.innerHTML='<strong>Ticket and booth sales permissions</strong><br>Ticket sales: '+(ticketApproved?'Approved':'Approval required')+' · Booth/table sales: '+(boothApproved?'Approved':'Approval required')+(approval.review_notes?'<br>'+esc(approval.review_notes):'')+'<br>Vendor+ membership unlocks your tools, but ticket and booth sales require separate admin approval.';
+
  fill($('vendor-shop-form'),d.shop);
  const eventSelect=$('vendor-item-event'),selected=eventSelect.value;
  eventSelect.innerHTML='<option value="">Shop / all shows</option>'+d.events.map(e=>'<option value="'+e.id+'">'+esc(e.event_name)+' — '+esc(dateLabel(e.event_date))+'</option>').join('');
