@@ -760,7 +760,8 @@
             storeAddress: state.values.storeAddress || '',
             lineCount: state.values.lineCount,
             lineSeenAt: state.values.lineSeenAt,
-            stockedBy: state.values.stockedBy
+            stockedBy: state.values.stockedBy,
+            lineNotes: state.values.lineNotes || ''
           }
         };
       } else {
