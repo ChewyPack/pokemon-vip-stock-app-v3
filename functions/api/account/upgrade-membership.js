@@ -123,7 +123,22 @@ export async function onRequestPost({ request, env }) {
       console.error('Staging immediate upgrade was not applied:', response.status, result.error?.type || result.status || 'unknown');
       return json({ ok: false, error: response.status === 402 ? 'upgrade_payment_failed' : 'upgrade_apply_failed' }, response.status === 402 ? 402 : 502);
     }
-    return json({ ok: true, applied: true, tier, interval, subscription_status: result.status });
+    // Stripe has confirmed the immediate upgrade. Synchronize the account's
+    // billing tier AND entitlement tier now so Vendor+ tools unlock immediately,
+    // without waiting for a webhook delivery or the next renewal.
+    try {
+      const synced = await env.DB.prepare(
+        "UPDATE accounts SET membership_tier = ?, membership_entitlement_tier = ?, membership_interval = ?, stripe_price_id = ?, membership_status = 'active', membership_scheduled_tier = NULL, membership_scheduled_interval = NULL, membership_scheduled_price_id = NULL, membership_scheduled_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND stripe_subscription_id = ?"
+      ).bind(tier, tier, interval, targetPrice, account.id, sub.id).run();
+      if (!synced.meta || Number(synced.meta.changes || 0) !== 1) {
+        console.error('Stripe upgrade succeeded but account entitlement sync did not update exactly one account:', account.id);
+        return json({ ok: false, error: 'upgrade_applied_entitlement_sync_failed', stripe_updated: true }, 502);
+      }
+    } catch (syncError) {
+      console.error('Stripe upgrade succeeded but account entitlement sync failed:', syncError);
+      return json({ ok: false, error: 'upgrade_applied_entitlement_sync_failed', stripe_updated: true }, 502);
+    }
+    return json({ ok: true, applied: true, tier, interval, entitlement_active: true, subscription_status: result.status });
   } catch (error) {
     console.error('Staging immediate membership upgrade failed:', error);
     return json({ ok: false, error: 'membership_upgrade_failed' }, 500);
