@@ -1,11 +1,10 @@
 (function(){
   'use strict';
-  var reportPages = ['/', '/index.html', '/news.html', '/updates.html', '/market-intelligence.html', '/events.html', '/instant-buyout.html'];
+  var reportPages = ['/news.html', '/updates.html', '/market-intelligence.html', '/events.html', '/instant-buyout.html'];
   var currentPath = location.pathname.replace(/\/$/, '') || '/';
   if (reportPages.indexOf(currentPath) === -1) return;
   if(document.getElementById('pokereport-sidebar')) return;
   var links=[
-    {label:'PokéReport Home',href:'/'},
     {label:'News',href:'/news.html'},
     {label:'Platform Updates',href:'/updates.html'},
     {label:'Market Intelligence',href:'/market-intelligence.html'},
