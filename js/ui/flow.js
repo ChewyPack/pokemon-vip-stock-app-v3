@@ -102,6 +102,13 @@
       });
     }
 
+    function activeSteps() {
+      if (state.values.reportType === 'line') {
+        return [cfg.steps[0]].concat(cfg.lineSteps || []);
+      }
+      return cfg.steps;
+    }
+
     /* ---------- chrome ---------- */
     var title = h('h2', {
       class: 'panel__title',
@@ -230,9 +237,10 @@
     }
 
     function renderProgress() {
-      var total = cfg.steps.length + 1;
+      var steps = activeSteps();
+      var total = steps.length + 1;
 
-      var labels = cfg.steps
+      var labels = steps
         .map(function (step) {
           return step.label;
         })
@@ -456,7 +464,7 @@
         class: 'review'
       });
 
-      cfg.steps.forEach(function (step, stepIndex) {
+      activeSteps().forEach(function (step, stepIndex) {
         var dl = h('dl', {
           class: 'review__list'
         });
@@ -524,12 +532,13 @@
 
     /* ---------- step rendering ---------- */
     function renderStep(focusTitle) {
-      var isReview = state.step === cfg.steps.length;
+      var steps = activeSteps();
+      var isReview = state.step === steps.length;
 
       VIP.clear(body);
 
       if (!isReview) {
-        var step = cfg.steps[state.step];
+        var step = steps[state.step];
 
         title.textContent = step.title;
         blurb.textContent = step.blurb;
@@ -583,7 +592,7 @@
 
     function validateStep(index) {
       var first = null;
-      var step = cfg.steps[index];
+      var step = activeSteps()[index];
 
       step.fields.forEach(function (id) {
         var field = cfg.getField(id);
@@ -664,7 +673,7 @@
         return;
       }
 
-      if (state.step < cfg.steps.length) {
+      if (state.step < activeSteps().length) {
         if (validateStep(state.step)) {
           goTo(state.step + 1);
         }
@@ -683,8 +692,9 @@
     }
 
     function stepOfField(id) {
-      for (var i = 0; i < cfg.steps.length; i++) {
-        if (cfg.steps[i].fields.indexOf(id) !== -1) {
+      var steps = activeSteps();
+      for (var i = 0; i < steps.length; i++) {
+        if (steps[i].fields.indexOf(id) !== -1) {
           return i;
         }
       }
@@ -711,7 +721,46 @@
         return;
       }
 
-      var result = V.validateAll(cfg, state.values);
+      var result;
+      if (state.values.reportType === 'line') {
+        var lineErrors = {};
+        ['lineCount', 'lineSeenAt', 'stockedBy'].forEach(function (id) {
+          var field = cfg.getField(id);
+          var options = cfg.getOptions(id, ctx) || [];
+          var message = V.validateField(field, state.values[id], {
+            options: options,
+            futureToleranceMs: 15 * 60 * 1000
+          });
+          if (message) lineErrors[id] = message;
+        });
+        if (Object.keys(lineErrors).length) {
+          var firstLineId = Object.keys(lineErrors)[0];
+          goTo(stepOfField(firstLineId));
+          Object.keys(lineErrors).forEach(function (id) {
+            fields[id].setError(lineErrors[id]);
+          });
+          fields[firstLineId].focus();
+          showBanner('A few answers need fixing before you can send.');
+          return;
+        }
+        result = {
+          ok: true,
+          errors: {},
+          clean: {
+            reportType: 'line',
+            state: state.values.state,
+            retailer: state.values.retailer,
+            branch: state.values.branch,
+            storeTown: state.values.storeTown || '',
+            storeAddress: state.values.storeAddress || '',
+            lineCount: state.values.lineCount,
+            lineSeenAt: state.values.lineSeenAt,
+            stockedBy: state.values.stockedBy
+          }
+        };
+      } else {
+        result = V.validateAll(cfg, state.values);
+      }
 
       if (!result.ok) {
         var firstId = Object.keys(result.errors)[0];
