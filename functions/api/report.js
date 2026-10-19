@@ -27,6 +27,63 @@ import formConfig from '../../js/shared/form-config.js';
 import validate from '../../js/shared/validate.js';
 import { notifyReport } from '../_lib/notify.js';
 
+
+const ACCOUNT_COOKIE = 'collector_session';
+const PAID_TIERS = new Set(['collector_plus', 'vendor', 'organizer']);
+
+function getCookie(request, name) {
+  for (const part of (request.headers.get('Cookie') || '').split(';')) {
+    const value = part.trim();
+    if (value.startsWith(name + '=')) return value.slice(name.length + 1);
+  }
+  return '';
+}
+
+function base64Url(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+    .replace(/\\+/g, '-')
+    .replace(/\\//g, '_')
+    .replace(/=+$/, '');
+}
+
+async function sha256Base64Url(value) {
+  return base64Url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
+}
+
+async function requireActivePaidAccount(request, env) {
+  const token = getCookie(request, ACCOUNT_COOKIE);
+  if (!token) return { ok: false, status: 401, error: 'login_required' };
+
+  const account = await env.DB.prepare(
+    `SELECT id, session_expires_at, membership_status, membership_tier,
+            membership_entitlement_tier, membership_current_period_end,
+            stripe_subscription_id
+     FROM accounts WHERE session_token_hash = ? LIMIT 1`
+  ).bind(await sha256Base64Url(token)).first();
+
+  if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) {
+    return { ok: false, status: 401, error: 'login_required' };
+  }
+
+  const tier = String(account.membership_entitlement_tier || account.membership_tier || '').trim().toLowerCase();
+  if (account.membership_status !== 'active' || !PAID_TIERS.has(tier) || !account.stripe_subscription_id) {
+    return { ok: false, status: 403, error: 'paid_membership_required' };
+  }
+
+  if (account.membership_current_period_end) {
+    const rawEnd = account.membership_current_period_end;
+    const numericEnd = Number(rawEnd);
+    const endMs = Number.isFinite(numericEnd) && numericEnd > 0
+      ? (numericEnd < 100000000000 ? numericEnd * 1000 : numericEnd)
+      : Date.parse(rawEnd);
+    if (!Number.isFinite(endMs) || endMs <= Date.now()) {
+      return { ok: false, status: 403, error: 'paid_membership_required' };
+    }
+  }
+
+  return { ok: true, account };
+}
+
 const MAX_BODY_BYTES = 14 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
 const MAX_TOTAL_PHOTO_BYTES = 9 * 1024 * 1024;
@@ -272,6 +329,23 @@ async function handleLineReport(data, env, form) {
 }
 
 export async function onRequestPost({ request, env }) {
+  let access;
+  try {
+    access = await requireActivePaidAccount(request, env);
+  } catch (error) {
+    console.error('Paid report access check failed:', error);
+    return json({ ok: false, error: 'membership_check_failed' }, 500);
+  }
+  if (!access.ok) {
+    return json({
+      ok: false,
+      error: access.error,
+      message: access.error === 'login_required'
+        ? 'Sign in to a PokePrizePool account with an active paid membership to submit reports.'
+        : 'An active paid PokePrizePool membership is required to submit reports.'
+    }, access.status);
+  }
+
   const declared = Number(
     request.headers.get('content-length') || 0
   );
