@@ -207,6 +207,11 @@
         { value: 'best-buy-ct-west-hartford', label: 'West Hartford — 1501 New Britain Ave, West Hartford, CT 06110' },
         { value: 'best-buy-ct-west-simsbury', label: 'West Simsbury — 44A Albany Tpke, West Simsbury, CT 06092' }
       ],
+      'Five Below': [
+        { value: 'five-below-ct-new-milford', label: 'New Milford — 169 Danbury Rd, Suite E2, New Milford, CT 06776' },
+        { value: 'five-below-ct-north-haven', label: 'North Haven — 410 Universal Dr N, #02A, North Haven, CT 06473' },
+        { value: 'five-below-ct-cromwell', label: 'Cromwell — 51 Shunpike Rd, Suite 01, Cromwell, CT 06416' }
+      ],
       Target: [
         { value: 'target-ct-ansonia-20-w-main-st', label: 'Ansonia — 20 W Main St, CT' },
         { value: 'target-ct-bethel-7-stony-hill-rd', label: 'Bethel — 7 Stony Hill Rd, CT' },
@@ -253,6 +258,9 @@
         { value: 'best-buy-me-augusta', label: 'Augusta — 14 Crossing Way, Augusta, ME 04330' },
         { value: 'best-buy-me-bangor', label: 'Bangor — 45 Bangor Mall Blvd, Bangor, ME 04401' },
         { value: 'best-buy-me-south-portland', label: 'South Portland — 364 Maine Mall Rd, South Portland, ME 04106' }
+      ],
+      'Five Below': [
+        { value: 'five-below-me-bangor', label: 'Bangor — 480 Stillwater Ave, Suite C, Bangor, ME 04401' }
       ],
       Target: [
         { value: 'target-me-auburn-603-center-st', label: 'Auburn — 603 Center St, ME' },
@@ -314,6 +322,19 @@
         { value: 'best-buy-ma-saugus', label: 'Saugus — 1201 Broadway, Saugus, MA 01906' },
         { value: 'best-buy-ma-seekonk', label: 'Seekonk — 41 Commerce Way, Seekonk, MA 02771' },
         { value: 'best-buy-ma-watertown', label: 'Watertown — 550 Arsenal St, Ste 2, Watertown, MA 02472' }
+      ],
+      'Five Below': [
+        { value: 'five-below-ma-attleboro', label: 'Attleboro — 1190 Newport Ave, Units E5 & E6, Attleboro, MA 02703' },
+        { value: 'five-below-ma-stoneham', label: 'Stoneham — 99B Main St, Stoneham, MA 02180' },
+        { value: 'five-below-ma-dedham', label: 'Dedham — 340-2 Providence Hwy, Dedham, MA 02026' },
+        { value: 'five-below-ma-north-attleboro', label: 'North Attleboro — 1250 S Washington St, Suite I-1, North Attleboro, MA 02760' },
+        { value: 'five-below-ma-lowell', label: 'Lowell — 199 Plain St, Unit 7, Lowell, MA 01852' },
+        { value: 'five-below-ma-hudson', label: 'Hudson — 30 Highland Commons East, Hudson, MA 01749' },
+        { value: 'five-below-ma-west-springfield', label: 'West Springfield — 935 Riverdale St, Suite G105, West Springfield, MA 01089' },
+        { value: 'five-below-ma-bridgewater', label: 'Bridgewater — 233 Broad St, Bridgewater, MA 02324' },
+        { value: 'five-below-ma-brockton', label: 'Brockton — 715 Crescent St, Suite 12, Brockton, MA 02302' },
+        { value: 'five-below-ma-raynham', label: 'Raynham — 266 New State Hwy, Unit 17, Raynham, MA 02767' },
+        { value: 'five-below-ma-stoughton', label: 'Stoughton — 1334 Park St, Stoughton, MA 02072' }
       ],
       Target: [
         { value: 'target-ma-abington-385-centre-ave', label: 'Abington — 385 Centre Ave, MA' },
