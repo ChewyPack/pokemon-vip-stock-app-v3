@@ -582,7 +582,7 @@
         label: 'Line details',
         description: 'Help collectors understand the queue at this location.',
         blurb: 'Share what you observed so the community can track demand and store activity.',
-        fields: ['lineCount', 'lineSeenAt', 'stockedBy', 'photos']
+        fields: ['lineCount', 'lineSeenAt', 'stockedBy', 'photos', 'lineNotes']
       }
     ],
 
@@ -622,6 +622,14 @@
           { value: 'store_employees', label: 'Store employees' },
           { value: 'unknown', label: 'Not sure' }
         ]
+      },
+      {
+        id: 'lineNotes',
+        type: 'textarea',
+        label: 'Additional notes',
+        required: false,
+        maxLength: 1000,
+        placeholder: 'Optional: queue details, product sightings, store limits, or other useful information'
       },
       {
         id: 'state',
