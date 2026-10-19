@@ -37,7 +37,10 @@ export async function notifyReport(env, report) {
     : 'Pokémon stock report: ' + String(report.retailer || 'Store');
   const body = line
     ? String(report.lineCount || '?') + ' people in line' + (report.location ? ' at ' + report.location : '')
-    : String(report.productName || report.product || 'Product update') + (report.location ? ' at ' + report.location : '');
+    : [
+        String(report.product || '').trim(),
+        String(report.productName || '').trim()
+      ].filter(Boolean).join(' — ') + (report.location ? ' at ' + report.location : '');
   const url = '/notifications.html';
   let inAppCreated = 0, pushAttempted = 0, pushDelivered = 0, pushFailed = 0;
 
