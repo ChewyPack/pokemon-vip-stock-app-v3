@@ -41,6 +41,30 @@ export async function onRequestGet({ request, env }) {
       });
     }
 
+    if (mode === 'history') {
+      if (!state?.last_success_at) return json({ ok: false, error: 'tcgcsv_not_synced' }, 503);
+      const productId = Number(url.searchParams.get('product_id') || 0);
+      const variant = (url.searchParams.get('variant') || '').trim().slice(0, 80);
+      if (!Number.isInteger(productId) || productId < 1) {
+        return json({ ok: false, error: 'invalid_product_id' }, 400);
+      }
+      const history = await env.DB.prepare(`
+        SELECT product_id, subtype_name, source_timestamp, low_price, mid_price,
+               high_price, market_price, direct_low_price, recorded_at
+        FROM tcgcsv_price_history
+        WHERE product_id = ? AND (? = '' OR subtype_name = ?)
+        ORDER BY source_timestamp DESC
+        LIMIT 365
+      `).bind(productId, variant, variant).all();
+      return json({
+        ok: true,
+        product_id: productId,
+        variant: variant || null,
+        history: history.results || [],
+        source_timestamp: state.source_timestamp || null
+      });
+    }
+
     const query = (url.searchParams.get('q') || '').trim().slice(0, 80);
     if (query.length < 2) return json({ ok: true, products: [], source_timestamp: state?.source_timestamp || null });
 
