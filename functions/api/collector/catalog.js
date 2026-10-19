@@ -101,6 +101,7 @@ export async function onRequestGet({ request, env }) {
         SELECT p.*
         FROM tcgcsv_products p
         WHERE p.category_id = 3
+          AND p.last_seen_sync = ?
           AND (
             instr(lower(p.name), lower(?)) > 0
             OR instr(lower(COALESCE(p.clean_name, '')), lower(?)) > 0
@@ -120,6 +121,7 @@ export async function onRequestGet({ request, env }) {
       LEFT JOIN tcgcsv_prices pr ON pr.product_id = p.product_id
       ORDER BY p.name COLLATE NOCASE, pr.subtype_name COLLATE NOCASE
     `).bind(
+      state.source_timestamp,
       ...binds.slice(0, 3),
       likeQuery,
       ...(requestedType !== 'all' ? [requestedType] : []),
