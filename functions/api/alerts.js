@@ -55,14 +55,14 @@ export async function onRequestGet({ request, env }) {
           (? = '' AND datetime(created_at) >= datetime('now', '-24 hours'))
           OR
           (? != '' AND (
-            COALESCE(store, '') LIKE ? ESCAPE '\\'
-            OR COALESCE(location, '') LIKE ? ESCAPE '\\'
-            OR COALESCE(product_name, '') LIKE ? ESCAPE '\\'
-            OR COALESCE(product, '') LIKE ? ESCAPE '\\'
-            OR COALESCE(notes, '') LIKE ? ESCAPE '\\'
-            OR COALESCE(state, '') LIKE ? ESCAPE '\\'
-            OR COALESCE(store_town, '') LIKE ? ESCAPE '\\'
-            OR COALESCE(store_address, '') LIKE ? ESCAPE '\\'
+            COALESCE(store, '') LIKE ?
+            OR COALESCE(location, '') LIKE ?
+            OR COALESCE(product_name, '') LIKE ?
+            OR COALESCE(product, '') LIKE ?
+            OR COALESCE(notes, '') LIKE ?
+            OR COALESCE(state, '') LIKE ?
+            OR COALESCE(store_town, '') LIKE ?
+            OR COALESCE(store_address, '') LIKE ?
           ))
         )
       ORDER BY datetime(created_at) DESC
