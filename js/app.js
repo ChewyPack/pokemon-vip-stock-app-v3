@@ -38,8 +38,59 @@
     show('form');
   }
 
+  function renderReportAccessRequired(message) {
+    VIP.clear(views.form);
+
+    var title = h('h2', { class: 'panel__title', tabindex: '-1' }, 'Paid Membership Required');
+    var blurb = h('p', { class: 'panel__blurb' }, message);
+    var actions = h('div', { class: 'done-actions' },
+      h('a', { class: 'btn btn--primary', href: '/account.html' }, 'Sign In / Manage Membership'),
+      h('a', { class: 'btn btn--ghost', href: '/' }, 'Back Home')
+    );
+    views.form.appendChild(h('section', { class: 'panel' },
+      h('div', { class: 'panel__head' }, title, blurb),
+      h('div', { class: 'panel__body' }, actions)
+    ));
+    show('form');
+  }
+
   async function openReport() {
-    renderReport();
+    show('form');
+    VIP.clear(views.form);
+    views.form.appendChild(h('section', { class: 'panel' },
+      h('div', { class: 'panel__body' }, h('p', { class: 'panel__blurb' }, 'Checking membership…'))
+    ));
+
+    try {
+      var response = await fetch('/api/account/me', {
+        credentials: 'same-origin',
+        cache: 'no-store'
+      });
+      if (!response.ok) {
+        renderReportAccessRequired('Please sign in and make sure your PokePrizePool paid membership is active to submit stock or line reports.');
+        return;
+      }
+
+      var data = await response.json();
+      var membership = data && data.membership ? data.membership : {};
+      var tier = String(membership.entitlement_tier || membership.tier || '').toLowerCase();
+      var paidTier = ['collector_plus', 'vendor', 'organizer'].indexOf(tier) !== -1;
+      var active = data && data.ok && data.authenticated &&
+        membership.status === 'active' && paidTier;
+
+      if (!active) {
+        renderReportAccessRequired(
+          data && data.authenticated
+            ? 'Submitting stock and line reports is a benefit for members with an active paid membership. Upgrade your membership to continue.'
+            : 'Please sign in to your PokePrizePool account and have an active paid membership to submit stock or line reports.'
+        );
+        return;
+      }
+
+      renderReport();
+    } catch (error) {
+      renderReportAccessRequired('We could not verify your membership right now. Please try again after signing in to your account.');
+    }
   }
 
   function handleSuccess(info) {
