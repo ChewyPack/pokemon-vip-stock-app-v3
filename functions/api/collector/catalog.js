@@ -44,7 +44,7 @@ export async function onRequestGet({ request, env }) {
     const query = (url.searchParams.get('q') || '').trim().slice(0, 80);
     if (query.length < 2) return json({ ok: true, products: [], source_timestamp: state?.source_timestamp || null });
 
-    const requestedType = normalizeType(url.searchParams.get('type'));
+    if (!state?.last_success_at) return json({ ok: false, error: 'tcgcsv_not_synced' }, 503);\n\n    const requestedType = normalizeType(url.searchParams.get('type'));
     const groupIdRaw = url.searchParams.get('set_id') || '';
     const groupId = /^\\d+$/.test(groupIdRaw) ? Number(groupIdRaw) : null;
     const limitRaw = Number(url.searchParams.get('limit') || 30);
