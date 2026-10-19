@@ -64,6 +64,25 @@ function numericQuantity(value) {
   return null;
 }
 
+
+async function persistReportPhotos(env, photos) {
+  if (!photos.length) return [];
+  if (!env.VENDOR_MEDIA) throw new Error('report_photo_storage_not_configured');
+  const urls = [];
+  for (const photo of photos) {
+    const extension = photo.name.split('.').pop().toLowerCase();
+    const key = 'reports/' + crypto.randomUUID() + '.' + extension;
+    await env.VENDOR_MEDIA.put(key, photo.file, {
+      httpMetadata: {
+        contentType: photo.file.type,
+        cacheControl: 'public, max-age=31536000, immutable'
+      }
+    });
+    urls.push('/api/vendor/image?key=' + encodeURIComponent(key));
+  }
+  return urls;
+}
+
 function makeStoreDetails(report) {
   const ctx = {
     get: function (id) {
@@ -180,9 +199,13 @@ async function handleLineReport(data, env, form) {
     photos.push({ file, name: 'line-photo' + (i + 1) + '.' + extension });
   }
 
-  const photoNames = photos.map(function (photo) {
-    return photo.name;
-  });
+  let photoNames;
+  try {
+    photoNames = await persistReportPhotos(env, photos);
+  } catch (error) {
+    console.error('Report photo upload failed:', error);
+    return json({ ok: false, error: String(error && error.message || '').includes('not_configured') ? 'photo_storage_not_configured' : 'photo_upload_failed' }, String(error && error.message || '').includes('not_configured') ? 503 : 500);
+  }
 
   const store = makeStoreDetails(data);
   const lineNotes = String(data.lineNotes || '').trim().slice(0, 1000);
@@ -395,9 +418,13 @@ export async function onRequestPost({ request, env }) {
     });
   }
 
-  const photoNames = photos.map(function (photo) {
-    return photo.name;
-  });
+  let photoNames;
+  try {
+    photoNames = await persistReportPhotos(env, photos);
+  } catch (error) {
+    console.error('Report photo upload failed:', error);
+    return json({ ok: false, error: String(error && error.message || '').includes('not_configured') ? 'photo_storage_not_configured' : 'photo_upload_failed' }, String(error && error.message || '').includes('not_configured') ? 503 : 500);
+  }
 
   /*
    * SAVE REPORT TO D1.
