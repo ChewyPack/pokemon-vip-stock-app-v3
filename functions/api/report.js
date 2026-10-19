@@ -226,7 +226,7 @@ async function handleLineReport(data, env) {
       report.branch,
       report.storeTown,
       report.storeAddress,
-      report.lineCount,
+      Number(report.lineCount),
       report.lineCount,
       report.stockedBy
     ).run();
@@ -246,7 +246,7 @@ async function handleLineReport(data, env) {
         { name: 'Location', value: report.location || 'Location unavailable', inline: false },
         { name: 'People in line', value: report.lineCount, inline: true },
         { name: 'Who stocked?', value: report.stockedByLabel, inline: true },
-        { name: 'Observed at', value: report.lineSeenAt, inline: false }
+        { name: 'Observed at', value: new Date(report.lineSeenAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }), inline: false }
       ],
       footer: { text: 'PokePrizePool Stock Intelligence • Line report' },
       timestamp: new Date().toISOString()
