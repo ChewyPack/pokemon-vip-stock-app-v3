@@ -151,7 +151,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  const $=id=>document.getElementById(id);
  let own=false,profile=null,items=[],activeList='collection',viewUsername=new URLSearchParams(location.search).get('user')||'';
  const TCGDEX='https://api.tcgdex.net/v2/en';
- let catalogSets=[],catalogTimer=null,catalogRequest=0,followState={followers:0,following:0,isFollowing:false};
+ let catalogSets=[],catalogTimer=null,catalogRequest=0,selectedCatalogProductId=null,selectedCatalogProductName='',followState={followers:0,following:0,isFollowing:false};
 
  const money=cents=>cents===null||cents===undefined?'Not set':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents)/100);
  const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -270,6 +270,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   const product=(window.__tcgcsvCatalogResults||[]).find(item=>String(item.id)===String(id));
   if(!product){setStatus('catalog-status','That catalog result expired. Search again and choose the card.');return;}
   $('product-name').value=product.name||'';
+  selectedCatalogProductId=Number(product.tcgcsv_product_id||product.id)||null;selectedCatalogProductName=String(product.name||'');
   const selectedType=$('product-type').value;
   $('product-type').value=selectedType==='graded'?'graded':'card';
   $('set-name').value=product.set_name||'';
@@ -316,6 +317,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.sealedId));if(product)selectSealedProduct(product);}});
  function selectSealedProduct(product){
   $('product-name').value=product.name||'';
+  selectedCatalogProductId=Number(product.tcgcsv_product_id||product.id)||null;selectedCatalogProductName=String(product.name||'');
   $('product-type').value='sealed';
   $('set-name').value=product.set_name||'';
   $('card-number').value='';
@@ -428,12 +430,12 @@ async function searchCollectors(query){
   try{const response=await fetch('/api/account/logout',{method:'POST',credentials:'include'});if(!response.ok)throw new Error('Please try logging out again.');location.href='/';}
   catch(error){setStatus('view-status',error.message||'Could not log out.');button.disabled=false;button.textContent='Log out';}
  });
- $('item-form').addEventListener('submit',async e=>{
+ $('product-name').addEventListener('input',()=>{if(selectedCatalogProductName&&$('product-name').value.trim()!==selectedCatalogProductName){selectedCatalogProductId=null;selectedCatalogProductName='';}});\n $('item-form').addEventListener('submit',async e=>{
   e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Adding item…');
   const value=$('estimated-value').value;
-  try{const r=await fetch('/api/collector/items',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({list_type:$('list-type').value,product_type:$('product-type').value,product_name:$('product-name').value,set_name:$('set-name').value,card_number:$('card-number').value,condition:$('condition').value,quantity:Number($('quantity').value),estimated_value:value===''?null:Number(value),image_url:$('image-url').value,notes:$('notes').value})}),d=await r.json();
+  try{const r=await fetch('/api/collector/items',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({list_type:$('list-type').value,product_type:$('product-type').value,product_name:$('product-name').value,set_name:$('set-name').value,card_number:$('card-number').value,condition:$('condition').value,quantity:Number($('quantity').value),estimated_value:value===''?null:Number(value),image_url:$('image-url').value,notes:$('notes').value,tcgcsv_product_id:selectedCatalogProductId})}),d=await r.json();
    if(!r.ok||!d.ok){const errors={login_required:'Your session expired. Please sign in again.',database_not_configured:'The staging database is not configured.',invalid_item:'Check the product name and item details.',invalid_quantity:'Quantity must be between 1 and 9999.',invalid_image_url:'Image must be a valid HTTPS URL.',invalid_estimated_value:'Enter a valid non-negative estimated value.',item_save_failed:'The staging database rejected the item. The collector database migration may not have been applied.',collector_database_migration_required:'The collector tables are missing from the staging database. Apply the two staging collector migrations, then try again.'};throw new Error(errors[d.error]||('Could not add the item ('+(d.error||'unknown error')+').'));}
-   e.target.reset();$('quantity').value='1';$('card-number').disabled=false;$('product-type').value='card';$('catalog-search').placeholder='Search card or sealed product (e.g. Charizard or ETB)';setStatus('owner-status','Item added.');const rr=await fetch('/api/collector/items',{credentials:'include',cache:'no-store'}),dd=await rr.json();if(rr.ok&&dd.ok){items=dd.items||[];stats();render();}
+   e.target.reset();selectedCatalogProductId=null;selectedCatalogProductName='';$('quantity').value='1';$('card-number').disabled=false;$('product-type').value='card';$('catalog-search').placeholder='Search card or sealed product (e.g. Charizard or ETB)';setStatus('owner-status','Item added.');const rr=await fetch('/api/collector/items',{credentials:'include',cache:'no-store'}),dd=await rr.json();if(rr.ok&&dd.ok){items=dd.items||[];stats();render();}
   }catch(error){setStatus('owner-status',error.message||'Could not add item.');}finally{button.disabled=false;}
  });
  async function removeItem(id){if(!confirm('Remove this item from your list?'))return;try{const r=await fetch('/api/collector/items?id='+encodeURIComponent(id),{method:'DELETE',credentials:'include'}),d=await r.json();if(!r.ok||!d.ok)throw new Error('Could not remove item.');items=items.filter(x=>String(x.id)!==String(id));stats();render();setStatus('owner-status','Item removed.');}catch(e){setStatus('owner-status',e.message||'Could not remove item.');}}
