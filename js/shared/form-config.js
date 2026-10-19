@@ -582,7 +582,7 @@
         label: 'Line details',
         description: 'Help collectors understand the queue at this location.',
         blurb: 'Share what you observed so the community can track demand and store activity.',
-        fields: ['lineCount', 'lineSeenAt', 'stockedBy']
+        fields: ['lineCount', 'lineSeenAt', 'stockedBy', 'photos']
       }
     ],
 
