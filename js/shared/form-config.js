@@ -66,7 +66,14 @@
         { value: 'walmart-providence', label: 'Providence — 51 Silver Spring St' },
         { value: 'walmart-warwick-bald-hill', label: 'Warwick — 650 Bald Hill Rd' },
         { value: 'walmart-warwick-post', label: 'Warwick — 840 Post Rd' },
-        { value: 'walmart-westerly', label: 'Westerly — 258 Post Rd' }
+        { value: 'walmart-westerly', label: 'Westerly — 258 Post Rd' },
+        { value: 'walmart-newport', label: 'Newport — 199 Connell Hwy, Newport, RI 02840' }
+      ],
+
+      'Barnes & Noble': [
+        { value: 'barnes-noble-ri-warwick-centre', label: 'Warwick Centre — 1350-B Bald Hill Rd, Warwick, RI 02886' },
+        { value: 'barnes-noble-ri-middletown-village', label: 'Middletown Village — 1311 West Main Road, Middletown, RI 02842' },
+        { value: 'barnes-noble-ri-crossings-smithfield', label: 'The Crossings at Smithfield — 371 Putnam Pike, Suite 330, Smithfield, RI 02917' }
       ],
 
       'Best Buy': [
@@ -316,6 +323,20 @@
         { value: 'walmart-ma-fall-river', label: 'Fall River — 638 Quequechan St, MA 02721' },
         { value: 'walmart-ma-north-oxford', label: 'North Oxford — 742 Main St, MA 01537' },
         { value: 'walmart-ma-lunenburg', label: 'Lunenburg — 301 Massachusetts Ave, MA 01462' }
+      ],
+      'Barnes & Noble': [
+        { value: 'barnes-noble-ma-stallbrook-bellingham', label: 'Stallbrook Marketplace — 270 Hartford Avenue, Bellingham, MA 02019' },
+        { value: 'barnes-noble-ma-blackstone-millbury', label: 'The Shoppes at Blackstone Valley — 70 Worcester Providence Turnpike #5, Millbury, MA 01527' },
+        { value: 'barnes-noble-ma-sherwood-natick', label: 'Sherwood Plaza Shopping Center — 1324 Worcester Street #1334, Natick, MA 01760' },
+        { value: 'barnes-noble-ma-walpole', label: 'Walpole — 82 Providence Highway, Walpole, MA 02032' },
+        { value: 'barnes-noble-ma-legacy-dedham', label: 'Legacy Place — 246 Legacy Place, Dedham, MA 02026' },
+        { value: 'barnes-noble-ma-watertower-leominster', label: 'Watertower Plaza — 120 Watertower Plaza, Leominster, MA 01453' },
+        { value: 'barnes-noble-ma-point-littleton', label: 'The Point — 350 Constitution Way, Littleton, MA 01460' },
+        { value: 'barnes-noble-ma-burlington', label: 'Burlington — 98 Middlesex Turnpike, Burlington, MA 01803' },
+        { value: 'barnes-noble-ma-derby-hingham', label: 'The Derby Street Shops — 96 Derby Street, Suite 300, Hingham, MA 02043' },
+        { value: 'barnes-noble-ma-market-street-lynnfield', label: 'Market Street Lynnfield — 1115 Market Street, Lynnfield, MA 01940' },
+        { value: 'barnes-noble-ma-northshore-peabody', label: 'Northshore Mall — 210 Andover Street, LL08, Peabody, MA 01960' },
+        { value: 'barnes-noble-ma-dartmouth-towne-center', label: 'Dartmouth Towne Center — 392 State Road (Route 6), North Dartmouth, MA 02747' }
       ],
       'Best Buy': [
         { value: 'best-buy-ma-bellingham', label: 'Bellingham — 140 Depot St, Bellingham, MA 02019' },
