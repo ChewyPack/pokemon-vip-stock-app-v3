@@ -186,6 +186,10 @@
     },
 
     CT: {
+      Walmart: [
+        { value: 'walmart-ct-brooklyn', label: 'Brooklyn — 450 Providence Rd, CT 06234' },
+        { value: 'walmart-ct-hartford', label: 'Hartford — 495 Flatbush Ave, CT 06106' }
+      ],
       Target: [
         { value: 'target-ct-ansonia-20-w-main-st', label: 'Ansonia — 20 W Main St, CT' },
         { value: 'target-ct-bethel-7-stony-hill-rd', label: 'Bethel — 7 Stony Hill Rd, CT' },
@@ -215,6 +219,19 @@
     },
 
     ME: {
+      Walmart: [
+        { value: 'walmart-me-bangor', label: 'Bangor — 900 Stillwater Ave, ME 04401' },
+        { value: 'walmart-me-brewer', label: 'Brewer — 24 Walton Dr, ME 04412' },
+        { value: 'walmart-me-calais', label: 'Calais — 379 South St, ME 04619' },
+        { value: 'walmart-me-ellsworth', label: 'Ellsworth — 17 Myrick St, ME 04605' },
+        { value: 'walmart-me-farmington', label: 'Farmington — 615 Wilton Rd, ME 04938' },
+        { value: 'walmart-me-mexico', label: 'Mexico — 258 River Rd, ME 04257' },
+        { value: 'walmart-me-oxford', label: 'Oxford — 1240 Main St, ME 04270' },
+        { value: 'walmart-me-palmyra', label: 'Palmyra — 1573 Main St, ME 04965' },
+        { value: 'walmart-me-presque-isle', label: 'Presque Isle — 781 Main St, ME 04769' },
+        { value: 'walmart-me-sanford', label: 'Sanford — 1930 Main St, ME 04073' },
+        { value: 'walmart-me-scarborough', label: 'Scarborough — 500 Gallery Blvd, ME 04074' }
+      ],
       Target: [
         { value: 'target-me-auburn-603-center-st', label: 'Auburn — 603 Center St, ME' },
         { value: 'target-me-augusta-119-crossing-way', label: 'Augusta — 119 Crossing Way, ME' },
@@ -226,6 +243,34 @@
     },
 
     MA: {
+      Walmart: [
+        { value: 'walmart-ma-abington', label: 'Abington — 777 Brockton Ave, MA 02351' },
+        { value: 'walmart-ma-avon', label: 'Avon — 30 Memorial Dr, MA 02322' },
+        { value: 'walmart-ma-brockton', label: 'Brockton — 700 Oak St, MA 02301' },
+        { value: 'walmart-ma-chelmsford', label: 'Chelmsford — 66 Parkhurst Rd, MA 01824' },
+        { value: 'walmart-ma-framingham', label: 'Framingham — 121 Worcester Rd, MA 01701' },
+        { value: 'walmart-ma-leominster', label: 'Leominster — 11 Jungle Rd, MA 01453' },
+        { value: 'walmart-ma-methuen', label: 'Methuen — 70 Pleasant Valley St, MA 01844' },
+        { value: 'walmart-ma-north-attleboro', label: 'North Attleboro — 1470 S Washington St, MA 02760' },
+        { value: 'walmart-ma-northborough', label: 'Northborough — 200 Otis St, MA 01532' },
+        { value: 'walmart-ma-plymouth', label: 'Plymouth — 300 Colony Place Rd, MA 02360' },
+        { value: 'walmart-ma-quincy', label: 'Quincy — 301 Falls Blvd, MA 02169' },
+        { value: 'walmart-ma-raynham', label: 'Raynham — 36 Paramount Dr, MA 02767' },
+        { value: 'walmart-ma-seekonk', label: 'Seekonk — 1180 Fall River Ave, MA 02771' },
+        { value: 'walmart-ma-swansea', label: 'Swansea — 54 Cousineau Dr, MA 02777' },
+        { value: 'walmart-ma-tewksbury', label: 'Tewksbury — 333 Main St, MA 01876' },
+        { value: 'walmart-ma-walpole', label: 'Walpole — 550 Providence Hwy, MA 02081' },
+        { value: 'walmart-ma-wareham', label: 'Wareham — 15 Tobey Rd, MA 02571' },
+        { value: 'walmart-ma-weymouth', label: 'Weymouth — 740 Middle St, MA 02188' },
+        { value: 'walmart-ma-whitinsville', label: 'Whitinsville — 100 Valley Pkwy, MA 01588' },
+        { value: 'walmart-ma-west-boylston', label: 'West Boylston — 137 W Boylston St, MA 01583' },
+        { value: 'walmart-ma-worcester', label: 'Worcester — 25 Tobias Boland Way, MA 01607' },
+        { value: 'walmart-ma-north-dartmouth', label: 'North Dartmouth — 506 State Rd, MA 02747' },
+        { value: 'walmart-ma-fall-river', label: 'Fall River — 638 Quequechan St, MA 02721' },
+        { value: 'walmart-ma-hudson', label: 'Hudson — 254 Lowell Rd, NH 03051' },
+        { value: 'walmart-ma-north-oxford', label: 'North Oxford — 742 Main St, MA 01537' },
+        { value: 'walmart-ma-lunenburg', label: 'Lunenburg — 301 Massachusetts Ave, MA 01462' }
+      ],
       Target: [
         { value: 'target-ma-abington-385-centre-ave', label: 'Abington — 385 Centre Ave, MA' },
         { value: 'target-ma-boston-860-commonwealth-ave', label: 'Boston — 860 Commonwealth Ave, MA' },
@@ -281,6 +326,17 @@
     },
 
     NH: {
+      Walmart: [
+        { value: 'walmart-nh-amherst', label: 'Amherst — 85 State Route 101A, NH 03031' },
+        { value: 'walmart-nh-concord', label: 'Concord — 344 Loudon Rd, NH 03301' },
+        { value: 'walmart-nh-derry', label: 'Derry — 11 Ashleigh Dr, NH 03038' },
+        { value: 'walmart-nh-epping', label: 'Epping — 35 Fresh River Rd, NH 03042' },
+        { value: 'walmart-nh-keene', label: 'Keene — 350 Winchester St, NH 03431' },
+        { value: 'walmart-nh-manchester', label: 'Manchester — 725 Gold St, NH 03103' },
+        { value: 'walmart-nh-rochester', label: 'Rochester — 116 Farmington Rd, NH 03867' },
+        { value: 'walmart-nh-salem', label: 'Salem — 326 N Broadway, NH 03079' },
+        { value: 'walmart-nh-west-lebanon', label: 'West Lebanon — 285 Plainfield Rd, NH 03784' }
+      ],
       Target: [
         { value: 'target-nh-bedford-220-s-river-rd', label: 'Bedford — 220 S River Rd, NH' },
         { value: 'target-nh-concord-80-damante-dr', label: 'Concord — 80 Damante Dr, NH' },
