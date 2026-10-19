@@ -185,11 +185,121 @@
       Other: []
     },
 
-    CT: {},
-    ME: {},
-    MA: {},
-    NH: {},
-    VT: {}
+    CT: {
+      Target: [
+        { value: 'target-ct-ansonia-20-w-main-st', label: 'Ansonia — 20 W Main St, CT' },
+        { value: 'target-ct-bethel-7-stony-hill-rd', label: 'Bethel — 7 Stony Hill Rd, CT' },
+        { value: 'target-ct-danbury-7-backus-ave', label: 'Danbury — 7 Backus Ave, CT' },
+        { value: 'target-ct-dayville-2177-killingly-commons', label: 'Dayville — 2177 Killingly Commons, CT' },
+        { value: 'target-ct-enfield-94-elm-st-ste-1', label: 'Enfield — 94 Elm St, Ste 1, CT' },
+        { value: 'target-ct-guilford-900-boston-post-rd', label: 'Guilford — 900 Boston Post Rd, CT' },
+        { value: 'target-ct-lisbon-195-river-rd', label: 'Lisbon — 195 River Rd, CT' },
+        { value: 'target-ct-manchester-125-buckland-hills-dr', label: 'Manchester — 125 Buckland Hills Dr, CT' },
+        { value: 'target-ct-meriden-474-chamberlain-hwy', label: 'Meriden — 474 Chamberlain Hwy, CT' },
+        { value: 'target-ct-milford-1191-boston-post-rd', label: 'Milford — 1191 Boston Post Rd, CT' },
+        { value: 'target-ct-new-britain-475-hartford-rd', label: 'New Britain — 475 Hartford Rd, CT' },
+        { value: 'target-ct-newington-3265-berlin-turnpike', label: 'Newington — 3265 Berlin Turnpike, CT' },
+        { value: 'target-ct-north-haven-200-universal-dr-n', label: 'North Haven — 200 Universal Dr N, CT' },
+        { value: 'target-ct-norwalk-680-connecticut-ave', label: 'Norwalk — 680 Connecticut Ave, CT' },
+        { value: 'target-ct-orange-25-boston-post-rd', label: 'Orange — 25 Boston Post Rd, CT' },
+        { value: 'target-ct-southington-600-executive-blvd', label: 'Southington — 600 Executive Blvd, CT' },
+        { value: 'target-ct-stamford-21-broad-st', label: 'Stamford — 21 Broad St, CT' },
+        { value: 'target-ct-torrington-1922-e-main-st', label: 'Torrington — 1922 E Main St, CT' },
+        { value: 'target-ct-trumbull-5065-main-st', label: 'Trumbull — 5065 Main St, CT' },
+        { value: 'target-ct-trumbull-120-hawley-ln', label: 'Trumbull — 120 Hawley Ln, CT' },
+        { value: 'target-ct-waterbury-300-chase-ave', label: 'Waterbury — 300 Chase Ave, CT' },
+        { value: 'target-ct-waterford-900-hartford-tpke', label: 'Waterford — 900 Hartford Tpke, CT' },
+        { value: 'target-ct-west-hartford-333-n-main-st-ste-10', label: 'West Hartford — 333 N Main St, Ste 10, CT' },
+        { value: 'target-ct-windsor-1075-kennedy-rd', label: 'Windsor — 1075 Kennedy Rd, CT' }
+      ]
+    },
+
+    ME: {
+      Target: [
+        { value: 'target-me-auburn-603-center-st', label: 'Auburn — 603 Center St, ME' },
+        { value: 'target-me-augusta-119-crossing-way', label: 'Augusta — 119 Crossing Way, ME' },
+        { value: 'target-me-bangor-60-longview-dr', label: 'Bangor — 60 Longview Dr, ME' },
+        { value: 'target-me-biddeford-430-mariner-way', label: 'Biddeford — 430 Mariner Way, ME' },
+        { value: 'target-me-south-portland-200-running-hill-rd', label: 'South Portland — 200 Running Hill Rd, ME' },
+        { value: 'target-me-topsham-125-topsham-fair-mall-rd', label: 'Topsham — 125 Topsham Fair Mall Rd, ME' }
+      ]
+    },
+
+    MA: {
+      Target: [
+        { value: 'target-ma-abington-385-centre-ave', label: 'Abington — 385 Centre Ave, MA' },
+        { value: 'target-ma-boston-860-commonwealth-ave', label: 'Boston — 860 Commonwealth Ave, MA' },
+        { value: 'target-ma-boston-100-cambridge-st-ste-2', label: 'Boston — 100 Cambridge St, Ste 2, MA' },
+        { value: 'target-ma-boston-1341-boylston-st', label: 'Boston — 1341 Boylston St, MA' },
+        { value: 'target-ma-braintree-250-granite-st', label: 'Braintree — 250 Granite St, MA' },
+        { value: 'target-ma-burlington-34-cambridge-st-ste-145', label: 'Burlington — 34 Cambridge St, Ste 145, MA' },
+        { value: 'target-ma-cambridge-822-somerville-ave', label: 'Cambridge — 822 Somerville Ave, MA' },
+        { value: 'target-ma-cambridge-564-massachusetts-ave', label: 'Cambridge — 564 Massachusetts Ave, MA' },
+        { value: 'target-ma-danvers-240-independence-way', label: 'Danvers — 240 Independence Way, MA' },
+        { value: 'target-ma-dorchester-500-geneva-ave', label: 'Dorchester — 500 Geneva Ave, MA' },
+        { value: 'target-ma-dorchester-7-allstate-rd', label: 'Dorchester — 7 Allstate Rd, MA' },
+        { value: 'target-ma-everett-1-mystic-view-rd', label: 'Everett — 1 Mystic View Rd, MA' },
+        { value: 'target-ma-framingham-400-cochituate-rd', label: 'Framingham — 400 Cochituate Rd, MA' },
+        { value: 'target-ma-hadley-367-russell-st', label: 'Hadley — 367 Russell St, MA' },
+        { value: 'target-ma-hanover-1167-washington-st', label: 'Hanover — 1167 Washington St, MA' },
+        { value: 'target-ma-haverhill-35-computer-dr', label: 'Haverhill — 35 Computer Dr, MA' },
+        { value: 'target-ma-holyoke-50-holyoke-st', label: 'Holyoke — 50 Holyoke St, MA' },
+        { value: 'target-ma-hyannis-793-iyannough-rd', label: 'Hyannis — 793 Iyannough Rd, MA' },
+        { value: 'target-ma-kingston-101-independence-mall-way', label: 'Kingston — 101 Independence Mall Way, MA' },
+        { value: 'target-ma-lanesborough-655-cheshire-rd', label: 'Lanesborough — 655 Cheshire Rd, MA' },
+        { value: 'target-ma-leominster-86-orchard-hill-park-dr', label: 'Leominster — 86 Orchard Hill Park Dr, MA' },
+        { value: 'target-ma-lowell-181-plain-st', label: 'Lowell — 181 Plain St, MA' },
+        { value: 'target-ma-marlborough-605-boston-post-rd-e', label: 'Marlborough — 605 Boston Post Rd E, MA' },
+        { value: 'target-ma-marlborough-423-donald-lynch-blvd', label: 'Marlborough — 423 Donald Lynch Blvd, MA' },
+        { value: 'target-ma-medford-471-salem-st', label: 'Medford — 471 Salem St, MA' },
+        { value: 'target-ma-methuen-67-pleasant-valley-st', label: 'Methuen — 67 Pleasant Valley St, MA' },
+        { value: 'target-ma-milford-250-fortune-blvd', label: 'Milford — 250 Fortune Blvd, MA' },
+        { value: 'target-ma-millbury-70-worcester-providence-tpke-100', label: 'Millbury — 70 Worcester Providence Tpke #100, MA' },
+        { value: 'target-ma-north-attleboro-1205-s-washington-st', label: 'North Attleboro — 1205 S Washington St, MA' },
+        { value: 'target-ma-north-dartmouth-479-state-rd', label: 'North Dartmouth — 479 State Rd, MA' },
+        { value: 'target-ma-plainville-91-taunton-st', label: 'Plainville — 91 Taunton St, MA' },
+        { value: 'target-ma-quincy-289-hancock-st', label: 'Quincy — 289 Hancock St, MA' },
+        { value: 'target-ma-revere-36-furlong-dr', label: 'Revere — 36 Furlong Dr, MA' },
+        { value: 'target-ma-roslindale-4165-washington-st', label: 'Roslindale — 4165 Washington St, MA' },
+        { value: 'target-ma-salem-227-highland-ave', label: 'Salem — 227 Highland Ave, MA' },
+        { value: 'target-ma-saugus-400-lynn-fells-pkwy', label: 'Saugus — 400 Lynn Fells Pkwy, MA' },
+        { value: 'target-ma-seekonk-79-commerce-way', label: 'Seekonk — 79 Commerce Way, MA' },
+        { value: 'target-ma-somerville-180-somerville-ave', label: 'Somerville — 180 Somerville Ave, MA' },
+        { value: 'target-ma-south-easton-41-robert-dr', label: 'South Easton — 41 Robert Dr, MA' },
+        { value: 'target-ma-stoneham-113-main-st', label: 'Stoneham — 113 Main St, MA' },
+        { value: 'target-ma-stoughton-1-hawes-way', label: 'Stoughton — 1 Hawes Way, MA' },
+        { value: 'target-ma-swansea-579-gar-hwy', label: 'Swansea — 579 GAR Hwy, MA' },
+        { value: 'target-ma-taunton-81-taunton-depot-dr', label: 'Taunton — 81 Taunton Depot Dr, MA' },
+        { value: 'target-ma-wareham-2421-cranberry-hwy', label: 'Wareham — 2421 Cranberry Hwy, MA' },
+        { value: 'target-ma-watertown-550-arsenal-st', label: 'Watertown — 550 Arsenal St, MA' },
+        { value: 'target-ma-westborough-330-turnpike-rd', label: 'Westborough — 330 Turnpike Rd, MA' },
+        { value: 'target-ma-westwood-221-university-ave', label: 'Westwood — 221 University Ave, MA' },
+        { value: 'target-ma-wilmington-210-ballardvale-st', label: 'Wilmington — 210 Ballardvale St, MA' },
+        { value: 'target-ma-woburn-101-commerce-way', label: 'Woburn — 101 Commerce Way, MA' },
+        { value: 'target-ma-worcester-529-lincoln-st', label: 'Worcester — 529 Lincoln St, MA' }
+      ]
+    },
+
+    NH: {
+      Target: [
+        { value: 'target-nh-bedford-220-s-river-rd', label: 'Bedford — 220 S River Rd, NH' },
+        { value: 'target-nh-concord-80-damante-dr', label: 'Concord — 80 Damante Dr, NH' },
+        { value: 'target-nh-greenland-1450-greenland-rd', label: 'Greenland — 1450 Greenland Rd, NH' },
+        { value: 'target-nh-hooksett-100-quality-dr', label: 'Hooksett — 100 Quality Dr, NH' },
+        { value: 'target-nh-keene-46-ash-brook-rd', label: 'Keene — 46 Ash Brook Rd, NH' },
+        { value: 'target-nh-nashua-600-amherst-st', label: 'Nashua — 600 Amherst St, NH' },
+        { value: 'target-nh-nashua-310-daniel-webster-hwy', label: 'Nashua — 310 Daniel Webster Hwy, NH' },
+        { value: 'target-nh-salem-203-s-broadway', label: 'Salem — 203 S Broadway, NH' },
+        { value: 'target-nh-somersworth-11-andrews-rd', label: 'Somersworth — 11 Andrews Rd, NH' },
+        { value: 'target-nh-west-lebanon-200-s-main-st-unit-24', label: 'West Lebanon — 200 S Main St, Unit 24, NH' }
+      ]
+    },
+
+    VT: {
+      Target: [
+        { value: 'target-vt-south-burlington-155-dorset-st', label: 'South Burlington — 155 Dorset St, VT' }
+      ]
+    }
   };
 
   var config = {
