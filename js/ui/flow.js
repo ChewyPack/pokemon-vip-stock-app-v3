@@ -456,6 +456,11 @@
         }
       }
 
+      if (field.type === 'choice' || field.type === 'select') {
+        var selectedOption = cfg.getOption(field.id, value, ctx);
+        if (selectedOption) return selectedOption.label;
+      }
+
       return String(value);
     }
 
