@@ -135,11 +135,11 @@
           },
           navLink('Home', '/'),
           dropdown('Poke Report', [
-            { title: 'News', description: 'Pokémon news and hobby coverage', href: '/news.html' },
-            { title: 'Updates', description: 'Platform updates and announcements', href: '/updates.html' },
+            { title: 'Report a Sighting', description: 'Submit an in-store stock report', href: '/#report' },
+            { title: 'News & Exclusives', description: 'Pokémon news and hobby coverage', href: '/news.html' },
             { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
-            { title: 'Events', description: 'Shows, trade nights, and releases', href: '/events.html' },
-            { title: 'Instant Cash Out', description: 'Explore collection cash-out options', href: '/instant-cash-out.html' }
+            { title: 'Events Calendar', description: 'Shows, trade nights, and releases', href: '/events.html' },
+            { title: 'Instant Buyout', description: 'Request an offer for cards, sealed product, slabs, or a collection', href: '/instant-buyout.html' }
           ]),
           dropdown('Alerts', [
             { title: 'Live Stock', description: 'View live stock alerts', href: '/alerts.html' },
