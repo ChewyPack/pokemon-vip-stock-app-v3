@@ -21,6 +21,7 @@
   ]),
   dropdown('Alerts',[
    {title:'Live Stock',description:'View live stock alerts',href:'/alerts.html'},
+   {title:'Collector Notifications',description:'Browser alerts and your notification inbox',href:'/notifications.html'},
    {title:'Target',description:'Target stock alerts',href:'/alerts.html?retailer=target'},
    {title:'Walmart',description:'Walmart stock alerts',href:'/alerts.html?retailer=walmart'},
    {title:'BestBuy',description:'Best Buy stock alerts',href:'/alerts.html?retailer=bestbuy'}
