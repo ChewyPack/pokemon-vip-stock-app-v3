@@ -36,4 +36,5 @@
  $('ib-admin-list').addEventListener('click',async e=>{const b=e.target.closest('[data-save-buyout]');if(!b)return;const wrap=b.closest('[data-admin-id]'),id=Number(wrap.dataset.adminId);b.disabled=true;b.textContent='Saving…';try{await api({action:'admin_update',id,status:wrap.querySelector('[name=status]').value,offer_amount:wrap.querySelector('[name=offer_amount]').value,partner_vendor_name:wrap.querySelector('[name=partner_vendor_name]').value,partner_vendor_contact:wrap.querySelector('[name=partner_vendor_contact]').value,offer_notes:wrap.querySelector('[name=offer_notes]').value});$('ib-list-status').textContent='Buyout request updated.';await load();}catch(err){$('ib-list-status').textContent=err.message;}finally{b.disabled=false;b.textContent='Save update';}});
  load();
 })();
-</script></body></html>
+</script><script src="/js/ui/pokereport-sidebar.js"></script>
+</body></html>
