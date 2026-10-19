@@ -94,7 +94,7 @@ async function sync(db) {
     if (!groups.length) throw new Error('TCGCSV returned zero Pokémon groups; refusing to clear existing data.');
 
     const groupStatements = groups.map(group => db.prepare(`
-      INSERT INTO tcgcsv_groups(group_id, category_id, name, abbreviation, published_on, modified_on, last_seen_sync)
+      INSERT INTO tcgcsv_groups_staging(group_id, category_id, name, abbreviation, published_on, modified_on, last_seen_sync)
       VALUES(?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(group_id) DO UPDATE SET
         category_id=excluded.category_id, name=excluded.name, abbreviation=excluded.abbreviation,
@@ -127,7 +127,7 @@ async function sync(db) {
       const productStatements = productsPayload.results.map(product => {
         const ext = Array.isArray(product.extendedData) ? product.extendedData : [];
         return db.prepare(`
-          INSERT INTO tcgcsv_products(
+          INSERT INTO tcgcsv_products_staging(
             product_id, category_id, group_id, name, clean_name, image_url, product_url,
             product_type, card_number, rarity, extended_data_json, last_seen_sync
           ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -149,7 +149,7 @@ async function sync(db) {
       productsSaved += productStatements.length;
 
       const priceStatements = pricePayload.results.map(price => db.prepare(`
-        INSERT INTO tcgcsv_prices(
+        INSERT INTO tcgcsv_prices_staging(
           product_id, subtype_name, low_price, mid_price, high_price,
           market_price, direct_low_price, last_seen_sync
         ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
@@ -164,22 +164,40 @@ async function sync(db) {
       ));
       await batches(db, priceStatements, 75);
       pricesSaved += priceStatements.length;
-      await db.prepare(`INSERT OR IGNORE INTO tcgcsv_price_history(product_id, subtype_name, source_timestamp, low_price, mid_price, high_price, market_price, direct_low_price, recorded_at) SELECT p.product_id, p.subtype_name, ?, p.low_price, p.mid_price, p.high_price, p.market_price, p.direct_low_price, ? FROM tcgcsv_prices p JOIN tcgcsv_products product ON product.product_id=p.product_id WHERE product.group_id=? AND p.last_seen_sync=?`).bind(sourceTimestamp, new Date().toISOString(), groupId, sourceTimestamp).run();
       groupsProcessed += 1;
     }
 
-    // Only prune stale catalog rows after every Pokémon group imported successfully.
-    await db.prepare('DELETE FROM tcgcsv_products WHERE category_id = ? AND last_seen_sync <> ?')
-      .bind(POKEMON_CATEGORY_ID, sourceTimestamp).run();
-    await db.prepare('DELETE FROM tcgcsv_prices WHERE last_seen_sync <> ?').bind(sourceTimestamp).run();
-    await db.prepare('DELETE FROM tcgcsv_groups WHERE category_id = ? AND last_seen_sync <> ?')
-      .bind(POKEMON_CATEGORY_ID, sourceTimestamp).run();
-
-    await db.prepare(`
-      UPDATE tcgcsv_sync_state
-      SET source_timestamp=?, last_success_at=?, status='success', last_error=NULL
-      WHERE id=1
-    `).bind(sourceTimestamp, new Date().toISOString()).run();
+    // Publish the new catalog in one D1 batch only after every group succeeded.
+    // Until this transaction commits, searches continue reading the previous successful catalog.
+    const commitAt = new Date().toISOString();
+    await db.batch([
+      db.prepare(`INSERT INTO tcgcsv_groups(group_id, category_id, name, abbreviation, published_on, modified_on, last_seen_sync)
+        SELECT group_id, category_id, name, abbreviation, published_on, modified_on, last_seen_sync FROM tcgcsv_groups_staging WHERE 1
+        ON CONFLICT(group_id) DO UPDATE SET category_id=excluded.category_id, name=excluded.name,
+          abbreviation=excluded.abbreviation, published_on=excluded.published_on,
+          modified_on=excluded.modified_on, last_seen_sync=excluded.last_seen_sync`),
+      db.prepare(`INSERT INTO tcgcsv_products(product_id, category_id, group_id, name, clean_name, image_url, product_url, product_type, card_number, rarity, extended_data_json, last_seen_sync)
+        SELECT product_id, category_id, group_id, name, clean_name, image_url, product_url, product_type, card_number, rarity, extended_data_json, last_seen_sync FROM tcgcsv_products_staging WHERE 1
+        ON CONFLICT(product_id) DO UPDATE SET category_id=excluded.category_id, group_id=excluded.group_id,
+          name=excluded.name, clean_name=excluded.clean_name, image_url=excluded.image_url,
+          product_url=excluded.product_url, product_type=excluded.product_type, card_number=excluded.card_number,
+          rarity=excluded.rarity, extended_data_json=excluded.extended_data_json, last_seen_sync=excluded.last_seen_sync`),
+      db.prepare(`INSERT INTO tcgcsv_prices(product_id, subtype_name, low_price, mid_price, high_price, market_price, direct_low_price, last_seen_sync)
+        SELECT product_id, subtype_name, low_price, mid_price, high_price, market_price, direct_low_price, last_seen_sync FROM tcgcsv_prices_staging WHERE 1
+        ON CONFLICT(product_id, subtype_name) DO UPDATE SET low_price=excluded.low_price, mid_price=excluded.mid_price,
+          high_price=excluded.high_price, market_price=excluded.market_price, direct_low_price=excluded.direct_low_price,
+          last_seen_sync=excluded.last_seen_sync`),
+      db.prepare('DELETE FROM tcgcsv_products WHERE category_id = ? AND NOT EXISTS (SELECT 1 FROM tcgcsv_products_staging s WHERE s.product_id = tcgcsv_products.product_id)').bind(POKEMON_CATEGORY_ID),
+      db.prepare('DELETE FROM tcgcsv_prices WHERE NOT EXISTS (SELECT 1 FROM tcgcsv_prices_staging s WHERE s.product_id = tcgcsv_prices.product_id AND s.subtype_name = tcgcsv_prices.subtype_name)'),
+      db.prepare('DELETE FROM tcgcsv_groups WHERE category_id = ? AND NOT EXISTS (SELECT 1 FROM tcgcsv_groups_staging s WHERE s.group_id = tcgcsv_groups.group_id)').bind(POKEMON_CATEGORY_ID),
+      db.prepare(`INSERT OR IGNORE INTO tcgcsv_price_history(product_id, subtype_name, source_timestamp, low_price, mid_price, high_price, market_price, direct_low_price, recorded_at)
+        SELECT p.product_id, p.subtype_name, ?, p.low_price, p.mid_price, p.high_price, p.market_price, p.direct_low_price, ?
+        FROM tcgcsv_prices_staging p JOIN tcgcsv_products_staging product ON product.product_id=p.product_id`).bind(sourceTimestamp, commitAt),
+      db.prepare(`UPDATE tcgcsv_sync_state SET source_timestamp=?, last_success_at=?, status='success', last_error=NULL WHERE id=1`).bind(sourceTimestamp, commitAt),
+      db.prepare('DELETE FROM tcgcsv_groups_staging'),
+      db.prepare('DELETE FROM tcgcsv_products_staging'),
+      db.prepare('DELETE FROM tcgcsv_prices_staging')
+    ]);
 
     return {
       skipped: false, source_timestamp: sourceTimestamp, groups_processed: groupsProcessed,
