@@ -146,6 +146,130 @@ function makeStoreDetails(report) {
   };
 }
 
+async function handleLineReport(data, env) {
+  const alertUrl = env.DISCORD_WEBHOOK_URL || '';
+  if (!WEBHOOK_PREFIX.test(alertUrl)) {
+    return json({ ok: false, error: 'not_configured' }, 500);
+  }
+
+  const errors = {};
+  ['state', 'retailer', 'branch'].forEach(function (id) {
+    const field = formConfig.getField(id);
+    const options = formConfig.getOptions(id, {
+      get: function (key) { return data[key] || ''; }
+    }) || [];
+    const message = validate.validateField(field, data[id], { options });
+    if (message) errors[id] = message;
+  });
+
+  ['lineCount', 'lineSeenAt', 'stockedBy'].forEach(function (id) {
+    const field = formConfig.getField(id);
+    const options = formConfig.getOptions(id) || [];
+    const message = validate.validateField(field, data[id], {
+      options,
+      futureToleranceMs: 15 * 60 * 1000
+    });
+    if (message) errors[id] = message;
+  });
+
+  if (data.branch === 'manual') {
+    if (String(data.storeTown || '').trim().length < 2) {
+      errors.storeTown = 'Enter the town or city for this store.';
+    }
+    if (String(data.storeAddress || '').trim().length < 3) {
+      errors.storeAddress = 'Enter the street address for this store.';
+    }
+  }
+
+  if (Object.keys(errors).length) {
+    return json({ ok: false, error: 'invalid', errors }, 422);
+  }
+
+  const store = makeStoreDetails(data);
+  const stockedByLabels = {
+    vendor: 'Vendor',
+    store_employees: 'Store employees',
+    unknown: 'Not sure'
+  };
+  const report = {
+    reportType: 'line',
+    state: data.state,
+    retailer: data.retailer,
+    branch: data.branch,
+    branchLabel: store.branchLabel,
+    storeTown: store.town,
+    storeAddress: store.address,
+    location: store.location,
+    lineCount: data.lineCount,
+    lineSeenAt: new Date(data.lineSeenAt).toISOString(),
+    stockedBy: data.stockedBy,
+    stockedByLabel: stockedByLabels[data.stockedBy] || 'Not sure'
+  };
+
+  try {
+    await env.DB.prepare(`
+      INSERT INTO reports (
+        store, location, product, quantity, price, reported_by, photo_url,
+        notes, price_type, product_located, seen_at, still_there, state,
+        branch_id, store_town, store_address, product_name, quantity_text,
+        shelf_price, msrp, report_type, line_count, stocked_by
+      ) VALUES (
+        ?, ?, '', NULL, NULL, '', '', ?, 'Line report', '', ?, '', ?,
+        ?, ?, ?, '', ?, NULL, NULL, 'line', ?, ?
+      )
+    `).bind(
+      report.retailer,
+      report.location,
+      'Line report — ' + report.lineCount + ' people; stocked by ' + report.stockedByLabel,
+      report.lineSeenAt,
+      report.state,
+      report.branch,
+      report.storeTown,
+      report.storeAddress,
+      report.lineCount,
+      report.stockedBy
+    ).run();
+  } catch (error) {
+    console.error('Line report D1 database error:', error);
+    return json({ ok: false, error: 'database_error' }, 500);
+  }
+
+  const roleId = env.DISCORD_ALERT_ROLE_ID || '';
+  const payload = {
+    content: roleId ? '<@&' + roleId + '> **STORE LINE REPORT**' : '**STORE LINE REPORT**',
+    allowed_mentions: roleId ? { roles: [roleId] } : { parse: [] },
+    embeds: [{
+      title: 'Queue observed at ' + report.retailer,
+      color: 15158332,
+      fields: [
+        { name: 'Location', value: report.location || 'Location unavailable', inline: false },
+        { name: 'People in line', value: report.lineCount, inline: true },
+        { name: 'Who stocked?', value: report.stockedByLabel, inline: true },
+        { name: 'Observed at', value: report.lineSeenAt, inline: false }
+      ],
+      footer: { text: 'PokePrizePool Stock Intelligence • Line report' },
+      timestamp: new Date().toISOString()
+    }]
+  };
+
+  const logUrl = env.DISCORD_LOG_WEBHOOK_URL || '';
+  const sends = [postToDiscord(alertUrl, payload, [])];
+  if (WEBHOOK_PREFIX.test(logUrl)) sends.push(postToDiscord(logUrl, payload, []));
+
+  try {
+    const responses = await Promise.all(sends);
+    if (responses.some(function (response) { return !response.ok; })) {
+      console.error('Discord rejected a line report alert:', responses.map(function (response) { return response.status; }));
+      return json({ ok: true, alerted: false, warning: 'discord_rejected' });
+    }
+  } catch (error) {
+    console.error('Discord connection error for line report:', error);
+    return json({ ok: true, alerted: false, warning: 'discord_unreachable' });
+  }
+
+  return json({ ok: true, alerted: true });
+}
+
 export async function onRequestPost({ request, env }) {
   /*
    * POKE REPORT IS OPEN TO USERS WITHOUT A PAID MEMBERSHIP.
@@ -213,6 +337,10 @@ export async function onRequestPost({ request, env }) {
       ok: false,
       error: 'bad_request'
     }, 400);
+  }
+
+  if (data.reportType === 'line') {
+    return handleLineReport(data, env);
   }
 
   const result = validate.validateAll(
