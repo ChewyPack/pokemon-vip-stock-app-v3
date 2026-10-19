@@ -185,6 +185,10 @@
 
     config.fields.forEach(function (field) {
       if (field.type === 'photos') return;
+      if (
+        values.reportType !== 'line' &&
+        ['lineCount', 'lineSeenAt', 'stockedBy'].indexOf(field.id) !== -1
+      ) return;
 
       var fieldOpts = {};
       Object.keys(opts).forEach(function (key) {
