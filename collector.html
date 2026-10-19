@@ -131,7 +131,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <label class="cp-field">Notes (optional)<textarea id="notes" maxlength="500" placeholder="Language, variant, target price, etc."></textarea></label>
 <button class="cp-btn" type="submit">Add item</button>
 </form>
-<p class="cp-public-note">Catalog search uses free TCGdex card and set records. Selecting a card fills its name, set, number, and image. Catalog data does not include verified market prices; leave value blank when you do not have a reliable price.</p>
+<p class="cp-public-note">Catalog search uses PokePrizePool's daily-synced TCGCSV Pokémon catalog. Results show TCGplayer market prices by available printing or sealed-product variant. Selecting a result fills the matching catalog details and market-price estimate. Graded-slab values must be researched separately from raw-card prices.</p>
 <p id="owner-status" class="cp-status" role="status" aria-live="polite"></p>
 </aside>
 <section class="cp-panel">
@@ -150,7 +150,6 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 (function(){
  const $=id=>document.getElementById(id);
  let own=false,profile=null,items=[],activeList='collection',viewUsername=new URLSearchParams(location.search).get('user')||'';
- const TCGDEX='https://api.tcgdex.net/v2/en';
  let catalogSets=[],catalogTimer=null,catalogRequest=0,selectedCatalogProductId=null,selectedCatalogProductName='',followState={followers:0,following:0,isFollowing:false};
 
  const money=cents=>cents===null||cents===undefined?'Not set':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents)/100);
@@ -430,7 +429,8 @@ async function searchCollectors(query){
   try{const response=await fetch('/api/account/logout',{method:'POST',credentials:'include'});if(!response.ok)throw new Error('Please try logging out again.');location.href='/';}
   catch(error){setStatus('view-status',error.message||'Could not log out.');button.disabled=false;button.textContent='Log out';}
  });
- $('product-name').addEventListener('input',()=>{if(selectedCatalogProductName&&$('product-name').value.trim()!==selectedCatalogProductName){selectedCatalogProductId=null;selectedCatalogProductName='';}});\n $('item-form').addEventListener('submit',async e=>{
+ $('product-name').addEventListener('input',()=>{if(selectedCatalogProductName&&$('product-name').value.trim()!==selectedCatalogProductName){selectedCatalogProductId=null;selectedCatalogProductName='';}});
+ $('item-form').addEventListener('submit',async e=>{
   e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Adding item…');
   const value=$('estimated-value').value;
   try{const r=await fetch('/api/collector/items',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({list_type:$('list-type').value,product_type:$('product-type').value,product_name:$('product-name').value,set_name:$('set-name').value,card_number:$('card-number').value,condition:$('condition').value,quantity:Number($('quantity').value),estimated_value:value===''?null:Number(value),image_url:$('image-url').value,notes:$('notes').value,tcgcsv_product_id:selectedCatalogProductId})}),d=await r.json();
