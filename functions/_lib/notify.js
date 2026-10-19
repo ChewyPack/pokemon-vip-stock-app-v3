@@ -26,7 +26,7 @@ export async function notifyReport(env, report) {
     LEFT JOIN notification_preferences p ON p.account_id = a.id
     WHERE (COALESCE(a.is_admin, 0) = 1 OR (
       LOWER(COALESCE(a.membership_status, '')) IN ('active', 'trialing') AND
-      LOWER(COALESCE(a.membership_entitlement_tier, a.membership_tier, '')) IN ('collector+', 'vendor', 'event organizer', 'event_organizer')
+      LOWER(REPLACE(REPLACE(COALESCE(NULLIF(TRIM(a.membership_entitlement_tier), ''), NULLIF(TRIM(a.membership_tier), ''), ''), '_', ' '), '-', ' ')) IN ('collector+', 'collector plus', 'vendor', 'event organizer')
     ))
       AND (COALESCE(p.in_app_enabled, 1) = 1 OR COALESCE(p.browser_push_enabled, 0) = 1)
   `).all();
