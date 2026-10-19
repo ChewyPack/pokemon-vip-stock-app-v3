@@ -1,0 +1,11 @@
+name = "pokeprizepool-tcgcsv-sync-staging"
+main = "worker.js"
+compatibility_date = "2026-10-19"
+
+[triggers]
+crons = ["0 9 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pokemon-vip-members-staging"
+database_id = "REPLACE_WITH_STAGING_D1_DATABASE_ID"
