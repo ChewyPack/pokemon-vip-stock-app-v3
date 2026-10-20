@@ -9,6 +9,13 @@ async function sha256(value) {
   return base64Url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
 }
 
+function apiDenied(status, error, message) {
+  return new Response(JSON.stringify({ ok: false, error, message }), {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
+  });
+}
+
 function lockPage() {
   const html = `<!doctype html>
 <html lang="en">
@@ -47,16 +54,17 @@ a.secondary{background:#1b2b47;color:#fff;border:1px solid #40516e}
 
 export async function onRequest({ request, env, next }) {
   const pathname = new URL(request.url).pathname;
-  if (pathname !== '/alerts.html' && pathname !== '/market-intelligence.html') {
+  const isAlertsApi = pathname === '/api/alerts';
+  if (pathname !== '/alerts.html' && pathname !== '/market-intelligence.html' && !isAlertsApi) {
     return next();
   }
 
   try {
-    if (!env.DB) return lockPage();
+    if (!env.DB) return isAlertsApi ? apiDenied(503, 'access_check_unavailable', 'Membership could not be verified. Please try again shortly.') : lockPage();
     const cookieHeader = request.headers.get('Cookie') || '';
     const token = cookieHeader.split(';').map(part => part.trim())
       .find(part => part.startsWith(COOKIE + '='));
-    if (!token) return lockPage();
+    if (!token) return isAlertsApi ? apiDenied(401, 'unauthorized', 'Please sign in to your PokePrizePool account.') : lockPage();
 
     const sessionHash = await sha256(token.slice(COOKIE.length + 1));
     const account = await env.DB.prepare(
@@ -66,7 +74,7 @@ export async function onRequest({ request, env, next }) {
     ).bind(sessionHash).first();
 
     if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) {
-      return lockPage();
+      return isAlertsApi ? apiDenied(401, 'unauthorized', 'Please sign in to your PokePrizePool account.') : lockPage();
     }
 
     const tier = String(account.membership_entitlement_tier || account.membership_tier || 'free').trim().toLowerCase();
@@ -74,9 +82,9 @@ export async function onRequest({ request, env, next }) {
     const paid = Number(account.is_admin || 0) === 1 ||
       (status === 'active' && tier !== '' && tier !== 'free' && tier !== 'none');
 
-    return paid ? next() : lockPage();
+    return paid ? next() : (isAlertsApi ? apiDenied(403, 'membership_required', 'An active paid membership is required to access Live Stock Alerts.') : lockPage());
   } catch (error) {
     console.error('Paid page access check failed:', error);
-    return lockPage();
+    return isAlertsApi ? apiDenied(503, 'access_check_failed', 'Membership could not be verified. Please try again shortly.') : lockPage();
   }
 }
