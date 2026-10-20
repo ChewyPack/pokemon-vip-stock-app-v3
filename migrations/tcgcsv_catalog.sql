@@ -66,8 +66,6 @@ CREATE INDEX IF NOT EXISTS idx_tcgcsv_prices_product
 CREATE INDEX IF NOT EXISTS idx_tcgcsv_prices_market
   ON tcgcsv_prices(market_price);
 
--- Link member-owned and wishlisted items to the exact shared catalog record.
--- This preserves exact printing identity for collection/wishlist matching.
 CREATE TABLE IF NOT EXISTS collector_item_catalog (
   item_id INTEGER PRIMARY KEY,
   tcgcsv_product_id INTEGER NOT NULL,
@@ -78,7 +76,6 @@ CREATE TABLE IF NOT EXISTS collector_item_catalog (
 CREATE INDEX IF NOT EXISTS idx_collector_item_catalog_product
   ON collector_item_catalog(tcgcsv_product_id);
 
--- One immutable snapshot per source build and printing variant for market trends.
 CREATE TABLE IF NOT EXISTS tcgcsv_price_history (
   product_id INTEGER NOT NULL,
   subtype_name TEXT NOT NULL DEFAULT 'Normal',
@@ -98,8 +95,6 @@ CREATE INDEX IF NOT EXISTS idx_tcgcsv_price_history_product_time
 CREATE INDEX IF NOT EXISTS idx_tcgcsv_price_history_time
   ON tcgcsv_price_history(source_timestamp);
 
--- Temporary import tables keep the last successful live catalog visible until a
--- complete daily sync succeeds. They are cleared/rebuilt for every changed source build.
 CREATE TABLE IF NOT EXISTS tcgcsv_groups_staging (
   group_id INTEGER PRIMARY KEY,
   category_id INTEGER NOT NULL,
@@ -136,3 +131,13 @@ CREATE TABLE IF NOT EXISTS tcgcsv_prices_staging (
   last_seen_sync TEXT NOT NULL,
   PRIMARY KEY (product_id, subtype_name)
 );
+
+CREATE TABLE IF NOT EXISTS tcgcsv_sync_progress (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  run_token TEXT,
+  source_timestamp TEXT,
+  group_ids_json TEXT,
+  next_group_index INTEGER NOT NULL DEFAULT 0
+);
+
+INSERT OR IGNORE INTO tcgcsv_sync_progress (id, next_group_index) VALUES (1, 0);
