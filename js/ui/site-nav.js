@@ -47,7 +47,8 @@
    {title:'Account Settings',description:'Profile and privacy settings',href:'/account.html#nearby-collector-settings'},
    {title:'News & Exclusives',description:'Pokémon news and hobby updates',href:'/news.html'},
    {title:'Events Calendar',description:'Shows, trade nights, and releases',href:'/events.html'},
-   {title:'Market Intelligence',description:'Pokémon TCG market trends',href:'/market-intelligence.html'}
+   {title:'Market Intelligence',description:'Pokémon TCG market trends',href:'/market-intelligence.html'},
+   {title:'Securing Product',description:'Interactive Pokémon TCG drop-day playbook and route planner',href:'/drop-day-playbook.html'}
   ]),
   link('Sign up / Log in','/account.html','site-nav__link account-nav-link'),
   inbox
