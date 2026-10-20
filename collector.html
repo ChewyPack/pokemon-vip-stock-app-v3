@@ -66,6 +66,12 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-catalog-results{display:grid;gap:7px;margin-top:9px;max-height:340px;overflow:auto}
 .cp-catalog-result{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid #dbe4f4;border-radius:9px;padding:7px;background:#fff;color:var(--navy);font:inherit;cursor:pointer;min-width:0}
 .cp-catalog-result:hover,.cp-catalog-result:focus{border-color:#2859a8;background:#f0f5ff}
+.cp-catalog-result-row{display:grid;gap:6px;border:1px solid #dbe4f4;border-radius:10px;padding:7px;background:#fff}
+.cp-catalog-result-row .cp-catalog-result{border:0;padding:3px;background:transparent}
+.cp-catalog-result-actions{display:flex;gap:7px;flex-wrap:wrap}
+.cp-catalog-result-actions button{flex:1;min-width:130px;padding:8px 10px;border:1px solid #b9c9e6;border-radius:8px;background:#f0f5ff;color:var(--navy);font:800 .82rem inherit;cursor:pointer}
+.cp-catalog-result-actions button[data-list-target="wishlist"]{background:#fff8df;border-color:#e7ce78}
+.cp-catalog-result-actions button:hover{filter:brightness(.97)}
 .cp-catalog-result img{width:48px;height:66px;object-fit:contain;flex:0 0 48px}
 .cp-catalog-result span{min-width:0;overflow-wrap:anywhere}
 .cp-catalog-result strong,.cp-catalog-result small{display:block}
@@ -243,9 +249,10 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    const rarity=product.rarity?' · '+product.rarity:'';
    const variant=product.market_price_subtype?' · '+product.market_price_subtype:'';
    const image=product.image_url||'';
-   return '<button class="cp-catalog-result" type="button" data-card-id="'+safe(product.id)+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">Card</span>')+'<span><strong>'+safe(product.name||'Unknown product')+'</strong><small>'+safe(product.set_name||'Set not listed')+safe(number)+safe(rarity)+'</small><small><strong>TCGplayer market: '+safe(price)+'</strong>'+safe(variant)+'</small></span></button>';
+   const id=safe(product.id);
+   return '<div class="cp-catalog-result-row"><div class="cp-catalog-result" data-card-id="'+id+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">Card</span>')+'<span><strong>'+safe(product.name||'Unknown product')+'</strong><small>'+safe(product.set_name||'Set not listed')+safe(number)+safe(rarity)+'</small><small><strong>TCGplayer market: '+safe(price)+'</strong>'+safe(variant)+'</small></span></div><div class="cp-catalog-result-actions"><button type="button" data-add-card-id="'+id+'" data-list-target="collection">Use for My Collection</button><button type="button" data-add-card-id="'+id+'" data-list-target="wishlist">Use for My Wishlist</button></div></div>';
   }).join('');
-  setStatus('catalog-status','Showing '+cards.length+' TCGCSV matches. Market prices are from the last successful daily sync.');
+  setStatus('catalog-status','Choose whether each result belongs in My Collection or My Wishlist. The selection fills the form; press Add item to save it.');
  }
  async function searchCatalog(){
   const query=$('catalog-search').value.trim(),setId=$('catalog-set').value,requestId=++catalogRequest;
@@ -265,9 +272,10 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    renderCatalogResults(data.products||[],requestId);
   }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'TCGCSV catalog search failed.');}
  }
- async function selectCatalogCard(id){
+ async function selectCatalogCard(id,listType){
   const product=(window.__tcgcsvCatalogResults||[]).find(item=>String(item.id)===String(id));
   if(!product){setStatus('catalog-status','That catalog result expired. Search again and choose the card.');return;}
+  if(listType)$('list-type').value=listType;
   $('product-name').value=product.name||'';
   selectedCatalogProductId=Number(product.tcgcsv_product_id||product.id)||null;selectedCatalogProductName=String(product.name||'');
   const selectedType=$('product-type').value;
@@ -283,12 +291,13 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    setStatus('catalog-status','Selected '+product.name+'. TCGplayer market price: '+priceText(product.market_price)+(product.market_price_subtype?' ('+product.market_price_subtype+')':'')+'. Price data is from the last successful TCGCSV sync.');
   }
   $('product-name').focus();
+  setStatus('catalog-status','Selected for '+(listType==='wishlist'?'My Wishlist':'My Collection')+'. Review the details and press Add item to save.');
  }
  $('catalog-search').addEventListener('input',()=>{clearTimeout(catalogTimer);catalogTimer=setTimeout(()=>{$('product-type').value==='sealed'?searchSealedCatalog():searchCatalog();},350);});
  $('product-type').addEventListener('change',()=>{const type=$('product-type').value,sealed=type==='sealed';$('card-number').disabled=sealed;$('condition').placeholder=sealed?'e.g. Sealed / box condition':type==='graded'?'e.g. PSA 10, BGS 9.5':'e.g. Near Mint';$('catalog-search').placeholder=sealed?'Search sealed product (e.g. Prismatic Evolutions ETB)':'Search card name (e.g. Charizard)';$('catalog-results').innerHTML='';if($('catalog-search').value.trim().length>=2)(sealed?searchSealedCatalog():searchCatalog());});
  $('catalog-set').addEventListener('change',()=>{if($('product-type').value!=='sealed')searchCatalog();});
  $('catalog-sort').addEventListener('change',()=>{const cards=window.__tcgcsvCatalogResults||[];renderCatalogResults(cards,catalogRequest);});
- $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-card-id]');if(button)selectCatalogCard(button.dataset.cardId);});
+ $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-card-id]');if(button)selectCatalogCard(button.dataset.addCardId,button.dataset.listTarget);});
  loadCatalogSets();
  async function searchSealedCatalog(){
   const query=$('catalog-search').value.trim(),setId=$('catalog-set').value,requestId=++catalogRequest;
@@ -309,11 +318,11 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    const sort=$('catalog-sort').value;
    if(sort==='name')products.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
    if(sort==='set')products.sort((a,b)=>String(a.set_name||'').localeCompare(String(b.set_name||'')));
-   $('catalog-results').innerHTML=products.map(product=>'<button class="cp-catalog-result" type="button" data-sealed-id="'+safe(product.id)+'">'+(product.image_url?'<img loading="lazy" src="'+safe(product.image_url)+'" alt="">':'<span aria-hidden="true">Product</span>')+'<span><strong>'+safe(product.name||'Sealed product')+'</strong><small>'+safe(product.set_name||'Set not listed')+'</small><small><strong>TCGplayer market: '+safe(priceText(product.market_price))+'</strong>'+(product.market_price_subtype?' · '+safe(product.market_price_subtype):'')+'</small></span></button>').join('');
+   $('catalog-results').innerHTML=products.map(product=>'<div class="cp-catalog-result-row"><div class="cp-catalog-result" data-sealed-id="'+safe(product.id)+'">'+(product.image_url?'<img loading="lazy" src="'+safe(product.image_url)+'" alt="">':'<span aria-hidden="true">Product</span>')+'<span><strong>'+safe(product.name||'Sealed product')+'</strong><small>'+safe(product.set_name||'Set not listed')+'</small><small><strong>TCGplayer market: '+safe(priceText(product.market_price))+'</strong>'+(product.market_price_subtype?' · '+safe(product.market_price_subtype):'')+'</small></span></div><div class="cp-catalog-result-actions"><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="collection">Use for My Collection</button><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="wishlist">Use for My Wishlist</button></div></div>').join('');
    setStatus('catalog-status','Showing '+products.length+' sealed TCGCSV matches. Prices are from the last successful daily sync.');
   }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'Could not search TCGCSV sealed products.');}
  }
- $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.sealedId));if(product)selectSealedProduct(product);}});
+ $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.addSealedId));if(product){$('list-type').value=button.dataset.listTarget;selectSealedProduct(product);setStatus('catalog-status','Selected for '+(button.dataset.listTarget==='wishlist'?'My Wishlist':'My Collection')+'. Review the details and press Add item to save.');}}});
  function selectSealedProduct(product){
   $('product-name').value=product.name||'';
   selectedCatalogProductId=Number(product.tcgcsv_product_id||product.id)||null;selectedCatalogProductName=String(product.name||'');
