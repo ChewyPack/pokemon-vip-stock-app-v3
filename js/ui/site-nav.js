@@ -17,7 +17,7 @@
   {title:'Walmart',description:'Walmart stock alerts',href:'/alerts.html?retailer=walmart'},
   {title:'BestBuy',description:'Best Buy stock alerts',href:'/alerts.html?retailer=bestbuy'}
  ];
- var isCollectorProfile=/^\\/collector(?:\\.html)?\\/?$/.test(window.location.pathname);
+ var isCollectorProfile=/^\/collector(?:\.html)?\/?$/.test(window.location.pathname);
  if(isCollectorProfile)alertsItems=alertsItems.filter(function(item){return item.title!=='Collector Notifications';});
  var nav=el('nav',{class:'site-nav','aria-label':'Main navigation'},[
   link('Home','/'),
