@@ -40,7 +40,7 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
 <div id="alerts-navigation"></div>
 <main class="alerts-content">
   <h1 id="page-title">Live Stock</h1>
-  <p class="alerts-intro">The live feed shows sightings from the last 24 hours. Older reports leave the live feed automatically but remain searchable in report history. Community reports are time-sensitive and do not guarantee that products are still on the shelf.</p>
+  <p class="alerts-intro">Paid members can view recent live sightings. Free members can view reports once they are at least one hour old, and can search saved report history. Community reports are time-sensitive and do not guarantee that products are still on the shelf.</p>
   <div class="alerts-controls">
     <label>Search report history<input id="search" type="search" maxlength="120" placeholder="Product, store, town, state, notes…"></label>
     <label>Retailer<select id="retailer"><option value="">All retailers</option><option value="target">Target</option><option value="walmart">Walmart</option><option value="bestbuy">BestBuy</option><option value="gamestop">GameStop</option><option value="costco">Costco</option></select></label>
@@ -48,7 +48,7 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
     <button class="alerts-btn" id="refresh" type="button">Refresh</button>
     <div class="alerts-summary" id="summary" aria-live="polite">Loading stock reports…</div>
   </div>
-  <p class="alert-search-hint" id="search-hint">Showing reports from the last 24 hours. Enter a search to look through older reports.</p>
+  <p class="alert-search-hint" id="search-hint">Free members see reports after they are at least one hour old. Search to explore saved report history.</p>
   <div id="feed" class="alerts-grid" aria-live="polite"><div class="alert-empty">Loading recent reports…</div></div>
   <div class="alert-notice">Community-reported sightings are not retailer inventory feeds. Please verify availability before travelling, and respect store purchase limits.</div>
 </main>
@@ -115,7 +115,7 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
  function render(items){if(!items.length){feed.innerHTML='<div class="alert-empty">No matching reports found. Try a different search, retailer, or state.</div>';return;}
  feed.innerHTML=items.map(r=>'<article class="alert-card"><div class="alert-card-head"><div><div class="alert-retailer">'+esc(r.retailer)+'</div><div class="alert-meta">'+esc(r.location)+(r.state?' · '+esc(r.state):'')+'</div></div><div class="alert-time">Reported<br>'+esc(dateLabel(r.createdAt))+'</div></div><div class="alert-product">'+(r.productType?'<span class="alert-product-type">'+esc(r.productType)+'</span><br>':'')+esc(r.product)+'</div><div class="alert-meta">'+(r.quantity?'Quantity reported: '+esc(r.quantity)+'<br>':'')+(r.productLocated?'Location in store: '+esc(r.productLocated)+'<br>':'')+'</div>'+(r.price!=null?'<div class="alert-price">'+esc(Number(r.price).toLocaleString('en-US',{style:'currency',currency:'USD'}))+' <span style="font-size:.78rem;font-weight:600;color:#c5d3eb">'+esc(r.priceType||'')+'</span></div>':'')+(r.notes?'<div class="alert-notes">'+esc(r.notes)+'</div>':'')+((r.photos&&r.photos.length)?'<div class="alert-photos">'+r.photos.map(function(photo,i){return '<img class="alert-photo" src="'+esc(photo)+'" alt="Report photo '+(i+1)+'" loading="lazy">';}).join('')+'</div>':'')+'</article>').join('');}
  async function load(){refresh.disabled=true;summary.textContent='Refreshing…';const q=new URLSearchParams();if(retailer.value)q.set('retailer',retailer.value);if(state.value)q.set('state',state.value);if(search.value.trim())q.set('search',search.value.trim());
- hint.textContent=search.value.trim()?'Searching saved report history, including reports older than 24 hours.':'Showing reports from the last 24 hours. Enter a search to look through older reports.';
+ hint.textContent=search.value.trim()?'Searching saved report history. Free members only see reports that are at least one hour old.':'Free members see reports after they are at least one hour old. Search to explore saved report history.';
  document.getElementById('page-title').textContent=search.value.trim()?'Search Stock Reports':'Live Stock';
  try{const response=await fetch('/api/alerts?'+q.toString(),{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(response.status===401){feed.innerHTML='<div class="alert-empty">Please <a href="/account.html">sign in to your PokePrizePool account</a> to view the live stock feed.</div>';summary.textContent='Sign-in required';return;}if(!response.ok||!data.ok)throw new Error(data.error||'Could not load stock reports');render(data.reports||[]);summary.textContent=(data.count||0)+' report'+((data.count||0)===1?'':'s')+' · Updated '+new Date(data.refreshedAt).toLocaleTimeString();}catch(e){feed.innerHTML='<div class="alert-empty">We couldn’t load the stock feed. Please refresh and try again.</div>';summary.textContent='Unable to load';}finally{refresh.disabled=false;}}
  let debounce;search.addEventListener('input',function(){clearTimeout(debounce);debounce=setTimeout(load,300);});refresh.addEventListener('click',load);retailer.addEventListener('change',load);state.addEventListener('change',load);load();
