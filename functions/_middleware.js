@@ -55,6 +55,7 @@ a.secondary{background:#1b2b47;color:#fff;border:1px solid #40516e}
 export async function onRequest({ request, env, next }) {
   const pathname = new URL(request.url).pathname;
   const isAlertsApi = pathname === '/api/alerts';
+  if (pathname === '/alerts.html') return next(); // Free accounts may view delayed report history.
   if (isAlertsApi) return next(); // The API applies paid-live vs. delayed-history access itself.
   if (pathname !== '/alerts.html' && pathname !== '/market-intelligence.html' && !isAlertsApi) {
     return next();
