@@ -5,7 +5,46 @@
  if(!root)return;
  function el(tag,attrs,children){var n=document.createElement(tag);Object.keys(attrs||{}).forEach(function(k){if(k==='text')n.textContent=attrs[k];else n.setAttribute(k,attrs[k]);});(children||[]).filter(Boolean).forEach(function(c){n.appendChild(c);});return n;}
  function link(label,href,cls){return el('a',{class:cls||'site-nav__link',href:href,text:label});}
- function dropdown(label,items){var id='site-nav-'+label.toLowerCase().replace(/[^a-z0-9]+/g,'-');var b=el('button',{class:'site-nav__toggle',type:'button','aria-expanded':'false','aria-controls':id,text:label+' ▾'});var menu=el('div',{class:'site-nav__menu',id:id,hidden:'hidden'});items.forEach(function(item){var a=el('a',{class:'site-nav__item',href:item.href});a.appendChild(el('span',{class:'site-nav__item-title',text:item.title}));if(item.description)a.appendChild(el('span',{class:'site-nav__item-description',text:item.description}));menu.appendChild(a);});b.addEventListener('click',function(){var open=b.getAttribute('aria-expanded')!=='true';root.querySelectorAll('.site-nav__toggle').forEach(function(x){x.setAttribute('aria-expanded','false');});root.querySelectorAll('.site-nav__menu').forEach(function(x){x.hidden=true;});if(open){b.setAttribute('aria-expanded','true');menu.hidden=false;}});return el('div',{class:'site-nav__dropdown'},[b,menu]);}
+ function dropdown(label,items){
+  var id='site-nav-'+label.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  var b=el('button',{class:'site-nav__toggle',type:'button','aria-expanded':'false','aria-controls':id,text:label+' ▾'});
+  var menu=el('div',{class:'site-nav__menu',id:id,hidden:'hidden'});
+  items.forEach(function(item){
+   if(item.children&&item.children.length){
+    var subId=id+'-'+item.title.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+    var subButton=el('button',{class:'site-nav__item site-nav__submenu-toggle',type:'button','aria-expanded':'false','aria-controls':subId});
+    subButton.appendChild(el('span',{class:'site-nav__item-title',text:item.title}));
+    subButton.appendChild(el('span',{class:'site-nav__submenu-arrow',text:'›','aria-hidden':'true'}));
+    var subMenu=el('div',{class:'site-nav__menu site-nav__submenu',id:subId,hidden:'hidden'});
+    item.children.forEach(function(child){
+     var childLink=el('a',{class:'site-nav__item',href:child.href});
+     childLink.appendChild(el('span',{class:'site-nav__item-title',text:child.title}));
+     subMenu.appendChild(childLink);
+    });
+    subButton.addEventListener('click',function(event){
+     event.preventDefault();event.stopPropagation();
+     var open=subButton.getAttribute('aria-expanded')!=='true';
+     menu.querySelectorAll('.site-nav__submenu-toggle').forEach(function(other){other.setAttribute('aria-expanded','false');});
+     menu.querySelectorAll('.site-nav__submenu').forEach(function(other){other.hidden=true;});
+     if(open){subButton.setAttribute('aria-expanded','true');subMenu.hidden=false;}
+    });
+    menu.appendChild(el('div',{class:'site-nav__nested-dropdown'},[subButton,subMenu]));
+   }else{
+    var a=el('a',{class:'site-nav__item',href:item.href});
+    a.appendChild(el('span',{class:'site-nav__item-title',text:item.title}));
+    if(item.description)a.appendChild(el('span',{class:'site-nav__item-description',text:item.description}));
+    menu.appendChild(a);
+   }
+  });
+  b.addEventListener('click',function(){
+   var open=b.getAttribute('aria-expanded')!=='true';
+   root.querySelectorAll('.site-nav__toggle').forEach(function(x){x.setAttribute('aria-expanded','false');});
+   root.querySelectorAll('.site-nav__menu').forEach(function(x){x.hidden=true;});
+   root.querySelectorAll('.site-nav__submenu-toggle').forEach(function(x){x.setAttribute('aria-expanded','false');});
+   if(open){b.setAttribute('aria-expanded','true');menu.hidden=false;}
+  });
+  return el('div',{class:'site-nav__dropdown'},[b,menu]);
+ }
  var inbox=el('a',{class:'site-nav__link site-nav__inbox-link',href:'/inbox.html','aria-label':'Offer inbox'});
  var inboxImage=el('img',{src:'/inbox-icon.png',alt:'',class:'site-nav__inbox-image'});
   var inboxBadge=el('span',{class:'site-nav__inbox-badge',hidden:'hidden','aria-live':'polite'});
