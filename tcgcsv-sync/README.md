@@ -5,9 +5,8 @@ This Worker downloads only the Pokémon category (TCGplayer category ID 3), stor
 ## Safety first
 
 - Do not point this Worker at the production D1 database.
-- Apply the existing collector schema migrations first if they have not already been applied, then apply `migrations/tcgcsv_catalog.sql` to `pokemon-vip-members-staging` before the first sync.
-- In `wrangler.toml`, replace `REPLACE_WITH_STAGING_D1_DATABASE_ID` with the ID for the staging database only.
-- Keep the Worker name ending in `-staging`.
+- Apply the collector schema and TCGCSV catalog schema to `pokemon-vip-members-staging` before the first sync.
+- Keep the Worker name ending in `-staging` and use the staging D1 ID only.
 
 ## Deploy
 
@@ -18,25 +17,15 @@ npx wrangler secret put SYNC_SECRET
 npx wrangler deploy
 ```
 
-When prompted for `SYNC_SECRET`, enter a long random secret and save it somewhere secure. Do not commit it to GitHub.
+When prompted for `SYNC_SECRET`, enter a long random secret and save it somewhere secure. Do not commit it to GitHub or share it in chat.
 
-The Worker is scheduled for 09:00 UTC every day. It first checks `https://tcgcsv.com/last-updated.txt`; if the timestamp matches the last successful sync, it skips all catalog requests. During a sync, every TCGCSV request includes the custom User-Agent `PokePrizePoolMarket/1.0.0` and is followed by a 100 ms delay. It syncs Pokémon groups only, not the full archive.
+The Worker is scheduled for 09:00 UTC daily. It checks `https://tcgcsv.com/last-updated.txt` first and skips unchanged source builds. Requests use the custom User-Agent `PokePrizePoolMarket/1.0.0` and a 100 ms delay.
 
-## Initial sync and status
+## Resumable import
 
-After deployment, run the initial sync once using the Worker URL:
+Each Worker invocation processes one Pokémon group/set and then securely schedules the next invocation. This avoids exceeding Cloudflare's per-invocation subrequest limit. Progress is saved in `tcgcsv_sync_progress` and is visible at `/health`. The catalog is published only after all groups complete successfully.
 
-```sh
-curl -X POST "https://pokeprizepool-tcgcsv-sync-staging.<your-account-subdomain>.workers.dev/sync" -H "Authorization: Bearer <your-SYNC_SECRET>"
-```
-
-Check status with:
-
-```sh
-curl "https://pokeprizepool-tcgcsv-sync-staging.<your-account-subdomain>.workers.dev/health"
-```
-
-Do not share the secret or put it in browser-side code.
+Start a sync with a POST to `/sync` using the Authorization bearer secret. Check progress at `/health`. Never expose the secret in browser code.
 
 ## Current scope and limitations
 
