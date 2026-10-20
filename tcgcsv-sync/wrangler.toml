@@ -1,4 +1,4 @@
-name = "pokeprizeprizepool-tcgcsv-sync-staging"
+name = "pokeprizepool-tcgcsv-sync-staging"
 main = "worker.js"
 compatibility_date = "2026-10-19"
 
