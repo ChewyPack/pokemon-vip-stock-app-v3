@@ -1,9 +1,9 @@
-name = "pokeprizepool-tcgcsv-sync-staging"
+name = "pokeprizeprizepool-tcgcsv-sync-staging"
 main = "worker.js"
 compatibility_date = "2026-10-19"
 
 [triggers]
-crons = ["0 9 * * *"]
+crons = ["* * * * *"]
 
 [[d1_databases]]
 binding = "DB"
