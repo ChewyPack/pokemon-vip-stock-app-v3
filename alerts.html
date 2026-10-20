@@ -37,7 +37,7 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
 </style>
 </head>
 <body>
-<div id="alerts-navigation"></div>
+<div id="site-navigation"></div>
 <main class="alerts-content">
   <h1 id="page-title">Live Stock</h1>
   <p class="alerts-intro">Paid members can view recent live sightings. Free members can view reports once they are at least one hour old, and can search saved report history. Community reports are time-sensitive and do not guarantee that products are still on the shelf.</p>
@@ -52,44 +52,7 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
   <div id="feed" class="alerts-grid" aria-live="polite"><div class="alert-empty">Loading recent reports…</div></div>
   <div class="alert-notice">Community-reported sightings are not retailer inventory feeds. Please verify availability before travelling, and respect store purchase limits.</div>
 </main>
-<script>
-(function(){
- 'use strict';
- var root=document.getElementById('alerts-navigation');
- function el(tag,attrs,children){var n=document.createElement(tag);Object.keys(attrs||{}).forEach(function(k){if(k==='class')n.className=attrs[k];else n.setAttribute(k,attrs[k]);});(children||[]).forEach(function(c){if(c)n.appendChild(c);});return n;}
- function txt(tag,attrs,value){var n=el(tag,attrs);n.textContent=value;return n;}
- function link(label,href){return txt('a',{class:'site-nav__link',href:href},label);}
- function closeMenus(nav){nav.querySelectorAll('.site-nav__toggle,.site-nav__submenu-toggle').forEach(function(b){b.setAttribute('aria-expanded','false');});nav.querySelectorAll('.site-nav__menu').forEach(function(m){m.hidden=true;});}
- function item(data){if(data.children){var id='alerts-sub-'+data.title.toLowerCase();var b=txt('button',{class:'site-nav__item site-nav__submenu-toggle',type:'button','aria-expanded':'false','aria-controls':id},data.title+'  ›');var sub=el('div',{class:'site-nav__menu site-nav__submenu',id:id});sub.hidden=true;data.children.forEach(function(c){sub.appendChild(txt('a',{class:'site-nav__item',href:c.href},c.title));});b.addEventListener('click',function(e){e.stopPropagation();var open=b.getAttribute('aria-expanded')!=='true';nav.querySelectorAll('.site-nav__submenu').forEach(function(m){m.hidden=true;});nav.querySelectorAll('.site-nav__submenu-toggle').forEach(function(x){x.setAttribute('aria-expanded','false');});if(open){sub.hidden=false;b.setAttribute('aria-expanded','true');}});return el('div',{class:'site-nav__nested-dropdown'},[b,sub]);}
- var kids=[txt('span',{class:'site-nav__item-title'},data.title)];if(data.description)kids.push(txt('span',{class:'site-nav__item-description'},data.description));return el('a',{class:'site-nav__item',href:data.href},kids);}
- function dropdown(label,items){var id='alerts-nav-'+label.toLowerCase().replace(/[^a-z0-9]+/g,'-');var b=txt('button',{class:'site-nav__toggle',type:'button','aria-expanded':'false','aria-controls':id},label+' ▾');var menu=el('div',{class:'site-nav__menu',id:id});menu.hidden=true;items.forEach(function(x){menu.appendChild(item(x));});b.addEventListener('click',function(){var open=b.getAttribute('aria-expanded')!=='true';closeMenus(nav);if(open){b.setAttribute('aria-expanded','true');menu.hidden=false;}});return el('div',{class:'site-nav__dropdown'},[b,menu]);}
- var nav=el('nav',{class:'site-nav','aria-label':'Main navigation'},[
-  link('Home','/'),
-  dropdown('Poke Report',[
-   {title:'News',description:'Pokémon news and hobby coverage',href:'/news.html'},
-   {title:'Updates',description:'Platform updates and announcements',href:'/updates.html'},
-   {title:'Market Intelligence',description:'Market trends and product insights',href:'/market-intelligence.html'},
-   {title:'Events',description:'Shows, trade nights, and releases',href:'/events.html'},
-   {title:'Instant Cash Out',description:'Explore collection cash-out options',href:'/instant-buyout.html'}]),
-  dropdown('Alerts',[
-   {title:'Live Stock',description:'Community-reported in-store sightings',href:'/alerts.html'},
-   {title:'Target Online Alerts · Coming Soon',description:'Online inventory alerts for Target',href:'/alerts.html?retailer=target'},
-   {title:'Walmart Online Alerts · Coming Soon',description:'Online inventory alerts for Walmart',href:'/alerts.html?retailer=walmart'},
-   {title:'Best Buy Online Alerts · Coming Soon',description:'Online inventory alerts for Best Buy',href:'/alerts.html?retailer=bestbuy'}]),
-  link('Line Services','/line-services.html'),
-  dropdown('Shop',[
-   {title:'Cards',children:[{title:'Sealed',href:'/shop.html?category=sealed'},{title:'Slabs',href:'/shop.html?category=slabs'},{title:'Singles',href:'/shop.html?category=singles'}]},
-   {title:'Merch',children:[{title:'Clothing',href:'/shop.html?category=clothing'},{title:'Plushies',href:'/shop.html?category=plushies'},{title:'Other',href:'/shop.html?category=other'}]}]),
-  link('Giveaways','/giveaways.html'),link('Chat','/chat.html'),
-  dropdown('Resources',[{title:'Securing Product',href:'/resources/securing-product.html'},{title:'Spotting Fakes',href:'/resources/spotting-fakes.html'},{title:'Pricing Cards',href:'/resources/pricing-cards.html'}]),
-  txt('a',{class:'site-nav__link account-nav-link',href:'/account.html',id:'alerts-account-link'},'Sign up / Log in')
- ]);
- root.appendChild(el('header',{class:'site-nav-header'},[el('div',{class:'wrap site-nav-header__inner'},[nav])]));
- fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){var a=document.getElementById('alerts-account-link');if(d&&d.ok&&d.authenticated&&a){a.href='/collector.html';a.textContent='Profile';a.setAttribute('aria-label','Open your collector profile');}}).catch(function(){});
- document.addEventListener('click',function(e){if(!root.contains(e.target))closeMenus(nav);});
- nav.addEventListener('keydown',function(e){if(e.key==='Escape')closeMenus(nav);});
-})();
-</script>
+<script src="/js/ui/site-nav.js"></script>
 <script>
 (function(){
  const feed=document.getElementById('feed'), retailer=document.getElementById('retailer'), state=document.getElementById('state'), search=document.getElementById('search'), summary=document.getElementById('summary'), refresh=document.getElementById('refresh'), hint=document.getElementById('search-hint');
