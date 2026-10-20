@@ -10,6 +10,15 @@
  var inboxImage=el('img',{src:'/inbox-icon.png',alt:'',class:'site-nav__inbox-image'});
   var inboxBadge=el('span',{class:'site-nav__inbox-badge',hidden:'hidden','aria-live':'polite'});
  inbox.appendChild(inboxImage);inbox.appendChild(inboxBadge);
+ var alertsItems=[
+  {title:'Live Stock',description:'View live stock alerts',href:'/alerts.html'},
+  {title:'Collector Notifications',description:'Browser alerts and your notification inbox',href:'/notifications.html'},
+  {title:'Target',description:'Target stock alerts',href:'/alerts.html?retailer=target'},
+  {title:'Walmart',description:'Walmart stock alerts',href:'/alerts.html?retailer=walmart'},
+  {title:'BestBuy',description:'Best Buy stock alerts',href:'/alerts.html?retailer=bestbuy'}
+ ];
+ var isCollectorProfile=/^\\/collector(?:\\.html)?\\/?$/.test(window.location.pathname);
+ if(isCollectorProfile)alertsItems=alertsItems.filter(function(item){return item.title!=='Collector Notifications';});
  var nav=el('nav',{class:'site-nav','aria-label':'Main navigation'},[
   link('Home','/'),
   dropdown('Poke Report',[
@@ -19,13 +28,7 @@
    {title:'Events Calendar',description:'Shows, trade nights, and releases',href:'/events.html'},
    {title:'Instant Cash Out',description:'Explore collection cash-out options',href:'/instant-buyout.html'}
   ]),
-  dropdown('Alerts',[
-   {title:'Live Stock',description:'View live stock alerts',href:'/alerts.html'},
-   {title:'Collector Notifications',description:'Browser alerts and your notification inbox',href:'/notifications.html'},
-   {title:'Target',description:'Target stock alerts',href:'/alerts.html?retailer=target'},
-   {title:'Walmart',description:'Walmart stock alerts',href:'/alerts.html?retailer=walmart'},
-   {title:'BestBuy',description:'Best Buy stock alerts',href:'/alerts.html?retailer=bestbuy'}
-  ]),
+  dropdown('Alerts',alertsItems),
   link('Line Services','/line-services.html'),
   dropdown('Shop',[
    {title:'Shop All',description:'Browse the PokePrizePool shop',href:'/shop.html'},
