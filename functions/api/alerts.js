@@ -23,7 +23,7 @@ async function currentAccount(request, env) {
   const token = getCookie(request, COOKIE);
   if (!token) return null;
   const account = await env.DB.prepare(
-    'SELECT id, session_expires_at FROM accounts WHERE session_token_hash = ? LIMIT 1'
+    'SELECT id, session_expires_at, is_admin, membership_tier, membership_entitlement_tier, membership_status FROM accounts WHERE session_token_hash = ? LIMIT 1'
   ).bind(await sha256(token)).first();
   if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) return null;
   return account;
@@ -34,6 +34,11 @@ export async function onRequestGet({ request, env }) {
   try {
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: false, error: 'unauthorized' }, 401);
+
+    const tier = String(account.membership_entitlement_tier || account.membership_tier || 'free').trim().toLowerCase();
+    const status = String(account.membership_status || '').trim().toLowerCase();
+    const paid = Number(account.is_admin || 0) === 1 ||
+      (status === 'active' && tier !== '' && tier !== 'free' && tier !== 'none');
 
     const url = new URL(request.url);
     const retailer = norm(url.searchParams.get('retailer') || '');
@@ -50,6 +55,7 @@ export async function onRequestGet({ request, env }) {
              store_address, product_name, quantity_text, shelf_price, msrp, report_type, created_at
       FROM reports
       WHERE COALESCE(report_type, 'stock') != 'line'
+        AND (? = 1 OR datetime(created_at) <= datetime('now', '-1 hour'))
         AND LOWER(TRIM(COALESCE(still_there, ''))) IN ('yes', 'true', 'in stock')
         AND (
           (? = '' AND datetime(created_at) >= datetime('now', '-24 hours'))
@@ -67,7 +73,7 @@ export async function onRequestGet({ request, env }) {
         )
       ORDER BY datetime(created_at) DESC
       LIMIT 1000
-    `).bind(search, search, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern).all();
+    `).bind(paid ? 1 : 0, search, search, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern).all();
 
     const reports = (result.results || []).filter(row => {
       const rowRetailer = norm(row.store);
