@@ -8,4 +8,4 @@ crons = ["0 9 * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "pokemon-vip-members-staging"
-database_id = "REPLACE_WITH_STAGING_D1_DATABASE_ID"
+database_id = "1fe7c695-5b43-40a2-81ea-5c524d533406"
