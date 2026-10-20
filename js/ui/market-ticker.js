@@ -6,8 +6,9 @@
   'use strict';
 
   // This ticker belongs only on the Market Intelligence page, not the site-wide header.
-  var currentPath = window.location.pathname.replace(/\\/+$/, '') || '/';
-  if (currentPath !== '/market-intelligence') return;
+  var currentPath = window.location.pathname || '/';
+  while (currentPath.length > 1 && currentPath.endsWith('/')) currentPath = currentPath.slice(0, -1);
+  if (currentPath !== '/market-intelligence' && currentPath !== '/market-intelligence.html') return;
 
   if (document.getElementById('pp-market-ticker')) return;
 
