@@ -12,43 +12,41 @@
  inbox.appendChild(inboxImage);inbox.appendChild(inboxBadge);
  var alertsItems=[
   {title:'Live Stock',description:'Community-reported in-store sightings',href:'/alerts.html'},
-  {title:'Collector Notifications',description:'Browser alerts and your notification inbox',href:'/notifications.html'},
-  {title:'Target Online Alerts · Coming Soon',description:'Online inventory alerts for Target',href:'/alerts.html?retailer=target'},
-  {title:'Walmart Online Alerts · Coming Soon',description:'Online inventory alerts for Walmart',href:'/alerts.html?retailer=walmart'},
-  {title:'Best Buy Online Alerts · Coming Soon',description:'Online inventory alerts for Best Buy',href:'/alerts.html?retailer=bestbuy'}
+  {title:'Target',description:'Target stock alerts',href:'/alerts.html?retailer=target'},
+  {title:'Walmart',description:'Walmart stock alerts',href:'/alerts.html?retailer=walmart'},
+  {title:'BestBuy',description:'Best Buy stock alerts',href:'/alerts.html?retailer=bestbuy'}
  ];
  var isCollectorProfile=!!document.getElementById('item-form')||/collector(?:\.html)?/.test(window.location.pathname);
  if(isCollectorProfile)alertsItems=alertsItems.filter(function(item){return item.title!=='Collector Notifications';});
  var nav=el('nav',{class:'site-nav','aria-label':'Main navigation'},[
   link('Home','/'),
   dropdown('Poke Report',[
-   {title:'Report a Sighting',description:'Submit an in-store stock report',href:'/#report'},
-   {title:'News & Exclusives',description:'Pokémon news and hobby updates',href:'/news.html'},
+   {title:'News',description:'Pokémon news and hobby coverage',href:'/news.html'},
+   {title:'Updates',description:'Platform updates and announcements',href:'/updates.html'},
    {title:'Market Intelligence',description:'Market trends and product insights',href:'/market-intelligence.html'},
-   {title:'Events Calendar',description:'Shows, trade nights, and releases',href:'/events.html'},
-   {title:'Instant Cash Out',description:'Explore collection cash-out options',href:'/instant-buyout.html'}
+   {title:'Events',description:'Shows, trade nights, and releases',href:'/events.html'},
+   {title:'Instant Cashout',description:'Explore collection cash-out options',href:'/instant-buyout.html'}
   ]),
   dropdown('Alerts',alertsItems),
   link('Line Services','/line-services.html'),
   dropdown('Shop',[
-   {title:'Shop All',description:'Browse the PokePrizePool shop',href:'/shop.html'},
-   {title:'Sealed Cards',description:'Sealed Pokémon products',href:'/shop.html?category=sealed'},
-   {title:'Slabs',description:'Graded cards',href:'/shop.html?category=slabs'},
-   {title:'Singles',description:'Individual cards',href:'/shop.html?category=singles'},
-   {title:'Clothing',description:'PokePrizePool clothing',href:'/shop.html?category=clothing'},
-   {title:'Plushies',description:'Pokémon plushies',href:'/shop.html?category=plushies'},
-   {title:'Other Merch',description:'More merchandise',href:'/shop.html?category=other'}
+   {title:'Cards',children:[
+    {title:'Sealed',href:'/shop.html?category=sealed'},
+    {title:'Slabs',href:'/shop.html?category=slabs'},
+    {title:'Singles',href:'/shop.html?category=singles'}
+   ]},
+   {title:'Merch',children:[
+    {title:'Clothing',href:'/shop.html?category=clothing'},
+    {title:'Plushies',href:'/shop.html?category=plushies'},
+    {title:'Other',href:'/shop.html?category=other'}
+   ]}
   ]),
   link('Giveaways','/giveaways.html'),
   link('Chat','/chat.html'),
   dropdown('Resources',[
-   {title:'Collector Profiles',description:'Browse collector profiles and collections',href:'/collector.html'},
-   {title:'Offer Inbox',description:'Cash offers and collection trades',href:'/inbox.html'},
-   {title:'Account Settings',description:'Profile and privacy settings',href:'/account.html#nearby-collector-settings'},
-   {title:'News & Exclusives',description:'Pokémon news and hobby updates',href:'/news.html'},
-   {title:'Events Calendar',description:'Shows, trade nights, and releases',href:'/events.html'},
-   {title:'Market Intelligence',description:'Pokémon TCG market trends',href:'/market-intelligence.html'},
-   {title:'Securing Product',description:'Interactive Pokémon TCG drop-day playbook and route planner',href:'/resources/securing-product.html'}
+   {title:'Securing Product',href:'/resources/securing-product.html'},
+   {title:'Spotting Fakes',href:'/resources/spotting-fakes.html'},
+   {title:'Pricing Cards',href:'/resources/pricing-cards.html'}
   ]),
   link('Sign up / Log in','/account.html','site-nav__link account-nav-link'),
   inbox
