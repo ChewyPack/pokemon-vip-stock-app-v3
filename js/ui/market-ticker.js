@@ -5,6 +5,10 @@
 (function () {
   'use strict';
 
+  // This ticker belongs only on the Market Intelligence page, not the site-wide header.
+  var currentPath = window.location.pathname.replace(/\\/+$/, '') || '/';
+  if (currentPath !== '/market-intelligence') return;
+
   if (document.getElementById('pp-market-ticker')) return;
 
   var style = document.createElement('style');
