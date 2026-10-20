@@ -195,6 +195,7 @@ async function processOneGroup(db, token) {
 
   try {
     const groupId = Number(groupIds[index]);
+    console.log('Processing TCGCSV group', index + 1, 'of', groupIds.length, 'groupId', groupId);
     const group = await db.prepare('SELECT group_id, category_id FROM tcgcsv_groups_staging WHERE group_id=?')
       .bind(groupId).first();
     if (!group) throw new Error('Staging group not found: ' + groupId);
@@ -266,22 +267,31 @@ async function processOneGroup(db, token) {
 
 export default {
   async scheduled(_event, env, ctx) {
+    console.log('TCGCSV scheduled trigger fired');
     ctx.waitUntil((async () => {
       const state = await env.DB.prepare(
         'SELECT status FROM tcgcsv_sync_state WHERE id = 1'
       ).first();
-      if (state?.status === 'syncing') {
-        const progress = await env.DB.prepare(
-          'SELECT run_token FROM tcgcsv_sync_progress WHERE id = 1'
-        ).first();
-        if (progress?.run_token) {
-          await processOneGroup(env.DB, progress.run_token).catch(error => {
-            console.error('TCGCSV group batch failed:', error);
-            return setError(env.DB, error);
-          });
+      const progress = await env.DB.prepare(
+        'SELECT run_token, source_timestamp, group_ids_json FROM tcgcsv_sync_progress WHERE id = 1'
+      ).first().catch(() => null);
+
+      if (progress?.run_token && progress?.source_timestamp && progress?.group_ids_json) {
+        if (state?.status !== 'syncing') {
+          console.log('Resuming saved TCGCSV batch progress; previous status:', state?.status);
+          await env.DB.prepare(
+            "UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1"
+          ).run();
         }
+        console.log('Processing saved TCGCSV group batch');
+        await processOneGroup(env.DB, progress.run_token).catch(error => {
+          console.error('TCGCSV group batch failed:', error);
+          return setError(env.DB, error);
+        });
         return;
       }
+
+      console.log('No saved TCGCSV progress; starting a new sync');
       await beginSync(env.DB).catch(error => {
         console.error('TCGCSV scheduled sync failed:', error);
         return setError(env.DB, error);
