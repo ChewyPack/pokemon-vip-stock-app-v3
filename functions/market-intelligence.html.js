@@ -45,7 +45,7 @@ function getCookie(request) {
 
 function b64(bytes) {
   return btoa(String.fromCharCode(...new Uint8Array(bytes)))
-    .replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/g, '');
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
 async function sha256(value) {
