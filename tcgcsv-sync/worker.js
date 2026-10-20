@@ -1,7 +1,6 @@
 const SOURCE = 'https://tcgcsv.com/tcgplayer';
 const POKEMON_CATEGORY_ID = 3;
 const USER_AGENT = 'PokePrizePoolMarket/1.0.0';
-const WORKER_ORIGIN = 'https://pokeprizepool-tcgcsv-sync-staging.lasttime9423.workers.dev';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function json(body, status = 200) {
@@ -79,22 +78,7 @@ async function setError(db, error) {
     .bind(message).run().catch(() => {});
 }
 
-async function scheduleContinuation(origin, token, secret) {
-  const response = await fetch(origin + '/continue', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + secret,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ run_token: token })
-  });
-  if (!response.ok) {
-    const message = (await response.text()).slice(0, 500);
-    throw new Error('Continuation request failed with HTTP ' + response.status + ': ' + message);
-  }
-}
-
-async function beginSync(db, origin, env, ctx) {
+async function beginSync(db) {
   await ensureProgressTable(db);
   const sourceTimestamp = await getText('https://tcgcsv.com/last-updated.txt');
   if (!sourceTimestamp) throw new Error('TCGCSV last-updated.txt was empty.');
@@ -151,7 +135,6 @@ async function beginSync(db, origin, env, ctx) {
       SET run_token=?, source_timestamp=?, group_ids_json=?, next_group_index=0
       WHERE id=1`).bind(token, sourceTimestamp, JSON.stringify(groups.map(group => Number(group.groupId)))).run();
 
-    ctx.waitUntil(scheduleContinuation(origin, token, env.SYNC_SECRET).catch(error => setError(db, error)));
     return { skipped: false, started: true, source_timestamp: sourceTimestamp, groups_total: groups.length };
   } catch (error) {
     await setError(db, error);
@@ -198,7 +181,7 @@ async function publishCatalog(db, token) {
   return { complete: true, source_timestamp: sourceTimestamp, completed_at: commitAt };
 }
 
-async function processOneGroup(db, token, origin, env, ctx) {
+async function processOneGroup(db, token) {
   const progress = await db.prepare(`SELECT run_token, source_timestamp, group_ids_json, next_group_index
     FROM tcgcsv_sync_progress WHERE id=1`).first();
   if (!progress || progress.run_token !== token) return { ignored: true, reason: 'run_token_mismatch' };
@@ -274,7 +257,6 @@ async function processOneGroup(db, token, origin, env, ctx) {
       return { complete: true, groups_processed: nextIndex, groups_total: groupIds.length };
     }
 
-    ctx.waitUntil(scheduleContinuation(origin, token, env.SYNC_SECRET).catch(error => setError(db, error)));
     return { processed_group: groupId, groups_processed: nextIndex, groups_total: groupIds.length, continuing: true };
   } catch (error) {
     await setError(db, error);
@@ -284,10 +266,27 @@ async function processOneGroup(db, token, origin, env, ctx) {
 
 export default {
   async scheduled(_event, env, ctx) {
-    ctx.waitUntil(beginSync(env.DB, WORKER_ORIGIN, env, ctx).catch(error => {
-      console.error('TCGCSV scheduled sync failed:', error);
-      return setError(env.DB, error);
-    }));
+    ctx.waitUntil((async () => {
+      const state = await env.DB.prepare(
+        'SELECT status FROM tcgcsv_sync_state WHERE id = 1'
+      ).first();
+      if (state?.status === 'syncing') {
+        const progress = await env.DB.prepare(
+          'SELECT run_token FROM tcgcsv_sync_progress WHERE id = 1'
+        ).first();
+        if (progress?.run_token) {
+          await processOneGroup(env.DB, progress.run_token).catch(error => {
+            console.error('TCGCSV group batch failed:', error);
+            return setError(env.DB, error);
+          });
+        }
+        return;
+      }
+      await beginSync(env.DB).catch(error => {
+        console.error('TCGCSV scheduled sync failed:', error);
+        return setError(env.DB, error);
+      });
+    })());
   },
 
   async fetch(request, env, ctx) {
@@ -319,27 +318,12 @@ export default {
       if (!expected || auth !== 'Bearer ' + expected) return json({ ok: false, error: 'unauthorized' }, 401);
       if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
       try {
-        const result = await beginSync(env.DB, url.origin, env, ctx);
+        const result = await beginSync(env.DB);
         return json({ ok: true, result, note: result.skipped ? 'No import was needed.' : 'Import is running in resumable per-group batches. Check /health for progress.' }, result.skipped ? 200 : 202);
       } catch (error) {
         console.error('TCGCSV sync start failed:', error);
         return json({ ok: false, error: 'sync_start_failed', message: String(error?.message || error).slice(0, 500) }, 500);
       }
-    }
-
-    if (url.pathname === '/continue' && request.method === 'POST') {
-      const expected = env.SYNC_SECRET;
-      const auth = request.headers.get('Authorization') || '';
-      if (!expected || auth !== 'Bearer ' + expected) return json({ ok: false, error: 'unauthorized' }, 401);
-      if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
-      let body;
-      try { body = await request.json(); } catch { return json({ ok: false, error: 'invalid_json' }, 400); }
-      if (typeof body?.run_token !== 'string' || !body.run_token) return json({ ok: false, error: 'missing_run_token' }, 400);
-      ctx.waitUntil(processOneGroup(env.DB, body.run_token, url.origin, env, ctx).catch(error => {
-        console.error('TCGCSV group batch failed:', error);
-        return setError(env.DB, error);
-      }));
-      return json({ ok: true, accepted: true }, 202);
     }
 
     return json({ ok: false, error: 'not_found' }, 404);
