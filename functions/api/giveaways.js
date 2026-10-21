@@ -62,9 +62,15 @@ async function ensureTable(env) {
     giveaway_id INTEGER NOT NULL,
     account_id INTEGER NOT NULL,
     entered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    bonus_entries INTEGER NOT NULL DEFAULT 0 CHECK(bonus_entries BETWEEN 0 AND 1000000),
     is_winner INTEGER NOT NULL DEFAULT 0 CHECK(is_winner IN (0,1)),
     UNIQUE(giveaway_id, account_id)
   )`).run();
+  const entryColumns = await env.DB.prepare('PRAGMA table_info(poke_prize_giveaway_entries)').all();
+  if (!(entryColumns.results || []).some(column => column.name === 'bonus_entries')) {
+    try { await env.DB.prepare('ALTER TABLE poke_prize_giveaway_entries ADD COLUMN bonus_entries INTEGER NOT NULL DEFAULT 0').run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaway_entries_giveaway ON poke_prize_giveaway_entries(giveaway_id, entered_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaways_status ON poke_prize_giveaways(status, featured, end_at)').run();
 }
@@ -129,7 +135,7 @@ export async function onRequestGet({ request, env }) {
       if (access.response) return access.response;
       const rows = await env.DB.prepare(
         `SELECT g.*,
-        (SELECT COUNT(*) FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = g.id) AS actual_entry_count,
+        (SELECT COALESCE(SUM(1 + e.bonus_entries), 0) FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = g.id) AS actual_entry_count,
         (SELECT a.display_name FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.id = g.winner_entry_id LIMIT 1) AS winner_name,
         (SELECT p.username FROM poke_prize_giveaway_entries e JOIN collector_profiles p ON p.account_id = e.account_id WHERE e.id = g.winner_entry_id LIMIT 1) AS winner_username
        FROM poke_prize_giveaways g ORDER BY g.updated_at DESC, g.id DESC LIMIT 500`
