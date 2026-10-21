@@ -187,7 +187,7 @@ function renderMessages(messages){const root=$('chat-history');root.replaceChild
 async function selectChannel(id){
  state.channelId=id;state.unread[id]=0;renderChannels();const c=currentChannel();if(!c)return;
  $('chat-room-name').textContent=c.name;$('chat-room-description').textContent=c.description||'Community conversation';$('chat-input').placeholder='Message #'+c.slug;$('chat-history').innerHTML='<div class="chat-history-status">Loading messages…</div>';alertBox('');
- try{const d=await api('/api/chat/messages?channel='+encodeURIComponent(id));state.messages.set(id,d.messages||[]);renderMessages(d.messages||[]);if(d.realtime_ready===false)alertBox('Messages can be read, but live delivery is not configured. Ask the site administrator to finish the staging setup.');}
+ try{const d=await api('/api/chat/messages?channel='+encodeURIComponent(id));state.messages.set(id,d.messages||[]);renderMessages(d.messages||[]);if(d.realtime_ready===false)alertBox('Messages can be read, but live delivery is not configured. Ask the site administrator to finish the real-time chat setup.');}
  catch(e){$('chat-history').innerHTML='';const msg=document.createElement('div');msg.className='chat-history-status';msg.textContent=e.message;$('chat-history').appendChild(msg);if(e.message.includes('not configured'))alertBox(e.message);}
 }
 function receive(event){
@@ -236,7 +236,7 @@ function chooseMention(username){
 }
 function updateCount(){$('chat-char-count').textContent=$('chat-input').value.length.toLocaleString()+' / 1,200';}
 async function start(){
- try{const d=await api('/api/chat/channels');state.account=d.account;state.channels=d.channels||[];if(!state.channels.length)throw new Error('No chat channels are available yet. Apply the staging chat database migration first.');showApp();state.channelId=Number(state.channels[0].id);renderChannels();await selectChannel(state.channelId);connect();}
+ try{const d=await api('/api/chat/channels');state.account=d.account;state.channels=d.channels||[];if(!state.channels.length)throw new Error('No chat channels are available yet. The site administrator needs to finish chat setup.');showApp();state.channelId=Number(state.channels[0].id);renderChannels();await selectChannel(state.channelId);connect();}
  catch(e){if(e.message==='login_required')return;showGate('Community Chat is almost ready',e.message);$('chat-gate-copy').textContent=e.message;}
 }
 $('chat-form').addEventListener('submit',sendMessage);$('chat-input').addEventListener('input',()=>{updateCount();updateMentionSuggestions();});$('chat-input').addEventListener('keydown',e=>{if(! $('chat-mention-suggestions').hidden && mentionResults.length && (e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();mentionIndex=(mentionIndex+(e.key==='ArrowDown'?1:mentionResults.length-1))%mentionResults.length;const buttons=$('chat-mention-suggestions').querySelectorAll('button');buttons.forEach((button,index)=>button.setAttribute('aria-selected',String(index===mentionIndex)));return;}if(! $('chat-mention-suggestions').hidden && e.key==='Enter'&&!e.shiftKey){e.preventDefault();chooseMention(mentionResults[mentionIndex].username);return;}if(e.key==='Escape')hideMentionSuggestions();if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chat-form').requestSubmit();}});$('chat-input').addEventListener('blur',()=>setTimeout(hideMentionSuggestions,160));
