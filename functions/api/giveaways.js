@@ -144,7 +144,7 @@ export async function onRequestGet({ request, env }) {
     }
     const rows = await env.DB.prepare(
       `SELECT g.id, g.title, g.description, g.prize_value, g.image_url, g.start_at, g.end_at, g.eligibility, g.rules, g.status, g.featured, g.vip_only,
-        (SELECT COUNT(*) FROM poke_prize_giveaway_entries e WHERE e.giveaway_id = g.id) AS actual_entry_count,
+        (SELECT COALESCE(SUM(1 + e.bonus_entries), 0) FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = g.id) AS actual_entry_count,
         g.published_at, g.created_at, g.winner_selected_at,
         (SELECT p.username FROM poke_prize_giveaway_entries e JOIN collector_profiles p ON p.account_id = e.account_id WHERE e.id = g.winner_entry_id LIMIT 1) AS winner_username
        FROM poke_prize_giveaways g WHERE g.status = 'published' ORDER BY g.featured DESC, g.id DESC LIMIT 500`
