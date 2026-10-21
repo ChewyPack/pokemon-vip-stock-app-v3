@@ -10,7 +10,7 @@ var css=`
 .ppp-ad-slot--rail{position:fixed;top:170px;width:160px;height:600px;padding:24px 8px 8px;border-radius:10px}
 .ppp-ad-slot--left{left:12px}
 .ppp-ad-slot--right{right:12px}
-@media(max-width:1579px){.ppp-ad-slot--rail{display:none!important}}
+@media(max-width:1639px){.ppp-ad-slot--rail{display:none!important}}
 @media(max-width:600px){.ppp-ad-slot--top{min-height:70px;margin:12px auto 18px;font-size:10px}}
 `;
 var style=document.createElement('style');style.setAttribute('data-ppp-ad-style','');style.textContent=css;document.head.appendChild(style);
