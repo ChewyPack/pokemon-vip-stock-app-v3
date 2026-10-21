@@ -3,7 +3,7 @@
  * SUBMISSION ADAPTER
  *
  * The UI calls VIP.submit.send(report, photos, meta).
- * The server controls membership access, validation, storage and alerts.
+ * The server controls validation, storage and in-site/browser notification delivery.
  *
  * This version reports known server errors clearly so failures can be
  * diagnosed without blindly resubmitting a report.
@@ -23,7 +23,7 @@
       "Couldn't reach the server. Check your connection and try again.",
 
     busy:
-      'Discord is busy right now. Wait a few seconds before trying again.',
+      'The service is busy right now. Wait a few seconds before trying again.',
 
     photo_too_large:
       'Your photos are too large to send. Remove a photo and try again.',
@@ -34,8 +34,8 @@
     bad_photo:
       "One of the files isn't a supported photo. Use JPG, PNG or WebP.",
 
-    not_configured:
-      "The report alert system isn't configured correctly. Please tell an admin.",
+    notification_delivery_failed:
+      'Your report was saved, but notifications could not be delivered. Check your notifications inbox before submitting again.',
 
     membership_required:
       'VIP membership is required to submit a report. Please sign in again.',
@@ -48,12 +48,6 @@
 
     database_error:
       'The report could not be saved to the database. Please contact an admin before submitting it again.',
-
-    discord_unreachable:
-      'The report may already be saved, but the server could not reach Discord. Check the report dashboard before submitting again.',
-
-    discord_error:
-      'The report may already be saved, but Discord rejected the alert. Check the report dashboard before submitting again.',
 
     too_large:
       'The report or its photos are too large. Remove some photos and try again.',
