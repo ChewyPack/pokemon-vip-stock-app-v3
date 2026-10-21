@@ -1,4 +1,39 @@
 import { chatJson, currentChatAccount, publishChatEvent, chatError } from "../../_lib/chat.js";
+import { sendWebPush } from "../../_lib/web-push.js";
+
+async function notifyChatMentions(env, sender, body, channelId) {
+  const names = [...new Set(Array.from(body.matchAll(/(?:^|\\s)@([a-zA-Z0-9_.-]{2,30})/g), match => match[1].toLowerCase()))];
+  if (!names.length) return;
+  const { results = [] } = await env.DB.prepare(`
+    SELECT a.id, a.display_name, p.username
+    FROM accounts a JOIN collector_profiles p ON p.account_id = a.id
+    WHERE LOWER(p.username) IN (${names.map(() => "?").join(",")})
+  `).bind(...names).all();
+  for (const recipient of results) {
+    if (Number(recipient.id) === Number(sender.id)) continue;
+    const title = "You were mentioned in community chat";
+    const excerpt = body.length > 150 ? body.slice(0, 147) + "..." : body;
+    const notificationBody = (sender.display_name || "A collector") + " mentioned you: " + excerpt;
+    try {
+      const prefs = await env.DB.prepare("SELECT in_app_enabled, browser_push_enabled FROM notification_preferences WHERE account_id = ?").bind(recipient.id).first().catch(() => null);
+      if (Number(prefs?.in_app_enabled ?? 1) === 1) {
+        await env.DB.prepare("INSERT INTO notifications (account_id, notification_type, title, body, url, data_json) VALUES (?, 'mention', ?, ?, ?, ?)")
+          .bind(recipient.id, title, notificationBody, "/chat.html", JSON.stringify({ kind: "chat_mention", channel_id: channelId })).run();
+      }
+      if (Number(prefs?.browser_push_enabled || 0) === 1 && env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
+        const { results: subscriptions = [] } = await env.DB.prepare("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE account_id = ?").bind(recipient.id).all();
+        await Promise.all(subscriptions.map(async sub => {
+          try {
+            const response = await sendWebPush(sub, { title, body: notificationBody, url: "/chat.html", tag: "chat-mention-" + recipient.id }, env);
+            if (response.status === 404 || response.status === 410) {
+              await env.DB.prepare("DELETE FROM push_subscriptions WHERE id = ?").bind(sub.id).run();
+            }
+          } catch (error) { console.error("Chat mention push failed:", error); }
+        }));
+      }
+    } catch (error) { console.error("Chat mention notification failed:", recipient.id, error); }
+  }
+}
 
 function realtimeReady(env) {
   return Boolean(env.CHAT_ROOM && env.CHAT_INTERNAL_SECRET);
@@ -70,6 +105,8 @@ export async function onRequestPost({ request, env }) {
     let realtime = true;
     try { await publishChatEvent(env, { type: "message", message: { ...message, mine: undefined } }); }
     catch (error) { realtime = false; console.error("Chat message saved but live broadcast failed:", error); }
+    try { await notifyChatMentions(env, account, body, channelId); }
+    catch (error) { console.error("Chat mention processing failed:", error); }
     return chatJson({ ok: true, message, realtime }, 201);
   } catch (error) {
     return chatError(error, "chat_message_send_failed");
