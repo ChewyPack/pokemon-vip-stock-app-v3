@@ -129,7 +129,7 @@ export async function onRequestGet({ request, env }) {
       if (access.response) return access.response;
       const rows = await env.DB.prepare(
         `SELECT g.*,
-        (SELECT COUNT(*) FROM poke_prize_giveaway_entries e WHERE e.giveaway_id = g.id) AS actual_entry_count,
+        (SELECT COUNT(*) FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = g.id) AS actual_entry_count,
         (SELECT a.display_name FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.id = g.winner_entry_id LIMIT 1) AS winner_name,
         (SELECT p.username FROM poke_prize_giveaway_entries e JOIN collector_profiles p ON p.account_id = e.account_id WHERE e.id = g.winner_entry_id LIMIT 1) AS winner_username
        FROM poke_prize_giveaways g ORDER BY g.updated_at DESC, g.id DESC LIMIT 500`
