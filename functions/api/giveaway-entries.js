@@ -20,7 +20,7 @@ async function sha256(value) {
   return base64Url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
 }
 async function ensureTables(env) {
-  await env.DB.prepare(\`CREATE TABLE IF NOT EXISTS poke_prize_giveaways (
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaways (
     id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
     prize_value REAL, image_url TEXT NOT NULL DEFAULT '', start_at TEXT, end_at TEXT,
     eligibility TEXT NOT NULL DEFAULT '', rules TEXT NOT NULL DEFAULT '',
@@ -29,7 +29,7 @@ async function ensureTables(env) {
     vip_only INTEGER NOT NULL DEFAULT 0 CHECK(vip_only IN (0,1)),
     entry_count INTEGER, published_at TEXT, winner_entry_id INTEGER, winner_selected_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )\`).run();
+  )`).run();
   const columns = await env.DB.prepare('PRAGMA table_info(poke_prize_giveaways)').all();
   const names = new Set((columns.results || []).map(column => column.name));
   if (!names.has('winner_entry_id')) {
@@ -40,14 +40,14 @@ async function ensureTables(env) {
     try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_selected_at TEXT').run(); }
     catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
   }
-  await env.DB.prepare(\`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     giveaway_id INTEGER NOT NULL,
     account_id INTEGER NOT NULL,
     entered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_winner INTEGER NOT NULL DEFAULT 0 CHECK(is_winner IN (0,1)),
     UNIQUE(giveaway_id, account_id)
-  )\`).run();
+  )`).run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaway_entries_giveaway ON poke_prize_giveaway_entries(giveaway_id, entered_at)').run();
 }
 async function currentAccount(request, env) {
@@ -81,12 +81,12 @@ function randomIndex(max) {
 }
 async function getWinnerData(env, giveawayId) {
   return await env.DB.prepare(
-    \`SELECT e.id AS entry_id, e.giveaway_id, e.account_id, e.entered_at,
+    `SELECT e.id AS entry_id, e.giveaway_id, e.account_id, e.entered_at,
       a.display_name, a.email, p.username
      FROM poke_prize_giveaway_entries e
      JOIN accounts a ON a.id = e.account_id
      LEFT JOIN collector_profiles p ON p.account_id = a.id
-     WHERE e.giveaway_id = ? ORDER BY e.entered_at ASC, e.id ASC\`
+     WHERE e.giveaway_id = ? ORDER BY e.entered_at ASC, e.id ASC`
   ).bind(giveawayId).all();
 }
 
@@ -97,14 +97,14 @@ export async function onRequestGet({ request, env }) {
     const url = new URL(request.url);
     if (url.searchParams.get('winners') === '1') {
       const winners = await env.DB.prepare(
-        \`SELECT g.id, g.title AS giveaway_title, g.winner_selected_at AS announced_at,
+        `SELECT g.id, g.title AS giveaway_title, g.winner_selected_at AS announced_at,
           COALESCE(NULLIF(p.username, ''), 'Collector') AS winner_name
          FROM poke_prize_giveaways g
          JOIN poke_prize_giveaway_entries e ON e.id = g.winner_entry_id
          JOIN accounts a ON a.id = e.account_id
          LEFT JOIN collector_profiles p ON p.account_id = a.id
          WHERE g.status = 'published'
-         ORDER BY g.winner_selected_at DESC, g.id DESC LIMIT 8\`
+         ORDER BY g.winner_selected_at DESC, g.id DESC LIMIT 8`
       ).all();
       return json({ ok: true, winners: winners.results || [] });
     }
@@ -174,11 +174,11 @@ export async function onRequestPost({ request, env }) {
 
     const offset = randomIndex(count);
     const chosen = await env.DB.prepare(
-      \`SELECT e.id AS entry_id, e.account_id, e.entered_at, a.display_name, a.email, p.username
+      `SELECT e.id AS entry_id, e.account_id, e.entered_at, a.display_name, a.email, p.username
        FROM poke_prize_giveaway_entries e
        JOIN accounts a ON a.id = e.account_id
        LEFT JOIN collector_profiles p ON p.account_id = a.id
-       WHERE e.giveaway_id = ? ORDER BY e.id ASC LIMIT 1 OFFSET ?\`
+       WHERE e.giveaway_id = ? ORDER BY e.id ASC LIMIT 1 OFFSET ?`
     ).bind(giveawayId, offset).first();
     if (!chosen) return json({ ok: false, error: 'winner_selection_failed' }, 500);
 
