@@ -141,7 +141,7 @@ export async function onRequestPost({ request, env }) {
     let inserted;
     try {
       inserted = await env.DB.prepare(
-        'INSERT INTO poke_prize_giveaway_entries (giveaway_id, account_id) VALUES (?, ?)'
+        'INSERT INTO poke_prize_giveaway_entries (giveaway_id, account_id, rules_accepted_at) VALUES (?, ?, CURRENT_TIMESTAMP)'
       ).bind(giveawayId, account.id).run();
     } catch (error) {
       if (String(error && error.message || '').toLowerCase().includes('unique')) {
