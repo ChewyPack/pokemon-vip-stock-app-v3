@@ -14,7 +14,8 @@ async function loadSubmissions(){
  submissions.forEach(function(sub){
   const row=document.createElement('article');row.className='item';
   const h=document.createElement('h3');h.textContent=sub.title;row.appendChild(h);
-  const meta=document.createElement('p');meta.className='muted';meta.textContent=(sub.status||'pending').toUpperCase()+' · '+sub.event_date+' · '+sub.event_type+' · Submitted by '+(sub.submitter_username?'@'+sub.submitter_username+' / ':'')+(sub.submitter_name||'Member')+' ('+(sub.submitter_email||'no email')+')';row.appendChild(meta);
+  const meta=document.createElement('p');meta.className='muted';var recurrenceLabel=sub.recurrence_frequency&&sub.recurrence_frequency!=='once'?' · Repeats '+sub.recurrence_frequency+' until '+sub.recurrence_until:' · One-time';
+  meta.textContent=(sub.status||'pending').toUpperCase()+' · '+sub.event_date+' · '+sub.event_type+recurrenceLabel+' · Submitted by '+(sub.submitter_username?'@'+sub.submitter_username+' / ':'')+(sub.submitter_name||'Member')+' ('+(sub.submitter_email||'no email')+')';row.appendChild(meta);
   const detail=document.createElement('p');detail.textContent=sub.description||'No description provided.';row.appendChild(detail);
   const place=document.createElement('p');place.className='muted';place.textContent=[sub.start_time&&('Start '+sub.start_time),sub.end_time&&('End '+sub.end_time),sub.venue,sub.address,sub.city,sub.state_name||sub.state,sub.zip,sub.price&&('Admission '+sub.price)].filter(Boolean).join(' · ')||'No location supplied';row.appendChild(place);
   if(sub.url){const link=document.createElement('a');link.href=sub.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open official event link';row.appendChild(link);}
@@ -24,7 +25,7 @@ async function loadSubmissions(){
    const approve=document.createElement('button');approve.type='button';approve.textContent='Approve & publish';approve.addEventListener('click',async function(){
     if(!confirm('Approve and publish "'+sub.title+'" on the public Events Calendar?'))return;
     approve.disabled=true;
-    try{await api('/api/event-submissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'approve',id:Number(sub.id)})});say('Event approved and published.');await loadSubmissions();}
+    try{const result=await api('/api/event-submissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'approve',id:Number(sub.id)})});say(result.message||'Event approved and published.');await loadSubmissions();await load();}
     catch(e){say('Could not approve event: '+e.message);approve.disabled=false;}
    });actions.appendChild(approve);
    const reject=document.createElement('button');reject.type='button';reject.className='danger';reject.textContent='Reject';reject.addEventListener('click',async function(){
