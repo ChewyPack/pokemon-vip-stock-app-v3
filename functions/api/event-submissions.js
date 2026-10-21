@@ -167,8 +167,9 @@ export async function onRequestPost({ request, env }) {
         return env.DB.prepare("INSERT INTO poke_report_events (title,description,event_type,event_date,start_time,end_time,venue,address,city,state,state_name,zip,url,price,image_url,badge,status) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'published' WHERE EXISTS (SELECT 1 FROM poke_prize_event_submissions WHERE id = ? AND status = 'pending')")
           .bind(submission.title,submission.description,submission.event_type,eventDate,submission.start_time,submission.end_time,submission.venue,submission.address,submission.city,submission.state,submission.state_name,submission.zip,submission.url,submission.price,'',badge,id);
       });
-      statements.push(env.DB.prepare("UPDATE poke_prize_event_submissions SET status = 'approved', approved_event_id = ?, reviewed_by_account_id = ?, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'")
-        .bind(0, access.account.id, id));
+      const firstBadge = frequency === 'once' ? 'Community submission' : (frequency.charAt(0).toUpperCase() + frequency.slice(1)) + ' series 1/' + dates.length;
+      statements.push(env.DB.prepare("UPDATE poke_prize_event_submissions SET status = 'approved', approved_event_id = (SELECT id FROM poke_report_events WHERE title = ? AND event_date = ? AND badge = ? AND status = 'published' ORDER BY id DESC LIMIT 1), reviewed_by_account_id = ?, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'")
+        .bind(submission.title, dates[0], firstBadge, access.account.id, id));
       const reviewResults = await env.DB.batch(statements);
       if (!reviewResults.length || Number(reviewResults[0]?.meta?.changes || 0) !== 1) {
         return json({ ok: false, error: 'submission_already_reviewed' }, 409);
@@ -179,8 +180,7 @@ export async function onRequestPost({ request, env }) {
         console.error('Event submission review status did not update.', { submissionId: id });
         return json({ ok: false, error: 'submission_review_state_failed' }, 500);
       }
-      await env.DB.prepare("UPDATE poke_prize_event_submissions SET approved_event_id = ? WHERE id = ?").bind(eventId, id).run();
-      return json({ ok: true, status: 'approved', event_id: eventId });
+      return json({ ok: true, status: 'approved', event_id: eventId, occurrences_created: dates.length, message: dates.length === 1 ? 'Event approved and published.' : 'Recurring event approved. ' + dates.length + ' occurrences were added to the calendar.' });
     }
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: false, error: 'login_required' }, 401);
