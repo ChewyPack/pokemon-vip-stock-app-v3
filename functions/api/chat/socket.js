@@ -5,7 +5,7 @@ export async function onRequestGet({ request, env }) {
     const account = await currentChatAccount(request, env);
     if (!account) return chatJson({ ok: false, error: "login_required" }, 401);
     if (!env.CHAT_ROOM || !env.CHAT_INTERNAL_SECRET) {
-      return chatJson({ ok: false, error: "chat_realtime_not_configured", message: "Real-time chat is not configured on staging yet." }, 503);
+      return chatJson({ ok: false, error: "chat_realtime_not_configured", message: "Real-time chat is not configured for this environment yet." }, 503);
     }
     if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
       return chatJson({ ok: false, error: "websocket_required" }, 426);
