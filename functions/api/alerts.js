@@ -87,6 +87,7 @@ export async function onRequestGet({ request, env }) {
              store_address, product_name, quantity_text, shelf_price, msrp${reportTypeSelect}, created_at
       FROM reports
       WHERE 1 = 1
+        AND NOT EXISTS (SELECT 1 FROM admin_hidden_reports hidden WHERE hidden.report_id = reports.id)
         ${reportTypeFilter}
         AND (? = 1 OR datetime(created_at) <= datetime('now', '-1 hour'))
         AND LOWER(TRIM(COALESCE(still_there, ''))) IN ('yes', 'true', 'in stock')
