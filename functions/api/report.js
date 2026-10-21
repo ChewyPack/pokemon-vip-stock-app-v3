@@ -199,6 +199,24 @@ function makeStoreDetails(report) {
 }
 
 async function handleLineReport(data, env, form) {
+  // Line-report columns are only available after the dedicated schema migration.
+  // Fail clearly before uploading photos or attempting an INSERT against legacy production D1.
+  try {
+    const schema = await env.DB.prepare('PRAGMA table_info(reports)').all();
+    const columns = new Set((schema.results || []).map(column => column.name));
+    const required = ['report_type', 'line_count', 'stocked_by'];
+    if (!required.every(column => columns.has(column))) {
+      return json({
+        ok: false,
+        error: 'line_reports_not_enabled',
+        message: 'Line reports are temporarily unavailable while this database uses the legacy schema.'
+      }, 503);
+    }
+  } catch (error) {
+    console.error('Line report schema check failed:', error);
+    return json({ ok: false, error: 'database_schema_check_failed' }, 503);
+  }
+
 
   const errors = {};
   ['state', 'retailer', 'branch'].forEach(function (id) {
