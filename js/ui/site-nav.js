@@ -98,4 +98,22 @@
  fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){var a=root.querySelector('.account-nav-link');if(d&&d.ok&&d.authenticated){a.href='/collector.html';a.textContent='My Profile';a.setAttribute('aria-label','Open your collector profile');var wrap=el('div',{class:'site-nav__profile-wrap'});var trigger=el('button',{class:'site-nav__profile-menu-trigger',type:'button','aria-label':'My Profile options','aria-expanded':'false',text:'▾'});var menu=el('div',{class:'site-nav__profile-menu',hidden:'hidden'});var settings=el('a',{class:'site-nav__profile-menu-settings',href:'/account.html#nearby-collector-settings',text:'Settings'});menu.appendChild(settings);var logout=el('button',{type:'button',text:'Log Out'});logout.addEventListener('click',function(){logout.disabled=true;logout.textContent='Logging out…';fetch('/api/account/logout',{method:'POST',credentials:'include'}).then(function(r){if(!r.ok)throw new Error('Logout failed');location.href='/account.html';}).catch(function(){logout.disabled=false;logout.textContent='Log Out';});});menu.appendChild(logout);trigger.addEventListener('click',function(){var open=menu.hidden;menu.hidden=!open;trigger.setAttribute('aria-expanded',String(open));});wrap.appendChild(trigger);wrap.appendChild(menu);a.parentNode.insertBefore(wrap,a.nextSibling);var st=el('style',{});st.textContent='.site-nav__profile-wrap{position:relative;display:inline-flex;align-items:center;margin-left:-8px}.site-nav__profile-menu-trigger{min-height:40px;border:1px solid #b9c9e6;border-radius:8px;background:#f3f7ff;color:#17386c;font:900 1rem Nunito,system-ui,sans-serif;cursor:pointer}.site-nav__profile-menu{position:absolute;z-index:1000;right:0;top:calc(100% + 6px);min-width:130px;padding:5px;background:#fff;border:1px solid #d5e0f2;border-radius:9px;box-shadow:0 8px 22px #07194d22}.site-nav__profile-menu[hidden]{display:none!important}.site-nav__profile-menu button,.site-nav__profile-menu-settings{box-sizing:border-box;display:block;width:100%;padding:10px;border:0;border-radius:6px;background:#fff;color:#17386c;text-align:left;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;cursor:pointer}.site-nav__profile-menu-settings{border-bottom:1px solid #e2e9f5;border-radius:6px 6px 0 0}.site-nav__profile-menu-settings:hover{background:#f3f7ff}.site-nav__profile-menu button{color:#a32222}.site-nav__profile-menu button:hover{background:#fff0ef}';root.prepend(st);}}).catch(function(){});
  document.addEventListener('click',function(e){if(!root.contains(e.target)){root.querySelectorAll('.site-nav__toggle').forEach(function(b){b.setAttribute('aria-expanded','false');});root.querySelectorAll('.site-nav__menu').forEach(function(m){m.hidden=true;});}});
  root.addEventListener('keydown',function(e){if(e.key==='Escape'){root.querySelectorAll('.site-nav__toggle').forEach(function(b){b.setAttribute('aria-expanded','false');});root.querySelectorAll('.site-nav__menu').forEach(function(m){m.hidden=true;});}});
+
+ // Report authenticated collector presence per browser tab, so chat and admin tabs do not overwrite each other.
+ (function(){
+  var page = location.pathname || "/";
+  // Generate an in-memory ID for this page instance. sessionStorage can be copied
+  // when a tab is duplicated, causing two tabs to overwrite the same presence row.
+  var tabId = (window.crypto && typeof window.crypto.randomUUID === "function")
+    ? window.crypto.randomUUID().replace(/-/g, "")
+    : "tab_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  function beat(){
+   if(document.visibilityState === "hidden") return;
+   fetch("/api/presence", {method:"POST",credentials:"include",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({page:page,tab_id:tabId})}).catch(function(){});
+  }
+  beat();
+  window.setInterval(beat, 30000);
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") beat(); });
+ })();
+
 })();
