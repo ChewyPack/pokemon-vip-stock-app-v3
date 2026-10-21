@@ -83,14 +83,46 @@ export async function onRequestGet({ request, env }) {
       }));
       return json({ ok: true, alerts });
     }
-    const result = await env.DB.prepare(`
+    const search = String(url.searchParams.get("q") || "").trim().slice(0, 120);
+    const offset = Math.max(0, Math.min(10000000, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0));
+    const limit = Math.max(1, Math.min(100, Number.parseInt(url.searchParams.get("limit") || "100", 10) || 100));
+    const totalRow = await env.DB.prepare("SELECT COUNT(*) AS total FROM accounts").first();
+    const activeRow = await env.DB.prepare(`
+      SELECT COUNT(*) AS total
+      FROM accounts a
+      WHERE LOWER(COALESCE(a.membership_status, 'inactive')) IN ('active', 'trialing')
+        AND LOWER(TRIM(COALESCE(NULLIF(a.membership_entitlement_tier, ''), a.membership_tier, '')))
+          NOT IN ('', 'free', 'none', 'inactive')
+    `).first();
+
+    const queryFilter = search
+      ? "WHERE LOWER(COALESCE(a.display_name, '')) LIKE LOWER(?) OR LOWER(COALESCE(a.email, '')) LIKE LOWER(?) OR LOWER(COALESCE(p.username, '')) LIKE LOWER(?)"
+      : "";
+    const searchPattern = "%" + search + "%";
+    const filteredCountRow = search
+      ? await env.DB.prepare(`
+          SELECT COUNT(*) AS total
+          FROM accounts a
+          LEFT JOIN collector_profiles p ON p.account_id = a.id
+          ${queryFilter}
+        `).bind(searchPattern, searchPattern, searchPattern).first()
+      : totalRow;
+
+    const memberQuery = `
       SELECT a.id, a.display_name, a.email, a.created_at, a.is_admin,
         a.membership_tier, a.membership_entitlement_tier, a.membership_status,
         a.membership_current_period_end, a.membership_cancel_at_period_end,
         p.username
-      FROM accounts a LEFT JOIN collector_profiles p ON p.account_id = a.id
-      ORDER BY a.created_at DESC LIMIT 1000
-    `).all();
+      FROM accounts a
+      LEFT JOIN collector_profiles p ON p.account_id = a.id
+      ${queryFilter}
+      ORDER BY a.created_at DESC, a.id DESC
+      LIMIT ? OFFSET ?
+    `;
+    const result = search
+      ? await env.DB.prepare(memberQuery).bind(searchPattern, searchPattern, searchPattern, limit, offset).all()
+      : await env.DB.prepare(memberQuery).bind(limit, offset).all();
+
     const members = (result.results || []).map(row => ({
       id: Number(row.id), display_name: row.display_name || "Collector",
       email: row.email || "", username: row.username || "",
@@ -101,7 +133,21 @@ export async function onRequestGet({ request, env }) {
       cancel_at_period_end: Number(row.membership_cancel_at_period_end || 0) === 1,
       active: isActiveMember(row)
     }));
-    return json({ ok: true, members, count: members.length, admin_account_id: requester.id });
+    const totalAccounts = Number(totalRow?.total || 0);
+    const activeCount = Number(activeRow?.total || 0);
+    const filteredCount = Number(filteredCountRow?.total || 0);
+    return json({
+      ok: true,
+      members,
+      count: totalAccounts,
+      total_accounts: totalAccounts,
+      active_count: activeCount,
+      free_count: Math.max(0, totalAccounts - activeCount),
+      filtered_count: filteredCount,
+      limit,
+      offset,
+      admin_account_id: requester.id
+    });
   } catch (error) {
     console.error("Admin tools read failed:", error);
     return json({ ok: false, error: "admin_tools_read_failed" }, 500);
