@@ -55,7 +55,8 @@ async function notifyMention(env, accountId, sender, message, channelName) {
 }
 export async function onRequestGet({ request, env }) {
   try {
-    if (!(await admin(request, env))) return json({ ok: false, error: "admin_required" }, 403);
+    const requester = await admin(request, env);
+    if (!requester) return json({ ok: false, error: "admin_required" }, 403);
     const url = new URL(request.url);
     const mode = url.searchParams.get("view") || "members";
     if (mode === "alerts") {
@@ -85,7 +86,7 @@ export async function onRequestGet({ request, env }) {
       SELECT a.id, a.display_name, a.email, a.created_at, a.is_admin,
         a.membership_tier, a.membership_entitlement_tier, a.membership_status,
         a.membership_current_period_end, a.membership_cancel_at_period_end,
-        p.username
+        a.stripe_subscription_id, p.username
       FROM accounts a LEFT JOIN collector_profiles p ON p.account_id = a.id
       ORDER BY a.created_at DESC LIMIT 1000
     `).all();
@@ -99,7 +100,7 @@ export async function onRequestGet({ request, env }) {
       cancel_at_period_end: Number(row.membership_cancel_at_period_end || 0) === 1,
       active: isActiveMember(row)
     }));
-    return json({ ok: true, members, count: members.length });
+    return json({ ok: true, members, count: members.length, admin_account_id: requester.id });
   } catch (error) {
     console.error("Admin tools read failed:", error);
     return json({ ok: false, error: "admin_tools_read_failed" }, 500);
@@ -110,14 +111,72 @@ export async function onRequestDelete({ request, env }) {
     const sender = await admin(request, env);
     if (!sender) return json({ ok: false, error: "admin_required" }, 403);
     const data = await request.json().catch(() => null);
-    const reportId = Number(data?.report_id);
+    if (!data || typeof data !== "object") return json({ ok: false, error: "bad_request" }, 400);
+
+    const accountId = Number(data.account_id);
+    if (Number.isSafeInteger(accountId) && accountId > 0) {
+      if (accountId === Number(sender.id)) {
+        return json({ ok: false, error: "cannot_delete_own_admin_account", message: "You cannot delete the admin account you are currently using." }, 409);
+      }
+
+      const target = await env.DB.prepare(
+        "SELECT id, display_name, email, is_admin, stripe_subscription_id, membership_status, membership_cancel_at_period_end FROM accounts WHERE id = ? LIMIT 1"
+      ).bind(accountId).first();
+      if (!target) return json({ ok: false, error: "account_not_found" }, 404);
+      if (Number(target.is_admin || 0) === 1) {
+        return json({ ok: false, error: "cannot_delete_admin_account", message: "Administrator accounts are protected from deletion." }, 409);
+      }
+      const subscriptionStatus = String(target.membership_status || "").toLowerCase();
+      if (target.stripe_subscription_id &&
+          ["active", "trialing"].includes(subscriptionStatus) &&
+          Number(target.membership_cancel_at_period_end || 0) !== 1) {
+        return json({
+          ok: false,
+          error: "active_subscription_requires_cancellation",
+          message: "This account has an active Stripe subscription. Cancel its membership first; this action will not silently leave recurring billing active."
+        }, 409);
+      }
+
+      // Delete offers first so their offer-items no longer restrict deletion of a collector's items.
+      // The account eligibility condition is repeated in each statement so the batch will not
+      // partially remove account data if its admin/subscription status changes during the request.
+      const eligible = `EXISTS (
+        SELECT 1 FROM accounts
+        WHERE id = ? AND is_admin = 0
+          AND (stripe_subscription_id IS NULL
+            OR membership_status NOT IN ('active', 'trialing')
+            OR membership_cancel_at_period_end = 1)
+      )`;
+      await env.DB.batch([
+        env.DB.prepare(`DELETE FROM collector_trade_offers
+          WHERE (proposer_account_id = ? OR recipient_account_id = ?) AND ${eligible}`)
+          .bind(accountId, accountId, accountId),
+        env.DB.prepare(`DELETE FROM collector_trade_offer_items
+          WHERE collector_item_id IN (SELECT id FROM collector_items WHERE account_id = ?)
+            AND ${eligible}`).bind(accountId, accountId),
+        env.DB.prepare(`DELETE FROM collector_items
+          WHERE account_id = ? AND ${eligible}`).bind(accountId, accountId),
+        env.DB.prepare(`DELETE FROM accounts
+          WHERE id = ? AND is_admin = 0
+            AND (stripe_subscription_id IS NULL
+              OR membership_status NOT IN ('active', 'trialing')
+              OR membership_cancel_at_period_end = 1)`).bind(accountId)
+      ]);
+      const stillExists = await env.DB.prepare("SELECT id FROM accounts WHERE id = ? LIMIT 1").bind(accountId).first();
+      if (stillExists) {
+        return json({ ok: false, error: "account_delete_blocked", message: "The account could not be deleted because it is protected or has an active subscription. Refresh the member list and check its membership status." }, 409);
+      }
+      return json({ ok: true, deleted: true, account_id: accountId });
+    }
+
+    const reportId = Number(data.report_id);
     if (!Number.isSafeInteger(reportId) || reportId < 1) return json({ ok: false, error: "invalid_report_id" }, 400);
     await env.DB.prepare("INSERT OR IGNORE INTO admin_hidden_reports (report_id, hidden_by_account_id, reason) VALUES (?, ?, ?)")
       .bind(reportId, sender.id, String(data?.reason || "").slice(0, 300) || null).run();
     return json({ ok: true, hidden: true, report_id: reportId });
   } catch (error) {
-    console.error("Admin alert hide failed:", error);
-    return json({ ok: false, error: "admin_alert_hide_failed", detail: String(error?.message || "").slice(0, 180) }, 500);
+    console.error("Admin delete action failed:", error);
+    return json({ ok: false, error: "admin_action_failed", detail: String(error?.message || "").slice(0, 180) }, 500);
   }
 }
 export async function onRequestPost({ request, env }) {
