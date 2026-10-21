@@ -1,5 +1,6 @@
 import { currentChatAccount, publishChatEvent } from "../_lib/chat.js";
 import { sendWebPush } from "../_lib/web-push.js";
+import { accountStripeConfig } from "../_lib/account-stripe.js";
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
@@ -113,58 +114,110 @@ export async function onRequestDelete({ request, env }) {
     const data = await request.json().catch(() => null);
     if (!data || typeof data !== "object") return json({ ok: false, error: "bad_request" }, 400);
 
-    const accountId = Number(data.account_id);
-    if (Number.isSafeInteger(accountId) && accountId > 0) {
+    if (Object.prototype.hasOwnProperty.call(data, "account_id")) {
+      const accountId = Number(data.account_id);
+      if (!Number.isSafeInteger(accountId) || accountId < 1) {
+        return json({ ok: false, error: "invalid_account_id" }, 400);
+      }
       if (accountId === Number(sender.id)) {
-        return json({ ok: false, error: "cannot_delete_own_admin_account", message: "You cannot delete the admin account you are currently using." }, 409);
-      }
-
-      const target = await env.DB.prepare(
-        "SELECT id, display_name, email, is_admin, stripe_subscription_id, membership_status, membership_cancel_at_period_end FROM accounts WHERE id = ? LIMIT 1"
-      ).bind(accountId).first();
-      if (!target) return json({ ok: false, error: "account_not_found" }, 404);
-      if (Number(target.is_admin || 0) === 1) {
-        return json({ ok: false, error: "cannot_delete_admin_account", message: "Administrator accounts are protected from deletion." }, 409);
-      }
-      const subscriptionStatus = String(target.membership_status || "").toLowerCase();
-      if (target.stripe_subscription_id &&
-          ["active", "trialing"].includes(subscriptionStatus) &&
-          Number(target.membership_cancel_at_period_end || 0) !== 1) {
         return json({
           ok: false,
-          error: "active_subscription_requires_cancellation",
-          message: "This account has an active Stripe subscription. Cancel its membership first; this action will not silently leave recurring billing active."
+          error: "cannot_delete_own_admin_account",
+          message: "You cannot delete the admin account you are currently using."
         }, 409);
       }
 
-      // Delete offers first so their offer-items no longer restrict deletion of a collector's items.
-      // The account eligibility condition is repeated in each statement so the batch will not
-      // partially remove account data if its admin/subscription status changes during the request.
-      const eligible = `EXISTS (
-        SELECT 1 FROM accounts
-        WHERE id = ? AND is_admin = 0
-          AND (stripe_subscription_id IS NULL
-            OR membership_status NOT IN ('active', 'trialing')
-            OR membership_cancel_at_period_end = 1)
-      )`;
+      const target = await env.DB.prepare(
+        "SELECT id, display_name, email, is_admin, stripe_customer_id, stripe_subscription_id, membership_status, membership_cancel_at_period_end FROM accounts WHERE id = ? LIMIT 1"
+      ).bind(accountId).first();
+      if (!target) return json({ ok: false, error: "account_not_found" }, 404);
+
+      // If the account has a Stripe subscription, verify its ownership and cancel it
+      // immediately before deleting the account. Never remove the account if billing
+      // could not be verified or the cancellation failed.
+      if (target.stripe_subscription_id) {
+        const stripe = accountStripeConfig(env);
+        if (!stripe) {
+          return json({
+            ok: false,
+            error: "stripe_not_configured_for_safe_delete",
+            message: "Stripe billing could not be checked for this account. Verify the account Stripe configuration before deleting it."
+          }, 503);
+        }
+
+        const subscriptionResponse = await fetch(
+          "https://api.stripe.com/v1/subscriptions/" + encodeURIComponent(target.stripe_subscription_id),
+          { headers: { Authorization: "Bearer " + stripe.secretKey } }
+        );
+        const subscription = await subscriptionResponse.json().catch(() => ({}));
+        const customerId = typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer?.id || "";
+
+        if (!subscriptionResponse.ok ||
+            subscription.id !== target.stripe_subscription_id ||
+            customerId !== String(target.stripe_customer_id || "") ||
+            Number(subscription.metadata?.account_id || 0) !== accountId) {
+          console.error("Account deletion blocked: Stripe subscription ownership could not be verified.", {
+            accountId,
+            status: subscriptionResponse.status
+          });
+          return json({
+            ok: false,
+            error: "stripe_subscription_verification_failed",
+            message: "Stripe could not verify that this subscription belongs to this account. The account was not deleted."
+          }, 409);
+        }
+
+        if (!["canceled", "incomplete_expired"].includes(String(subscription.status || ""))) {
+          const cancelResponse = await fetch(
+            "https://api.stripe.com/v1/subscriptions/" + encodeURIComponent(target.stripe_subscription_id),
+            {
+              method: "DELETE",
+              headers: { Authorization: "Bearer " + stripe.secretKey }
+            }
+          );
+          const canceled = await cancelResponse.json().catch(() => ({}));
+          if (!cancelResponse.ok || canceled.status !== "canceled") {
+            console.error("Account deletion blocked: Stripe cancellation failed.", {
+              accountId,
+              status: cancelResponse.status
+            });
+            return json({
+              ok: false,
+              error: "stripe_subscription_cancel_failed",
+              message: "The Stripe subscription could not be cancelled immediately. The account was not deleted."
+            }, 502);
+          }
+        }
+      }
+
+      // Allow deleting any other account, including other admins and paid accounts.
+      // The current admin account is guarded both above and again in every D1 statement.
+      // Deleting offers first avoids RESTRICT conflicts from offered collector items.
+      const eligible = "EXISTS (SELECT 1 FROM accounts WHERE id = ? AND id <> ?)";
       await env.DB.batch([
         env.DB.prepare(`DELETE FROM collector_trade_offers
           WHERE (proposer_account_id = ? OR recipient_account_id = ?) AND ${eligible}`)
-          .bind(accountId, accountId, accountId),
+          .bind(accountId, accountId, accountId, Number(sender.id)),
         env.DB.prepare(`DELETE FROM collector_trade_offer_items
           WHERE collector_item_id IN (SELECT id FROM collector_items WHERE account_id = ?)
-            AND ${eligible}`).bind(accountId, accountId),
+            AND ${eligible}`).bind(accountId, accountId, Number(sender.id)),
         env.DB.prepare(`DELETE FROM collector_items
-          WHERE account_id = ? AND ${eligible}`).bind(accountId, accountId),
+          WHERE account_id = ? AND ${eligible}`).bind(accountId, accountId, Number(sender.id)),
         env.DB.prepare(`DELETE FROM accounts
-          WHERE id = ? AND is_admin = 0
-            AND (stripe_subscription_id IS NULL
-              OR membership_status NOT IN ('active', 'trialing')
-              OR membership_cancel_at_period_end = 1)`).bind(accountId)
+          WHERE id = ? AND id <> ?`).bind(accountId, Number(sender.id))
       ]);
-      const stillExists = await env.DB.prepare("SELECT id FROM accounts WHERE id = ? LIMIT 1").bind(accountId).first();
+
+      const stillExists = await env.DB.prepare(
+        "SELECT id FROM accounts WHERE id = ? LIMIT 1"
+      ).bind(accountId).first();
       if (stillExists) {
-        return json({ ok: false, error: "account_delete_blocked", message: "The account could not be deleted because it is protected or has an active subscription. Refresh the member list and check its membership status." }, 409);
+        return json({
+          ok: false,
+          error: "account_delete_failed",
+          message: "The account could not be deleted. Billing was checked first; refresh the list and retry or inspect the deployment logs."
+        }, 409);
       }
       return json({ ok: true, deleted: true, account_id: accountId });
     }
