@@ -15,6 +15,9 @@
   <style>
     body.market-page{min-height:100vh;color:#eef3ff;background:#080c15;font-family:Barlow,Arial,sans-serif}
     body.market-page:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 15% 0%,rgba(39,86,170,.18),transparent 42%),radial-gradient(ellipse at 90% 20%,rgba(0,211,190,.07),transparent 32%);z-index:-1}
+    body.market-access-pending .market-content> :not(#market-access-gate),body.market-access-locked .market-content> :not(#market-access-gate){display:none!important}
+    body.market-access-pending .market-content,body.market-access-locked .market-content{min-height:70vh}
+    #market-access-gate .mi-actions{margin-top:20px}
     .market-content{width:min(1240px,calc(100% - 36px));margin:0 auto;padding:42px 0 84px}
     .mi-topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:#9ba9c3;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase}
     .mi-live{display:inline-flex;align-items:center;gap:8px;color:#9ff5d0;border:1px solid rgba(91,235,177,.25);background:rgba(38,180,125,.08);padding:8px 11px;border-radius:999px;letter-spacing:.06em}
@@ -93,11 +96,16 @@
   </style>
 </head>
 
-<body class="market-page">
+<body class="market-page market-access-pending">
   <div id="site-navigation"></div>
 
 
   <main class="market-content">
+    <section id="market-access-gate" class="mi-panel" role="status" aria-live="polite" style="margin:24px 0;padding:28px">
+      <p class="mi-kicker">Membership access</p>
+      <h1 style="font-size:clamp(1.8rem,4vw,2.6rem);margin:0 0 12px">Checking your membership…</h1>
+      <p class="mi-subtitle">Market Intelligence is a member benefit. Please wait while we verify your access.</p>
+    </section>
     <div class="mi-topline">
       <span>PokePrizePool / Market Intelligence</span>
       <span class="mi-live"><span class="mi-dot"></span> Source-linked research</span>
@@ -310,10 +318,6 @@
         <div class="mi-hype-meter"><div class="mi-hype-heading"><strong>Collector hype meter</strong><span id="artist-hype-status" class="mi-hype-status">Early signal · limited sample</span></div><div id="artist-hype-track" class="mi-hype-track" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><p id="artist-hype-note">Matched cards show movement in the supplied snapshot, but this small sample is not enough to claim broad artist-level demand. This is a research flag, not a numerical hype score or buy/sell signal.</p></div>
         <p class="mi-artist-footnote">Artist credits are checked against linked card references; price changes come from the dated PokePrizePool snapshot. The spotlight rotates among matched artists only. No price movement is attributed to an artist unless the exact printing and credit match.</p>
       </article>
-      <article class="mi-note"><h3>Card hype tracker</h3><p>A card hype tracker can combine grading submissions, submission growth relative to the graded base, seven-day price movement, and total graded supply. Treat rapid attention as a prompt to investigate liquidity and supply, not proof of sustainable demand.</p></article>
-      <article class="mi-note"><h3>Cheap SIR / hyper-rare research</h3><p>A useful research board can cover English SIR, Hyper Rare, and Mega Hyper Rare cards across Scarlet & Violet and Mega-era sets, using graded-price references where available. Confirm current prices and missing values before comparing cards.</p></article>
-      <article class="mi-note"><h3>Promos & regional exclusives</h3><p>Promo galleries use set/population identification and price references; regional-exclusive coverage is described as verified releases with market presence, not a guaranteed exhaustive checklist. Confirm release details before treating an item as region-exclusive.</p></article>
-      <article class="mi-note"><h3>Market data quality checks</h3><p>The supplied verified-movers description says market, low, and mid must move in the same direction, the row must have refreshed recently, and market price cannot sit below its own listing floor. The methodology page explains the precise filters and why they exist. These checks reduce obvious anomalies but do not eliminate all risk.</p></article>
     </section>
 
     <div class="mi-section-heading" id="watchlist"><div><h2>Collector watchlist & field intelligence</h2><p>Signals to investigate — not automatic buy or sell calls.</p></div></div>
@@ -369,6 +373,46 @@
     })();
   </script>
 
+<script>
+(function(){
+  var body=document.body;
+  var gate=document.getElementById('market-access-gate');
+  function showGate(title, message, links){
+    body.classList.remove('market-access-pending');
+    body.classList.add('market-access-locked');
+    gate.innerHTML='<p class="mi-kicker">Member-only research</p><h1 style="font-size:clamp(1.8rem,4vw,2.6rem);margin:0 0 12px">'+title+'</h1><p class="mi-subtitle">'+message+'</p><div class="mi-actions">'+links+'</div>';
+  }
+  function unlock(){
+    body.classList.remove('market-access-pending','market-access-locked');
+    if(gate) gate.remove();
+  }
+  function activePaidMembership(data){
+    if(!data||!data.ok||!data.authenticated||!data.membership)return false;
+    var m=data.membership;
+    var status=String(m.status||'').toLowerCase();
+    var tier=String(m.entitlement_tier||m.billing_tier||m.tier||'free').toLowerCase().replace(/[-_]/g,' ');
+    var account=data.account||{};
+    return account.is_admin===true || (['active','trialing'].includes(status)&&!['','free','none','inactive'].includes(tier));
+  }
+  Promise.all([
+    fetch('/api/account/me',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null}),
+    fetch('/api/membership',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})
+  ]).then(function(results){
+    var account=results[0], vip=results[1];
+    if(activePaidMembership(account) || (vip&&vip.ok&&vip.active===true)){
+      unlock();
+      return;
+    }
+    showGate('Market Intelligence is for members',
+      'Your current account does not have an active paid membership with Market Intelligence access. Upgrade or sign in with your paid member account to unlock market movers, research tools, and collector insights.',
+      '<a class="mi-button primary" href="/account.html">View membership options</a><a class="mi-button" href="/account.html">Sign in / account</a><a class="mi-button" href="/">Back to PokePrizePool</a>');
+  }).catch(function(){
+    showGate('We could not verify your membership',
+      'Market Intelligence stays locked until your membership can be verified. Please try again or open your account page.',
+      '<a class="mi-button primary" href="/account.html">Open account</a><a class="mi-button" href="/">Back to PokePrizePool</a>');
+  });
+})();
+</script>
 <script src="/js/ui/market-ticker.js"></script>
 <script src="/js/ui/pokereport-sidebar.js"></script>
 </body>
