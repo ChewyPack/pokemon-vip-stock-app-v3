@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Poke Report Editor | PokePrizePool</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body{margin:0;background:#07142e;color:#f6f8ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+    .editor-wrap{width:min(1180px,calc(100% - 32px));margin:0 auto;padding:30px 0 70px}
+    .editor-card{background:rgba(9,25,61,.94);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:22px;margin:20px 0;box-shadow:0 12px 35px rgba(0,0,0,.18)}
+    h1,h2{margin-top:0}.subtle{color:#bac9e8;line-height:1.6}
+    label{display:block;font-weight:700;margin:14px 0 6px}
+    input,textarea,select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #52688f;border-radius:8px;background:#08142d;color:#fff;font:inherit}
+    textarea{min-height:180px;resize:vertical}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    button,.button-link{border:1px solid #7e9bce;border-radius:8px;background:#174a9c;color:#fff;padding:11px 15px;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}
+    button.secondary{background:transparent}.danger{border-color:#b85a6a;background:#692738}
+    button:disabled{opacity:.6;cursor:wait}
+    .story-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.14)}
+    .story-row:last-child{border-bottom:0}.story-row h3{margin:0 0 6px}.story-meta{font-size:.88rem;color:#bac9e8}
+    .status{display:inline-block;border:1px solid #8da7d4;border-radius:99px;padding:2px 9px;font-size:.78rem;margin-left:6px}
+    #message{padding:12px 0;white-space:pre-wrap}.error{color:#ffb4bd}.success{color:#b6f3d0}
+    .hidden{display:none!important}
+    @media(max-width:680px){.form-grid{grid-template-columns:1fr}.editor-card{padding:16px}.story-row{display:block}.story-row .actions{margin-top:12px}}
+  </style>
+</head>
+<body>
+  <div id="site-navigation"></div>
+  <main class="editor-wrap">
+    <h1>Poke Report Editor</h1>
+    <p class="subtle">Private publishing area. Stories saved as drafts stay private. Only published stories appear on the public News page.</p>
+    <div id="message" role="status" aria-live="polite">Checking your account permissions…</div>
+    <section id="editor" class="hidden">
+      <div class="editor-card">
+        <h2 id="form-heading">Write a story</h2>
+        <form id="story-form">
+          <input type="hidden" id="story-id">
+          <div class="form-grid">
+            <div><label for="title">Headline *</label><input id="title" maxlength="180" required placeholder="Story headline"></div>
+            <div><label for="category">Poke Report section *</label><select id="category"><option>News</option><option>Updates</option><option>Market Intelligence</option><option>Events</option></select></div>
+            <div><label for="slug">Story URL slug (optional)</label><input id="slug" maxlength="90" placeholder="auto-generated-from-headline"></div>
+            <div><label for="image-url">Featured image URL (optional)</label><input id="image-url" type="url" placeholder="https://…"></div>
+          </div>
+          <label for="excerpt">Short summary</label>
+          <textarea id="excerpt" maxlength="500" style="min-height:90px" placeholder="A short preview shown on the News page."></textarea>
+          <label for="content">Story text *</label>
+          <textarea id="content" maxlength="30000" required placeholder="Write your story here. Blank lines become paragraph breaks."></textarea>
+          <div class="actions">
+            <button type="submit" data-status="draft">Save draft</button>
+            <button type="submit" data-status="published">Publish story</button>
+            <button type="button" class="secondary" id="new-story">Clear / New story</button>
+          </div>
+        </form>
+      </div>
+      <div class="editor-card">
+        <h2>Your stories</h2>
+        <p class="subtle">Edit drafts, update published stories, or unpublish a story to remove it from public view.</p>
+        <div id="story-list">Loading stories…</div>
+      </div>
+    </section>
+  </main>
+  <script src="/js/ui/site-nav.js"></script>
+  <script>
+    (function(){
+      'use strict';
+      var message=document.getElementById('message');
+      var editor=document.getElementById('editor');
+      var form=document.getElementById('story-form');
+      var list=document.getElementById('story-list');
+      var stories=[];
+      function say(text,kind){message.textContent=text;message.className=kind||'';}
+      function escText(value){return String(value||'');}
+      function api(url,options){return fetch(url,Object.assign({credentials:'include',cache:'no-store'},options||{})).then(function(r){return r.json().catch(function(){return {};}).then(function(data){if(!r.ok||!data.ok){var e=new Error(data.error||'Request failed');e.status=r.status;throw e;}return data;});});}
+      function dateLabel(value){if(!value)return 'Not published';var d=new Date(value);return isNaN(d.getTime())?value:d.toLocaleString();}
+      function resetForm(){form.reset();document.getElementById('story-id').value='';document.getElementById('form-heading').textContent='Write a story';}
+      function loadStories(){
+        return api('/api/news?admin=1').then(function(data){
+          stories=data.stories||[];
+          list.replaceChildren();
+          if(!stories.length){var p=document.createElement('p');p.className='subtle';p.textContent='No stories yet. Write your first story above.';list.appendChild(p);return;}
+          stories.forEach(function(story){
+            var row=document.createElement('div');row.className='story-row';
+            var info=document.createElement('div');
+            var h=document.createElement('h3');h.textContent=story.title;info.appendChild(h);
+            var meta=document.createElement('div');meta.className='story-meta';meta.textContent=story.category+' · Updated '+dateLabel(story.updated_at)+' · '+(story.status==='published'?'Published':'Draft');info.appendChild(meta);
+            var actions=document.createElement('div');actions.className='actions';
+            function addButton(label,fn,cls){var b=document.createElement('button');b.type='button';b.textContent=label;if(cls)b.className=cls;b.addEventListener('click',fn);actions.appendChild(b);}
+            addButton('Edit',function(){document.getElementById('story-id').value=story.id;document.getElementById('title').value=story.title||'';document.getElementById('category').value=story.category||'News';document.getElementById('slug').value=story.slug||'';document.getElementById('image-url').value=story.image_url||'';document.getElementById('excerpt').value=story.excerpt||'';document.getElementById('content').value=story.content||'';document.getElementById('form-heading').textContent='Edit story';window.scrollTo({top:0,behavior:'smooth'});});
+            if(story.status==='published')addButton('Unpublish',function(){if(!confirm('Move this story back to drafts? It will disappear from the public News page.'))return;saveStory(Object.assign({},story,{status:'draft'}));},'secondary');
+            else addButton('Publish',function(){if(!confirm('Publish this story so everyone can see it?'))return;saveStory(Object.assign({},story,{status:'published'}));});
+            addButton('Delete',function(){if(!confirm('Permanently delete this story?'))return;api('/api/news?id='+encodeURIComponent(story.id),{method:'DELETE'}).then(function(){say('Story deleted.','success');return loadStories();}).catch(function(e){say('Could not delete story: '+e.message,'error');});},'danger');
+            row.appendChild(info);row.appendChild(actions);list.appendChild(row);
+          });
+        });
+      }
+      function saveStory(data){
+        return api('/api/news',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(){say(data.status==='published'?'Story published.':'Draft saved.','success');resetForm();return loadStories();}).catch(function(e){say('Could not save story: '+e.message,'error');throw e;});
+      }
+      api('/api/news?admin=1').then(function(data){editor.classList.remove('hidden');say('You have publishing access.','success');stories=data.stories||[];return loadStories();}).catch(function(e){if(e.status===401){say('Please sign in to your PokePrizePool account. Redirecting to login…','error');setTimeout(function(){location.href='/account.html?next='+encodeURIComponent('/news-admin.html');},900);}else if(e.status===403){say('This account does not have publishing permission. The page is private; ask the site administrator to grant your account admin access.','error');}else{say('Could not verify publishing access. Try refreshing. ('+e.message+')','error');}});
+      form.addEventListener('submit',function(event){event.preventDefault();var submitter=event.submitter;var status=submitter&&submitter.dataset.status==='published'?'published':'draft';var data={id:Number(document.getElementById('story-id').value)||undefined,title:document.getElementById('title').value,category:document.getElementById('category').value,slug:document.getElementById('slug').value, image_url:document.getElementById('image-url').value,excerpt:document.getElementById('excerpt').value,content:document.getElementById('content').value,status:status};submitter.disabled=true;saveStory(data).catch(function(){}).finally(function(){submitter.disabled=false;});});
+      document.getElementById('new-story').addEventListener('click',resetForm);
+    })();
+  </script>
+</body>
+</html>

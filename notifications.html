@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06174A">
+<title>Notifications | PokePrizePool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+body{margin:0;min-height:100vh;background:#eef3ff;color:#07194d;font-family:Nunito,system-ui,sans-serif}
+.notify-main{width:min(1000px,calc(100% - 28px));margin:28px auto 70px}
+.notify-hero,.notify-panel{background:#fff;border:2px solid #d5e0f2;border-radius:16px;padding:clamp(17px,3vw,27px);margin-bottom:16px;box-shadow:0 5px 18px #07194d0a}
+.notify-hero{border:3px solid #0b2a6b;box-shadow:6px 6px 0 #07194d}
+.notify-hero h1{font:400 clamp(2rem,5vw,3rem)/1 Bangers,cursive;color:#0b2a6b;margin:0 0 9px}
+.notify-hero p,.muted{color:#53658a;line-height:1.55}
+.notify-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.notify-btn{border:2px solid #0b2a6b;border-radius:9px;padding:10px 14px;background:#eaf4ff;color:#0b2a6b;font:900  .95rem Nunito,system-ui,sans-serif;cursor:pointer;min-height:42px}
+.notify-btn.primary{background:#ffd21f}.notify-btn:disabled{opacity:.55;cursor:wait}
+.notify-status{min-height:24px;line-height:1.5;color:#31517f;white-space:pre-wrap}
+.notify-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.notify-field{border:1px solid #d5e0f2;border-radius:10px;padding:13px;background:#f7faff}
+.notify-field h3{font-size:.92rem;margin:0 0 10px}
+.notify-checks{display:flex;gap:9px 14px;flex-wrap:wrap}
+.notify-checks label{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:.9rem}
+.notify-list{display:grid;gap:10px;margin-top:14px}
+.notify-card{padding:15px;border:1px solid #d5e0f2;border-radius:11px;background:#fff}
+.notify-card.unread{border-left:5px solid #ef233c;background:#fffdfd}
+.notify-card h3{margin:0 0 5px;font-size:1.02rem;overflow-wrap:anywhere}
+.notify-card p{margin:5px 0;color:#405782;line-height:1.5;overflow-wrap:anywhere}
+.notify-card small{color:#6b7b9b}.notify-card a{color:#174b9b;font-weight:900}
+.notify-empty{padding:24px;text-align:center;border:2px dashed #b9c9e6;border-radius:12px;color:#53658a;line-height:1.6}
+@media(max-width:620px){.notify-settings{grid-template-columns:1fr}.notify-main{margin-top:18px}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="notify-main">
+<header class="notify-hero"><h1>Collector Alerts</h1><p>Get PokePrizePool stock and store-line updates in your site inbox, with optional browser push notifications when you're away from the site.</p></header>
+<section class="notify-panel">
+<div class="notify-row"><div><h2>Your notifications</h2><p class="muted" id="unread-count">Loading inbox…</p></div><button class="notify-btn" id="read-all" type="button">Mark all as read</button></div>
+<p class="notify-status" id="inbox-status" role="status" aria-live="polite">Loading notifications…</p><div class="notify-list" id="notify-list"><div class="notify-empty">Loading notifications…</div></div>
+</section>
+</main>
+<script src="/js/ui/site-nav.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+let state={notifications:[],unread:0};
+const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(method='GET',body){
+ const response=await fetch('/api/notifications',{method,credentials:'include',cache:'no-store',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+ const data=await response.json().catch(()=>({ok:false,error:'Could not read notifications.'}));
+ if(response.status===401){location.href='/account.html';throw new Error('Please sign in to your collector account.');}
+ if(!response.ok||!data.ok)throw new Error(data.error||'Notification request failed.');
+ return data;
+}
+function render(){
+ $('unread-count').textContent=Number(state.unread||0)+' unread notification'+(Number(state.unread||0)===1?'':'s');
+ const items=state.notifications||[];
+ if(!items.length){$('notify-list').innerHTML='<div class="notify-empty">Your inbox is clear. New stock and line reports will appear here when they match your preferences.</div>';return;}
+ $('notify-list').innerHTML=items.map(n=>{
+  let extra='';try{const data=JSON.parse(n.data_json||'{}');extra=[data.state,data.retailer,data.location].filter(Boolean).join(' · ');}catch(_){}
+  return '<article class="notify-card '+(!n.read_at?'unread':'')+'"><div class="notify-row"><h3>'+safe(n.title)+'</h3>'+(!n.read_at?'<button class="notify-btn" data-read="'+Number(n.id)+'" type="button">Mark read</button>':'')+'</div><p>'+safe(n.body)+'</p>'+(extra?'<p><small>'+safe(extra)+'</small></p>':'')+'<p><small>'+safe(n.created_at||'')+'</small> · <a href="'+safe(n.url||'/market-intelligence.html')+'">Open update</a></p></article>';
+ }).join('');
+}
+async function reload(){
+ try{state=await api();render();$('inbox-status').textContent='Notifications loaded.';}
+ catch(error){$('inbox-status').textContent=error.message;$('notify-list').innerHTML='';}
+}
+$('read-all').addEventListener('click',async()=>{
+ const button=$('read-all');button.disabled=true;
+ try{state=await api('PATCH',{action:'read_all'});render();$('inbox-status').textContent='All notifications marked as read.';}
+ catch(error){$('inbox-status').textContent=error.message;}finally{button.disabled=false;}
+});
+$('notify-list').addEventListener('click',async event=>{
+ const button=event.target.closest('[data-read]');if(!button)return;
+ try{state=await api('PATCH',{action:'read',id:Number(button.dataset.read)});render();}
+ catch(error){$('inbox-status').textContent=error.message;}
+});
+reload();
+})();
+</script>
+</body>
+</html>

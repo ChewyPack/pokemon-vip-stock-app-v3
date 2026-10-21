@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07142e">
+<title>Live Stock | PokePrizePool</title>
+<meta name="description" content="Recent and searchable community-reported Pokémon stock sightings from PokePrizePool.">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+html{min-height:100%;background:#07142e}
+body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-image:linear-gradient(rgba(3,10,29,.76),rgba(3,10,29,.88)),url("/assets/backgrounds/vip-collage.jpg");background-position:center center;background-size:cover;background-repeat:no-repeat;background-attachment:scroll}
+#alerts-navigation{position:relative;z-index:100}
+.alerts-content{position:relative;z-index:1;width:min(1120px,calc(100% - 32px));margin:0 auto;padding:36px 0 70px}
+.alerts-content h1{margin:0;color:#fff;font-family:var(--font-display);font-size:clamp(2.4rem,6vw,3.8rem);font-weight:400;line-height:1.1;letter-spacing:.03em;text-shadow:3px 3px 0 #0b2a6b}
+.alerts-intro{margin:12px 0 22px;max-width:760px;color:#e0e8f7;line-height:1.65}
+.alerts-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:18px 0}
+.alerts-controls label{display:grid;gap:6px;color:#d2def4;font-size:.92rem;font-weight:800}
+.alerts-controls input,.alerts-controls select,.alerts-btn{min-height:46px;padding:10px 13px;border:1px solid rgba(255,255,255,.24);border-radius:10px;background:rgba(5,15,40,.9);color:#fff;font:inherit}
+.alerts-controls input{width:min(360px,80vw)}
+.alerts-btn{cursor:pointer;font-weight:800;background:#173b76}
+.alerts-btn:disabled{opacity:.65;cursor:wait}
+.alerts-summary{color:#c1d0e9;font-size:.9rem;margin-left:auto}
+.alerts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.alert-card{border:1px solid #d8deea;border-radius:14px;padding:18px;background:#fff;color:#182235;box-shadow:0 5px 20px rgba(0,0,0,.16);min-width:0}
+.alert-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.alert-retailer{font-weight:900;font-size:1.1rem;color:#111827}
+.alert-meta{color:#374151;line-height:1.55}
+.alert-time{color:#4b5563;font-size:.82rem;text-align:right}
+.alert-product{font-size:1.25rem;font-weight:900;margin:13px 0 8px;overflow-wrap:anywhere;color:#111827}.alert-product-type{display:inline-block;margin-bottom:3px;color:#4b5563;font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.alert-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.alert-photo{display:block;width:min(180px,100%);max-height:220px;object-fit:contain;border:1px solid #d1d5db;border-radius:9px;background:#f9fafb}
+.alert-price{color:#087f6b;font-size:1.25rem;font-weight:900;margin-top:12px}
+.alert-notes{border-top:1px solid #e5e7eb;margin-top:13px;padding-top:12px;color:#1f2937;white-space:pre-wrap;overflow-wrap:anywhere}
+.alert-empty,.alert-notice{border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:20px;background:rgba(5,15,40,.68);color:#d3def2;line-height:1.65}
+.alert-notice{margin-top:16px;font-size:.9rem}
+.alert-search-hint{color:#b9c9e8;font-size:.9rem;margin:-5px 0 18px}
+@media(max-width:700px){.alerts-grid{grid-template-columns:1fr}.alerts-summary{width:100%;margin-left:0}.alerts-content{padding-top:28px}.alert-card-head{gap:8px}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="alerts-content">
+  <h1 id="page-title">Live Stock</h1>
+  <p class="alerts-intro">Paid members can view recent live sightings. Free members can view reports once they are at least one hour old, and can search saved report history. Community reports are time-sensitive and do not guarantee that products are still on the shelf.</p>
+  <div class="alerts-controls">
+    <label>Search report history<input id="search" type="search" maxlength="120" placeholder="Product, store, town, state, notes…"></label>
+    <label>Retailer<select id="retailer"><option value="">All retailers</option><option value="target">Target</option><option value="walmart">Walmart</option><option value="bestbuy">BestBuy</option><option value="gamestop">GameStop</option><option value="costco">Costco</option></select></label>
+    <label>State<select id="state"><option value="">All states</option><option value="RI">Rhode Island (RI)</option><option value="MA">Massachusetts (MA)</option><option value="CT">Connecticut (CT)</option><option value="NH">New Hampshire (NH)</option><option value="NY">New York (NY)</option></select></label>
+    <button class="alerts-btn" id="refresh" type="button">Refresh</button>
+    <div class="alerts-summary" id="summary" aria-live="polite">Loading stock reports…</div>
+  </div>
+  <p class="alert-search-hint" id="search-hint">Free members see reports after they are at least one hour old. Search to explore saved report history.</p>
+  <div id="feed" class="alerts-grid" aria-live="polite"><div class="alert-empty">Loading recent reports…</div></div>
+  <div class="alert-notice">Community-reported sightings are not retailer inventory feeds. Please verify availability before travelling, and respect store purchase limits.</div>
+</main>
+<script src="/js/ui/site-nav.js"></script>
+<script>
+(function(){
+ const feed=document.getElementById('feed'), retailer=document.getElementById('retailer'), state=document.getElementById('state'), search=document.getElementById('search'), summary=document.getElementById('summary'), refresh=document.getElementById('refresh'), hint=document.getElementById('search-hint');
+ const params=new URLSearchParams(location.search); const requested=(params.get('retailer')||'').toLowerCase(); if(requested){const option=Array.from(retailer.options).find(o=>o.value===requested);if(option)retailer.value=option.value;}
+ const onlineRetailers={target:'Target',walmart:'Walmart',bestbuy:'Best Buy'};
+ if(onlineRetailers[requested]){
+  const name=onlineRetailers[requested];
+  document.title=name+' Online Stock Alerts Coming Soon | PokePrizePool';
+  document.getElementById('page-title').textContent=name+' Online Stock Alerts';
+  document.querySelector('.alerts-intro').textContent='PokePrizePool is preparing online inventory alerts for '+name+'. These will focus on online product availability, not community-reported in-store sightings.';
+  document.querySelector('.alerts-controls').hidden=true;
+  hint.hidden=true;
+  summary.textContent='Coming soon';
+  feed.className='alert-empty';
+  feed.innerHTML='<strong>'+name+' online stock alerts are coming soon.</strong><p>We are building online availability alerts for '+name+'. This page will be updated when the feature is ready.</p><p>For now, use Live Stock for community-reported in-store sightings.</p><p><a href="/alerts.html" style="color:#fff;text-decoration:underline;font-weight:800">View Live Stock</a></p>';
+  feed.style.display='block';
+  feed.style.gridColumn='1 / -1';
+  document.querySelector('.alert-notice').textContent='Online inventory alerts are not active yet. Live Stock is a separate community-reported in-store sighting feed.';
+  return;
+ }
+ function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ function dateLabel(value){if(!value)return 'Time not provided';let raw=String(value).trim();if(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(raw)){raw=raw.replace(' ','T')+'Z';}const d=new Date(raw);return Number.isNaN(d.getTime())?value:d.toLocaleString();}
+ function render(items){if(!items.length){feed.innerHTML='<div class="alert-empty">No matching reports found. Try a different search, retailer, or state.</div>';return;}
+ feed.innerHTML=items.map(r=>'<article class="alert-card"><div class="alert-card-head"><div><div class="alert-retailer">'+esc(r.retailer)+'</div><div class="alert-meta">'+esc(r.location)+(r.state?' · '+esc(r.state):'')+'</div></div><div class="alert-time">Reported<br>'+esc(dateLabel(r.createdAt))+'</div></div><div class="alert-product">'+(r.productType?'<span class="alert-product-type">'+esc(r.productType)+'</span><br>':'')+esc(r.product)+'</div><div class="alert-meta">'+(r.quantity?'Quantity reported: '+esc(r.quantity)+'<br>':'')+(r.productLocated?'Location in store: '+esc(r.productLocated)+'<br>':'')+'</div>'+(r.price!=null?'<div class="alert-price">'+esc(Number(r.price).toLocaleString('en-US',{style:'currency',currency:'USD'}))+' <span style="font-size:.78rem;font-weight:600;color:#c5d3eb">'+esc(r.priceType||'')+'</span></div>':'')+(r.notes?'<div class="alert-notes">'+esc(r.notes)+'</div>':'')+((r.photos&&r.photos.length)?'<div class="alert-photos">'+r.photos.map(function(photo,i){return '<img class="alert-photo" src="'+esc(photo)+'" alt="Report photo '+(i+1)+'" loading="lazy">';}).join('')+'</div>':'')+'</article>').join('');}
+ async function load(){refresh.disabled=true;summary.textContent='Refreshing…';const q=new URLSearchParams();if(retailer.value)q.set('retailer',retailer.value);if(state.value)q.set('state',state.value);if(search.value.trim())q.set('search',search.value.trim());
+ hint.textContent=search.value.trim()?'Searching saved report history. Free members only see reports that are at least one hour old.':'Free members see reports after they are at least one hour old. Search to explore saved report history.';
+ document.getElementById('page-title').textContent=search.value.trim()?'Search Stock Reports':'Live Stock';
+ try{const response=await fetch('/api/alerts?'+q.toString(),{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(response.status===401){feed.innerHTML='<div class="alert-empty">Please <a href="/account.html">sign in to your PokePrizePool account</a> to view the live stock feed.</div>';summary.textContent='Sign-in required';return;}if(!response.ok||!data.ok)throw new Error(data.error||'Could not load stock reports');render(data.reports||[]);summary.textContent=(data.count||0)+' report'+((data.count||0)===1?'':'s')+' · Updated '+new Date(data.refreshedAt).toLocaleTimeString();}catch(e){feed.innerHTML='<div class="alert-empty">We couldn’t load the stock feed. Please refresh and try again.</div>';summary.textContent='Unable to load';}finally{refresh.disabled=false;}}
+ let debounce;search.addEventListener('input',function(){clearTimeout(debounce);debounce=setTimeout(load,300);});refresh.addEventListener('click',load);retailer.addEventListener('change',load);state.addEventListener('change',load);load();
+})();
+</script>
+</body></html>

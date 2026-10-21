@@ -1,0 +1,21 @@
+// Staging redeploy trigger: refresh the feature preview after Preview secrets were configured.
+const COOKIE='collector_session';
+function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});}
+function getCookie(request,name){for(const part of (request.headers.get('Cookie')||'').split(';')){const p=part.trim();if(p.startsWith(name+'='))return p.slice(name.length+1);}return '';}
+function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+async function sha256(value){return b64(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));}
+export async function onRequestGet({request,env}){
+ const token=getCookie(request,COOKIE);if(!token)return json({ok:true,authenticated:false});
+ try{
+  let account;
+  try{
+   account=await env.DB.prepare('SELECT id,display_name,email,phone_number,account_type,is_admin,sms_alerts_enabled,created_at,session_expires_at,membership_tier,membership_entitlement_tier,membership_status,membership_current_period_end,membership_interval,membership_cancel_at_period_end,stripe_price_id,membership_scheduled_tier,membership_scheduled_interval,membership_scheduled_at FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();
+  }catch(error){
+   if(!String(error&&error.message||'').toLowerCase().includes('no such column: phone_number'))throw error;
+   account=await env.DB.prepare('SELECT id,display_name,email,account_type,is_admin,sms_alerts_enabled,created_at,session_expires_at,membership_tier,membership_entitlement_tier,membership_status,membership_current_period_end,membership_interval,membership_cancel_at_period_end,stripe_price_id,membership_scheduled_tier,membership_scheduled_interval,membership_scheduled_at FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();
+  }
+  if(!account||!account.session_expires_at||Number(account.session_expires_at)<=Date.now())return json({ok:true,authenticated:false});
+  return json({ok:true,authenticated:true,account:{display_name:account.display_name,email:account.email,phone_number:account.phone_number||'',account_type:account.account_type,is_admin:Number(account.is_admin||0)===1,sms_alerts_enabled:Number(account.sms_alerts_enabled||0)===1,created_at:account.created_at},membership:{tier:account.membership_tier||'free',billing_tier:account.membership_tier||'free',entitlement_tier:account.membership_entitlement_tier||account.membership_tier||'free',status:account.membership_status||'inactive',current_period_end:account.membership_current_period_end||null,interval:account.membership_interval||(String(account.stripe_price_id||'').endsWith('voZUm24d')||String(account.stripe_price_id||'').endsWith('sL4w405C')||String(account.stripe_price_id||'').endsWith('e7oCo2FN')||String(account.stripe_price_id||'').endsWith('Azg3OAdDb')||String(account.stripe_price_id||'').endsWith('AwFLhU5tS')?'yearly':'monthly'),cancel_at_period_end:Number(account.membership_cancel_at_period_end||0)===1,scheduled_tier:account.membership_scheduled_tier||null,scheduled_interval:account.membership_scheduled_interval||null,scheduled_at:account.membership_scheduled_at||null,message:'Paid membership and vendor/organizer verification are separate.'}});
+ }catch(error){console.error('Account session check failed:',error);return json({ok:false,error:'account_check_failed'},500);}
+}
+export async function onRequest(){return json({ok:false,error:'method_not_allowed'},405);}

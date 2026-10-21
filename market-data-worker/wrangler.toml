@@ -1,0 +1,14 @@
+name = "pokeprizepool-market-data-staging"
+main = "src/index.js"
+compatibility_date = "2026-10-17"
+
+[[r2_buckets]]
+binding = "MARKET_DATA"
+bucket_name = "pokemon-vip-market-data-staging"
+preview_bucket_name = "pokemon-vip-market-data-staging"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[vars]
+APP_ENV = "staging"

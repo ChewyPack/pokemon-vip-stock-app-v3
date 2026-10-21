@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spotting Fakes | PokePrizePool</title>
+<meta name="description" content="Educational field guide for spotting counterfeit Pokémon cards and sealed products.">
+<!-- TODO: link the site's shared stylesheet(s) with root-relative paths, e.g. <link rel="stylesheet" href="/css/site.css"> -->
+<style>
+:root{--bg:#0b0e17;--bg2:#10141f;--panel:rgba(255,255,255,.05);--line:rgba(255,255,255,.12);--text:#e8ecf6;--mut:#aab3c8;--blue:#4f8cff;--yel:#ffcb05;--bad:#ff6b6b;--ok:#4ade80}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+a{color:var(--blue)}
+:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+section{padding:56px 0}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h2{font-size:clamp(1.5rem,4vw,2rem)}
+h2::after{content:"";display:block;width:56px;height:3px;background:var(--yel);margin-top:10px;border-radius:2px}
+.lead{color:var(--mut);max-width:70ch}
+.glass{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;backdrop-filter:blur(8px)}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:10px 18px;border-radius:10px;border:1px solid var(--blue);background:rgba(79,140,255,.15);color:var(--text);font:inherit;font-weight:600;text-decoration:none;cursor:pointer;transition:background .2s}
+.btn:hover{background:rgba(79,140,255,.35)}
+.btn.pri{background:var(--yel);color:#1a1a1a;border-color:var(--yel)}
+.btn.pri:hover{background:#ffd93d}
+.hero{padding:72px 0 40px;background:radial-gradient(ellipse at 20% 0,rgba(79,140,255,.25),transparent 60%)}
+.hero h1{font-size:clamp(2.4rem,8vw,4.5rem);letter-spacing:.04em}
+.hero em{display:block;color:var(--yel);font-size:1.25rem;margin-bottom:16px}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
+.notice{border-left:4px solid var(--yel);padding:10px 14px;background:rgba(255,203,5,.08);border-radius:6px;color:var(--mut);font-size:.95rem}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:99px;background:rgba(255,203,5,.15);color:var(--yel);margin-bottom:8px}
+.card h3{font-size:1.05rem}
+.card p{margin:.3em 0;color:var(--mut);font-size:.95rem}
+.card b{color:var(--text)}
+.bar{height:12px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;margin:10px 0}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--yel));transition:width .3s}
+.chk{display:flex;gap:12px;align-items:flex-start;padding:12px 4px;min-height:44px;border-bottom:1px solid var(--line);cursor:pointer}
+.chk input{width:22px;height:22px;margin-top:2px;flex:none;accent-color:var(--yel)}
+.msg{margin-top:14px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);font-weight:600}
+.msg.ok{border-color:var(--ok);background:rgba(74,222,128,.1)}
+.msg.warn{border-color:var(--yel);background:rgba(255,203,5,.1)}
+.msg.bad{border-color:var(--bad);background:rgba(255,107,107,.1)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.tabs button[aria-selected=true]{background:var(--yel);color:#1a1a1a;border-color:var(--yel)}
+.cmp{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.mock{border:2px dashed var(--line);border-radius:12px;padding:16px;background:rgba(0,0,0,.25)}
+.mock h4{margin:0 0 8px}
+.mock.good h4{color:var(--ok)}.mock.bad h4{color:var(--bad)}
+.ph{height:90px;border-radius:8px;margin:10px 0;display:grid;place-items:center;font-size:.8rem;color:var(--mut);background:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 10px,transparent 10px 20px)}
+.myth{border-color:rgba(255,107,107,.5);background:rgba(255,107,107,.07)}
+.myth li::marker{content:"✕  ";color:var(--bad)}
+ul,ol{padding-left:1.3em}li{margin:.35em 0}
+details{border-bottom:1px solid var(--line);padding:12px 0}
+summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+details p{color:var(--mut);margin:.3em 0 0}
+.hdr-slot{min-height:0}
+footer{padding:40px 0 60px;text-align:center}
+.final{font-size:1.2rem;max-width:60ch;margin:0 auto 20px}
+</style>
+</head>
+<body>
+<!-- TODO: insert the shared site header/nav include here, identical to the homepage. Add "Spotting Fakes" -> /resources/spotting-fakes.html to the Resources menu. -->
+<div class="hdr-slot" id="site-header"></div>
+
+<main id="main">
+<header class="hero"><div class="wrap">
+<h1>SPOTTING FAKES</h1>
+<em>Know what you're buying. Protect your collection.</em>
+<p class="lead">Counterfeit Pokémon cards and sealed products can fool new collectors and experienced collectors alike. Learn the warning signs, compare suspicious items against reliable references, and make informed decisions before you spend your money.</p>
+<div class="actions">
+<a class="btn pri" href="#checklist">Start the Authentication Checklist</a>
+<a class="btn" href="#compare">Compare Card Details</a>
+<a class="btn" href="#sealed">Check Sealed Products</a>
+</div>
+<p class="notice">This guide offers educational guidance only. It cannot authenticate an item or guarantee that a card or product is genuine.</p>
+</div></header>
+
+<section id="quick"><div class="wrap">
+<h2>Quick identification guide</h2>
+<p class="lead">These are warning signs, not proof. Manufacturing defects, print variations, language differences, and legitimate product variants can look unusual without the item being counterfeit. Treat each sign as a reason to investigate.</p>
+<div class="grid" id="quickGrid"></div>
+</div></section>
+
+<section id="checklist"><div class="wrap">
+<h2>Card inspection checklist</h2>
+<p class="lead">An educational screening checklist. Completing it does not authenticate a card.</p>
+<div class="glass">
+<div id="chkList"></div>
+<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Checklist completion" id="chkBar"><i></i></div>
+<p id="chkCount" aria-live="polite"><b>0%</b> complete · 0 of 8 items checked</p>
+<div id="chkMsg" class="msg ok" hidden role="status"></div>
+<p><button class="btn" id="chkReset" type="button">Reset checklist</button></p>
+<p class="notice">Progress is saved only in this browser, under a local key, and contains no personal information.</p>
+</div>
+</div></section>
+
+<section id="compare"><div class="wrap">
+<h2>Card comparison laboratory</h2>
+<p class="lead">The examples below are <b>illustrative mockups, not real cards</b>. They show what to inspect. Always compare against a verified reference for the exact printing.</p>
+<div class="tabs" role="tablist" aria-label="Comparison categories" id="tabs"></div>
+<div id="cmpPanel" role="tabpanel" tabindex="0"></div>
+<p style="margin-top:16px">Compare the <b>exact card version</b> (set, number, language, and finish), not just another card featuring the same Pokémon.</p>
+<a class="btn" href="https://www.pokemon.com/us/pokemon-tcg/pokemon-cards/" target="_blank" rel="noopener noreferrer">Official Pokémon TCG database ↗</a>
+</div></section>
+
+<section id="sealed"><div class="wrap">
+<h2>Sealed product inspection</h2>
+<p class="lead">Applies to booster packs, booster boxes, Elite Trainer Boxes, collection boxes, tins, and other sealed products.</p>
+<div class="grid">
+<div class="glass card"><h3>Packaging</h3><p>Compare artwork, logos, text, and product identifiers with official product images for the same product and region.</p></div>
+<div class="glass card"><h3>Wrapping and seals</h3><p>Look for unusual construction, glue residue, or signs of tampering. Wrapping can differ across regions, releases, and production runs, so no single seal or logo proves authenticity.</p></div>
+<div class="glass card"><h3>The listing</h3><p>Confirm the listing describes the actual product being sold, with real photographs of the item itself.</p></div>
+<div class="glass card"><h3>Seller and price</h3><p>Check purchase history, reputation, and return policy. A price or claim that seems too good deserves further investigation.</p></div>
+</div>
+<div class="glass card" style="margin-top:16px"><h3>Counterfeit vs. opened or resealed</h3><p><b>Counterfeit packaging</b> means the product itself is not genuine. <b>Opened or resealed</b> means a potentially genuine product may have had its contents removed or swapped. These are separate concerns. Evaluate each on its own evidence, and do not cut or destroy a sealed product to test it.</p></div>
+</div></section>
+
+<section id="myths"><div class="wrap">
+<h2>Common myths and dangerous tests</h2>
+<div class="glass myth"><p>Do <b>not</b> do these. They can destroy a card's value and none of them is conclusive:</p>
+<ul>
+<li>Ripping a card to look for internal layers.</li>
+<li>Bending a card to test flexibility.</li>
+<li>Scratching the surface or scraping off foil.</li>
+<li>Cutting or destroying a sealed product.</li>
+<li>Treating a flashlight test as definitive proof.</li>
+<li>Relying on weight, texture, or any single visual clue.</li>
+</ul>
+<p>No single informal test authenticates every Pokémon card. Instead, compare side by side with a known authentic example, check reputable card databases, and get an experienced second opinion on expensive purchases.</p></div>
+</div></section>
+
+<section id="risk"><div class="wrap">
+<h2>Risk assessment</h2>
+<p class="lead">A preliminary educational indicator only. It is not an authentication service or a validated fraud score. Don't enter any personal or payment details.</p>
+<div class="glass">
+<fieldset style="border:0;padding:0;margin:0"><legend class="sr" style="position:absolute;left:-9999px">Warning signs observed</legend>
+<div id="riskList"></div></fieldset>
+<div id="riskMsg" class="msg ok" role="status" aria-live="polite"></div>
+<p><button class="btn" id="riskReset" type="button">Reset assessment</button></p>
+</div>
+</div></section>
+
+<section id="buy"><div class="wrap">
+<h2>Before you buy</h2>
+<div class="glass"><ul>
+<li>Request clear photos of the front, back, packaging, and relevant identifiers.</li>
+<li>Compare against official product information or a reputable card database.</li>
+<li>Check the seller's history and any applicable buyer protection.</li>
+<li>Review return and dispute policies before paying.</li>
+<li>Avoid irreversible payment methods with unfamiliar sellers.</li>
+<li>For expensive cards, consider an independent professional authentication service.</li>
+<li>Walk away if material inconsistencies remain unresolved.</li>
+</ul></div>
+</div></section>
+
+<section id="suspect"><div class="wrap">
+<h2>If you suspect a fake</h2>
+<div class="glass"><ol>
+<li>Pause the purchase or stop further transactions.</li>
+<li>Preserve receipts, order confirmations, listing screenshots, messages, and photographs.</li>
+<li>Contact the seller or marketplace through its official dispute process.</li>
+<li>Contact Pokémon Support when appropriate, particularly for suspected counterfeit products or possible manufacturing issues.</li>
+<li>For a high-value collectible, seek a qualified independent opinion before making irreversible decisions.</li>
+</ol>
+<p>Pokémon Support distinguishes counterfeit concerns from eligible manufacturing defects, and its assistance and exchange policies may have specific requirements. No refund, replacement, or outcome is guaranteed.</p>
+<a class="btn" href="https://support.pokemon.com/hc/en-us/categories/115000426053-Pok%C3%A9mon-Trading-Card-Game" target="_blank" rel="noopener noreferrer">Pokémon Support ↗</a></div>
+</div></section>
+
+<section id="faq"><div class="wrap">
+<h2>Frequently asked questions</h2>
+<div id="faqList"></div>
+</div></section>
+
+<section id="sources"><div class="wrap">
+<h2>Sources and further reading</h2>
+<ul>
+<li><b>Official:</b> <a href="https://www.pokemon.com/us/pokemon-tcg/pokemon-cards/" target="_blank" rel="noopener noreferrer">Pokémon TCG card database</a></li>
+<li><b>Official:</b> <a href="https://support.pokemon.com/hc/en-us/categories/115000426053-Pok%C3%A9mon-Trading-Card-Game" target="_blank" rel="noopener noreferrer">Pokémon TCG Support</a></li>
+<li><b>Third-party collector advice:</b> <a href="https://www.tcgplayer.com/content/article/How-to-Spot-Fake-Pok%EF%BF%BDmon-Cards/0b3c551c-39e2-4949-ac46-3cb27e215b04/" target="_blank" rel="noopener noreferrer">TCGplayer: How to Spot Fake Pokémon Cards</a></li>
+</ul>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+<p class="final">Protecting your collection starts before the purchase. Check the details, verify the seller, compare reliable references, and never feel pressured to buy when something doesn't add up.</p>
+<a class="btn pri" href="/resources/">PokePrizePool Resources</a>
+<a class="btn" href="/">Home</a>
+</div></footer>
+
+<script>
+(function(){
+var QUICK=[
+["Text and typography","Fonts, spelling, punctuation, or wording that looks off.","Counterfeits often get small text details wrong.","Compare word for word with a reference for the exact printing."],
+["Stats and symbols","HP, attack values, energy symbols, card number, set symbol.","Mismatched identifiers suggest the card isn't the printing it claims to be.","Verify each against a trusted database."],
+["Card back and borders","Back color, artwork, border width, print details.","Backs are easy to compare and often reveal inconsistencies.","Compare with a known authentic card when appropriate."],
+["Stock and finish","Cardstock, print quality, texture, holographic pattern.","Finish differs by version, so know what to expect.","Check the expected finish for that exact card."],
+["Packaging","Logos, packaging text, and consistency with official photos.","Sealed fakes often differ from official product imagery.","Compare with official product information."],
+["Price and seller","Very low prices, unrealistic claims, refusal to verify.","Pressure and vague answers are common in risky sales.","Ask for more photos and review seller history."],
+["Opened or resealed","Signs of tampering, glue, or altered seals.","Contents may have been removed or swapped.","Ask about provenance; avoid if unexplained."]];
+var g=document.getElementById("quickGrid");
+QUICK.forEach(function(q,i){var d=document.createElement("article");d.className="glass card";
+d.innerHTML='<span class="tag">Warning sign '+(i+1)+'</span><h3>'+q[0]+'</h3><p><b>Inspect:</b> '+q[1]+'</p><p><b>Why it matters:</b> '+q[2]+'</p><p><b>Next:</b> '+q[3]+'</p><p><i>A warning sign is not proof.</i></p>';g.appendChild(d)});
+
+var ITEMS=["I compared the card with a trusted reference for the exact printing.","I checked the card name, HP, attacks, energy symbols, and wording.","I verified the set symbol, collector number, rarity, and other relevant identifiers.","I inspected the front and back for print-quality inconsistencies.","I compared the card back with a known authentic card when appropriate.","I checked the finish and texture against the expected version.","I reviewed the seller's listing, price, reputation, and return policy.","I inspected the card without bending, scratching, cutting, or otherwise damaging it."];
+var KEY="ppp:spotting-fakes:checklist:v1";
+function load(){try{var v=JSON.parse(localStorage.getItem(KEY));return Array.isArray(v)?v:[]}catch(e){return[]}}
+function save(a){try{localStorage.setItem(KEY,JSON.stringify(a))}catch(e){}}
+var saved=load(),cl=document.getElementById("chkList");
+ITEMS.forEach(function(t,i){var l=document.createElement("label");l.className="chk";
+l.innerHTML='<input type="checkbox" data-i="'+i+'"><span>'+t+'</span>';
+l.firstChild.checked=saved.indexOf(i)>-1;cl.appendChild(l)});
+function updChk(){var boxes=cl.querySelectorAll("input"),n=0,a=[];
+boxes.forEach(function(b,i){if(b.checked){n++;a.push(i)}});
+var p=Math.round(n/ITEMS.length*100);
+document.querySelector("#chkBar i").style.width=p+"%";
+document.getElementById("chkBar").setAttribute("aria-valuenow",p);
+document.getElementById("chkCount").innerHTML="<b>"+p+"%</b> complete · "+n+" of "+ITEMS.length+" items checked";
+var m=document.getElementById("chkMsg");m.hidden=n!==ITEMS.length;
+m.textContent="Checklist complete. This is a screening step only and does not authenticate the card. For expensive cards, seek an independent opinion.";
+save(a)}
+cl.addEventListener("change",updChk);
+document.getElementById("chkReset").onclick=function(){cl.querySelectorAll("input").forEach(function(b){b.checked=false});updChk()};
+updChk();
+
+var CMP=[
+["Typography","Even font weight, consistent spacing, correct spelling and punctuation.","Uneven spacing, odd font shapes, misspellings, or wrong punctuation.","Sample Attack Name — 30"],
+["Card back","Color, border, and print pattern match a known authentic card.","Noticeably different blue tone, blurry swirl, or uneven borders.","Back of card"],
+["Layout and symbols","Symbols, text boxes, and borders sit where the reference shows.","Shifted elements, wrong symbol shapes, or inconsistent margins.","Symbol area"],
+["Holographic finish","Pattern and shine match the expected version of that printing.","Flat, overly uniform, or wrong-pattern shine. Not proof by itself.","Foil area"],
+["Set numbers and details","Number, set symbol, rarity, and HP agree with the reference.","Numbers out of range, wrong set symbol, or stats that conflict.","123/456"]];
+var tabs=document.getElementById("tabs"),panel=document.getElementById("cmpPanel");
+function show(i){tabs.querySelectorAll("button").forEach(function(b,j){b.setAttribute("aria-selected",j===i);b.tabIndex=j===i?0:-1});
+var c=CMP[i];panel.setAttribute("aria-label",c[0]);
+panel.innerHTML='<div class="cmp"><div class="mock good"><h4>Expected (illustrative)</h4><div class="ph">Generic placeholder: '+c[3]+'</div><p>'+c[1]+'</p></div><div class="mock bad"><h4>Suspicious (illustrative)</h4><div class="ph">Generic placeholder: '+c[3]+'</div><p>'+c[2]+'</p></div></div><p class="notice" style="margin-top:12px">Illustrative only: not a real card. Differences like these can also come from print variation or legitimate variants.</p>'}
+CMP.forEach(function(c,i){var b=document.createElement("button");b.type="button";b.className="btn";b.setAttribute("role","tab");b.textContent=c[0];
+b.onclick=function(){show(i)};
+b.onkeydown=function(e){var k=e.key,n=i;if(k==="ArrowRight")n=(i+1)%CMP.length;else if(k==="ArrowLeft")n=(i+CMP.length-1)%CMP.length;else return;e.preventDefault();show(n);tabs.children[n].focus()};
+tabs.appendChild(b)});
+show(0);
+
+var RISKS=["Text or printing inconsistencies","Card details that don't match a trusted reference","Suspicious packaging or possible tampering","Unusually low pricing or unsupported seller claims","Missing information or refusal to provide additional photos"];
+var rl=document.getElementById("riskList");
+RISKS.forEach(function(t){var l=document.createElement("label");l.className="chk";l.innerHTML='<input type="checkbox"><span>'+t+'</span>';rl.appendChild(l)});
+function updRisk(){var n=rl.querySelectorAll("input:checked").length,m=document.getElementById("riskMsg");
+if(n===0){m.className="msg ok";m.textContent="No obvious warning signs selected. Continue verification; this does not establish authenticity."}
+else if(n===1){m.className="msg warn";m.textContent="Pause the purchase and investigate further."}
+else{m.className="msg bad";m.textContent="Multiple inconsistencies selected. Avoid purchasing until the concerns have been independently resolved."}}
+rl.addEventListener("change",updRisk);
+document.getElementById("riskReset").onclick=function(){rl.querySelectorAll("input").forEach(function(b){b.checked=false});updRisk()};
+updRisk();
+
+var FAQ=[
+["Can a real Pokémon card have printing defects?","Yes. Genuine cards can have print lines, centering issues, or ink flaws. Defects alone don't make a card fake, but they're worth comparing against references."],
+["Does a holographic finish prove a card is genuine?","No. Counterfeits can include foil effects. Check that the pattern matches the expected version, along with other details."],
+["Is every cheap card or sealed product suspicious?","No. Sales, bulk lots, and common cards are often inexpensive. Be cautious when a price is far below market for a sought-after item or the seller can't back up their claims."],
+["Can a counterfeit card pass a visual inspection?","Yes, some can. That's why you should compare several details against references and get a second opinion on valuable cards."],
+["Should I bend or rip a card to test it?","No. These tests damage the card and aren't conclusive."],
+["What should I do if I already bought a suspected counterfeit?","Preserve all records, use the seller or marketplace dispute process, and consider contacting Pokémon Support. Outcomes aren't guaranteed."],
+["When should I seek professional authentication?","For high-value cards, when you can't resolve inconsistencies yourself, or before an expensive, irreversible purchase."]];
+var fl=document.getElementById("faqList");
+FAQ.forEach(function(f){var d=document.createElement("details");d.innerHTML="<summary>"+f[0]+"</summary><p>"+f[1]+"</p>";fl.appendChild(d)});
+})();
+</script>
+</body>
+</html>

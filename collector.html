@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06174A"><title>Collector Profile | PokePrizePool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+:root{--navy:#07194d;--blue:#0b2a6b;--yellow:#ffd21f;--muted:#607096;--line:#dbe4f4}
+body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-serif}
+.cp-wrap{width:min(1180px,calc(100% - 28px));margin:22px auto 70px}
+.cp-nav{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px;padding:12px 14px;background:#fff;border:1px solid #d5e0f2;border-radius:16px;box-shadow:0 5px 18px #18345b12}
+.cp-brand{font:2rem Bangers,cursive;color:#174b9b;text-decoration:none;white-space:nowrap;letter-spacing:.3px}
+.cp-nav-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.cp-settings-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:9px 13px;border:1px solid #b9c9e6;border-radius:10px;background:#f3f7ff;color:#17386c!important;font-family:inherit;font-size:.9rem;font-weight:800;line-height:1.2;text-decoration:none;white-space:nowrap;cursor:pointer;box-shadow:0 2px 0 #d8e3f4;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.cp-settings-link:hover,.cp-settings-link:focus-visible{background:#e3edff;border-color:#6e91cc;transform:translateY(-1px);outline:2px solid #f0c629;outline-offset:2px}
+.cp-nav-actions .cp-logout{background:#fff0ef;border-color:#e5b8b5;color:#8c2722!important}
+.cp-nav-actions .cp-logout:hover,.cp-nav-actions .cp-logout:focus-visible{background:#ffe0de;border-color:#c96e68}
+.cp-nav-actions a[hidden],.cp-nav-actions button[hidden]{display:none!important}
+@media(max-width:640px){.cp-nav{align-items:flex-start;flex-direction:column;padding:12px}.cp-brand{font-size:1.9rem}.cp-nav-actions{width:100%;justify-content:flex-start;gap:8px}.cp-settings-link{min-height:44px;padding:10px 11px;white-space:normal;flex:1 1 auto}.cp-nav-actions .cp-logout{flex:1 1 auto}}
+.cp-discover{background:transparent;border:0;border-radius:0;padding:0;margin:0 0 16px;box-shadow:none}.cp-discover h2{display:none}.cp-discover-form{display:flex;gap:8px;flex-wrap:wrap}.cp-discover-form .cp-search{flex:1;min-width:180px}.cp-search-ball{position:relative;flex:0 0 46px;width:46px;height:46px;min-height:46px;padding:0;border:3px solid #101522;border-radius:50%;background:linear-gradient(to bottom,#f52b38 0%,#f52b38 46%,#101522 46%,#101522 54%,#fff 54%,#fff 100%);box-shadow:0 3px 0 #07194d30;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}.cp-search-ball:before{content:'';position:absolute;width:13px;height:13px;left:50%;top:50%;transform:translate(-50%,-50%);border:3px solid #101522;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #fff}.cp-search-ball:hover{transform:translateY(-2px) rotate(-8deg);box-shadow:0 5px 0 #07194d30}.cp-search-ball:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}.cp-search-ball:active{transform:translateY(1px)}.cp-discover-results{display:grid;gap:8px;margin-top:10px}.cp-person{display:flex;align-items:center;gap:10px;border:1px solid #dbe4f4;border-radius:11px;padding:10px;background:#f9fbff;min-width:0}.cp-person-avatar{width:48px;height:48px;flex:0 0 48px;border-radius:12px;object-fit:cover;background:#eaf1ff;display:grid;place-items:center;font-size:1.3rem}.cp-person-main{flex:1;min-width:0}.cp-person-main a{font-weight:900;color:var(--blue);text-decoration:none;overflow-wrap:anywhere}.cp-person-main a:hover{text-decoration:underline}.cp-person-main p{margin:2px 0 0;color:var(--muted);font-size:.82rem;overflow-wrap:anywhere}.cp-person-follow{border:1px solid var(--blue);border-radius:8px;padding:7px 10px;background:var(--blue);color:#fff;font:inherit;font-weight:900;cursor:pointer;white-space:nowrap}.cp-person-follow.following{background:#fff;color:var(--blue)}.cp-person-follow:disabled{opacity:.6;cursor:wait}
+.cp-hero{position:relative;background:linear-gradient(120deg,#07194d,#123d8c);background-size:cover;background-position:center;color:#fff;border-radius:18px;padding:clamp(22px,4vw,42px);display:flex;align-items:center;gap:22px;box-shadow:0 8px 24px #07194d20;min-height:245px;overflow:visible;isolation:isolate}.cp-hero:before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,#07194df2,#07194db0);pointer-events:none;z-index:0}.cp-hero>*{position:relative;z-index:1}
+.cp-avatar{width:104px;height:104px;flex:0 0 104px;border-radius:27px;border:3px solid var(--yellow);background:#fff;color:var(--blue);display:grid;place-items:center;overflow:hidden;font-size:2.2rem;font-weight:900}
+.cp-avatar img{width:100%;height:100%;object-fit:cover}.cp-avatar-edit{padding:0;cursor:pointer;font-family:inherit}.cp-avatar-edit:focus-visible,.cp-cover-edit:focus-visible{outline:3px solid #ffd21f;outline-offset:3px}.cp-cover-edit{position:absolute;right:16px;bottom:14px;z-index:3;border:1px solid #ffffff88;border-radius:9px;padding:8px 11px;background:#07194ddd;color:#fff;font:inherit;font-weight:900;cursor:pointer}.cp-cover-edit[hidden]{display:none!important}
+.cp-hero h1{font:2.5rem/1 Bangers,cursive;margin:0 0 8px;overflow-wrap:anywhere}
+.cp-hero p{margin:0;color:#dbe8ff;line-height:1.5}
+.cp-hero-main{min-width:0;flex:1}.cp-bio-row{display:flex;align-items:flex-start;gap:10px}.cp-bio-edit{border:1px solid #ffffff70;border-radius:8px;background:#07194d99;color:#fff;padding:6px 9px;font:inherit;font-size:.8rem;font-weight:900;cursor:pointer}.cp-bio-editor{display:grid;gap:8px;max-width:560px;margin-top:10px}.cp-bio-editor textarea{width:100%;min-height:80px;border:1px solid #ffffff80;border-radius:9px;padding:10px;font:inherit;color:#07194d}.cp-bio-click{display:block;text-align:left;border:0;background:transparent;color:#fff;font:inherit;line-height:1.55;padding:0;cursor:pointer;max-width:100%}.cp-bio-click:hover{text-decoration:underline;text-decoration-color:#ffd21f;text-underline-offset:3px}.cp-bio-click:focus-visible{outline:2px solid #ffd21f;outline-offset:4px;border-radius:3px}.cp-follow-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}.cp-follow-count{color:#fff;font-size:.9rem}.cp-follow-count strong{font-size:1.05rem}.cp-follow-btn{border:1px solid #ffd21f;border-radius:9px;padding:8px 13px;background:#ffd21f;color:#07194d;font:inherit;font-weight:900;cursor:pointer}.cp-follow-btn.secondary{background:transparent;color:#fff}.cp-follow-btn:disabled{opacity:.6;cursor:wait}.cp-profile-menu-wrap{position:relative}.cp-profile-menu-trigger{width:38px;height:38px;border:1px solid #ffffff88;border-radius:9px;background:#07194d88;color:#fff;font:900 1.4rem/1 Nunito,system-ui,sans-serif;letter-spacing:2px;cursor:pointer}.cp-profile-menu{position:absolute;right:0;top:calc(100% + 7px);z-index:100;min-width:170px;padding:6px;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 12px 28px #0003}.cp-profile-menu button{display:block;width:100%;padding:10px 12px;border:0;border-radius:7px;background:#fff;color:var(--navy);text-align:left;font:inherit;font-weight:900;cursor:pointer}.cp-profile-menu button:hover{background:#edf3ff}.cp-profile-menu button.danger{color:#a32222}.cp-profile-menu[hidden]{display:none!important}
+.cp-catalog-refine{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.cp-catalog-refine[hidden]{display:none}
+.cp-catalog-refine label{display:grid;gap:4px;font-size:.8rem;font-weight:900;color:var(--muted)}
+.cp-handle{font-weight:900;color:var(--yellow)!important;margin-bottom:6px!important}
+.cp-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.cp-stat,.cp-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:0 3px 12px #07194d08}
+.cp-stat span{display:block;color:var(--muted);font-size:.8rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+.cp-stat strong{display:block;font-size:1.6rem;margin-top:5px}
+.cp-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
+.cp-panel h2{font:1.65rem Bangers,cursive;margin:0 0 13px}
+.cp-field{display:grid;gap:5px;margin:10px 0;font-size:.88rem;font-weight:900}
+.cp-field input,.cp-field select,.cp-field textarea,.cp-search{width:100%;min-height:42px;padding:10px 11px;border:1px solid #b9c9e6;border-radius:9px;font:inherit;background:#fff;color:var(--navy)}
+.cp-field textarea{min-height:86px;resize:vertical}
+.cp-btn{border:0;border-radius:9px;padding:11px 15px;background:var(--yellow);color:var(--navy);font:inherit;font-weight:900;cursor:pointer}
+.cp-btn.secondary{background:#eaf1ff;border:1px solid #bfd0ee}
+.cp-btn.danger{background:#fff0f0;color:#8a2525}
+.cp-btn:disabled{opacity:.55;cursor:wait}
+.cp-status{font-size:.88rem;line-height:1.5;color:#31517f;overflow-wrap:anywhere}
+.cp-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.cp-tabs button[aria-pressed=true]{background:var(--blue);color:#fff}
+.cp-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.cp-tools .cp-search{flex:1;min-width:180px}
+.cp-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.cp-item{border:1px solid #dbe4f4;border-radius:16px;overflow:visible;background:linear-gradient(160deg,#fff,#f7faff);min-width:0;box-shadow:0 8px 18px #07194d10;transition:transform .22s ease,box-shadow .22s ease}.cp-item:hover{transform:translateY(-5px);box-shadow:0 16px 30px #07194d20}
+.cp-item-image{height:270px;background:radial-gradient(ellipse at center,#eaf1ff 0%,#f8faff 62%,#fff 100%);display:grid;place-items:center;color:#8495b8;font-size:2.2rem;overflow:visible;border-radius:15px 15px 0 0;padding:16px 10px 8px}
+.cp-item-image img{display:block;width:auto;height:auto;max-width:100%;max-height:245px;object-fit:contain;filter:drop-shadow(0 12px 10px rgba(7,25,77,.28));transform:translateY(-3px);transition:transform .22s ease,filter .22s ease}.cp-item:hover .cp-item-image img{transform:translateY(-9px) rotate(-1deg);filter:drop-shadow(0 18px 13px rgba(7,25,77,.32))}
+.cp-item-body{padding:12px}
+.cp-item h3{font-size:1rem;line-height:1.3;margin:0 0 5px;overflow-wrap:anywhere}
+.cp-item p{font-size:.82rem;color:var(--muted);margin:4px 0;line-height:1.4;overflow-wrap:anywhere}
+.cp-item-bottom{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:10px;font-size:.85rem;font-weight:900}
+.cp-item-bottom button{padding:6px 8px;font-size:.78rem}
+.cp-empty{padding:30px 14px;text-align:center;border:1px dashed #b9c9e6;border-radius:12px;color:var(--muted);grid-column:1/-1}
+.cp-hidden{display:none!important}
+.cp-public-note{margin-top:10px;padding:10px 12px;background:#fff8d8;border-radius:8px;font-size:.83rem;line-height:1.5;color:#5c4b0a}
+.cp-catalog{border:1px solid #c9d7ef;border-radius:12px;padding:12px;margin:12px 0;background:#f7faff}
+.cp-catalog-title{font-weight:900;margin:0 0 8px}
+.cp-catalog-controls{display:grid;gap:8px}
+.cp-catalog input,.cp-catalog select{width:100%;min-height:42px;padding:10px 11px;border:1px solid #b9c9e6;border-radius:9px;font:inherit;background:#fff;color:var(--navy)}
+.cp-catalog-results{display:grid;gap:7px;margin-top:9px;max-height:340px;overflow:auto}
+.cp-catalog-result{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid #dbe4f4;border-radius:9px;padding:7px;background:#fff;color:var(--navy);font:inherit;cursor:pointer;min-width:0}
+.cp-catalog-result:hover,.cp-catalog-result:focus{border-color:#2859a8;background:#f0f5ff}
+.cp-catalog-result-row{display:grid;gap:6px;border:1px solid #dbe4f4;border-radius:10px;padding:7px;background:#fff}
+.cp-catalog-result-row .cp-catalog-result{border:0;padding:3px;background:transparent}
+.cp-catalog-result-actions{display:flex;gap:7px;flex-wrap:wrap}
+.cp-catalog-result-actions button{flex:1;min-width:130px;padding:8px 10px;border:1px solid #b9c9e6;border-radius:8px;background:#f0f5ff;color:var(--navy);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer}
+.cp-catalog-result-actions button[data-list-target="wishlist"]{background:#fff8df;border-color:#e7ce78}
+.cp-catalog-result-actions button:hover{filter:brightness(.97)}
+.cp-catalog-result img{width:48px;height:66px;object-fit:contain;flex:0 0 48px}
+.cp-catalog-result span{min-width:0;overflow-wrap:anywhere}
+.cp-catalog-result strong,.cp-catalog-result small{display:block}
+.cp-catalog-result small{color:var(--muted);margin-top:3px}
+.cp-catalog-status{font-size:.82rem;color:var(--muted);margin:8px 0 0;line-height:1.4}
+@media(max-width:820px){.cp-layout{grid-template-columns:1fr}.cp-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.cp-hero{align-items:flex-start;gap:15px;min-height:220px;padding:20px 16px}.cp-avatar{width:76px;height:76px;flex-basis:76px;border-radius:20px}.cp-hero h1{font-size:2rem}.cp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-items{grid-template-columns:1fr 1fr}.cp-item-image{height:210px;padding:10px 6px 6px}.cp-item-image img{max-height:190px}.cp-stat strong{font-size:1.35rem}}
+[hidden]{display:none!important}
+/* Compatibility nodes for legacy profile controls; shared navigation owns sign-in and logout UI. */
+#collector-logout,#collector-signin,#collector-settings{display:none!important}
+ .cp-follow-list-trigger{border:0;background:transparent;padding:4px 0;font:inherit;text-align:left;cursor:pointer}.cp-follow-list-trigger:hover{text-decoration:underline;text-underline-offset:3px}.cp-follow-list-trigger:focus-visible{outline:2px solid #ffd21f;outline-offset:3px;border-radius:3px}.cp-follow-modal{position:fixed;inset:0;z-index:1000;background:#06132dbb;display:grid;place-items:center;padding:18px}.cp-follow-dialog{width:min(520px,100%);max-height:min(78vh,700px);overflow:auto;background:#fff;border-radius:16px;padding:18px;color:var(--navy);box-shadow:0 20px 60px #0004}.cp-follow-dialog-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.cp-follow-dialog h2{font:1.7rem Bangers,cursive;margin:0}.cp-follow-close{border:1px solid var(--line);background:#f3f6fc;border-radius:8px;padding:7px 11px;font:inherit;font-weight:900;cursor:pointer}.cp-follow-list{display:grid;gap:8px;margin-top:14px}.cp-follow-empty{padding:22px 10px;text-align:center;color:var(--muted)}
+.cp-offer-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.cp-inbox-list{display:grid;gap:10px}.cp-inbox-card.is-unread{border:2px solid #ef233c;box-shadow:0 0 0 2px #ef233c18}.cp-unread-pill{display:inline-flex;border-radius:999px;padding:3px 7px;background:#ef233c;color:#fff;font-size:.72rem;font-weight:900;margin-left:6px}.cp-inbox-card{border:1px solid var(--line);border-radius:12px;padding:13px;background:#f9fbff;min-width:0}.cp-inbox-card h3{font-size:1rem;margin:0 0 6px;overflow-wrap:anywhere}.cp-inbox-card p{font-size:.86rem;color:var(--muted);margin:5px 0;line-height:1.45;overflow-wrap:anywhere}.cp-offer-options{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.cp-offer-options button[aria-pressed=true]{background:var(--blue);color:#fff}.cp-offer-picks{display:grid;gap:8px;max-height:260px;overflow:auto;margin:8px 0}.cp-offer-pick{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid var(--line);border-radius:9px;background:#f9fbff;font-weight:800;min-width:0}.cp-offer-pick span{flex:1;min-width:0;overflow-wrap:anywhere}.cp-offer-pick input[type=number]{width:72px;min-height:36px;border:1px solid #b9c9e6;border-radius:7px;padding:5px}.cp-offer-section{margin-top:14px}.cp-offer-section h3{font-size:1rem;margin:0 0 6px}.cp-offer-modal textarea,.cp-offer-modal input[type=number]{width:100%;min-height:42px;padding:10px;border:1px solid #b9c9e6;border-radius:9px;font:inherit;color:var(--navy)}.cp-offer-modal textarea{min-height:80px;resize:vertical}.cp-offer-modal label{font-weight:900;font-size:.88rem;display:grid;gap:5px}.cp-offer-modal [hidden]{display:none!important}.cp-offer-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.cp-inbox-list{display:grid;gap:10px}.cp-inbox-card{border:1px solid var(--line);border-radius:12px;padding:13px;background:#f9fbff;min-width:0}.cp-inbox-card h3{font-size:1rem;margin:0 0 6px;overflow-wrap:anywhere}.cp-inbox-card p{font-size:.86rem;color:var(--muted);margin:5px 0;line-height:1.45;overflow-wrap:anywhere}.cp-offer-options{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.cp-offer-options button[aria-pressed=true]{background:var(--blue);color:#fff}.cp-offer-picks{display:grid;gap:8px;max-height:260px;overflow:auto;margin:8px 0}.cp-offer-pick{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid var(--line);border-radius:9px;background:#f9fbff;font-weight:800;min-width:0}.cp-offer-pick span{flex:1;min-width:0;overflow-wrap:anywhere}.cp-offer-pick input[type=number]{width:72px;min-height:36px;border:1px solid #b9c9e6;border-radius:7px;padding:5px}.cp-offer-section{margin-top:14px}.cp-offer-section h3{font-size:1rem;margin:0 0 6px}.cp-offer-modal textarea,.cp-offer-modal input[type=number]{width:100%;min-height:42px;padding:10px;border:1px solid #b9c9e6;border-radius:9px;font:inherit;color:var(--navy)}.cp-offer-modal textarea{min-height:80px;resize:vertical}.cp-offer-modal label{font-weight:900;font-size:.88rem;display:grid;gap:5px}.cp-offer-modal [hidden]{display:none!important}.cp-match-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.cp-match-card{border:1px solid var(--line);border-radius:11px;padding:12px;background:#f9fbff;min-width:0}.cp-match-card h3{font-size:.98rem;margin:0 0 5px;overflow-wrap:anywhere}.cp-match-card p{font-size:.83rem;color:var(--muted);margin:4px 0;line-height:1.45}.cp-match-card a{font-weight:900;color:var(--blue)}.cp-match-pill{display:inline-block;background:#fff2ae;color:#654d00;border-radius:20px;padding:4px 8px;font-size:.78rem;font-weight:900}.cp-match-empty{padding:14px;border:1px dashed #b9c9e6;border-radius:10px;color:var(--muted);line-height:1.5}.cp-match-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.cp-match-header h2{margin-bottom:0}
+.cp-wishlist-dashboard{margin:16px 0}.cp-wishlist-dashboard .cp-match-header{margin-bottom:12px}.cp-wishlist-dashboard .cp-match-header h2{margin:0}.cp-wishlist-dashboard .cp-match-header .cp-status{margin:0}.cp-match-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}.cp-match-card{display:grid;grid-template-columns:82px minmax(0,1fr);gap:12px;align-items:center;padding:12px}.cp-match-image{width:82px;height:104px;display:grid;place-items:center;background:#eef3fc;border-radius:8px;overflow:hidden;color:var(--muted);font-size:.8rem;text-align:center}.cp-match-image img{width:100%;height:100%;object-fit:contain}.cp-match-details{min-width:0}.cp-match-details h3{margin:0 0 5px}.cp-match-details p{margin:3px 0}.cp-match-contact{display:inline-flex;margin-top:8px;align-items:center;justify-content:center;padding:7px 11px;border-radius:8px;background:var(--blue);color:#fff!important;text-decoration:none;font-weight:700;font-size:.86rem}.cp-match-contact:hover{background:#174b9b}@media(max-width:520px){.cp-match-grid{grid-template-columns:1fr}.cp-match-card{grid-template-columns:72px minmax(0,1fr)}.cp-match-image{width:72px;height:94px}}
+.cp-layout.cp-public-layout{grid-template-columns:minmax(0,1fr)}.cp-layout.cp-public-layout>section{grid-column:1/-1;min-width:0}.cp-layout.cp-public-layout .cp-items{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:820px){.cp-layout.cp-public-layout .cp-items{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.cp-layout.cp-public-layout .cp-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<!-- Hidden compatibility control used by the profile page logout handler; the visible Log Out action is in the shared profile menu. -->
+<button id="collector-logout" type="button" hidden>Log out</button>
+<button id="collector-signin" type="button" hidden>Sign in</button>
+<div id="collector-settings" hidden></div>
+<main class="cp-wrap">
+
+<section class="cp-discover" aria-label="Search collectors"><form id="collector-search-form" class="cp-discover-form"><input id="collector-search-query" class="cp-search" type="search" minlength="2" maxlength="60" placeholder="Search by collector name or username…" autocomplete="off" aria-label="Search collectors"><button class="cp-search-ball" type="submit" aria-label="Search collectors" title="Search collectors"></button></form><p id="collector-search-status" class="cp-status" role="status" aria-live="polite"></p><div id="collector-search-results" class="cp-discover-results"></div></section>
+<section class="cp-hero" id="profile-hero">
+<button id="avatar" class="cp-avatar cp-avatar-edit" type="button" aria-label="Change profile photo" title="Click to change profile photo">Card</button><input id="profile-photo-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="Upload profile photo"><input id="profile-cover-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="Upload cover photo"><button id="change-cover" class="cp-cover-edit" type="button" hidden>Change cover photo</button>
+<div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><button id="bio-display" class="cp-bio-click" type="button" aria-label="Edit profile bio" title="Click to edit your bio">Your collection, your chase, your story.</button><button id="edit-bio" class="cp-bio-edit" type="button" hidden>Edit bio</button></div><form id="bio-editor" class="cp-bio-editor" hidden><textarea id="bio-input" maxlength="500" placeholder="Tell other collectors about yourself…"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cp-btn" type="submit">Save bio</button><button id="cancel-bio" class="cp-btn secondary" type="button">Cancel</button></div><p id="bio-status" class="cp-status" role="status" aria-live="polite"></p></form><div class="cp-follow-row"><button class="cp-follow-count cp-follow-list-trigger" id="followers-trigger" type="button"><strong id="followers-count">0</strong> followers</button><button class="cp-follow-count cp-follow-list-trigger" id="following-trigger" type="button"><strong id="following-count">0</strong> following</button><button id="follow-button" class="cp-follow-btn" type="button" hidden>Follow</button><div id="profile-menu-wrap" class="cp-profile-menu-wrap" hidden><button id="profile-menu-trigger" class="cp-profile-menu-trigger" type="button" aria-label="More profile options" aria-haspopup="menu" aria-expanded="false">···</button><div id="profile-menu" class="cp-profile-menu" role="menu" hidden><button id="menu-unfollow" type="button" role="menuitem">Unfollow</button><button id="menu-block" class="danger" type="button" role="menuitem">Block</button></div></div></div></div>
+</section>
+</section>
+<section id="wishlist-match-dashboard" class="cp-panel cp-wishlist-dashboard" hidden>
+ <div class="cp-match-header"><h2>Wishlist Matches</h2><p class="cp-status" id="wishlist-match-status" role="status" aria-live="polite"></p></div>
+ <div id="wishlist-match-results" class="cp-match-grid"><div class="cp-match-empty">Checking your wishlist…</div></div>
+</section>
+<div class="cp-stats">
+<div class="cp-stat"><span>Collection items</span><strong id="stat-items">0</strong></div>
+<div class="cp-stat"><span>Total quantity</span><strong id="stat-quantity">0</strong></div>
+<div class="cp-stat"><span>Sealed products</span><strong id="stat-sealed">0</strong></div>
+<div class="cp-stat"><span>Estimated value</span><strong id="stat-value">Not set</strong></div>
+</div>
+<div class="cp-layout">
+<aside id="owner-tools" class="cp-panel">
+<h2>Add to your lists</h2>
+<form id="item-form">
+<label class="cp-field">List<select id="list-type"><option value="collection">My Collection</option><option value="wishlist">My Wishlist</option></select></label>
+<div class="cp-catalog">
+<p class="cp-catalog-title">Add a card or sealed product</p><p class="cp-catalog-status">Choose Single card / Graded card to search cards, or Sealed product to search booster boxes, ETBs, tins, bundles, and collections.</p>
+<div class="cp-catalog-controls">
+<input id="catalog-search" type="search" placeholder="Search card or sealed product (e.g. Charizard or ETB)" autocomplete="off" aria-label="Search Pokémon card or sealed product catalog">
+
+</div>
+<p id="catalog-status" class="cp-catalog-status" role="status" aria-live="polite">Loading set list…</p>
+<div id="catalog-results" class="cp-catalog-results"></div><div id="catalog-refine" class="cp-catalog-refine" hidden><label>Filter by set<select id="catalog-set" aria-label="Filter results by set"><option value="">All sets</option></select></label><label>Sort results<select id="catalog-sort"><option value="relevance">Best match</option><option value="name">Name A–Z</option><option value="set">Set A–Z</option></select></label></div>
+</div>
+<label class="cp-field">Product name *<input id="product-name" required maxlength="160" placeholder="e.g. Charizard ex"></label>
+<label class="cp-field">Product type<select id="product-type"><option value="card">Single card</option><option value="graded">Graded card</option><option value="sealed">Sealed product</option></select></label>
+<label class="cp-field">Set / product line<input id="set-name" maxlength="120" placeholder="e.g. Obsidian Flames"></label>
+<label class="cp-field">Card number (optional)<input id="card-number" maxlength="40" placeholder="e.g. 223/197"></label>
+<label class="cp-field">Condition / grade<input id="condition" maxlength="60" placeholder="e.g. Near Mint, PSA 10"></label>
+<label class="cp-field">Quantity<input id="quantity" type="number" min="1" max="9999" value="1" required></label>
+<label class="cp-field">Estimated value in USD (optional)<input id="estimated-value" type="number" min="0" max="1000000" step="0.01" placeholder="Leave blank if unknown"></label>
+<label class="cp-field">Image URL (optional)<input id="image-url" type="url" placeholder="https://…"></label>
+<label class="cp-field">Notes (optional)<textarea id="notes" maxlength="500" placeholder="Language, variant, target price, etc."></textarea></label>
+<button class="cp-btn" type="submit">Add item</button>
+</form>
+<p class="cp-public-note">Catalog search uses PokePrizePool's daily-synced TCGCSV Pokémon catalog. Results show TCGplayer market prices by available printing or sealed-product variant. Selecting a result fills the matching catalog details and market-price estimate. Graded-slab values must be researched separately from raw-card prices.</p>
+<p id="owner-status" class="cp-status" role="status" aria-live="polite"></p>
+</aside>
+<section class="cp-panel">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h2 id="list-heading">Collection showcase</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="make-offer-button" class="cp-btn" type="button" hidden> Make an Offer</button><button id="visit-shop" class="cp-btn" type="button">Visit Shop</button><button id="copy-profile" class="cp-btn secondary" type="button">Copy profile link</button></div></div>
+<div class="cp-tabs" role="group" aria-label="Choose list"><button class="cp-btn" type="button" data-list="collection" aria-pressed="true">My Collection</button><button class="cp-btn secondary" type="button" data-list="wishlist" aria-pressed="false">My Wishlist</button></div>
+<div class="cp-tools"><input id="search" class="cp-search" type="search" placeholder="Search this collection…"><select id="type-filter" class="cp-search" style="max-width:190px"><option value="all">All product types</option><option value="card">Singles</option><option value="graded">Graded</option><option value="sealed">Sealed</option></select></div>
+<div id="items" class="cp-items"><div class="cp-empty">Loading your collection…</div></div>
+<p id="view-status" class="cp-status" role="status" aria-live="polite"></p>
+</section>
+</div>
+</main>
+ <section id="block-confirm-modal" class="cp-follow-modal" hidden><div class="cp-follow-dialog" role="dialog" aria-modal="true" aria-labelledby="block-confirm-title"><div class="cp-follow-dialog-head"><h2 id="block-confirm-title">Block collector?</h2><button id="block-confirm-close" class="cp-follow-close" type="button">Cancel</button></div><p id="block-confirm-text">They will be removed from your follow list and their profile will no longer appear in collector search for you.</p><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button id="block-confirm-cancel" class="cp-btn secondary" type="button">Cancel</button><button id="block-confirm-yes" class="cp-btn danger" type="button">Block collector</button></div><p id="block-confirm-status" class="cp-status" role="status" aria-live="polite"></p></div></section>
+ <section id="follow-modal" class="cp-follow-modal" hidden><div class="cp-follow-dialog" role="dialog" aria-modal="true" aria-labelledby="follow-modal-title"><div class="cp-follow-dialog-head"><h2 id="follow-modal-title">Followers</h2><button id="follow-modal-close" class="cp-follow-close" type="button">Close</button></div><p id="follow-modal-status" class="cp-status" role="status" aria-live="polite"></p><div id="follow-modal-list" class="cp-follow-list"></div></div></section>
+<section id="make-offer-modal" class="cp-follow-modal" hidden><div class="cp-follow-dialog cp-offer-modal" role="dialog" aria-modal="true" aria-labelledby="make-offer-title"><div class="cp-follow-dialog-head"><h2 id="make-offer-title">Make an Offer</h2><button id="make-offer-close" class="cp-follow-close" type="button">Close</button></div><p id="offer-recipient-label" class="cp-status"></p><div class="cp-offer-options" role="group" aria-label="Offer type"><button id="offer-type-cash" class="cp-btn secondary" type="button" aria-pressed="true"> Cash Offer</button><button id="offer-type-trade" class="cp-btn secondary" type="button" aria-pressed="false"> Trade Offer</button></div><form id="make-offer-form"><div id="cash-offer-fields" class="cp-offer-section"><label>Cash offer amount (USD)<input id="cash-offer-amount" type="number" min="0.01" max="1000000" step="0.01" placeholder="e.g. 45.00"></label><p class="cp-status">This sends an offer only; payment is not collected through PokePrizePool.</p></div><div id="trade-offer-fields" class="cp-offer-section" hidden><h3>Choose items from your collection to offer</h3><p class="cp-status">Select the cards or sealed products you want to offer.</p><div id="offer-own-picks" class="cp-offer-picks"></div><h3 style="margin-top:14px">Choose items from their collection</h3><p class="cp-status">Select what you want in return.</p><div id="offer-their-picks" class="cp-offer-picks"></div></div><label style="margin-top:12px">Message *<textarea id="offer-message" required minlength="1" maxlength="500" placeholder="A message is required to send an offer…"></textarea></label><p id="make-offer-status" class="cp-status" role="status" aria-live="polite"></p><div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:14px"><button id="make-offer-cancel" class="cp-btn secondary" type="button">Cancel</button><button id="make-offer-submit" class="cp-btn" type="submit">Send Cash Offer</button></div></form></div></section>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ let own=false,profile=null,items=[],activeList='collection',viewUsername=new URLSearchParams(location.search).get('user')||'';
+ let catalogSets=[],catalogTimer=null,catalogRequest=0,selectedCatalogProductId=null,selectedCatalogProductName='',followState={followers:0,following:0,isFollowing:false};
+
+ const money=cents=>cents===null||cents===undefined?'Not set':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents)/100);
+ const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function setStatus(id,text){$(id).textContent=text||'';}
+ async function loadWishlistMatchDashboard(){
+   if(!own)return;
+   const panel=$('wishlist-match-dashboard'),results=$('wishlist-match-results'),status=$('wishlist-match-status');
+   panel.hidden=false;status.textContent='';results.innerHTML='<div class="cp-match-empty">Loading wishlist matches…</div>';
+   try{
+    const response=await fetch('/api/collector/wishlist-matches',{credentials:'include',cache:'no-store'});
+    const data=await response.json().catch(()=>({ok:false,error:'bad_response'}));
+    if(response.status===401){location.href='/account.html';return;}
+    if(!response.ok||!data.ok){
+     const messages={wishlist_trades_migration_required:'Wishlist matching needs its database migration before it can load.',login_required:'Sign in to view your wishlist matches.'};
+     throw new Error(messages[data.error]||'Wishlist matches could not be loaded.');
+    }
+    const matches=data.matches||[],rows=[];
+    matches.forEach(match=>(match.collectors||[]).forEach(collector=>rows.push({item:match.wishlist_item,collector})));
+    if(!rows.length){
+     results.innerHTML='<div class="cp-match-empty">No matching collectors found for your wishlist yet.</div>';
+     status.textContent=data.location_enabled?'Searching within '+Number(data.radius_miles||25)+' miles.':'Enable approximate location in Settings to see distances.';
+     return;
+    }
+    results.innerHTML=rows.map(row=>{
+     const item=row.item||{},collector=row.collector||{};
+     const image=item.image_url?'<img loading="lazy" src="'+safe(item.image_url)+'" alt="'+safe(item.product_name||'Wishlist item')+'">':'No image';
+     const cardDetails=[item.set_name,item.card_number?'#'+item.card_number:''].filter(Boolean).join(' · ');
+     const distance=collector.distance_miles===null||collector.distance_miles===undefined?'Distance unavailable':Number(collector.distance_miles)+' mi away';
+     return '<article class="cp-match-card"><div class="cp-match-image">'+image+'</div><div class="cp-match-details"><h3>'+safe(item.product_name||'Wishlist item')+'</h3>'+(cardDetails?'<p>'+safe(cardDetails)+'</p>':'')+'<p>Has it: <strong>@'+safe(collector.username||'collector')+'</strong></p><p>'+safe(distance)+'</p><a class="cp-match-contact" href="/collector.html?user='+encodeURIComponent(collector.username||'')+'">Contact</a></div></article>';
+    }).join('');
+    status.textContent=data.location_enabled?'Matches within '+Number(data.radius_miles||25)+' miles.':'Enable approximate location in Settings to see distances.';
+   }catch(error){
+    results.innerHTML='<div class="cp-match-empty">'+safe(error.message||'Wishlist matches could not be loaded.')+'</div>';
+   }
+  }
+  function render(){
+  const q=$('search').value.trim().toLowerCase(),type=$('type-filter').value;
+  const filtered=items.filter(x=>x.list_type===activeList&&(!q||[x.product_name,x.set_name,x.card_number,x.condition,x.notes].join(' ').toLowerCase().includes(q))&&(type==='all'||x.product_type===type));
+  $('list-heading').textContent=activeList==='collection'?'Collection showcase':'Wishlist';
+  $('items').innerHTML=filtered.length?filtered.map(x=>'<article class="cp-item"><div class="cp-item-image">'+(x.image_url?'<img loading="lazy" src="'+safe(x.image_url)+'" alt="'+safe(x.product_name)+'">':'Card')+'</div><div class="cp-item-body"><h3>'+safe(x.product_name)+'</h3><p>'+safe([x.set_name,x.card_number].filter(Boolean).join(' · ')||'Pokémon TCG')+'</p><p>'+safe(x.condition||'Condition not listed')+' · '+(x.product_type==='sealed'?'Sealed product':x.product_type==='graded'?'Graded card':'Single card')+'</p>'+(x.notes?'<p>'+safe(x.notes)+'</p>':'')+(x.tcgcsv_product_id?'<p><strong>TCGplayer market'+(x.product_type==='graded'?' (raw-card reference)':'')+': '+safe(x.tcgcsv_market_price===null||x.tcgcsv_market_price===undefined?'Price unavailable':priceText(x.tcgcsv_market_price))+'</strong>'+(x.tcgcsv_market_price_subtype?' · '+safe(x.tcgcsv_market_price_subtype):'')+'</p>':'')+'<div class="cp-item-bottom"><span>'+(activeList==='collection'?'Qty: '+Number(x.quantity||1):'On wishlist')+'</span><span>'+(activeList==='collection'?money(x.estimated_value_cents):'')+'</span></div>'+(own?'<div style="margin-top:10px"><button class="cp-btn danger" data-remove="'+Number(x.id)+'" type="button">Remove</button></div>':'')+'</div></article>').join(''):'<div class="cp-empty">'+(activeList==='collection'?'No collection items match yet. Add your first card or sealed product.':'Your wishlist is empty. Add the cards you’re chasing.')+'</div>';
+  $('items').querySelectorAll('[data-remove]').forEach(button=>button.addEventListener('click',()=>removeItem(button.dataset.remove)));
+ }
+ function showProfile(p,accountName){
+  profile=p;const hero=$('profile-hero');if(hero)hero.style.backgroundImage=p?.cover_url?'url("'+String(p.cover_url).replace(/["\\\\]/g,'')+'"), linear-gradient(120deg,#07194d,#123d8c)':'';
+  
+  $('handle').textContent=p?.username?'@'+p.username:'Create your collector handle';
+  const displayName=String(accountName||p?.display_name||p?.username||'Collector Profile').trim();
+  $('display-name').textContent=displayName;
+  $('display-name').hidden=!!p?.username&&displayName.toLowerCase()===String(p.username).trim().toLowerCase();
+  $('bio-display').textContent=p?.bio||'Pokémon collector — add a bio to tell your story.';
+  $('edit-bio').hidden=!own;$('bio-editor').hidden=true;$('bio-input').value=p?.bio||'';
+  if(p?.avatar_url)$('avatar').innerHTML='<img src="'+safe(p.avatar_url)+'" alt="Profile photo">';else $('avatar').textContent='Card';
+  $('avatar').disabled=!own;$('avatar').title=own?'Click to change profile photo':'';$('change-cover').hidden=!own;
+ }
+ function stats(){
+  const collection=items.filter(x=>x.list_type==='collection');
+  $('stat-items').textContent=collection.length.toLocaleString();
+  $('stat-quantity').textContent=collection.reduce((n,x)=>n+Number(x.quantity||1),0).toLocaleString();
+  $('stat-sealed').textContent=collection.filter(x=>x.product_type==='sealed').reduce((n,x)=>n+Number(x.quantity||1),0).toLocaleString();
+  const value=collection.reduce((n,x)=>{const cents=x.product_type!=='graded'&&x.tcgcsv_market_price!==null&&x.tcgcsv_market_price!==undefined?Math.round(Number(x.tcgcsv_market_price)*100):(Number(x.estimated_value_cents)||0);return n+cents*Number(x.quantity||1);},0);
+  $('stat-value').textContent=collection.some(x=>(x.product_type!=='graded'&&x.tcgcsv_market_price!==null&&x.tcgcsv_market_price!==undefined)||(x.estimated_value_cents!==null&&x.estimated_value_cents!==undefined))?money(value):'Not set';
+ }
+ async function loadCatalogSets(){
+  const select=$('catalog-set');
+  try{
+   const response=await fetch('/api/collector/catalog?mode=sets',{credentials:'same-origin',cache:'no-store'});
+   const data=await response.json();
+   if(!response.ok||!data.ok)throw new Error(data.error||'Could not load TCGCSV sets');
+   catalogSets=(data.sets||[]).map(set=>({id:String(set.id),name:set.name||''})).filter(set=>set.id&&set.name);
+   select.innerHTML='<option value="">All sets</option>'+catalogSets.map(set=>'<option value="'+safe(set.id)+'">'+safe(set.name)+'</option>').join('');
+   setStatus('catalog-status',data.synced?'TCGCSV Pokémon catalog loaded · prices last synced '+safe(data.source_timestamp||'recently')+'.':'TCGCSV catalog has not completed its first sync yet.');
+  }catch(error){setStatus('catalog-status','TCGCSV catalog is not ready yet. Please try again after the staging catalog sync has completed.');}
+ }
+ function priceText(value){
+  return value===null||value===undefined||value===''?'Price unavailable':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(value));
+ }
+ function renderCatalogResults(products,requestId){
+  if(requestId!==catalogRequest)return;
+  const results=$('catalog-results');
+  if(!products.length){results.innerHTML='';setStatus('catalog-status','No matching TCGCSV products found. Try a shorter name or clear the set filter.');return;}
+  $('catalog-refine').hidden=false;
+  const sort=$('catalog-sort').value;
+  const cards=products.slice();
+  if(sort==='name')cards.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  if(sort==='set')cards.sort((a,b)=>String(a.set_name||'').localeCompare(String(b.set_name||'')));
+  window.__tcgcsvCatalogResults=cards;
+  results.innerHTML=cards.map(product=>{
+   const price=product.market_price===null||product.market_price===undefined?'Price unavailable':priceText(product.market_price);
+   const number=product.card_number?' · #'+product.card_number:'';
+   const rarity=product.rarity?' · '+product.rarity:'';
+   const variant=product.market_price_subtype?' · '+product.market_price_subtype:'';
+   const image=product.image_url||'';
+   const id=safe(product.id);
+   return '<div class="cp-catalog-result-row"><div class="cp-catalog-result" data-card-id="'+id+'">'+(image?'<img loading="lazy" src="'+safe(image)+'" alt="">':'<span aria-hidden="true">Card</span>')+'<span><strong>'+safe(product.name||'Unknown product')+'</strong><small>'+safe(product.set_name||'Set not listed')+safe(number)+safe(rarity)+'</small><small><strong>TCGplayer market: '+safe(price)+'</strong>'+safe(variant)+'</small></span></div><div class="cp-catalog-result-actions"><button type="button" data-add-card-id="'+id+'" data-list-target="collection">Use for My Collection</button><button type="button" data-add-card-id="'+id+'" data-list-target="wishlist">Use for My Wishlist</button></div></div>';
+  }).join('');
+  setStatus('catalog-status','Choose whether each result belongs in My Collection or My Wishlist. The selection fills the form; press Add item to save it.');
+ }
+ async function searchCatalog(){
+  const query=$('catalog-search').value.trim(),setId=$('catalog-set').value,requestId=++catalogRequest;
+  $('catalog-results').innerHTML='';
+  if(query.length<2){setStatus('catalog-status','Enter at least 2 letters to search the TCGCSV catalog.');return;}
+  setStatus('catalog-status','Searching the saved TCGCSV catalog and market prices…');
+  try{
+   const params=new URLSearchParams({q:query,type:$('product-type').value==='graded'?'single':'single',limit:'30'});
+   if(setId)params.set('set_id',setId);
+   const response=await fetch('/api/collector/catalog?'+params.toString(),{credentials:'same-origin',cache:'no-store'});
+   const data=await response.json();
+   if(requestId!==catalogRequest)return;
+   if(!response.ok||!data.ok){
+    if(data.error==='tcgcsv_migration_required')throw new Error('The staging TCGCSV catalog migration has not been applied yet.');
+    throw new Error('TCGCSV catalog is not ready yet. Complete the staging sync and try again.');
+   }
+   renderCatalogResults(data.products||[],requestId);
+  }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'TCGCSV catalog search failed.');}
+ }
+ async function selectCatalogCard(id,listType){
+  const product=(window.__tcgcsvCatalogResults||[]).find(item=>String(item.id)===String(id));
+  if(!product){setStatus('catalog-status','That catalog result expired. Search again and choose the card.');return;}
+  if(listType)$('list-type').value=listType;
+  $('product-name').value=product.name||'';
+  selectedCatalogProductId=Number(product.tcgcsv_product_id||product.id)||null;selectedCatalogProductName=String(product.name||'');
+  const selectedType=$('product-type').value;
+  $('product-type').value=selectedType==='graded'?'graded':'card';
+  $('set-name').value=product.set_name||'';
+  $('card-number').value=product.card_number||'';
+  $('image-url').value=product.image_url||'';
+  if(selectedType==='graded'){
+   $('estimated-value').value='';
+   setStatus('catalog-status','Selected for '+(listType==='wishlist'?'My Wishlist':'My Collection')+': '+product.name+'. Raw-card TCGplayer market price: '+priceText(product.market_price)+'. This is not a graded-slab valuation; enter a graded value only when you have a reliable source.');
+  }else{
+   $('estimated-value').value=product.market_price===null||product.market_price===undefined?'':String(product.market_price);
+   setStatus('catalog-status','Selected for '+(listType==='wishlist'?'My Wishlist':'My Collection')+': '+product.name+'. TCGplayer market price: '+priceText(product.market_price)+(product.market_price_subtype?' ('+product.market_price_subtype+')':'')+'. Price data is from the last successful TCGCSV sync.');
+  }
+  $('product-name').focus();
+ }
+ $('catalog-search').addEventListener('input',()=>{clearTimeout(catalogTimer);catalogTimer=setTimeout(()=>{$('product-type').value==='sealed'?searchSealedCatalog():searchCatalog();},350);});
+ $('product-type').addEventListener('change',()=>{const type=$('product-type').value,sealed=type==='sealed';$('card-number').disabled=sealed;$('condition').placeholder=sealed?'e.g. Sealed / box condition':type==='graded'?'e.g. PSA 10, BGS 9.5':'e.g. Near Mint';$('catalog-search').placeholder=sealed?'Search sealed product (e.g. Prismatic Evolutions ETB)':'Search card name (e.g. Charizard)';$('catalog-results').innerHTML='';if($('catalog-search').value.trim().length>=2)(sealed?searchSealedCatalog():searchCatalog());});
+ $('catalog-set').addEventListener('change',()=>{if($('product-type').value!=='sealed')searchCatalog();});
+ $('catalog-sort').addEventListener('change',()=>{const cards=window.__tcgcsvCatalogResults||[];renderCatalogResults(cards,catalogRequest);});
+ $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-card-id]');if(button)selectCatalogCard(button.dataset.addCardId,button.dataset.listTarget);});
+ loadCatalogSets();
+ async function searchSealedCatalog(){
+  const query=$('catalog-search').value.trim(),setId=$('catalog-set').value,requestId=++catalogRequest;
+  $('catalog-results').innerHTML='';
+  if(query.length<2){setStatus('catalog-status','Enter at least 2 letters to search sealed products.');return;}
+  setStatus('catalog-status','Searching the saved TCGCSV sealed-product catalog and market prices…');
+  try{
+   const params=new URLSearchParams({q:query,type:'sealed',limit:'30'});
+   if(setId)params.set('set_id',setId);
+   const response=await fetch('/api/collector/catalog?'+params.toString(),{credentials:'same-origin',cache:'no-store'});
+   const data=await response.json();
+   if(requestId!==catalogRequest)return;
+   if(!response.ok||!data.ok)throw new Error('TCGCSV sealed catalog is not ready yet. Complete the staging sync and try again.');
+   const products=data.products||[];
+   window.__sealedResults=products.map(product=>({...product,sku:product.id,kind:'Sealed product'}));
+   if(!products.length){setStatus('catalog-status','No sealed products matched. Try a shorter search or another set.');return;}
+   $('catalog-refine').hidden=false;
+   const sort=$('catalog-sort').value;
+   if(sort==='name')products.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+   if(sort==='set')products.sort((a,b)=>String(a.set_name||'').localeCompare(String(b.set_name||'')));
+   $('catalog-results').innerHTML=products.map(product=>'<div class="cp-catalog-result-row"><div class="cp-catalog-result" data-sealed-id="'+safe(product.id)+'">'+(product.image_url?'<img loading="lazy" src="'+safe(product.image_url)+'" alt="">':'<span aria-hidden="true">Product</span>')+'<span><strong>'+safe(product.name||'Sealed product')+'</strong><small>'+safe(product.set_name||'Set not listed')+'</small><small><strong>TCGplayer market: '+safe(priceText(product.market_price))+'</strong>'+(product.market_price_subtype?' · '+safe(product.market_price_subtype):'')+'</small></span></div><div class="cp-catalog-result-actions"><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="collection">Use for My Collection</button><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="wishlist">Use for My Wishlist</button></div></div>').join('');
+   setStatus('catalog-status','Showing '+products.length+' sealed TCGCSV matches. Prices are from the last successful daily sync.');
+  }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'Could not search TCGCSV sealed products.');}
+ }
+ $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.addSealedId));if(product){$('list-type').value=button.dataset.listTarget;selectSealedProduct(product);setStatus('catalog-status','Selected for '+(button.dataset.listTarget==='wishlist'?'My Wishlist':'My Collection')+'. Review the details and press Add item to save.');}}});
+ function selectSealedProduct(product){
+  $('product-name').value=product.name||'';
+  selectedCatalogProductId=Number(product.tcgcsv_product_id||product.id)||null;selectedCatalogProductName=String(product.name||'');
+  $('product-type').value='sealed';
+  $('set-name').value=product.set_name||'';
+  $('card-number').value='';
+  $('card-number').disabled=true;
+  $('condition').placeholder='e.g. Sealed / box condition';
+  $('image-url').value=product.image_url||'';
+  $('estimated-value').value=product.market_price===null||product.market_price===undefined?'':String(product.market_price);
+  setStatus('catalog-status','Selected sealed product. TCGplayer market price: '+priceText(product.market_price)+(product.market_price_subtype?' ('+product.market_price_subtype+')':'')+'. This value is from the last successful TCGCSV sync.');
+  $('product-name').focus();
+ }
+ function compressProfileImage(file,kind){
+  return new Promise((resolve,reject)=>{
+   if(!file||!file.type.startsWith('image/')){reject(new Error('Choose an image file.'));return;}
+   if(file.size>12*1024*1024){reject(new Error('Choose an image smaller than 12 MB.'));return;}
+   const reader=new FileReader();reader.onerror=()=>reject(new Error('Could not read that image. Try another file.'));
+   reader.onload=()=>{const image=new Image();image.onerror=()=>reject(new Error('That image could not be opened.'));
+    image.onload=()=>{const maxW=kind==='avatar'?512:1600,maxH=kind==='avatar'?512:600,scale=Math.min(1,maxW/image.width,maxH/image.height);
+     const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));
+     const ctx=canvas.getContext('2d');if(!ctx){reject(new Error('Your browser could not process this image.'));return;}
+     ctx.drawImage(image,0,0,canvas.width,canvas.height);let data=canvas.toDataURL('image/webp',0.82);const limit=kind==='avatar'?350000:850000;
+     if(data.length>limit)data=canvas.toDataURL('image/jpeg',0.72);if(data.length>limit){reject(new Error('Image is still too large after compression. Try a smaller image.'));return;}resolve(data);
+    };image.src=reader.result;};reader.readAsDataURL(file);
+  });
+ }
+ async function uploadProfileImage(kind,file){
+  if(!own){setStatus('view-status','You can only change photos on your own collector profile.');return;}
+  const field=kind==='avatar'?'avatar_url':'cover_url',fileInput=$(kind==='avatar'?'profile-photo-file':'profile-cover-file');
+  setStatus('view-status','Preparing '+(kind==='avatar'?'profile photo':'cover photo')+'…');
+  try{
+   const dataUrl=await compressProfileImage(file,kind),payload={username:profile.username,bio:profile.bio||'',avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1};
+   payload[field]=dataUrl;setStatus('view-status','Saving '+(kind==='avatar'?'profile photo':'cover photo')+'…');
+   const response=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),result=await response.json();
+   if(!response.ok||!result.ok){const messages={login_required:'Your session expired. Please sign in again.',invalid_avatar_url:'Profile photo is too large or invalid.',invalid_cover_url:'Cover photo is too large or invalid.',profile_save_failed:'Could not save the image. Check the staging database setup.'};throw new Error(messages[result.error]||'Could not save image ('+(result.error||'unknown error')+').');}
+   profile={...profile,...result.profile};showProfile(profile,document.getElementById('display-name').textContent);setStatus('view-status',(kind==='avatar'?'Profile photo':'Cover photo')+' updated successfully.');
+  }catch(error){setStatus('view-status',error.message||'Could not update image.');}finally{fileInput.value='';}
+ }
+ $('avatar').addEventListener('click',()=>{if(own)$('profile-photo-file').click();});
+ $('change-cover').addEventListener('click',()=>{if(own)$('profile-cover-file').click();});
+ $('profile-photo-file').addEventListener('change',event=>{if(event.target.files?.[0])uploadProfileImage('avatar',event.target.files[0]);});
+ $('profile-cover-file').addEventListener('change',event=>{if(event.target.files?.[0])uploadProfileImage('cover',event.target.files[0]);});
+ async function loadFollowState(username){try{const r=await fetch('/api/collector/follow?username='+encodeURIComponent(username),{credentials:'include',cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok)return;followState=d; $('followers-count').textContent=Number(d.followers||0).toLocaleString();$('following-count').textContent=Number(d.following||0).toLocaleString();$('follow-button').hidden=own||!d.canFollow||!!d.isFollowing;$('follow-button').textContent='Follow';$('profile-menu-wrap').hidden=own||!d.canFollow||!d.isFollowing;$('profile-menu').hidden=true;$('profile-menu-trigger').setAttribute('aria-expanded','false');}catch{}}
+ async function openFollowList(kind){if(!profile?.username)return;const modal=$('follow-modal'),title=$('follow-modal-title'),status=$('follow-modal-status'),list=$('follow-modal-list');title.textContent=kind==='followers'?'Followers':'Following';status.textContent='Loading collectors…';list.innerHTML='';modal.hidden=false;$('follow-modal-close').focus();try{const r=await fetch('/api/collector/follow?username='+encodeURIComponent(profile.username)+'&list='+kind,{credentials:'include',cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok){const errors={follow_migration_required:'The staging follow database is not set up yet.',profile_not_found:'This collector profile could not be found.'};throw new Error(errors[d.error]||'Could not load this list.');}if(!d.results.length){status.textContent='';list.innerHTML='<div class="cp-follow-empty">'+(kind==='followers'?'No followers yet.':'Not following any collectors yet.')+'</div>';return;}status.textContent=d.results.length+' collector'+(d.results.length===1?'':'s');list.innerHTML=d.results.map(p=>'<article class="cp-person"><div class="cp-person-avatar">'+(p.avatar_url?'<img class="cp-person-avatar" src="'+safe(p.avatar_url)+'" alt="" loading="lazy">':'Card')+'</div><div class="cp-person-main"><a href="/collector.html?user='+encodeURIComponent(p.username)+'">'+safe(p.display_name||p.username)+'</a><p>@'+safe(p.username)+' · '+Number(p.followers||0).toLocaleString()+' followers</p></div>'+(p.canFollow?'<button class="cp-person-follow '+(p.isFollowing?'following':'')+'" type="button" data-modal-follow="'+safe(p.username)+'" data-following="'+String(!!p.isFollowing)+'">'+(p.isFollowing?'Following':'Follow')+'</button>':'')+'</article>').join('');}catch(error){status.textContent=error.message||'Could not load this list.';}}
+ $('followers-trigger').addEventListener('click',()=>openFollowList('followers'));$('following-trigger').addEventListener('click',()=>openFollowList('following'));$('follow-modal-close').addEventListener('click',()=>{$('follow-modal').hidden=true;});$('follow-modal').addEventListener('click',event=>{if(event.target===$('follow-modal'))$('follow-modal').hidden=true;});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('follow-modal').hidden)$('follow-modal').hidden=true;});$('follow-modal-list').addEventListener('click',async event=>{const button=event.target.closest('[data-modal-follow]');if(!button)return;const username=button.dataset.modalFollow,wasFollowing=button.dataset.following==='true';button.disabled=true;try{const r=await fetch('/api/collector/follow?username='+encodeURIComponent(username),{method:wasFollowing?'DELETE':'POST',credentials:'include'}),d=await r.json();if(!r.ok||!d.ok){if(r.status===401){location.href='/account.html';return;}throw new Error('Could not update follow.');}button.dataset.following=String(!!d.isFollowing);button.textContent=d.isFollowing?'Following':'Follow';button.classList.toggle('following',!!d.isFollowing);if(profile?.username)await loadFollowState(profile.username);}catch(error){$('follow-modal-status').textContent=error.message||'Could not update follow.';}finally{button.disabled=false;}});
+async function searchCollectors(query){
+  const status=$('collector-search-status'),results=$('collector-search-results');
+  results.innerHTML='';status.textContent='Searching collectors…';
+  try{
+   const r=await fetch('/api/collector/search?q='+encodeURIComponent(query.trim()),{credentials:'include',cache:'no-store'}),d=await r.json();
+   if(!r.ok||!d.ok){const errors={query_too_short:'Enter at least 2 characters to search.',collector_search_migration_required:'The staging collector-follow database setup is missing. Apply migrations/staging_collector_follows.sql to the pokemon-vip-members-staging database.',database_not_configured:'The staging database is not connected to this API.',collector_search_failed:'The search API failed. Check the staging Pages Function logs for the exact database error.'};throw new Error(errors[d.error]||('Could not search collectors ('+(d.error||'unknown error')+'). Please try again.'));}
+   if(!d.results.length){status.textContent='No public collector profiles found.';return;}
+   status.textContent='';
+   results.innerHTML=d.results.map(p=>'<article class="cp-person"><div class="cp-person-avatar">'+(p.avatar_url?'<img class="cp-person-avatar" src="'+safe(p.avatar_url)+'" alt="" loading="lazy">':'Card')+'</div><div class="cp-person-main"><a href="/collector.html?user='+encodeURIComponent(p.username)+'">'+safe(p.display_name||p.username)+'</a><p>@'+safe(p.username)+' · '+Number(p.followers||0).toLocaleString()+' followers'+(p.bio?' · '+safe(p.bio):'')+'</p></div>'+(p.canFollow?'<button class="cp-person-follow '+(p.isFollowing?'following':'')+'" type="button" data-person-follow="'+safe(p.username)+'" data-following="'+String(!!p.isFollowing)+'">'+(p.isFollowing?'Following':'Follow')+'</button>':'')+'</article>').join('');
+  }catch(error){status.textContent=error.message||'Could not search collectors.';}
+ }
+ $('collector-search-form').addEventListener('submit',event=>{event.preventDefault();const query=$('collector-search-query').value.trim();if(query.length<2){$('collector-search-status').textContent='Enter at least 2 characters to search.';return;}searchCollectors(query);});
+ $('collector-search-results').addEventListener('click',async event=>{
+  const button=event.target.closest('[data-person-follow]');if(!button)return;
+  const username=button.dataset.personFollow,wasFollowing=button.dataset.following==='true';button.disabled=true;
+  try{
+   const r=await fetch('/api/collector/follow?username='+encodeURIComponent(username),{method:wasFollowing?'DELETE':'POST',credentials:'include'}),d=await r.json();
+   if(!r.ok||!d.ok){if(r.status===401){location.href='/account.html';return;}throw new Error(d.error==='follow_migration_required'?'Follow setup is not finished on staging yet.':'Could not update follow. Please try again.');}
+   button.dataset.following=String(!!d.isFollowing);button.textContent=d.isFollowing?'Following':'Follow';button.classList.toggle('following',!!d.isFollowing);
+   const card=button.closest('.cp-person'),line=card?.querySelector('.cp-person-main p');if(line)line.textContent='@'+username+' · '+Number(d.followers||0).toLocaleString()+' followers';
+   if(profile?.username&&profile.username.toLowerCase()===username.toLowerCase())loadFollowState(profile.username);
+  }catch(error){$('collector-search-status').textContent=error.message||'Could not update follow.';}finally{button.disabled=false;}
+ });
+ async function changeProfileFollow(remove){if(!profile?.username)return;const button=$('follow-button');button.disabled=true;try{const r=await fetch('/api/collector/follow?username='+encodeURIComponent(profile.username),{method:remove?'DELETE':'POST',credentials:'include'}),d=await r.json();if(!r.ok||!d.ok){if(r.status===401){location.href='/account.html';return;}throw new Error('Could not update follow.');}followState=d;$('followers-count').textContent=Number(d.followers||0).toLocaleString();$('following-count').textContent=Number(d.following||0).toLocaleString();await loadFollowState(profile.username);$('profile-menu').hidden=true;}catch(error){setStatus('view-status',error.message||'Could not update follow.');}finally{button.disabled=false;}}
+ $('follow-button').addEventListener('click',()=>changeProfileFollow(false));
+ $('profile-menu-trigger').addEventListener('click',()=>{const menu=$('profile-menu'),open=menu.hidden;menu.hidden=!open;$('profile-menu-trigger').setAttribute('aria-expanded',String(open));});
+ $('menu-unfollow').addEventListener('click',()=>changeProfileFollow(true));
+ document.addEventListener('click',event=>{if(!$('profile-menu-wrap').contains(event.target)){$('profile-menu').hidden=true;$('profile-menu-trigger').setAttribute('aria-expanded','false');}});
+ $('menu-block').addEventListener('click',()=>{ $('profile-menu').hidden=true;$('block-confirm-status').textContent='';$('block-confirm-modal').hidden=false;$('block-confirm-yes').focus();});
+ $('block-confirm-close').addEventListener('click',closeBlockModal);$('block-confirm-cancel').addEventListener('click',closeBlockModal);
+ function closeBlockModal(){$('block-confirm-modal').hidden=true;$('block-confirm-status').textContent='';}
+ $('block-confirm-modal').addEventListener('click',event=>{if(event.target===$('block-confirm-modal'))closeBlockModal();});
+ $('block-confirm-yes').addEventListener('click',async()=>{if(!profile?.username)return;const button=$('block-confirm-yes');button.disabled=true;$('block-confirm-status').textContent='Blocking collector…';try{const r=await fetch('/api/collector/block',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:profile.username})}),d=await r.json();if(!r.ok||!d.ok){if(r.status===401){location.href='/account.html';return;}throw new Error(d.error==='block_migration_required'?'The staging block database table still needs to be created.':'Could not block this collector.');}closeBlockModal();$('profile-menu-wrap').hidden=true;$('follow-button').hidden=true;setStatus('view-status','Collector blocked. They have been removed from your follow list.');}catch(error){$('block-confirm-status').textContent=error.message||'Could not block this collector.';}finally{button.disabled=false;}});
+ 
+ let offerMode='cash',offerList=[];
+ const itemLabel=item=>[item.product_name,item.set_name,item.card_number?'#'+item.card_number:'',item.product_type==='sealed'?'Sealed product':item.product_type==='graded'?'Graded card':'Single card'].filter(Boolean).join(' · ');
+ async function collectorApi(url,options={}){const response=await fetch(url,{credentials:'include',cache:'no-store',...options,headers:{...(options.headers||{}),...(options.body?{'Content-Type':'application/json'}:{})}});const data=await response.json().catch(()=>({ok:false,error:'bad_response'}));if(response.status===401){location.href='/account.html';throw new Error('Please sign in to your collector account.');}if(!response.ok||!data.ok)throw new Error(({invalid_or_unavailable_items:'One or more selected items are no longer available. Refresh the profile and choose items from each collection.',invalid_trade_items:'Choose at least one item from each collection.',invalid_cash_amount:'Enter a valid cash offer amount.',message_required:'Add a message before sending your offer.',wishlist_trades_migration_required:'The staging offer database needs its offer-type migration.'})[data.error]||('Request failed: '+(data.error||'unknown_error')));return data;}
+ function renderOfferPicker(containerId,source,kind){const box=$(containerId);if(!source.length){box.innerHTML='<div class="cp-match-empty">'+(kind==='own'?'Your collection is empty. Add cards or sealed products to your collection first.':'This collector has no public collection items available to request.')+'</div>';return;}box.innerHTML=source.map(item=>'<label class="cp-offer-pick"><input type="checkbox" data-'+(kind==='own'?'offer-own':'offer-their')+'="'+Number(item.id)+'"><span>'+safe(itemLabel(item))+'<br><small>Available quantity: '+Number(item.quantity||1)+'</small></span><input type="number" aria-label="Quantity" min="1" max="'+Number(item.quantity||1)+'" value="1" data-quantity-for="'+kind+'-'+Number(item.id)+'"></label>').join('');}
+ async function openMakeOffer(){if(!profile?.username||own)return;$('make-offer-modal').hidden=false;$('make-offer-title').textContent='Make an Offer to @'+profile.username;$('offer-recipient-label').textContent='Choose a cash offer or a trade with @'+profile.username+'. Offers are not payments and should be completed safely between members.';$('make-offer-status').textContent='';$('offer-message').value='';$('cash-offer-amount').value='';$('offer-type-cash').setAttribute('aria-pressed','true');$('offer-type-trade').setAttribute('aria-pressed','false');offerMode='cash';$('cash-offer-fields').hidden=false;$('trade-offer-fields').hidden=true;$('make-offer-submit').textContent='Send Cash Offer';try{const data=await collectorApi('/api/collector/items');const mine=(data.items||[]).filter(i=>i.list_type==='collection');renderOfferPicker('offer-own-picks',mine,'own');renderOfferPicker('offer-their-picks',(items||[]).filter(i=>i.list_type==='collection'),'their');}catch(error){$('make-offer-status').textContent=error.message;}}
+ function setOfferMode(mode){offerMode=mode;$('offer-type-cash').setAttribute('aria-pressed',String(mode==='cash'));$('offer-type-trade').setAttribute('aria-pressed',String(mode==='trade'));$('cash-offer-fields').hidden=mode!=='cash';$('trade-offer-fields').hidden=mode!=='trade';$('make-offer-submit').textContent=mode==='cash'?'Send Cash Offer':'Send Trade Offer';$('make-offer-status').textContent='';}
+ function pickedItems(selector,kind){return [...document.querySelectorAll(selector+':checked')].map(input=>{const id=Number(input.getAttribute('data-'+kind)),qtyInput=document.querySelector('[data-quantity-for="'+kind.replace('offer-','')+'-'+id+'"]');return{id,quantity:Number(qtyInput?.value||1)};});}
+ async function submitOffer(event){event.preventDefault();const button=$('make-offer-submit');button.disabled=true;$('make-offer-status').textContent='Sending offer…';try{const payload={recipient_username:profile.username,offer_type:offerMode,message:$('offer-message').value.trim()};if(offerMode==='cash'){payload.cash_amount=Number($('cash-offer-amount').value);if(!Number.isFinite(payload.cash_amount)||payload.cash_amount<=0)throw new Error('Enter a cash offer amount greater than $0.');}else{payload.offering=pickedItems('[data-offer-own]','offer-own');payload.requesting=pickedItems('[data-offer-their]','offer-their');if(!payload.offering.length||!payload.requesting.length)throw new Error('Select at least one item from your collection and one from their collection.');}await collectorApi('/api/collector/trades',{method:'POST',body:JSON.stringify(payload)});$('make-offer-status').textContent=(offerMode==='cash'?'Cash':'Trade')+' offer sent successfully.';setTimeout(()=>{$('make-offer-modal').hidden=true;button.disabled=false;},900);}catch(error){$('make-offer-status').textContent=error.message||'Could not send offer.';button.disabled=false;}}
+ async function loadInbox(){if(!own)return;$('collector-inbox').hidden=false;$('inbox-status').textContent='Loading your offers…';try{const data=await collectorApi('/api/collector/trades');offerList=data.offers||[];renderInbox();$('inbox-status').textContent=offerList.length?'Incoming and outgoing offers.':'No offers yet. When someone sends you a cash or trade offer, it will appear here.';}catch(error){$('inbox-status').textContent=error.message;$('inbox-list').innerHTML='';}}
+ function renderInbox(){const list=$('inbox-list');if(!offerList.length){list.innerHTML='<div class="cp-match-empty">Your inbox is clear. Offers you receive and offers you send will show up here.</div>';return;}list.innerHTML=offerList.map(o=>{const incoming=o.direction==='incoming',other=incoming?o.proposer_username:o.recipient_username,isCash=o.offer_type==='cash',amount=isCash?money(Number(o.cash_amount_cents||0)):'';const parts=(o.items||[]).map(i=>(i.side==='offering'?'Offers: ':'Requests: ')+itemLabel(i)+' × '+Number(i.quantity||1)).join(' · ');let actions='';if(o.status==='pending'&&incoming)actions='<button class="cp-btn" data-inbox-action="accept" data-id="'+Number(o.id)+'">Accept</button><button class="cp-btn secondary" data-inbox-action="decline" data-id="'+Number(o.id)+'">Decline</button>';if(o.status==='pending'&&!incoming)actions='<button class="cp-btn secondary" data-inbox-action="cancel" data-id="'+Number(o.id)+'">Cancel offer</button>';if(o.status==='accepted')actions='<button class="cp-btn" data-inbox-action="complete" data-id="'+Number(o.id)+'">'+(isCash?'Confirm transaction complete':'Confirm trade complete')+'</button>';return '<article class="cp-inbox-card'+(incoming&&!o.recipient_read_at?' is-unread':'')+'" data-compact-offer-id="'+Number(o.id)+'"><h3>'+(isCash?' Cash offer':' Trade offer')+' · '+(incoming?'From ':'To ')+'<a href="/collector.html?user='+encodeURIComponent(other)+'">@'+safe(other)+'</a>'+(incoming&&!o.recipient_read_at?'<span class="cp-unread-pill">Unread</span>':'')+'</h3>'+(isCash?'<p><strong>Offer amount: '+amount+'</strong></p>':'<p>'+safe(parts||'Trade items listed')+'</p>')+(o.message?'<p>Message: '+safe(o.message)+'</p>':'')+'<p>Status: <strong>'+safe(o.status)+'</strong> · '+safe(o.created_at||'')+'</p>'+(actions?'<div class="cp-offer-actions">'+actions+'</div>':'')+'</article>';}).join('');}
+ async function actOnOffer(event){const button=event.target.closest('[data-inbox-action]');if(button){button.disabled=true;try{const data=await collectorApi('/api/collector/trades',{method:'PATCH',body:JSON.stringify({id:Number(button.dataset.id),action:button.dataset.inboxAction})});$('inbox-status').textContent=data.waiting_for_other?'Your confirmation is recorded; waiting for the other member.':'Offer updated: '+data.status+'.';await loadInbox();}catch(error){$('inbox-status').textContent=error.message;button.disabled=false;}return;}const card=event.target.closest('[data-compact-offer-id]');if(!card)return;const offer=offerList.find(o=>Number(o.id)===Number(card.dataset.compactOfferId));if(!offer||offer.direction!=='incoming'||offer.recipient_read_at)return;try{await collectorApi('/api/collector/trades',{method:'PATCH',body:JSON.stringify({id:Number(offer.id),action:'mark_read'})});offer.recipient_read_at=new Date().toISOString();renderInbox();$('inbox-status').textContent='Offer marked as read.';}catch(error){$('inbox-status').textContent=error.message;}}
+ async function load(){
+  try{
+   if(viewUsername){
+    const r=await fetch('/api/collector/profile?username='+encodeURIComponent(viewUsername),{cache:'no-store'}),d=await r.json();
+    if(!r.ok||!d.ok)throw new Error('This collector profile could not be found or is private.');
+    own=false;profile=d.profile;items=(d.items||[]).filter(i=>i.list_type==='collection');$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');document.querySelector('.cp-layout').classList.add('cp-public-layout');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;$('make-offer-button').hidden=false;showProfile(profile,profile.display_name);await loadFollowState(profile.username);
+   }else{
+    const r=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),d=await r.json();
+    if(r.status===401){location.href='/account.html';return;}if(!r.ok||!d.ok)throw new Error('Could not load your collector profile. Apply the staging database migration if it has not been run.');
+    own=true;profile=d.profile;items=d.items||[];document.querySelector('.cp-layout').classList.remove('cp-public-layout');$('make-offer-button').hidden=true;$('collector-signin').hidden=true;$('collector-logout').hidden=false;showProfile(profile,d.account?.display_name);await loadFollowState(profile.username)
+    if(!profile){$('handle').textContent='Profile not published yet';}
+   }
+   stats();render();if(own)await loadWishlistMatchDashboard();
+  }catch(e){setStatus('view-status',e.message||'Could not load the profile.');$('items').innerHTML='<div class="cp-empty">'+safe(e.message||'Could not load the profile.')+'</div>';}
+ }
+ function openBioEditor(){if(!own)return;$('bio-input').value=profile?.bio||'';$('bio-editor').hidden=false;$('bio-input').focus();}
+ $('edit-bio').addEventListener('click',openBioEditor);$('bio-display').addEventListener('click',openBioEditor);
+ $('cancel-bio').addEventListener('click',()=>{$('bio-editor').hidden=true;setStatus('bio-status','');});
+ $('bio-editor').addEventListener('submit',async e=>{e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('bio-status','Saving bio…');try{const payload={username:profile.username,bio:$('bio-input').value,avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1};const r=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error==='bio_too_long'?'Bio must be 500 characters or fewer.':'Could not save bio. Please try again.');profile={...profile,...d.profile};$('bio-display').textContent=profile.bio||'Pokémon collector — add a bio to tell your story.';$('bio-editor').hidden=true;setStatus('view-status','Bio updated.');}catch(error){setStatus('bio-status',error.message||'Could not save bio.');}finally{button.disabled=false;}});
+ $('collector-logout').addEventListener('click',async()=>{
+  const button=$('collector-logout');button.disabled=true;button.textContent='Logging out…';
+  try{const response=await fetch('/api/account/logout',{method:'POST',credentials:'include'});if(!response.ok)throw new Error('Please try logging out again.');location.href='/';}
+  catch(error){setStatus('view-status',error.message||'Could not log out.');button.disabled=false;button.textContent='Log out';}
+ });
+ ['product-name','set-name','card-number'].forEach(id=>$(id).addEventListener('input',()=>{if(selectedCatalogProductId!==null){selectedCatalogProductId=null;selectedCatalogProductName='';}}));
+ $('item-form').addEventListener('submit',async e=>{
+  e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('owner-status','Adding item…');
+  const value=$('estimated-value').value;
+  try{const r=await fetch('/api/collector/items',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({list_type:$('list-type').value,product_type:$('product-type').value,product_name:$('product-name').value,set_name:$('set-name').value,card_number:$('card-number').value,condition:$('condition').value,quantity:Number($('quantity').value),estimated_value:value===''?null:Number(value),image_url:$('image-url').value,notes:$('notes').value,tcgcsv_product_id:selectedCatalogProductId})}),d=await r.json();
+   if(!r.ok||!d.ok){const errors={login_required:'Your session expired. Please sign in again.',database_not_configured:'The staging database is not configured.',invalid_item:'Check the product name and item details.',invalid_quantity:'Quantity must be between 1 and 9999.',invalid_image_url:'Image must be a valid HTTPS URL.',invalid_estimated_value:'Enter a valid non-negative estimated value.',item_save_failed:'The staging database rejected the item. The collector database migration may not have been applied.',collector_database_migration_required:'The collector tables are missing from the staging database. Apply the two staging collector migrations, then try again.'};throw new Error(errors[d.error]||('Could not add the item ('+(d.error||'unknown error')+').'));}
+   e.target.reset();selectedCatalogProductId=null;selectedCatalogProductName='';$('quantity').value='1';$('card-number').disabled=false;$('product-type').value='card';$('catalog-search').placeholder='Search card or sealed product (e.g. Charizard or ETB)';setStatus('owner-status','Item added.');const rr=await fetch('/api/collector/items',{credentials:'include',cache:'no-store'}),dd=await rr.json();if(rr.ok&&dd.ok){items=dd.items||[];stats();render();}
+  }catch(error){setStatus('owner-status',error.message||'Could not add item.');}finally{button.disabled=false;}
+ });
+ async function removeItem(id){if(!confirm('Remove this item from your list?'))return;try{const r=await fetch('/api/collector/items?id='+encodeURIComponent(id),{method:'DELETE',credentials:'include'}),d=await r.json();if(!r.ok||!d.ok)throw new Error('Could not remove item.');items=items.filter(x=>String(x.id)!==String(id));stats();render();setStatus('owner-status','Item removed.');}catch(e){setStatus('owner-status',e.message||'Could not remove item.');}}
+ document.querySelectorAll('[data-list]').forEach(b=>b.addEventListener('click',()=>{activeList=b.dataset.list;document.querySelectorAll('[data-list]').forEach(x=>{x.setAttribute('aria-pressed',String(x===b));x.classList.toggle('secondary',x!==b);});render();}));
+ $('search').addEventListener('input',render);$('type-filter').addEventListener('change',render);
+ $('visit-shop').addEventListener('click',()=>{if(!profile?.username){setStatus('view-status','Save your collector username first.');return;}location.href='/shop.html?user='+encodeURIComponent(profile.username);});
+ $('copy-profile').addEventListener('click',async()=>{if(!profile?.username){setStatus('owner-status','Save a username first to create your public profile link.');return;}const url=location.origin+'/collector.html?user='+encodeURIComponent(profile.username);try{await navigator.clipboard.writeText(url);setStatus('owner-status','Profile link copied! '+url);}catch{setStatus('owner-status','Your profile link: '+url);}});
+ $('make-offer-button').addEventListener('click',openMakeOffer);
+ $('offer-type-cash').addEventListener('click',()=>setOfferMode('cash'));$('offer-type-trade').addEventListener('click',()=>setOfferMode('trade'));
+ $('make-offer-close').addEventListener('click',()=>$('make-offer-modal').hidden=true);$('make-offer-cancel').addEventListener('click',()=>$('make-offer-modal').hidden=true);
+ $('make-offer-modal').addEventListener('click',event=>{if(event.target===$('make-offer-modal'))$('make-offer-modal').hidden=true;});
+ $('make-offer-form').addEventListener('submit',submitOffer);
+ 
+ 
+ load();
+})();
+</script>
+<script src="/js/ui/site-nav.js"></script>
+</body></html>

@@ -1,0 +1,846 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Pokémon Events Calendar | PokePrizePool</title>
+  <meta
+    name="description"
+    content="Discover Pokémon card shows, trade nights, store events, restock reports, and Pokémon TCG release dates across New England."
+  >
+
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    :root {
+      --events-bg: #07142e;
+      --events-panel: rgba(9, 24, 56, 0.92);
+      --events-panel-light: rgba(18, 40, 83, 0.85);
+      --events-border: rgba(255, 255, 255, 0.14);
+      --events-text: #f4f7ff;
+      --events-muted: #b8c7e5;
+      --events-yellow: #ffd54a;
+      --events-blue: #75b7ff;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--events-bg);
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--events-text);
+      background:
+        linear-gradient(
+          rgba(3, 10, 29, 0.82),
+          rgba(3, 10, 29, 0.94)
+        ),
+        url("/assets/backgrounds/vip-collage.jpg") center / cover fixed;
+    }
+
+    .events-page {
+      min-height: 100vh;
+    }
+
+    #events-navigation {
+      position: relative;
+      z-index: 100;
+    }
+
+    .events-main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 42px 0 76px;
+    }
+
+    .events-hero {
+      padding: clamp(24px, 5vw, 48px);
+      border: 1px solid var(--events-border);
+      border-radius: 22px;
+      background:
+        radial-gradient(
+          circle at top right,
+          rgba(48, 111, 217, 0.26),
+          transparent 42%
+        ),
+        var(--events-panel);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+    }
+
+    .events-eyebrow {
+      margin: 0 0 12px;
+      color: var(--events-yellow);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .events-hero h1 {
+      max-width: 850px;
+      margin: 0;
+      color: #fff;
+      font-family: var(--font-display, inherit);
+      font-size: clamp(2.25rem, 6vw, 4.3rem);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: 0.015em;
+      text-shadow: 3px 3px 0 #0b2a6b;
+    }
+
+    .events-intro {
+      max-width: 720px;
+      margin: 18px 0 0;
+      color: var(--events-muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    .events-states {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .events-state {
+      padding: 7px 11px;
+      border: 1px solid rgba(117, 183, 255, 0.35);
+      border-radius: 999px;
+      background: rgba(117, 183, 255, 0.09);
+      color: #d9eaff;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .events-section {
+      margin-top: 30px;
+    }
+
+    .events-section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .events-section-heading h2 {
+      margin: 0;
+      color: #fff;
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+    }
+
+    .events-section-heading p {
+      margin: 6px 0 0;
+      color: var(--events-muted);
+      line-height: 1.6;
+    }
+
+    .events-filters {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      padding: 20px;
+      border: 1px solid var(--events-border);
+      border-radius: 16px;
+      background: var(--events-panel);
+    }
+
+    .events-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .events-field label {
+      color: #e8efff;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .events-field input,
+    .events-field select {
+      width: 100%;
+      min-height: 46px;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 9px;
+      background: #0a1b3d;
+      color: #fff;
+      font: inherit;
+    }
+
+    .events-field input:focus,
+    .events-field select:focus {
+      outline: 2px solid var(--events-blue);
+      outline-offset: 2px;
+    }
+
+    .events-filter-actions {
+      display: flex;
+      align-items: end;
+      gap: 10px;
+      grid-column: 1 / -1;
+    }
+
+    .events-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform 150ms ease, background 150ms ease;
+    }
+
+    .events-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .events-button-primary {
+      background: var(--events-yellow);
+      color: #17213a;
+    }
+
+    .events-button-secondary {
+      border-color: var(--events-border);
+      background: transparent;
+      color: #fff;
+    }
+
+    .events-results-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 22px 0 14px;
+    }
+
+    .events-results-count {
+      margin: 0;
+      color: var(--events-muted);
+      font-size: 0.92rem;
+    }
+
+    .events-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .event-card {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid var(--events-border);
+      border-radius: 15px;
+      background: var(--events-panel);
+    }
+
+    .event-card-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .event-type {
+      display: inline-flex;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(117, 183, 255, 0.13);
+      color: #cde5ff;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .event-status {
+      display: inline-flex;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(255, 213, 74, 0.12);
+      color: #ffe69b;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .event-card h3 {
+      margin: 16px 0 10px;
+      color: #fff;
+      font-size: 1.22rem;
+      line-height: 1.35;
+    }
+
+    .event-card p {
+      color: var(--events-muted);
+      line-height: 1.6;
+    }
+
+    .event-description {
+      margin: 0 0 14px;
+    }
+
+    .event-details {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: #e2eaff;
+      font-size: 0.9rem;
+    }
+
+    .event-details li {
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .event-card-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 18px;
+    }
+
+    .event-card-footer a {
+      color: var(--events-yellow);
+      font-size: 0.9rem;
+      font-weight: 800;
+      text-underline-offset: 3px;
+    }
+
+    .events-empty {
+      grid-column: 1 / -1;
+      padding: 28px;
+      border: 1px dashed var(--events-border);
+      border-radius: 15px;
+      background: var(--events-panel);
+      text-align: center;
+    }
+
+    .events-empty h3 {
+      margin-top: 0;
+    }
+
+    .events-empty p {
+      color: var(--events-muted);
+      line-height: 1.6;
+    }
+
+    .events-note {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-left: 3px solid var(--events-yellow);
+      border-radius: 0 10px 10px 0;
+      background: rgba(255, 213, 74, 0.07);
+      color: var(--events-muted);
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+
+    .events-note strong {
+      color: #fff;
+    }
+
+    .events-footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid var(--events-border);
+      color: var(--events-muted);
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    .events-footer a {
+      color: var(--events-yellow);
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 850px) {
+      .events-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .events-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .events-main {
+        width: min(100% - 24px, 1180px);
+        padding-top: 24px;
+      }
+
+      .events-hero {
+        padding: 23px 18px;
+        border-radius: 15px;
+      }
+
+      .events-filters {
+        grid-template-columns: 1fr;
+        padding: 15px;
+      }
+
+      .events-filter-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .events-button {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .event-card {
+        padding: 17px;
+      }
+
+      .events-section-heading {
+        align-items: start;
+        flex-direction: column;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .events-button {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="events-page">
+    <div id="site-navigation"></div>
+
+    <main class="events-main">
+      <section class="events-hero" aria-labelledby="events-title">
+        <p class="events-eyebrow">Your New England Pokémon Hub</p>
+        <h1 id="events-title">The Pokémon Events Calendar</h1>
+
+        <p class="events-intro">
+          Find Pokémon card shows, trade nights, tournaments, store events,
+          restock reports, and upcoming Pokémon TCG releases across New England.
+          One place to find your next event and connect with the hobby.
+        </p>
+
+        <div class="events-states" aria-label="Coverage area">
+          <span class="events-state">Rhode Island</span>
+          <span class="events-state">Massachusetts</span>
+          <span class="events-state">Connecticut</span>
+          <span class="events-state">New Hampshire</span>
+          <span class="events-state">Vermont</span>
+          <span class="events-state">Maine</span>
+        </div>
+      </section>
+
+      <section class="events-section" aria-labelledby="filters-title">
+        <div class="events-section-heading">
+          <div>
+            <h2 id="filters-title">Find Your Next Event</h2>
+            <p>Filter the calendar by date, event type, state, or location.</p>
+          </div>
+        </div>
+
+        <form class="events-filters" id="events-filter-form">
+          <div class="events-field">
+            <label for="events-search">Search</label>
+            <input
+              id="events-search"
+              name="search"
+              type="search"
+              placeholder="Event, venue, or city"
+            >
+          </div>
+
+          <div class="events-field">
+            <label for="events-type">Event type</label>
+            <select id="events-type" name="type">
+              <option value="">All event types</option>
+              <option value="show">Card shows &amp; conventions</option>
+              <option value="trade">Trade nights &amp; meetups</option>
+              <option value="tournament">Tournaments &amp; organized play</option>
+              <option value="store">Store events</option>
+              <option value="restock">Restock reports</option>
+              <option value="release">TCG product releases</option>
+            </select>
+          </div>
+
+          <div class="events-field">
+            <label for="events-state">State</label>
+            <select id="events-state" name="state">
+              <option value="">All New England</option>
+              <option value="RI">Rhode Island</option>
+              <option value="MA">Massachusetts</option>
+              <option value="CT">Connecticut</option>
+              <option value="NH">New Hampshire</option>
+              <option value="VT">Vermont</option>
+              <option value="ME">Maine</option>
+              <option value="ONLINE">Online / nationwide</option>
+            </select>
+          </div>
+
+          <div class="events-field">
+            <label for="events-from">From date</label>
+            <input id="events-from" name="from" type="date">
+          </div>
+
+          <div class="events-field">
+            <label for="events-to">To date</label>
+            <input id="events-to" name="to" type="date">
+          </div>
+
+          <div class="events-filter-actions">
+            <button class="events-button events-button-primary" type="submit">
+              Find Events
+            </button>
+            <button
+              class="events-button events-button-secondary"
+              type="reset"
+              id="events-reset"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="events-section" aria-labelledby="upcoming-title">
+        <div class="events-section-heading">
+          <div>
+            <h2 id="upcoming-title">Events &amp; Releases</h2>
+            <p>Use the filters above to narrow down your search.</p>
+          </div>
+        </div>
+
+        <div class="events-results-bar">
+          <p
+            class="events-results-count"
+            id="events-results-count"
+            role="status"
+            aria-live="polite"
+          >Loading calendar…</p>
+        </div>
+
+        <div class="events-list" id="events-list">
+          <div class="events-empty">
+            <h3>Loading events</h3>
+            <p>Please wait while the calendar loads.</p>
+          </div>
+        </div>
+
+        <div class="events-note">
+          <strong>Collector tip:</strong>
+          Always confirm the date, venue, admission details, and stock information
+          with the event organizer or retailer before traveling. Restock reports
+          can change quickly and are not guarantees of available inventory.
+        </div>
+      </section>
+
+      <footer class="events-footer">
+        <p>
+          Part of PokePrizePool — built by collectors, for collectors.
+          Event information should be verified with the original organizer.
+        </p>
+        <p>
+          Know about an upcoming show or trade night?
+          Share the event details with the PokePrizePool team so it can be reviewed
+          for inclusion in the calendar.
+        </p>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/js/ui/site-nav.js"></script>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /*
+       * Safe starter calendar.
+       * No fabricated real events are displayed.
+       *
+       * Later, reviewed events can be loaded from a real
+       * event feed or an admin-managed database.
+       */
+      var events = [];
+
+      var form = document.getElementById('events-filter-form');
+      var list = document.getElementById('events-list');
+      var count = document.getElementById('events-results-count');
+
+      var searchInput = document.getElementById('events-search');
+      var typeInput = document.getElementById('events-type');
+      var stateInput = document.getElementById('events-state');
+      var fromInput = document.getElementById('events-from');
+      var toInput = document.getElementById('events-to');
+
+      var typeLabels = {
+        show: 'Card Show / Convention',
+        trade: 'Trade Night / Meetup',
+        tournament: 'Tournament / Organized Play',
+        store: 'Store Event',
+        restock: 'Restock Report',
+        release: 'TCG Product Release'
+      };
+
+      function addText(parent, tag, className, value) {
+        var node = document.createElement(tag);
+
+        if (className) {
+          node.className = className;
+        }
+
+        node.textContent = value;
+        parent.appendChild(node);
+
+        return node;
+      }
+
+      function matches(event, filters) {
+        var search = filters.search.toLowerCase();
+
+        var searchable = [
+          event.title,
+          event.description,
+          event.city,
+          event.stateName,
+          event.venue
+        ].join(' ').toLowerCase();
+
+        if (search && searchable.indexOf(search) === -1) {
+          return false;
+        }
+
+        if (filters.type && event.type !== filters.type) {
+          return false;
+        }
+
+        if (filters.state && event.state !== filters.state) {
+          return false;
+        }
+
+        if (filters.from && event.date && event.date < filters.from) {
+          return false;
+        }
+
+        if (filters.to && event.date && event.date > filters.to) {
+          return false;
+        }
+
+        if (filters.from && !event.date) {
+          return false;
+        }
+
+        if (filters.to && !event.date) {
+          return false;
+        }
+
+        return true;
+      }
+
+      function readFilters() {
+        return {
+          search: searchInput.value.trim(),
+          type: typeInput.value,
+          state: stateInput.value,
+          from: fromInput.value,
+          to: toInput.value
+        };
+      }
+
+      function formatDate(dateString) {
+        if (!dateString) {
+          return 'Date to be confirmed';
+        }
+
+        var parts = dateString.split('-');
+
+        if (parts.length !== 3) {
+          return dateString;
+        }
+
+        var date = new Date(
+          Number(parts[0]),
+          Number(parts[1]) - 1,
+          Number(parts[2])
+        );
+
+        return date.toLocaleDateString(undefined, {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+      }
+
+      function renderCard(event) {
+        var card = make('article', {
+          class: 'event-card'
+        });
+
+        var top = make('div', {
+          class: 'event-card-top'
+        });
+
+        addText(
+          top,
+          'span',
+          'event-type',
+          typeLabels[event.type] || 'Event'
+        );
+
+        if (event.status) {
+          addText(top, 'span', 'event-status', event.status);
+        }
+
+        card.appendChild(top);
+
+        addText(card, 'h3', '', event.title);
+
+        if (event.description) {
+          addText(
+            card,
+            'p',
+            'event-description',
+            event.description
+          );
+        }
+
+        var details = make('ul', {
+          class: 'event-details'
+        });
+
+        [
+          ['Date', formatDate(event.date)],
+          ['Location', [event.city, event.stateName].filter(Boolean).join(', ') || 'Location to be confirmed'],
+          ['Venue', event.venue || 'Venue to be confirmed']
+        ].forEach(function (detail) {
+          var item = make('li');
+          var strong = make('strong');
+
+          strong.textContent = detail[0] + ': ';
+          item.appendChild(strong);
+          item.appendChild(document.createTextNode(detail[1]));
+          details.appendChild(item);
+        });
+
+        card.appendChild(details);
+
+        if (event.url) {
+          var footer = make('div', {
+            class: 'event-card-footer'
+          });
+
+          var anchor = make('a', {
+            href: event.url,
+            target: '_blank',
+            rel: 'noopener noreferrer'
+          });
+
+          anchor.textContent = 'Organizer / official details ↗';
+          footer.appendChild(anchor);
+          card.appendChild(footer);
+        }
+
+        return card;
+      }
+
+      function render() {
+        var filters = readFilters();
+        var filtered = events.filter(function (event) {
+          return matches(event, filters);
+        });
+
+        list.replaceChildren();
+
+        if (filtered.length === 0) {
+          var empty = make('div', {
+            class: 'events-empty'
+          });
+
+          addText(empty, 'h3', '', events.length
+            ? 'No events match those filters'
+            : 'The calendar is ready for event listings');
+
+          addText(empty, 'p', '', events.length
+            ? 'Try changing your date range, state, or event type.'
+            : 'No real events have been added yet. We are keeping this calendar free of invented dates and unverified listings. Once verified event information is added, it will appear here and become searchable.');
+
+          list.appendChild(empty);
+        } else {
+          filtered.sort(function (a, b) {
+            return (a.date || '9999-12-31').localeCompare(
+              b.date || '9999-12-31'
+            );
+          });
+
+          filtered.forEach(function (event) {
+            list.appendChild(renderCard(event));
+          });
+        }
+
+        count.textContent = filtered.length === 1
+          ? '1 event found'
+          : filtered.length + ' events found';
+      }
+
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        if (
+          fromInput.value &&
+          toInput.value &&
+          fromInput.value > toInput.value
+        ) {
+          count.textContent = 'Please check the date range: the From date is after the To date.';
+          fromInput.focus();
+          return;
+        }
+
+        render();
+      });
+
+      form.addEventListener('reset', function () {
+        window.setTimeout(render, 0);
+      });
+
+      [
+        searchInput,
+        typeInput,
+        stateInput,
+        fromInput,
+        toInput
+      ].forEach(function (control) {
+        control.addEventListener('change', render);
+      });
+
+      searchInput.addEventListener('input', render);
+
+      render();
+    })();
+  </script>
+<script src="/js/ui/pokereport-sidebar.js"></script>
+</body>
+</html>

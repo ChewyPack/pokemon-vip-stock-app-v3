@@ -91,6 +91,14 @@
         return valid ? '' : 'Pick one of the available options.';
       }
 
+      case 'number': {
+        var number = Number(v);
+        if (!Number.isInteger(number)) return 'Enter a whole number.';
+        if (field.min !== undefined && number < field.min) return 'Enter at least ' + field.min + '.';
+        if (field.max !== undefined && number > field.max) return 'Enter no more than ' + field.max + '.';
+        return '';
+      }
+
       case 'text': {
         if (field.minLength && v.length < field.minLength) {
           return 'Use at least ' + field.minLength + ' characters.';
@@ -142,6 +150,10 @@
       return normalizePrice(v);
     }
 
+    if (field.type === 'number') {
+      return v === '' ? '' : String(Number(v));
+    }
+
     if (field.type === 'datetime') {
       var t = Date.parse(v);
       return isNaN(t) ? '' : new Date(t).toISOString();
@@ -173,6 +185,10 @@
 
     config.fields.forEach(function (field) {
       if (field.type === 'photos') return;
+      if (
+        values.reportType !== 'line' &&
+        ['lineCount', 'lineSeenAt', 'stockedBy'].indexOf(field.id) !== -1
+      ) return;
 
       var fieldOpts = {};
       Object.keys(opts).forEach(function (key) {
