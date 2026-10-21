@@ -139,6 +139,7 @@
             { title: 'Updates', description: 'Platform updates and announcements', href: '/updates.html' },
             { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
             { title: 'Events', description: 'Shows, trade nights, and releases', href: '/events.html' },
+            { title: 'Submit an Event', description: 'Send an event to PokePrizePool for review', href: '/submit-event.html' },
             { title: 'Instant Cashout', description: 'Explore collection cash-out options', href: '/instant-buyout.html' }
           ]),
           dropdown('Alerts', [
