@@ -1,5 +1,6 @@
 import { currentChatAccount, publishChatEvent } from "../_lib/chat.js";
 import { sendWebPush } from "../_lib/web-push.js";
+import { accountStripeConfig } from "../_lib/account-stripe.js";
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
@@ -55,7 +56,8 @@ async function notifyMention(env, accountId, sender, message, channelName) {
 }
 export async function onRequestGet({ request, env }) {
   try {
-    if (!(await admin(request, env))) return json({ ok: false, error: "admin_required" }, 403);
+    const requester = await admin(request, env);
+    if (!requester) return json({ ok: false, error: "admin_required" }, 403);
     const url = new URL(request.url);
     const mode = url.searchParams.get("view") || "members";
     if (mode === "alerts") {
@@ -99,7 +101,7 @@ export async function onRequestGet({ request, env }) {
       cancel_at_period_end: Number(row.membership_cancel_at_period_end || 0) === 1,
       active: isActiveMember(row)
     }));
-    return json({ ok: true, members, count: members.length });
+    return json({ ok: true, members, count: members.length, admin_account_id: requester.id });
   } catch (error) {
     console.error("Admin tools read failed:", error);
     return json({ ok: false, error: "admin_tools_read_failed" }, 500);
@@ -110,14 +112,145 @@ export async function onRequestDelete({ request, env }) {
     const sender = await admin(request, env);
     if (!sender) return json({ ok: false, error: "admin_required" }, 403);
     const data = await request.json().catch(() => null);
-    const reportId = Number(data?.report_id);
+    if (!data || typeof data !== "object") return json({ ok: false, error: "bad_request" }, 400);
+
+    if (Object.prototype.hasOwnProperty.call(data, "account_id")) {
+      const accountId = Number(data.account_id);
+      if (!Number.isSafeInteger(accountId) || accountId < 1) {
+        return json({ ok: false, error: "invalid_account_id" }, 400);
+      }
+
+      const target = await env.DB.prepare(
+        "SELECT id, display_name, email, is_admin, stripe_customer_id, stripe_subscription_id FROM accounts WHERE id = ? LIMIT 1"
+      ).bind(accountId).first();
+      if (!target) return json({ ok: false, error: "account_not_found" }, 404);
+
+      // Account deletion also cancels a linked Stripe subscription first, so it cannot
+      // silently leave recurring billing running after the website account is removed.
+      if (target.stripe_subscription_id) {
+        const stripe = accountStripeConfig(env);
+        if (!stripe) {
+          return json({
+            ok: false,
+            error: "stripe_not_configured_for_safe_delete",
+            message: "Stripe billing could not be checked for this account. The account was not deleted. Check the production Stripe account configuration and retry."
+          }, 503);
+        }
+
+        const subscriptionResponse = await fetch(
+          "https://api.stripe.com/v1/subscriptions/" + encodeURIComponent(target.stripe_subscription_id),
+          { headers: { Authorization: "Bearer " + stripe.secretKey } }
+        );
+        const subscription = await subscriptionResponse.json().catch(() => ({}));
+        const customerId = typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer?.id || "";
+
+        if (!subscriptionResponse.ok ||
+            subscription.id !== target.stripe_subscription_id ||
+            customerId !== String(target.stripe_customer_id || "") ||
+            Number(subscription.metadata?.account_id || 0) !== accountId) {
+          console.error("Account deletion blocked: Stripe subscription ownership could not be verified.", {
+            accountId,
+            status: subscriptionResponse.status
+          });
+          return json({
+            ok: false,
+            error: "stripe_subscription_verification_failed",
+            message: "Stripe could not verify that this subscription belongs to this account. The account was not deleted."
+          }, 409);
+        }
+
+        if (!["canceled", "incomplete_expired"].includes(String(subscription.status || ""))) {
+          const cancelResponse = await fetch(
+            "https://api.stripe.com/v1/subscriptions/" + encodeURIComponent(target.stripe_subscription_id),
+            {
+              method: "DELETE",
+              headers: { Authorization: "Bearer " + stripe.secretKey }
+            }
+          );
+          const canceled = await cancelResponse.json().catch(() => ({}));
+          if (!cancelResponse.ok || canceled.status !== "canceled") {
+            console.error("Account deletion blocked: Stripe cancellation failed.", {
+              accountId,
+              status: cancelResponse.status
+            });
+            return json({
+              ok: false,
+              error: "stripe_subscription_cancel_failed",
+              message: "The Stripe subscription could not be cancelled immediately. The account was not deleted."
+            }, 502);
+          }
+        }
+      }
+
+      // This permits deletion of any account, including other administrators and
+      // the current administrator. If the current account is selected, the browser
+      // session is cleared after deletion and the UI sends the browser to the homepage.
+      // Delete offers that use the target's collection items before deleting those items;
+      // this also handles offers created by other accounts requesting a target-owned item.
+      const accountStillExists = "EXISTS (SELECT 1 FROM accounts WHERE id = ?)";
+      await env.DB.batch([
+        env.DB.prepare(`DELETE FROM collector_trade_offers
+          WHERE (
+            proposer_account_id = ?
+            OR recipient_account_id = ?
+            OR id IN (
+              SELECT oi.offer_id
+              FROM collector_trade_offer_items oi
+              JOIN collector_items ci ON ci.id = oi.collector_item_id
+              WHERE ci.account_id = ?
+            )
+          ) AND ${accountStillExists}`)
+          .bind(accountId, accountId, accountId, accountId),
+        env.DB.prepare(`DELETE FROM collector_trade_offer_items
+          WHERE collector_item_id IN (SELECT id FROM collector_items WHERE account_id = ?)
+            AND ${accountStillExists}`)
+          .bind(accountId, accountId),
+        env.DB.prepare(`DELETE FROM collector_items
+          WHERE account_id = ? AND ${accountStillExists}`)
+          .bind(accountId, accountId),
+        env.DB.prepare("DELETE FROM accounts WHERE id = ?").bind(accountId)
+      ]);
+
+      const stillExists = await env.DB.prepare(
+        "SELECT id FROM accounts WHERE id = ? LIMIT 1"
+      ).bind(accountId).first();
+      if (stillExists) {
+        return json({
+          ok: false,
+          error: "account_delete_failed",
+          message: "The account could not be deleted. Refresh the list and retry; if it keeps failing, the deployment logs will identify any related record blocking deletion."
+        }, 409);
+      }
+
+      const result = {
+        ok: true,
+        deleted: true,
+        account_id: accountId,
+        current_account_deleted: accountId === Number(sender.id)
+      };
+      if (result.current_account_deleted) {
+        return new Response(JSON.stringify(result), {
+          status: 200,
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+            "cache-control": "no-store",
+            "set-cookie": "collector_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0"
+          }
+        });
+      }
+      return json(result);
+    }
+
+    const reportId = Number(data.report_id);
     if (!Number.isSafeInteger(reportId) || reportId < 1) return json({ ok: false, error: "invalid_report_id" }, 400);
     await env.DB.prepare("INSERT OR IGNORE INTO admin_hidden_reports (report_id, hidden_by_account_id, reason) VALUES (?, ?, ?)")
       .bind(reportId, sender.id, String(data?.reason || "").slice(0, 300) || null).run();
     return json({ ok: true, hidden: true, report_id: reportId });
   } catch (error) {
-    console.error("Admin alert hide failed:", error);
-    return json({ ok: false, error: "admin_alert_hide_failed", detail: String(error?.message || "").slice(0, 180) }, 500);
+    console.error("Admin delete action failed:", error);
+    return json({ ok: false, error: "admin_action_failed", detail: String(error?.message || "").slice(0, 180) }, 500);
   }
 }
 export async function onRequestPost({ request, env }) {
