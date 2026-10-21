@@ -1,27 +1,8 @@
 // POST /api/account/change-membership
-// Staging-only: schedule a plan/interval change for the next renewal on the existing Stripe Test Mode subscription.
-// This endpoint never creates a new subscription and refuses subscriptions that are already scheduled to cancel/change.
+// Schedule a separate account-membership change for the next renewal.
+import { accountStripeConfig, accountStripeConfigError, priceDetailsFor } from '../../_lib/account-stripe.js';
 const COOKIE = 'collector_session';
-const PRICES = {
-  collector_plus: {
-    monthly: 'price_1UQVNSGXWs1THDBR6RhAZ3dI',
-    yearly: 'price_1UQVNSGXWs1THDBRvoZUm24d'
-  },
-  vendor: {
-    monthly: 'price_1UQVOUGXWs1THDBRYzlRnDDy',
-    yearly: 'price_1UQVOUGXWs1THDBRsL4w405C'
-  },
-  organizer: {
-    monthly: 'price_1UQVQLGXWs1THDBR39ZABaOC',
-    yearly: 'price_1UQVQLGXWs1THDBRe7oCo2FN'
-  }
-};
 const RANK = { collector_plus: 1, vendor: 2, organizer: 3 };
-const PRICE_DETAILS = Object.fromEntries(
-  Object.entries(PRICES).flatMap(([tier, intervals]) =>
-    Object.entries(intervals).map(([interval, price]) => [price, { tier, interval }])
-  )
-);
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -42,10 +23,10 @@ function b64(bytes) {
 async function sha256(value) {
   return b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
 }
-async function stripeRequest(env, path, params, method = 'GET') {
+async function stripeRequest(stripe, path, params, method = 'GET') {
   const options = {
     method,
-    headers: { Authorization: 'Bearer ' + env.STRIPE_TEST_SECRET_KEY }
+    headers: { Authorization: 'Bearer ' + stripe.secretKey }
   };
   if (params && method !== 'GET') {
     options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -76,9 +57,10 @@ function addPhase(params, index, start, end, price, tier, interval) {
 }
 export async function onRequestPost({ request, env }) {
   if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
-  if (typeof env.STRIPE_TEST_SECRET_KEY !== 'string' || !env.STRIPE_TEST_SECRET_KEY.startsWith('sk_test_')) {
-    return json({ ok: false, error: 'stripe_test_key_not_configured' }, 503);
-  }
+  const stripe = accountStripeConfig(env);
+  if (!stripe) return json({ ok: false, error: accountStripeConfigError(env) }, 503);
+  const PRICES = stripe.prices;
+  const PRICE_DETAILS = priceDetailsFor(PRICES);
   let data;
   try { data = await request.json(); } catch { return json({ ok: false, error: 'bad_request' }, 400); }
   const tier = typeof data.tier === 'string' ? data.tier : '';
@@ -104,16 +86,16 @@ export async function onRequestPost({ request, env }) {
     // Paid membership tier is independent of website account type and verification status.
 
     const targetPrice = PRICES[tier][interval];
+    if (!targetPrice) return json({ ok: false, error: 'plan_not_configured' }, 503);
     if (targetPrice === account.stripe_price_id) return json({ ok: false, error: 'same_plan_selected' }, 400);
 
-    const { response: subResponse, result: subscription } = await stripeRequest(
-      env, '/subscriptions/' + encodeURIComponent(account.stripe_subscription_id)
+    const { response: subResponse, result: subscription } = await stripeRequest(stripe, '/subscriptions/' + encodeURIComponent(account.stripe_subscription_id)
     );
     if (!subResponse.ok || subscription.id !== account.stripe_subscription_id ||
         stripeId(subscription.customer) !== account.stripe_customer_id ||
         Number(subscription.metadata?.account_id || 0) !== Number(account.id) ||
         !['active', 'trialing'].includes(subscription.status)) {
-      console.error('Staging membership change refused: subscription/account verification failed.');
+      console.error('Account membership change refused: subscription/account verification failed.');
       return json({ ok: false, error: 'subscription_verification_failed' }, 409);
     }
     const items = subscription.items?.data || [];
@@ -140,8 +122,7 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: false, error: 'subscription_has_pending_setup_manual_review' }, 409);
     }
 
-    const { response: createResponse, result: schedule } = await stripeRequest(
-      env,
+    const { response: createResponse, result: schedule } = await stripeRequest(stripe,
       '/subscription_schedules',
       new URLSearchParams({ from_subscription: subscription.id }),
       'POST'
@@ -167,7 +148,7 @@ export async function onRequestPost({ request, env }) {
       (currentPhase?.discounts || []).length
     );
     if (hasSpecialPhaseSettings) {
-      await stripeRequest(env, '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release', new URLSearchParams(), 'POST');
+      await stripeRequest(stripe, '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release', new URLSearchParams(), 'POST');
       const reasons = [];
       if (currentPhase?.application_fee_percent != null) reasons.push('application_fee');
       if (currentPhase?.billing_thresholds) reasons.push('billing_thresholds');
@@ -186,7 +167,7 @@ export async function onRequestPost({ request, env }) {
     }
     const scheduleCurrentStart = Number(currentPhase?.start_date || start);
     if (!Number.isSafeInteger(scheduleCurrentStart) || scheduleCurrentStart < 1) {
-      await stripeRequest(env, '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release', new URLSearchParams(), 'POST');
+      await stripeRequest(stripe, '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release', new URLSearchParams(), 'POST');
       return json({ ok: false, error: 'billing_period_unavailable' }, 409);
     }
     const phases = new URLSearchParams();
@@ -204,8 +185,7 @@ export async function onRequestPost({ request, env }) {
     }
     // Keep existing subscription-level metadata unchanged until the phase transition.
     // Stripe applies phase metadata at the transition, then the account webhook syncs D1.
-    const { response: updateResponse, result: updatedSchedule } = await stripeRequest(
-      env,
+    const { response: updateResponse, result: updatedSchedule } = await stripeRequest(stripe,
       '/subscription_schedules/' + encodeURIComponent(schedule.id),
       phases,
       'POST'
@@ -214,13 +194,12 @@ export async function onRequestPost({ request, env }) {
         updatedSchedule.phases.length < 2) {
       // Creating a schedule from an existing subscription attaches it immediately.
       // If configuring the next phase fails, release it so the current subscription is left alone.
-      await stripeRequest(
-        env,
+      await stripeRequest(stripe,
         '/subscription_schedules/' + encodeURIComponent(schedule.id) + '/release',
         new URLSearchParams(),
         'POST'
       );
-      console.error('Staging membership change schedule update failed:', updateResponse.status, updatedSchedule.error?.type || 'unknown');
+      console.error('Account membership change schedule update failed:', updateResponse.status, updatedSchedule.error?.type || 'unknown');
       return json({ ok: false, error: 'schedule_update_failed' }, 502);
     }
     await env.DB.prepare(
