@@ -20,7 +20,7 @@ async function sha256(value) {
   return base64Url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
 }
 async function ensureTables(env) {
-  await env.DB.prepare(\`CREATE TABLE IF NOT EXISTS poke_prize_giveaways (
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaways (
     id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
     prize_value REAL, image_url TEXT NOT NULL DEFAULT '', start_at TEXT, end_at TEXT,
     eligibility TEXT NOT NULL DEFAULT '', rules TEXT NOT NULL DEFAULT '',
@@ -29,7 +29,7 @@ async function ensureTables(env) {
     vip_only INTEGER NOT NULL DEFAULT 0 CHECK(vip_only IN (0,1)),
     entry_count INTEGER, published_at TEXT, winner_entry_id INTEGER, winner_selected_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )\`).run();
+  )`).run();
   let columns = await env.DB.prepare('PRAGMA table_info(poke_prize_giveaways)').all();
   let names = new Set((columns.results || []).map(column => column.name));
   if (!names.has('winner_entry_id')) {
@@ -40,14 +40,14 @@ async function ensureTables(env) {
     try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_selected_at TEXT').run(); }
     catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
   }
-  await env.DB.prepare(\`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     giveaway_id INTEGER NOT NULL,
     account_id INTEGER NOT NULL,
     entered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_winner INTEGER NOT NULL DEFAULT 0 CHECK(is_winner IN (0,1)),
     UNIQUE(giveaway_id, account_id)
-  )\`).run();
+  )`).run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaway_entries_giveaway ON poke_prize_giveaway_entries(giveaway_id, entered_at)').run();
 }
 async function currentAccount(request, env) {
