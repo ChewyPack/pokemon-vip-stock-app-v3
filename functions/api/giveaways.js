@@ -27,7 +27,7 @@ function truthy(value) {
   return value === true || value === 1 || value === '1' || value === 'true' || value === 'on';
 }
 async function ensureTable(env) {
-  await env.DB.prepare(\`CREATE TABLE IF NOT EXISTS poke_prize_giveaways (
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaways (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
@@ -46,19 +46,19 @@ async function ensureTable(env) {
     winner_selected_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )\`).run();
+  )`).run();
   const columns = await env.DB.prepare('PRAGMA table_info(poke_prize_giveaways)').all();
   const names = new Set((columns.results || []).map(column => column.name));
   if (!names.has('winner_entry_id')) await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_entry_id INTEGER').run();
   if (!names.has('winner_selected_at')) await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_selected_at TEXT').run();
-  await env.DB.prepare(\`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     giveaway_id INTEGER NOT NULL,
     account_id INTEGER NOT NULL,
     entered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_winner INTEGER NOT NULL DEFAULT 0 CHECK(is_winner IN (0,1)),
     UNIQUE(giveaway_id, account_id)
-  )\`).run();
+  )`).run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaway_entries_giveaway ON poke_prize_giveaway_entries(giveaway_id, entered_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaways_status ON poke_prize_giveaways(status, featured, end_at)').run();
 }
