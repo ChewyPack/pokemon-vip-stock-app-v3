@@ -282,8 +282,16 @@
    fileInput.addEventListener('change',async()=>{
     const file=fileInput.files&&fileInput.files[0];if(!file)return;
     profileMessage('Preparing '+(kind==='avatar'?'profile photo':'cover photo')+'…');
-    try{const data=await fileToCompressedDataUrl(file,kind);urlInput.value=data;updateImagePreview(kind,data);profileMessage('Image ready. Click Save profile to keep the change.');}
-    catch(error){fileInput.value='';profileMessage(error.message||'Could not process image.');}
+    try{
+     const dataUrl=await fileToCompressedDataUrl(file,kind);
+     const comma=dataUrl.indexOf(','),header=dataUrl.slice(0,comma),mime=header.slice(5,header.indexOf(';')),encoded=dataUrl.slice(comma+1);
+     if(comma<0||!header.endsWith(';base64')||!['image/webp','image/jpeg'].includes(mime))throw new Error('Could not prepare that image for upload.');
+     const binary=atob(encoded),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+     profileMessage('Uploading '+(kind==='avatar'?'profile photo':'cover photo')+'…');
+     const response=await fetch('/api/collector/upload?kind='+encodeURIComponent(kind),{method:'POST',credentials:'include',headers:{'Content-Type':mime},body:new Blob([bytes],{type:mime})}),data=await response.json();
+     if(!response.ok||!data.ok){const messages={login_required:'Your session expired. Please log in again.',image_storage_not_configured:'Photo storage is not configured yet. Please contact support.',unsupported_image_type:'That image type is not supported.',image_too_large:'Choose a smaller image.'};throw new Error(messages[data.error]||'Photo upload failed ('+(data.error||'unknown error')+').');}
+     urlInput.value=data.url;updateImagePreview(kind,data.url);profileMessage('Photo uploaded. Click Save profile to apply the change.');
+    }catch(error){fileInput.value='';profileMessage(error.message||'Could not upload image.');}
    });
    urlInput.addEventListener('input',()=>{if(/^https:\/\//i.test(urlInput.value.trim())||!urlInput.value.trim())updateImagePreview(kind,urlInput.value.trim());});
   });
