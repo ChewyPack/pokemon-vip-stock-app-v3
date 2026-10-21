@@ -60,14 +60,26 @@ export async function onRequestGet({ request, env }) {
     const mode = url.searchParams.get("view") || "members";
     if (mode === "alerts") {
       const result = await env.DB.prepare(`
-        SELECT r.id, r.store, r.location, r.product, r.product_name, r.state, r.quantity, r.created_at
+        SELECT r.*, h.report_id AS hidden_report_id
         FROM reports r
         LEFT JOIN admin_hidden_reports h ON h.report_id = r.id
         WHERE h.report_id IS NULL
-          AND LOWER(TRIM(COALESCE(r.still_there, ''))) IN ('yes', 'true', 'in stock')
-        ORDER BY datetime(r.created_at) DESC LIMIT 250
+        ORDER BY datetime(r.created_at) DESC LIMIT 500
       `).all();
-      return json({ ok: true, alerts: result.results || [] });
+      const alerts = (result.results || []).filter(row => {
+        const stillThere = String(row.still_there || "").trim().toLowerCase();
+        return !row.still_there || ["yes", "true", "in stock"].includes(stillThere);
+      }).slice(0, 250).map(row => ({
+        id: row.id,
+        store: row.store || "Store",
+        location: row.location || [row.store_town, row.store_address].filter(Boolean).join(" — "),
+        product: row.product || "",
+        product_name: row.product_name || row.product || "",
+        state: row.state || "",
+        quantity: row.quantity_text || row.quantity || "",
+        created_at: row.created_at || ""
+      }));
+      return json({ ok: true, alerts });
     }
     const result = await env.DB.prepare(`
       SELECT a.id, a.display_name, a.email, a.created_at, a.is_admin,
