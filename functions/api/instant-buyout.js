@@ -85,7 +85,7 @@ export async function onRequestPost({request,env}){
    const asking=dollarsToCents(d.asking_price);
    if(!CATEGORIES.has(category)||!title||!details)return json({ok:false,error:'required_fields_missing'},400);
    if(Number.isNaN(asking))return json({ok:false,error:'invalid_asking_price'},400);
-   if(photos.some(url=>{try{return new URL(url).protocol!=='https:';}catch{return true;}}))return json({ok:false,error:'photo_urls_must_be_https'},400);
+   if(photos.some(url=>{try{const parsed=new URL(url);return parsed.protocol!=='https:'||parsed.pathname!=='/api/instant-buyout-photo'||!parsed.searchParams.get('key');}catch{return true;}}))return json({ok:false,error:'photos_must_be_uploaded'},400);
    const created=await env.DB.prepare('INSERT INTO instant_buyout_requests (account_id,category,title,details,quantity,condition_notes,photo_urls,asking_price_cents) VALUES (?,?,?,?,?,?,?,?)')
     .bind(account.id,category,title,details,quantity,condition,photos.join('\n'),asking).run();
    const id=Number(created.meta?.last_row_id);

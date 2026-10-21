@@ -717,6 +717,8 @@
 
         card.appendChild(top);
 
+        if (event.image_url) { var cover = make('img', { class: 'event-cover', alt: event.title, loading: 'lazy' }); cover.src = event.image_url; cover.style.width = '100%'; cover.style.maxHeight = '260px'; cover.style.objectFit = 'cover'; cover.style.borderRadius = '10px'; cover.style.marginTop = '14px'; card.appendChild(cover); }
+
         addText(card, 'h3', '', event.title);
 
         if (event.description) {
@@ -838,7 +840,7 @@
 
       searchInput.addEventListener('input', render);
 
-      render();
+      fetch('/api/events',{credentials:'same-origin',cache:'no-store'}).then(function(response){if(!response.ok)throw new Error('events_unavailable');return response.json();}).then(function(data){events=(data.events||[]).map(function(item){return {id:item.id,title:item.title,description:item.description||'',type:item.event_type||'show',date:item.event_date||'',start_time:item.start_time||'',end_time:item.end_time||'',venue:item.venue||'',city:item.city||'',state:item.state||'',stateName:item.state_name||item.state||'',url:item.url||'',status:item.badge||'',image_url:item.image_url||''};});render();}).catch(function(){events=[];render();count.textContent='The event calendar could not load right now. Please refresh in a moment.';});
     })();
   </script>
 <script src="/js/ui/pokereport-sidebar.js"></script>
