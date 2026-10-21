@@ -60,7 +60,7 @@ export function chatError(error, fallback = "chat_request_failed") {
   const value = String(error && error.message || "");
   if (value === "database_not_configured") return chatJson({ ok: false, error: value }, 500);
   if (value === "chat_realtime_not_configured") {
-    return chatJson({ ok: false, error: value, message: "Real-time chat is not configured on staging yet." }, 503);
+    return chatJson({ ok: false, error: value, message: "Real-time chat is not configured for this environment yet." }, 503);
   }
   if (value === "chat_realtime_publish_failed") {
     return chatJson({ ok: false, error: value, message: "The chat message could not be broadcast live. Please retry." }, 503);
