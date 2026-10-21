@@ -152,7 +152,8 @@ function render(){
   var statusPill=document.createElement('span');statusPill.className='pill '+(g.status==='published'?'':'off');statusPill.textContent=g.status==='published'?'Published':'Draft';info.appendChild(statusPill);
   if(g.featured){var feat=document.createElement('span');feat.className='pill gold';feat.textContent='Featured';info.appendChild(feat);}
   if(g.vip_only){var vip=document.createElement('span');vip.className='pill gold';vip.textContent='VIP only';info.appendChild(vip);}
-  var meta=document.createElement('p');meta.className='muted small';meta.textContent='Prize value: '+(g.prize_value==null?'Not set':'
+  var meta=document.createElement('p');meta.className='muted small';meta.textContent='Prize value: '+(g.prize_value==null?'Not set':'$'+Number(g.prize_value).toLocaleString())+' · Entries: '+Number(g.entry_count||0)+' · Starts: '+dateLabel(g.start_at)+' · Ends: '+dateLabel(g.end_at);info.appendChild(meta);
+  if(g.winner_entry_id){var winnerMeta=document.createElement('p');winnerMeta.className='small';winnerMeta.style.color='#ffe5a1';winnerMeta.textContent='Winner selected: '+(g.winner_username?'@'+g.winner_username:(g.winner_name||'winner recorded'));info.appendChild(winnerMeta);}
   var actions=document.createElement('div');actions.className='list-actions';
   actions.appendChild(makeButton('Edit',function(){edit(g);}));
   if(g.status==='published'){
