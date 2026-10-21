@@ -45,9 +45,15 @@ async function ensureTables(env) {
     giveaway_id INTEGER NOT NULL,
     account_id INTEGER NOT NULL,
     entered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    rules_accepted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_winner INTEGER NOT NULL DEFAULT 0 CHECK(is_winner IN (0,1)),
     UNIQUE(giveaway_id, account_id)
   )`).run();
+  const entryColumns = await env.DB.prepare('PRAGMA table_info(poke_prize_giveaway_entries)').all();
+  if (!(entryColumns.results || []).some(column => column.name === 'rules_accepted_at')) {
+    try { await env.DB.prepare('ALTER TABLE poke_prize_giveaway_entries ADD COLUMN rules_accepted_at TEXT').run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaway_entries_giveaway ON poke_prize_giveaway_entries(giveaway_id, entered_at)').run();
 }
 async function currentAccount(request, env) {
