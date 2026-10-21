@@ -179,10 +179,12 @@ function renderEntryPanel(data){
  var draw=document.getElementById('draw-winner');
  summary.textContent=entries.length+' unique account entr'+(entries.length===1?'y':'ies')+'. One account receives one entry per giveaway.';
  winBox.replaceChildren();
- if(data.winner){
+ if(data.giveaway&&data.giveaway.winner_entry_id){
   var winner=document.createElement('p');
   winner.className='notice';
-  winner.textContent='WINNER: '+(data.winner.username?'@'+data.winner.username+' — ':'')+(data.winner.display_name||'Collector')+' · Contact: '+(data.winner.email||'No email available');
+  winner.textContent=data.winner
+   ? 'WINNER: '+(data.winner.username?'@'+data.winner.username+' — ':'')+(data.winner.display_name||'Collector')+' · Contact: '+(data.winner.email||'No email available')
+   : 'A winner has already been selected, but the original account record is unavailable.';
   winBox.appendChild(winner);
   draw.hidden=true;
  }else{
