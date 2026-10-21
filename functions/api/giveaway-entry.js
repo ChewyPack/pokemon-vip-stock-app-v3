@@ -85,10 +85,10 @@ export async function onRequestGet({ request, env }) {
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: true, authenticated: false, entered_ids: [] });
     const rows = await env.DB.prepare(
-      \`SELECT e.giveaway_id
+      `SELECT e.giveaway_id
        FROM poke_prize_giveaway_entries e
        JOIN poke_prize_giveaways g ON g.id = e.giveaway_id
-       WHERE e.account_id = ? AND g.status = 'published'\`
+       WHERE e.account_id = ? AND g.status = 'published'`
     ).bind(account.id).all();
     return json({
       ok: true,
