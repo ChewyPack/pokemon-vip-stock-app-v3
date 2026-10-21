@@ -78,6 +78,29 @@ function timestamp(value) {
   return Number.isFinite(number) ? number : NaN;
 }
 
+export async function onRequestGet({ request, env }) {
+  if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
+  try {
+    await ensureTables(env);
+    const account = await currentAccount(request, env);
+    if (!account) return json({ ok: true, authenticated: false, entered_ids: [] });
+    const rows = await env.DB.prepare(
+      \`SELECT e.giveaway_id
+       FROM poke_prize_giveaway_entries e
+       JOIN poke_prize_giveaways g ON g.id = e.giveaway_id
+       WHERE e.account_id = ? AND g.status = 'published'\`
+    ).bind(account.id).all();
+    return json({
+      ok: true,
+      authenticated: true,
+      entered_ids: (rows.results || []).map(row => Number(row.giveaway_id))
+    });
+  } catch (error) {
+    console.error('Giveaway entry status read failed:', error);
+    return json({ ok: false, error: 'giveaway_entry_status_failed' }, 500);
+  }
+}
+
 export async function onRequestPost({ request, env }) {
   if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
   if (!originAllowed(request)) return json({ ok: false, error: 'origin_not_allowed' }, 403);
