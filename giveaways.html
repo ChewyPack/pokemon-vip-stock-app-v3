@@ -381,7 +381,7 @@ function visible() {
 function renderGrid() {
   const grid = $('#grid'), list = visible();
   $('#count').textContent = state.all.length ? `${list.length} of ${state.all.length} shown` : '';
-  if (!state.all.length) { grid.innerHTML = `<div class="state"><h3>Giveaway listings coming soon</h3><p>Giveaway listings are being connected. Check back soon, or join VIP to stay close to the action.</p></div>`; return; }
+  if (!state.all.length) { grid.innerHTML = `<div class="state"><h3>No giveaways right now</h3><p>New prizes drop regularly. Check back soon, or join the collector community to stay close to the action.</p></div>`; return; }
   if (!list.length) { grid.innerHTML = `<div class="state"><h3>No matches</h3><p>Try a different search or filter.</p></div>`; return; }
   grid.innerHTML = list.map((g, i) => `<button class="card gcard" data-i="${i}" aria-label="${esc(g.title)}, ${LABEL[g._s] || ''}. View details"><div class="im">${img(g)}${g._s ? `<span class="badge b-${g._s}">${LABEL[g._s]}</span>` : ''}</div><div class="tx"><h3>${esc(g.title)}</h3>${g.vipOnly ? '<span class="badge b-vip" style="margin:0;align-self:start">VIP ONLY</span>' : ''}<p class="muted" style="font-size:.9rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(g.description)}</p><div class="row"><span class="val">${money(g.value)}</span><span class="muted">${g._s === 'upcoming' && g.start ? 'Opens ' + esc(when(g.start)) : g.end ? (g._s === 'ended' ? 'Ended ' : 'Ends ') + esc(when(g.end)) : ''}</span></div></div></button>`).join('');
   grid.querySelectorAll('.gcard').forEach(b => b.onclick = () => openModal(list[+b.dataset.i], b));
