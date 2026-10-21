@@ -167,7 +167,7 @@ export async function onRequestPost({ request, env }) {
     if (Date.now() < end) return json({ ok: false, error: 'giveaway_not_ended' }, 409);
 
     const countResult = await env.DB.prepare(
-      'SELECT COUNT(*) AS total FROM poke_prize_giveaway_entries WHERE giveaway_id = ?'
+      'SELECT COUNT(*) AS total FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = ?'
     ).bind(giveawayId).first();
     const count = Number(countResult?.total || 0);
     if (!count) return json({ ok: false, error: 'no_entries_to_draw' }, 409);
