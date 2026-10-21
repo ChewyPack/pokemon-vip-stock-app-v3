@@ -7,7 +7,7 @@ var css=`
 .ppp-ad-slot{position:relative;box-sizing:border-box;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;color:#8898b8;background:rgba(12,23,48,.88);border:1px dashed rgba(130,157,202,.52);font:700 12px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.08em;text-transform:uppercase;z-index:30}
 .ppp-ad-slot::before{content:"Advertisement";position:absolute;top:5px;left:8px;font-size:9px;letter-spacing:.12em;color:#7183a7}
 .ppp-ad-slot--top{width:min(970px,calc(100% - 32px));min-height:100px;margin:18px auto 24px;padding:24px 12px 12px;border-radius:10px}
-.ppp-ad-slot--rail{position:fixed;top:170px;width:160px;height:600px;padding:24px 8px 8px;border-radius:10px}
+.ppp-ad-slot--rail{position:fixed;top:175px;width:100px;height:520px;padding:24px 8px 8px;border-radius:10px}
 .ppp-ad-slot--left{left:12px}
 .ppp-ad-slot--right{right:12px}
 @media(max-width:1279px){.ppp-ad-slot--rail{display:none!important}}
