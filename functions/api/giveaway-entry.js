@@ -67,10 +67,11 @@ function originAllowed(request) {
 }
 function isVip(account) {
   const status = String(account.membership_status || '').toLowerCase();
-  const tier = String(account.membership_entitlement_tier || account.membership_tier || '').toLowerCase().trim();
-  const normalized = tier.replace(/\+/g, '_plus').replace(/[\s-]+/g, '_');
+  const tiers = [account.membership_entitlement_tier, account.membership_tier]
+    .filter(Boolean)
+    .map(value => String(value).toLowerCase().trim().replace(/\+/g, '_plus').replace(/[\s-]+/g, '_'));
   return ['active', 'trialing'].includes(status) &&
-    ['collector_plus', 'vendor', 'vendor_plus', 'organizer', 'organizer_plus', 'vip'].includes(normalized);
+    tiers.some(tier => ['collector_plus', 'vendor', 'vendor_plus', 'organizer', 'organizer_plus', 'vip'].includes(tier));
 }
 function timestamp(value) {
   if (!value) return NaN;
