@@ -1,4 +1,5 @@
 const COOKIE = 'collector_session';
+const VIP_COOKIE = 'vip_session';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -14,19 +15,45 @@ function getCookie(request, name) {
   return '';
 }
 function b64(bytes) {
-  return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/g, '');
 }
 async function sha256(value) {
   return b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
 }
 async function currentAccount(request, env) {
+  // Preserve access for existing paid VIP members stored in the production users table.
+  const vipToken = getCookie(request, VIP_COOKIE);
+  if (vipToken) {
+    const vipMember = await env.DB.prepare(
+      "SELECT id, session_expires_at, membership_status, membership_type FROM users WHERE session_token_hash = ? AND membership_status = 'active' LIMIT 1"
+    ).bind(await sha256(vipToken)).first();
+    if (vipMember && vipMember.session_expires_at && Number(vipMember.session_expires_at) > Date.now()) {
+      return {
+        id: vipMember.id,
+        session_expires_at: vipMember.session_expires_at,
+        is_admin: 0,
+        membership_tier: vipMember.membership_type || 'vip',
+        membership_entitlement_tier: vipMember.membership_type || 'vip',
+        membership_status: 'active',
+        legacyVip: true
+      };
+    }
+  }
+
   const token = getCookie(request, COOKIE);
   if (!token) return null;
-  const account = await env.DB.prepare(
-    'SELECT id, session_expires_at, is_admin, membership_tier, membership_entitlement_tier, membership_status FROM accounts WHERE session_token_hash = ? LIMIT 1'
-  ).bind(await sha256(token)).first();
-  if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) return null;
-  return account;
+  // The collector-account tables are not present in the legacy production schema.
+  // Treat their absence as no collector account, not as a failure for VIP sessions.
+  try {
+    const account = await env.DB.prepare(
+      'SELECT id, session_expires_at, is_admin, membership_tier, membership_entitlement_tier, membership_status FROM accounts WHERE session_token_hash = ? LIMIT 1'
+    ).bind(await sha256(token)).first();
+    if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) return null;
+    return account;
+  } catch (error) {
+    console.warn('Collector account lookup unavailable in this database:', error);
+    return null;
+  }
 }
 function norm(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
@@ -37,7 +64,7 @@ export async function onRequestGet({ request, env }) {
 
     const tier = String(account.membership_entitlement_tier || account.membership_tier || 'free').trim().toLowerCase();
     const status = String(account.membership_status || '').trim().toLowerCase();
-    const paid = Number(account.is_admin || 0) === 1 ||
+    const paid = account.legacyVip === true || Number(account.is_admin || 0) === 1 ||
       (status === 'active' && tier !== '' && tier !== 'free' && tier !== 'none');
 
     const url = new URL(request.url);
@@ -47,14 +74,20 @@ export async function onRequestGet({ request, env }) {
     const limit = Math.min(100, Math.max(10, Number(url.searchParams.get('limit') || 60)));
     const pattern = '%' + search + '%';
 
-    // Current alerts age out after 24 hours. A non-empty search queries the
-    // saved report history so older sightings remain discoverable.
+    // Adapt to both the legacy production reports table and newer staging schema.
+    const columns = await env.DB.prepare('PRAGMA table_info(reports)').all();
+    const hasReportType = (columns.results || []).some(column => column.name === 'report_type');
+    const reportTypeSelect = hasReportType ? ', report_type' : '';
+    const reportTypeFilter = hasReportType ? "AND COALESCE(report_type, 'stock') != 'line'" : '';
+
+    // Current alerts age out after 24 hours. A non-empty search queries saved report history.
     const result = await env.DB.prepare(`
       SELECT id, store, location, product, quantity, price, photo_url, notes,
              price_type, product_located, seen_at, still_there, state, store_town,
-             store_address, product_name, quantity_text, shelf_price, msrp, report_type, created_at
+             store_address, product_name, quantity_text, shelf_price, msrp${reportTypeSelect}, created_at
       FROM reports
-      WHERE COALESCE(report_type, 'stock') != 'line'
+      WHERE 1 = 1
+        ${reportTypeFilter}
         AND (? = 1 OR datetime(created_at) <= datetime('now', '-1 hour'))
         AND LOWER(TRIM(COALESCE(still_there, ''))) IN ('yes', 'true', 'in stock')
         AND (
