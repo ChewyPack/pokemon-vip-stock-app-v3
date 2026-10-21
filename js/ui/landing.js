@@ -227,11 +227,11 @@
 
         menu.appendChild(settings);
         menu.appendChild(logout);
+        var accountParent = accountLink.parentNode;
+        accountParent.insertBefore(profileWrap, accountLink);
         profileWrap.appendChild(accountLink);
         profileWrap.appendChild(trigger);
         profileWrap.appendChild(menu);
-        accountLink.parentNode.insertBefore(profileWrap, accountLink);
-        profileWrap.appendChild(accountLink);
 
         var profileStyle = h('style', {});
         profileStyle.textContent =
