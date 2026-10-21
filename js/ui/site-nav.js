@@ -99,12 +99,25 @@
  document.addEventListener('click',function(e){if(!root.contains(e.target)){root.querySelectorAll('.site-nav__toggle').forEach(function(b){b.setAttribute('aria-expanded','false');});root.querySelectorAll('.site-nav__menu').forEach(function(m){m.hidden=true;});}});
  root.addEventListener('keydown',function(e){if(e.key==='Escape'){root.querySelectorAll('.site-nav__toggle').forEach(function(b){b.setAttribute('aria-expanded','false');});root.querySelectorAll('.site-nav__menu').forEach(function(m){m.hidden=true;});}});
 
- // Report authenticated collector presence for the admin dashboard.
+ // Report authenticated collector presence per browser tab, so chat and admin tabs do not overwrite each other.
  (function(){
   var page = location.pathname || "/";
+  var tabKey = "ppp_presence_tab_id";
+  var tabId = "";
+  try {
+   tabId = sessionStorage.getItem(tabKey) || "";
+   if (!/^[a-zA-Z0-9_-]{8,100}$/.test(tabId)) {
+    tabId = (window.crypto && typeof window.crypto.randomUUID === "function")
+      ? window.crypto.randomUUID().replace(/-/g, "")
+      : "tab_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem(tabKey, tabId);
+   }
+  } catch (e) {
+   tabId = "tab_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
   function beat(){
    if(document.visibilityState === "hidden") return;
-   fetch("/api/presence", {method:"POST",credentials:"include",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({page:page})}).catch(function(){});
+   fetch("/api/presence", {method:"POST",credentials:"include",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({page:page,tab_id:tabId})}).catch(function(){});
   }
   beat();
   window.setInterval(beat, 30000);
