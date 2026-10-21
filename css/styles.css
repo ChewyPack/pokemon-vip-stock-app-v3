@@ -1810,3 +1810,158 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
     padding: 9px 10px;
   }
 }
+
+/* ==========================================================================
+   MOBILE POLISH — stable backgrounds, consistent controls, better tap targets
+   Keep the home/report experience's dedicated speed-line background unchanged.
+   ========================================================================== */
+@media (max-width: 760px) {
+  /* A fixed background layer keeps the collage at viewport scale on long pages.
+     It avoids mobile browsers stretching a scroll-attached background to document height. */
+  body:not(:has(.bg-speed)) {
+    position: relative;
+    isolation: isolate;
+    background-color: transparent !important;
+    background-image: none !important;
+    background-attachment: initial !important;
+  }
+
+  body:not(:has(.bg-speed))::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: #07142e;
+    background-image:
+      linear-gradient(rgba(3, 10, 29, 0.76), rgba(3, 10, 29, 0.88)),
+      url("/assets/backgrounds/vip-collage.jpg");
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+
+  /* Standardize ordinary text buttons without changing their semantic colors.
+     Custom round/icon controls are intentionally excluded. */
+  button:not(.cp-search-ball):not(.cp-profile-menu-trigger):not(.cp-avatar-edit):not(.site-nav__profile-menu-trigger):not(.site-nav__submenu-toggle),
+  .btn,
+  input[type="submit"],
+  input[type="button"],
+  .site-nav__link,
+  .site-nav__toggle,
+  [role="button"] {
+    min-height: 44px !important;
+    max-width: 100%;
+    padding: 10px 14px !important;
+    border-radius: 10px !important;
+    font-family: var(--font-body) !important;
+    font-size: 0.93rem !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    letter-spacing: 0 !important;
+    text-transform: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-shadow: 0 2px 0 rgba(11, 42, 107, 0.22) !important;
+    transition: background-color 0.15s ease, transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  button:not(.cp-search-ball):not(.cp-profile-menu-trigger):not(.cp-avatar-edit):not(.site-nav__profile-menu-trigger):not(.site-nav__submenu-toggle):active,
+  .btn:active,
+  input[type="submit"]:active,
+  input[type="button"]:active,
+  .site-nav__link:active,
+  .site-nav__toggle:active,
+  [role="button"]:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 rgba(11, 42, 107, 0.18) !important;
+  }
+
+  .btn--lg {
+    min-height: 48px !important;
+    padding-inline: 16px !important;
+    font-size: 1rem !important;
+  }
+
+  .btn--sm {
+    min-height: 40px !important;
+    padding: 8px 11px !important;
+    font-size: 0.86rem !important;
+  }
+
+  /* Stack primary actions in forms so they don't crowd or squeeze on narrow screens. */
+  .account-form > button,
+  .settings-profile-form > button,
+  .vendor-form > button,
+  .ib-form > button,
+  .chat-form > button,
+  .membership-checkout button,
+  .hero__actions > .btn,
+  .dashboard-actions > .btn,
+  .dashboard-actions > button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .dashboard-actions,
+  .vendor-item-actions,
+  .offer-actions,
+  .cp-offer-actions,
+  .cp-offer-options,
+  .cp-follow-row,
+  .alerts-controls,
+  .inbox-tools {
+    gap: 8px;
+  }
+
+  .vendor-item-actions > button,
+  .offer-actions > button,
+  .cp-offer-actions > button,
+  .cp-offer-options > button {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Prevent action buttons and long labels from forcing horizontal overflow. */
+  main,
+  section,
+  article,
+  form,
+  .dashboard-card,
+  .vendor-section,
+  .ib-card,
+  .offer-card {
+    min-width: 0;
+  }
+
+  img,
+  video,
+  iframe {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .wrap,
+  .wrap--form {
+    width: calc(100% - 24px);
+  }
+
+  .account-wrap,
+  .vendor-wrap,
+  .ib-wrap,
+  .inbox-main {
+    width: calc(100% - 24px);
+  }
+
+  .account-panel,
+  .vendor-panel,
+  .ib-panel {
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.32);
+  }
+
+  .btn,
+  button:not(.cp-search-ball):not(.cp-profile-menu-trigger):not(.cp-avatar-edit):not(.site-nav__profile-menu-trigger):not(.site-nav__submenu-toggle) {
+    padding-inline: 11px !important;
+  }
+}
