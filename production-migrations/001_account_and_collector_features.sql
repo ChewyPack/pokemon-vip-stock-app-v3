@@ -7,6 +7,25 @@
 
 PRAGMA foreign_keys = ON;
 
+-- Extend the existing production report schema without replacing or deleting old reports.
+-- The old reports table does not contain product_type; this migration does not add it.
+ALTER TABLE reports ADD COLUMN product_located TEXT NOT NULL DEFAULT '';
+ALTER TABLE reports ADD COLUMN seen_at TEXT NOT NULL DEFAULT '';
+ALTER TABLE reports ADD COLUMN still_there TEXT NOT NULL DEFAULT '';
+ALTER TABLE reports ADD COLUMN state TEXT NOT NULL DEFAULT '';
+ALTER TABLE reports ADD COLUMN branch_id TEXT NOT NULL DEFAULT '';
+ALTER TABLE reports ADD COLUMN store_town TEXT NOT NULL DEFAULT '';
+ALTER TABLE reports ADD COLUMN store_address TEXT NOT NULL DEFAULT '';
+ALTER TABLE reports ADD COLUMN product_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE reports ADD COLUMN quantity_text TEXT NOT NULL DEFAULT '';
+ALTER TABLE reports ADD COLUMN shelf_price REAL;
+ALTER TABLE reports ADD COLUMN msrp REAL;
+ALTER TABLE reports ADD COLUMN report_type TEXT NOT NULL DEFAULT 'stock';
+ALTER TABLE reports ADD COLUMN line_count INTEGER;
+ALTER TABLE reports ADD COLUMN stocked_by TEXT;
+CREATE INDEX IF NOT EXISTS idx_reports_report_type_created_at
+  ON reports(report_type, created_at);
+
 CREATE TABLE IF NOT EXISTS accounts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   display_name TEXT NOT NULL,
