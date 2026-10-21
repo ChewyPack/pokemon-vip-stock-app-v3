@@ -8,7 +8,13 @@ function json(body, status = 200) {
 }
 
 function isChatPage(page) {
-  return page === "/chat.html" || page === "/community.html" || page.startsWith("/community/");
+  const normalized = String(page || "/").toLowerCase().replace(/\/+$/, "") || "/";
+  return normalized === "/chat" ||
+    normalized === "/chat.html" ||
+    normalized === "/community" ||
+    normalized === "/community.html" ||
+    normalized.startsWith("/community/") ||
+    normalized.startsWith("/chat/");
 }
 
 export async function onRequestPost({ request, env }) {
