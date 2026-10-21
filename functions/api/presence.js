@@ -18,16 +18,19 @@ export async function onRequestPost({ request, env }) {
     const data = await request.json().catch(() => ({}));
     const rawPage = String(data?.page || "/").slice(0, 200);
     const page = rawPage.startsWith("/") && !rawPage.startsWith("//") ? rawPage.split("?")[0].split("#")[0] : "/";
+    const tabId = String(data?.tab_id || "").slice(0, 100);
+    if (!/^[a-zA-Z0-9_-]{8,100}$/.test(tabId)) return json({ ok: false, error: "invalid_tab_id" }, 400);
     const inChat = isChatPage(page) ? 1 : 0;
     const lastSeen = new Date().toISOString();
     await env.DB.prepare(`
-      INSERT INTO site_presence (account_id, last_seen_at, current_page, in_chat)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(account_id) DO UPDATE SET
+      INSERT INTO site_presence_tabs (tab_id, account_id, last_seen_at, current_page, in_chat)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(tab_id) DO UPDATE SET
+        account_id = excluded.account_id,
         last_seen_at = excluded.last_seen_at,
         current_page = excluded.current_page,
         in_chat = excluded.in_chat
-    `).bind(account.id, lastSeen, page, inChat).run();
+    `).bind(tabId, account.id, lastSeen, page, inChat).run();
     return json({ ok: true, last_seen_at: lastSeen });
   } catch (error) {
     console.error("Presence heartbeat failed:", error);
@@ -40,28 +43,45 @@ export async function onRequestGet({ request, env }) {
     const account = await currentChatAccount(request, env);
     if (!account || !account.is_admin) return json({ ok: false, error: "admin_required" }, 403);
     const { results = [] } = await env.DB.prepare(`
-      SELECT a.id, a.display_name, p.username, s.last_seen_at, s.current_page, s.in_chat
+      SELECT a.id, a.display_name, p.username, s.last_seen_at, s.current_page, s.in_chat, s.tab_id
       FROM accounts a
       LEFT JOIN collector_profiles p ON p.account_id = a.id
-      LEFT JOIN site_presence s ON s.account_id = a.id
-      WHERE datetime(s.last_seen_at) >= datetime('now', '-24 hours')
+      LEFT JOIN site_presence_tabs s ON s.account_id = a.id
+        AND datetime(s.last_seen_at) >= datetime('now', '-24 hours')
       ORDER BY s.last_seen_at DESC
-      LIMIT 500
+      LIMIT 2000
     `).all();
     const now = Date.now();
-    const collectors = results.map(row => {
-      const seenMs = row.last_seen_at ? Date.parse(row.last_seen_at) : 0;
-      const online = Number.isFinite(seenMs) && now - seenMs <= 120000 && now >= seenMs - 30000;
-      return {
-        id: Number(row.id),
-        display_name: row.display_name || "Collector",
-        username: row.username || "",
-        last_seen_at: row.last_seen_at || null,
-        current_page: row.current_page || "",
-        online,
-        in_chat: online && Number(row.in_chat || 0) === 1
-      };
-    });
+    const byAccount = new Map();
+    for (const row of results) {
+      const id = Number(row.id);
+      let collector = byAccount.get(id);
+      if (!collector) {
+        collector = {
+          id,
+          display_name: row.display_name || "Collector",
+          username: row.username || "",
+          last_seen_at: null,
+          current_page: "",
+          online: false,
+          in_chat: false
+        };
+        byAccount.set(id, collector);
+      }
+      if (!row.last_seen_at) continue;
+      const seenMs = Date.parse(row.last_seen_at);
+      if (!Number.isFinite(seenMs)) continue;
+      if (!collector.last_seen_at || seenMs > Date.parse(collector.last_seen_at)) {
+        collector.last_seen_at = row.last_seen_at;
+        collector.current_page = row.current_page || "";
+      }
+      const tabOnline = now - seenMs <= 120000 && now >= seenMs - 30000;
+      if (tabOnline) {
+        collector.online = true;
+        if (Number(row.in_chat || 0) === 1) collector.in_chat = true;
+      }
+    }
+    const collectors = Array.from(byAccount.values());
     return json({
       ok: true,
       online_count: collectors.filter(row => row.online).length,
