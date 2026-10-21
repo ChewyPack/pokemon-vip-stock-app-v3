@@ -49,8 +49,14 @@ async function ensureTable(env) {
   )`).run();
   const columns = await env.DB.prepare('PRAGMA table_info(poke_prize_giveaways)').all();
   const names = new Set((columns.results || []).map(column => column.name));
-  if (!names.has('winner_entry_id')) await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_entry_id INTEGER').run();
-  if (!names.has('winner_selected_at')) await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_selected_at TEXT').run();
+  if (!names.has('winner_entry_id')) {
+    try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_entry_id INTEGER').run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
+  if (!names.has('winner_selected_at')) {
+    try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_selected_at TEXT').run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     giveaway_id INTEGER NOT NULL,
@@ -79,7 +85,14 @@ async function requireAdmin(request, env) {
 }
 function validDateTime(value) {
   if (!value) return true;
-  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
+  return typeof value === 'string' &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) &&
+    !Number.isNaN(Date.parse(value));
+}
+function normalizeDateTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString();
 }
 function uploadedImageIsValid(value, requestUrl) {
   if (!value) return true;
@@ -148,8 +161,8 @@ export async function onRequestPost({ request, env }) {
   const title = clean(data.title, 180);
   const description = clean(data.description, 4000);
   const imageUrl = clean(data.image_url, 1000);
-  const startAt = clean(data.start_at, 20);
-  const endAt = clean(data.end_at, 20);
+  const startAtInput = clean(data.start_at, 40);
+  const endAtInput = clean(data.end_at, 40);
   const eligibility = clean(data.eligibility, 1500);
   const rules = clean(data.rules, 8000);
   const status = data.status === 'published' ? 'published' : 'draft';
@@ -162,7 +175,10 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: false, error: 'invalid_prize_value' }, 400);
     }
   }
-  if (!validDateTime(startAt) || !validDateTime(endAt)) return json({ ok: false, error: 'invalid_date_time' }, 400);
+  if (!validDateTime(startAtInput) || !validDateTime(endAtInput)) return json({ ok: false, error: 'invalid_date_time' }, 400);
+  const startAt = normalizeDateTime(startAtInput);
+  const endAt = normalizeDateTime(endAtInput);
+  if ((startAtInput && !startAt) || (endAtInput && !endAt)) return json({ ok: false, error: 'invalid_date_time' }, 400);
   if (startAt && endAt && Date.parse(startAt) >= Date.parse(endAt)) return json({ ok: false, error: 'end_must_follow_start' }, 400);
   if (status === 'published' && (!startAt || !endAt)) return json({ ok: false, error: 'published_dates_required' }, 400);
   if (!uploadedImageIsValid(imageUrl, request.url)) return json({ ok: false, error: 'image_must_be_uploaded' }, 400);
