@@ -21,7 +21,12 @@ h1{font-size:clamp(2.4rem,9vw,4.6rem)}
 h2{font-size:clamp(1.6rem,5vw,2.3rem)}
 h3{font-size:1.2rem}
 .lead,.mut{color:var(--mut)}
-.glass{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:20px}
+.glass{background:#151b2a;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+section:nth-of-type(even){background:#101522}
+#form{background:#151b2a;border-color:rgba(255,255,255,.24)}
+#form [data-s]{background:#151b2a}
+#done{background:#151b2a;border-color:var(--ok)}
+.price,.step,.res{background:#151b2a}
 .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 20px;border-radius:10px;border:1px solid var(--blue);background:rgba(61,165,255,.14);color:var(--text);font:inherit;font-weight:700;text-decoration:none;cursor:pointer;transition:transform .15s,background .2s}
 .btn:hover{background:rgba(61,165,255,.3);transform:translateY(-1px)}
