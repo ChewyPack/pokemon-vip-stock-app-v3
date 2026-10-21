@@ -77,6 +77,9 @@ export async function onRequestPost({ request, env }) {
     if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) {
       return json({ ok: false, error: 'login_required' }, 401);
     }
+    if (tier === 'vendor' && account.membership_tier !== 'vendor') {
+      return json({ ok: false, error: 'vendor_plus_coming_soon' }, 403);
+    }
     if (account.membership_status !== 'active' || !account.stripe_subscription_id) {
       return json({ ok: false, error: 'membership_not_active' }, 409);
     }

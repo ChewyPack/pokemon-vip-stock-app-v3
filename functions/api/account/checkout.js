@@ -34,7 +34,10 @@ export async function onRequestPost({ request, env }) {
   try { data = await request.json(); } catch { return json({ ok: false, error: 'bad_request' }, 400); }
   const tier = typeof data.tier === 'string' ? data.tier : '';
   const interval = typeof data.interval === 'string' ? data.interval : '';
-  if (!Object.prototype.hasOwnProperty.call(PRICES, tier) || !['monthly', 'yearly'].includes(interval)) {
+  if (tier === 'vendor' || tier === 'organizer' || tier === 'vendor_plus') {
+    return json({ ok: false, error: 'vendor_plus_coming_soon' }, 403);
+  }
+  if (tier !== 'collector_plus' || !['monthly', 'yearly'].includes(interval)) {
     return json({ ok: false, error: 'invalid_plan' }, 400);
   }
   const token = getCookie(request, COOKIE);

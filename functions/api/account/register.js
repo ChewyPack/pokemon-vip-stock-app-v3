@@ -1,7 +1,7 @@
 const SESSION_DAYS = 14;
 const PBKDF2_ITERATIONS = 100000;
 const COOKIE = 'collector_session';
-const ACCOUNT_TYPES = new Set(['free', 'collector', 'vendor', 'organizer']);
+const ACCOUNT_TYPES = new Set(['free', 'collector']);
 function json(body, status = 200, headers = {}) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers } });
 }
