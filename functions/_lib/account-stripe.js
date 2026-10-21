@@ -4,16 +4,14 @@
 const TEST_PRICES = {
   collector_plus: { monthly: 'price_1UQVNSGXWs1THDBR6RhAZ3dI', yearly: 'price_1UQVNSGXWs1THDBRvoZUm24d' },
   vendor: { monthly: 'price_1UQVOUGXWs1THDBRYzlRnDDy', yearly: 'price_1UQVOUGXWs1THDBRsL4w405C' },
+  // Keep the old organizer test prices available only in preview for existing test subscriptions.
   organizer: { monthly: 'price_1UQVQLGXWs1THDBR39ZABaOC', yearly: 'price_1UQVQLGXWs1THDBRe7oCo2FN' }
 };
-function livePrices(env) {
+function livePrices() {
+  // Organizer benefits are included in Vendor+; there is no separate live Organizer tier.
   return {
     collector_plus: { monthly: 'price_1UNaOcK5IxhaGczAyrX7Znyy', yearly: 'price_1UNaOcK5IxhaGczAzg3OAdDb' },
-    vendor: { monthly: 'price_1USIkQK5IxhaGczAsZPCANsv', yearly: 'price_1USIkQK5IxhaGczAwFLhU5tS' },
-    organizer: {
-      monthly: typeof env.STRIPE_ACCOUNT_ORGANIZER_MONTHLY_PRICE_ID === 'string' ? env.STRIPE_ACCOUNT_ORGANIZER_MONTHLY_PRICE_ID.trim() : '',
-      yearly: typeof env.STRIPE_ACCOUNT_ORGANIZER_YEARLY_PRICE_ID === 'string' ? env.STRIPE_ACCOUNT_ORGANIZER_YEARLY_PRICE_ID.trim() : ''
-    }
+    vendor: { monthly: 'price_1USIkQK5IxhaGczAsZPCANsv', yearly: 'price_1USIkQK5IxhaGczAwFLhU5tS' }
   };
 }
 export function accountStripeConfig(env) {
@@ -23,7 +21,7 @@ export function accountStripeConfig(env) {
     ? typeof secretKey === 'string' && secretKey.startsWith('sk_live_')
     : typeof secretKey === 'string' && secretKey.startsWith('sk_test_');
   if (!validKey) return null;
-  const prices = live ? livePrices(env) : TEST_PRICES;
+  const prices = live ? livePrices() : TEST_PRICES;
   const priceTiers = {};
   for (const [tier, intervals] of Object.entries(prices)) {
     for (const priceId of Object.values(intervals)) {
