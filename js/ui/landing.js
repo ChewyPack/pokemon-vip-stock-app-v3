@@ -462,6 +462,12 @@
 
       VIP.clear(root);
       root.appendChild(navigation);
+      var homeAdTop = h('aside', {
+        class: 'ppp-ad-slot ppp-ad-slot--top',
+        'data-ad-slot': 'home-top',
+        'aria-label': 'Advertisement placement: home top'
+      }, 'Ad placement · home · top');
+      root.appendChild(homeAdTop);
       root.appendChild(hero);
       root.appendChild(universes);
       root.appendChild(how);
