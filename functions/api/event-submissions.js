@@ -65,6 +65,10 @@ function normalize(body) {
     result[field] = clean(body[field], limit);
   }
   result.event_type = result.event_type || 'show';
+  if (!result.state_name) {
+    const stateNames = { RI: 'Rhode Island', MA: 'Massachusetts', CT: 'Connecticut', NH: 'New Hampshire', VT: 'Vermont', ME: 'Maine', ONLINE: 'Online / nationwide', OTHER: 'Other' };
+    result.state_name = stateNames[result.state] || result.state;
+  }
   return result;
 }
 export async function onRequestGet({ request, env }) {
