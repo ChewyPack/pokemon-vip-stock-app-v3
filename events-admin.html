@@ -6,6 +6,13 @@ async function api(url,options){const r=await fetch(url,Object.assign({credentia
 function reset(){form.reset();form.elements.id.value='';form.elements.image_url.value='';$('form-heading').textContent='Add an event';$('image-status').textContent='Choose an image file to upload a cover photo.';}
 function render(){const list=$('event-list');list.replaceChildren();if(!events.length){list.textContent='No events yet. Add your first event above.';return;}events.forEach(e=>{const row=document.createElement('div');row.className='item';const h=document.createElement('h3');h.textContent=e.title;row.appendChild(h);const p=document.createElement('p');p.className='muted';p.textContent=(e.event_date||'No date')+' · '+e.event_type+' · '+e.status;row.appendChild(p);const actions=document.createElement('div');actions.className='actions';function button(label,fn,cls){const b=document.createElement('button');b.type='button';b.textContent=label;if(cls)b.className=cls;b.addEventListener('click',fn);actions.appendChild(b);}button('Edit',()=>{for(const key of ['id','title','event_type','event_date','status','start_time','end_time','venue','address','city','state','state_name','zip','price','url','badge','image_url','description'])form.elements[key].value=e[key]||'';form.elements.image_file.value='';$('form-heading').textContent='Edit event';$('image-status').textContent=e.image_url?'An event image is already uploaded. Choose a file to replace it.':'No event image uploaded.';window.scrollTo({top:0,behavior:'smooth'});});if(e.status==='published')button('Unpublish',()=>{if(confirm('Unpublish this event? It will disappear from the public calendar.'))save(Object.assign({},e,{status:'draft'}));},'secondary');else button('Publish',()=>{if(confirm('Publish this event to the public calendar?'))save(Object.assign({},e,{status:'published'}));});button('Delete',async()=>{if(!confirm('Permanently delete this event?'))return;try{await api('/api/events?id='+e.id,{method:'DELETE'});say('Event deleted.');await load();}catch(err){say('Could not delete event: '+err.message);}},'danger');row.appendChild(actions);list.appendChild(row);});}
 async function load(){const d=await api('/api/events?admin=1');events=d.events||[];render();await loadSubmissions();}
+function formatTime12(value){
+ const match=String(value||'').trim().match(/^(\\d{1,2}):(\\d{2})$/);
+ if(!match)return value||'';
+ const hour=Number(match[1]),minute=match[2];
+ if(hour>23||minute>59)return value;
+ return (hour%12||12)+':'+minute+' '+(hour>=12?'PM':'AM');
+}
 async function loadSubmissions(){
  const data=await api('/api/event-submissions?admin=1');
  const list=$('submission-list');list.replaceChildren();
@@ -17,7 +24,7 @@ async function loadSubmissions(){
   const meta=document.createElement('p');meta.className='muted';var recurrenceLabel=sub.recurrence_frequency&&sub.recurrence_frequency!=='once'?' · Repeats '+sub.recurrence_frequency+' until '+sub.recurrence_until:' · One-time';
   meta.textContent=(sub.status||'pending').toUpperCase()+' · '+sub.event_date+' · '+sub.event_type+recurrenceLabel+' · Submitted by '+(sub.submitter_username?'@'+sub.submitter_username+' / ':'')+(sub.submitter_name||'Member')+' ('+(sub.submitter_email||'no email')+')';row.appendChild(meta);
   const detail=document.createElement('p');detail.textContent=sub.description||'No description provided.';row.appendChild(detail);
-  const place=document.createElement('p');place.className='muted';place.textContent=[sub.start_time&&('Start '+sub.start_time),sub.end_time&&('End '+sub.end_time),sub.venue,sub.address,sub.city,sub.state_name||sub.state,sub.zip,sub.price&&('Admission '+sub.price)].filter(Boolean).join(' · ')||'No location supplied';row.appendChild(place);
+  const place=document.createElement('p');place.className='muted';place.textContent=[sub.start_time&&('Start '+formatTime12(sub.start_time)),sub.end_time&&('End '+formatTime12(sub.end_time)),sub.venue,sub.address,sub.city,sub.state_name||sub.state,sub.zip,sub.price&&('Admission '+sub.price)].filter(Boolean).join(' · ')||'No location supplied';row.appendChild(place);
   if(sub.url){const link=document.createElement('a');link.href=sub.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open official event link';row.appendChild(link);}
   if(sub.review_note){const note=document.createElement('p');note.className='muted';note.textContent='Review note: '+sub.review_note;row.appendChild(note);}
   const actions=document.createElement('div');actions.className='actions';
