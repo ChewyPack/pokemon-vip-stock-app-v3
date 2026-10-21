@@ -219,7 +219,7 @@ async function deleteMessage(id){if(!confirm('Delete this message for everyone?'
 let mentionTimer=null;let mentionResults=[];let mentionIndex=0;
 function hideMentionSuggestions(){const box=$('chat-mention-suggestions');box.hidden=true;box.replaceChildren();mentionResults=[];mentionIndex=0;}
 async function updateMentionSuggestions(){
- const input=$('chat-input');const before=input.value.slice(0,input.selectionStart);const match=before.match(/(?:^|\\s)@([a-zA-Z0-9_.-]{0,30})$/);
+ const input=$('chat-input');const before=input.value.slice(0,input.selectionStart);const match=before.match(/(?:^|\s)@([a-zA-Z0-9_.-]{0,30})$/);
  if(!match){hideMentionSuggestions();return;}
  const query=match[1];if(mentionTimer)clearTimeout(mentionTimer);
  mentionTimer=setTimeout(async()=>{
@@ -230,7 +230,7 @@ async function updateMentionSuggestions(){
  },120);
 }
 function chooseMention(username){
- const input=$('chat-input');const cursor=input.selectionStart;const left=input.value.slice(0,cursor);const right=input.value.slice(cursor);const match=left.match(/(?:^|\\s)@([a-zA-Z0-9_.-]{0,30})$/);if(!match)return;
+ const input=$('chat-input');const cursor=input.selectionStart;const left=input.value.slice(0,cursor);const right=input.value.slice(cursor);const match=left.match(/(?:^|\s)@([a-zA-Z0-9_.-]{0,30})$/);if(!match)return;
  const start=left.length-match[0].length+(match[0].startsWith(' ')?1:0);const prefix=left.slice(0,start);const insertion='@'+username+' ';
  input.value=prefix+insertion+right;const position=(prefix+insertion).length;input.focus();input.setSelectionRange(position,position);updateCount();hideMentionSuggestions();
 }
