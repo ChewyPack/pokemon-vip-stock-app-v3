@@ -113,6 +113,7 @@ export async function onRequestPost({ request, env }) {
   if (!originAllowed(request)) return json({ ok: false, error: 'origin_not_allowed' }, 403);
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad_request' }, 400); }
+  if (body.rules_accepted !== true) return json({ ok: false, error: 'rules_acceptance_required' }, 400);
   const giveawayId = Number(body.giveaway_id);
   if (!Number.isSafeInteger(giveawayId) || giveawayId < 1) return json({ ok: false, error: 'invalid_giveaway_id' }, 400);
 
