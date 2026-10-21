@@ -131,6 +131,7 @@ footer{text-align:center;padding:50px 0 70px}
 <section id="reserve"><div class="wrap"><h2>Reservation inquiry</h2>
 <p class="lead">Do not enter payment card details. This form only sends an inquiry.</p>
 <form class="glass" id="form" novalidate>
+<div aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"><label for="website">Leave this field empty</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
 <div class="steps" id="bar"><i></i><i></i><i></i><i></i></div>
 <div data-s="0"><h3>Your information</h3>
 <label for="name">Name</label><input id="name" required autocomplete="name"><p class="err" data-e="name"></p>
@@ -164,7 +165,7 @@ footer{text-align:center;padding:50px 0 70px}
 <p class="err" id="subErr" role="alert"></p></div>
 <div class="row" style="margin-top:18px"><button class="btn" type="button" id="back" hidden>Back</button><button class="btn pri" type="button" id="next">Next</button><button class="btn pri" type="submit" id="submit" hidden>Submit request</button></div>
 </form>
-<div class="glass" id="done" hidden role="status"><h3>Request received</h3><p>Your request was received. Submitting does not guarantee a reservation. Wait for confirmation before treating your slot as secured.</p></div>
+<div class="glass" id="done" hidden role="status"><h3>Request received</h3><p id="doneMessage">Your request was received. Submitting does not guarantee a reservation. Wait for confirmation before treating your slot as secured.</p><p id="requestNumber"></p></div>
 </div></section>
 
 <section><div class="wrap"><h2>FAQ</h2><div id="faq"></div></div></section>
@@ -179,7 +180,7 @@ footer{text-align:center;padding:50px 0 70px}
 <script>
 (function(){
 // CONFIG: set endpoint to a verified submission URL (POST JSON). Leave "" until one exists.
-var CONFIG={endpoint:"",contactName:""};
+var CONFIG={endpoint:"/api/line-service-requests",contactName:"PokePrizePool"};
 var $=function(i){return document.getElementById(i)};
 var RATES={std:{member:[25,220],vip:[20,180]},high:{member:[30,260],vip:[25,225]}};
 var SV={std:"Standard / Off-Day",high:"High-Demand / Extreme Weather"},TN={member:"Member",vip:"VIP"};
@@ -233,11 +234,13 @@ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeT
 $("form").addEventListener("submit",function(ev){ev.preventDefault();$("subErr").textContent="";
 var all=[0,1,2].every(function(i){return validate(i)});if(!all){$("subErr").textContent="Please go back and fix the highlighted fields.";return}
 if(document.querySelectorAll(".ak:checked").length<5){setErr("ack","Please acknowledge every statement.");return}setErr("ack","");
-if(!CONFIG.endpoint){$("subErr").textContent="Submission isn't connected yet, so nothing was sent. Use Copy request above.";return}
 var b=$("submit");b.disabled=true;b.textContent="Sending…";
-fetch(CONFIG.endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({summary:summary(),name:v("name"),discord:v("discord"),email:v("email")})})
-.then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);$("form").hidden=true;$("done").hidden=false;$("done").scrollIntoView()})
-.catch(function(){$("subErr").textContent="We couldn't send your request. Please try again, or copy it and send it manually.";b.disabled=false;b.textContent="Submit request"})});
+var estimate=est(v("tier"),$("svc").value,$("mode").value,$("fhours").value);
+var payload={website:v("website"),summary:summary(),name:v("name"),discord:v("discord"),email:v("email"),tier:v("tier"),store:v("store"),address:v("addr"),request_date:v("date"),opening_time:v("open"),release:v("rel"),service_type:v("svc"),duration_mode:v("mode"),hours:v("mode")==="pkg"?"10":String(estimate.hours||""),products:v("prod"),quantities:v("qty"),budget:v("budget"),notes:v("notes"),estimated_fee:money(estimate.total)};
+fetch(CONFIG.endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+.then(function(r){return r.json().then(function(data){if(!r.ok||!data.ok)throw new Error(data.error||"submission_failed");return data})})
+.then(function(data){$("form").hidden=true;$("done").hidden=false;$("requestNumber").textContent="Request reference: #"+data.id;$("doneMessage").textContent=data.email_sent?"Your request was saved and the notification was emailed to PokePrizePool. This is an inquiry, not a confirmed reservation.":"Your request was saved successfully, but the email notification could not be sent automatically. The team can still review it in the admin area. This is not a confirmed reservation.";$("done").scrollIntoView()})
+.catch(function(error){$("subErr").textContent=error.message==="email_not_configured"?"Your request could not be confirmed. Please try again later or use Copy request above.":"We couldn't submit your request. Please try again, or copy it and send it manually.";b.disabled=false;b.textContent="Submit request"})});
 $("toForm").onclick=function(){$("tier").value=st.tier;$("svc").value=st.svc;$("mode").value=st.mode;if(st.mode==="hourly")$("fhours").value=Math.max(3,Math.floor(Number($("hours").value))||3);fmode();show(0);$("reserve").scrollIntoView()};
 
 var FAQ=[
