@@ -46,12 +46,18 @@ async function ensureTables(env) {
     account_id INTEGER NOT NULL,
     entered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     rules_accepted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    bonus_entries INTEGER NOT NULL DEFAULT 0 CHECK(bonus_entries BETWEEN 0 AND 1000000),
     is_winner INTEGER NOT NULL DEFAULT 0 CHECK(is_winner IN (0,1)),
     UNIQUE(giveaway_id, account_id)
   )`).run();
   const entryColumns = await env.DB.prepare('PRAGMA table_info(poke_prize_giveaway_entries)').all();
   if (!(entryColumns.results || []).some(column => column.name === 'rules_accepted_at')) {
     try { await env.DB.prepare('ALTER TABLE poke_prize_giveaway_entries ADD COLUMN rules_accepted_at TEXT').run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
+  const bonusColumn = await env.DB.prepare('PRAGMA table_info(poke_prize_giveaway_entries)').all();
+  if (!(bonusColumn.results || []).some(column => column.name === 'bonus_entries')) {
+    try { await env.DB.prepare('ALTER TABLE poke_prize_giveaway_entries ADD COLUMN bonus_entries INTEGER NOT NULL DEFAULT 0').run(); }
     catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
   }
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaway_entries_giveaway ON poke_prize_giveaway_entries(giveaway_id, entered_at)').run();
@@ -151,7 +157,7 @@ export async function onRequestPost({ request, env }) {
     }
     const entryId = Number(inserted.meta?.last_row_id || 0);
     const count = await env.DB.prepare(
-      'SELECT COUNT(*) AS total FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = ?'
+      'SELECT COALESCE(SUM(1 + e.bonus_entries), 0) AS total FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = ?'
     ).bind(giveawayId).first();
     return json({
       ok: true,
