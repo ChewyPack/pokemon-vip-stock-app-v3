@@ -5,7 +5,7 @@ function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).r
 async function sha256(value){return b64(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));}
 function clean(v,max=1000){return typeof v==='string'?v.trim().slice(0,max):'';}
 async function ensureTable(env){
- await env.DB.prepare(\`CREATE TABLE IF NOT EXISTS poke_report_events (
+ await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_report_events (
  id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,description TEXT NOT NULL DEFAULT '',
  event_type TEXT NOT NULL DEFAULT 'show',event_date TEXT NOT NULL,start_time TEXT NOT NULL DEFAULT '',
  end_time TEXT NOT NULL DEFAULT '',venue TEXT NOT NULL DEFAULT '',address TEXT NOT NULL DEFAULT '',
@@ -14,7 +14,7 @@ async function ensureTable(env){
  image_url TEXT NOT NULL DEFAULT '',badge TEXT NOT NULL DEFAULT '',
  status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
- )\`).run();
+ )`).run();
  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_report_events_public_date ON poke_report_events(status,event_date)').run();
 }
 async function account(request,env){const token=cookie(request,COOKIE);if(!token)return null;const a=await env.DB.prepare('SELECT id,is_admin,session_expires_at FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();return a&&a.session_expires_at&&Number(a.session_expires_at)>Date.now()?a:null;}
