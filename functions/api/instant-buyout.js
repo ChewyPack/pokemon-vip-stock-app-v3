@@ -11,6 +11,7 @@ async function sendBuyoutNotice(env,row){
  const from=clean(env.INSTANT_BUYOUT_FROM||env.LINE_SERVICE_FROM||env.PASSWORD_RESET_FROM,250);
  if(!env.RESEND_API_KEY||!from)return {sent:false,error:'email_not_configured'};
  const subject='New PokePrizePool instant buyout request #'+row.id;
+ const photoLinks=String(row.photo_urls||'').split(/\n/).filter(Boolean).map((url,index)=>'<li><a href="'+escapeHtml(url)+'">Photo '+(index+1)+'</a></li>').join('')||'<li>Not provided</li>';
  const summary=[
   'New Instant Buyout request #'+row.id,
   'Submitted by: '+row.seller_name+' <'+row.seller_email+'>',
@@ -31,7 +32,7 @@ async function sendBuyoutNotice(env,row){
    headers:{Authorization:'Bearer '+env.RESEND_API_KEY,'Content-Type':'application/json'},
    body:JSON.stringify({
     from,to:['pokeprizepool@gmail.com'],subject,text:summary,
-    html:'<h2>New Instant Buyout request #'+row.id+'</h2><p><strong>Submitted by:</strong> '+escapeHtml(row.seller_name)+' &lt;'+escapeHtml(row.seller_email)+'&gt;</p><p><strong>Category:</strong> '+escapeHtml(row.category)+'<br><strong>Title:</strong> '+escapeHtml(row.title)+'<br><strong>Quantity:</strong> '+escapeHtml(row.quantity||'Not specified')+'<br><strong>Asking price:</strong> '+escapeHtml(row.asking_price_cents==null?'Not provided':'$'+(Number(row.asking_price_cents)/100).toFixed(2))+'</p><h3>Details</h3><pre style="font:14px/1.5 Arial,sans-serif;white-space:pre-wrap">'+escapeHtml(row.details)+'</pre><h3>Condition / grading notes</h3><p>'+escapeHtml(row.condition_notes||'Not provided')+'</p><h3>Uploaded photos</h3><pre style="font:14px/1.5 Arial,sans-serif;white-space:pre-wrap">'+escapeHtml(row.photo_urls||'Not provided')+'</pre><p><a href="https://pokeprizepool.com/admin.html">Review in PokePrizePool Admin</a></p>'
+    html:'<h2>New Instant Buyout request #'+row.id+'</h2><p><strong>Submitted by:</strong> '+escapeHtml(row.seller_name)+' &lt;'+escapeHtml(row.seller_email)+'&gt;</p><p><strong>Category:</strong> '+escapeHtml(row.category)+'<br><strong>Title:</strong> '+escapeHtml(row.title)+'<br><strong>Quantity:</strong> '+escapeHtml(row.quantity||'Not specified')+'<br><strong>Asking price:</strong> '+escapeHtml(row.asking_price_cents==null?'Not provided':'$'+(Number(row.asking_price_cents)/100).toFixed(2))+'</p><h3>Details</h3><pre style="font:14px/1.5 Arial,sans-serif;white-space:pre-wrap">'+escapeHtml(row.details)+'</pre><h3>Condition / grading notes</h3><p>'+escapeHtml(row.condition_notes||'Not provided')+'</p><h3>Uploaded photos</h3><ul>'+photoLinks+'</ul><p><a href="https://pokeprizepool.com/admin.html">Review in PokePrizePool Admin</a></p>'
    })
   });
  }catch(error){

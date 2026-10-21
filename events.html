@@ -735,10 +735,12 @@
         });
 
         [
-          ['Date', formatDate(event.date)],
+          ['Date', formatDate(event.date) + (event.start_time ? ' · ' + event.start_time : '') + (event.end_time ? '–' + event.end_time : '')],
           ['Location', [event.city, event.stateName].filter(Boolean).join(', ') || 'Location to be confirmed'],
-          ['Venue', event.venue || 'Venue to be confirmed']
-        ].forEach(function (detail) {
+          ['Venue', event.venue || 'Venue to be confirmed'],
+          ['Address', event.address || ''],
+          ['Admission', event.price || '']
+        ].filter(function(detail){return Boolean(detail[1]);}).forEach(function (detail) {
           var item = make('li');
           var strong = make('strong');
 
