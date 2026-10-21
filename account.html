@@ -119,10 +119,32 @@
 <label class="field-label" id="signup-phone-label" hidden>Phone number<input id="signup-phone" name="phone_number" type="tel" autocomplete="tel" maxlength="30" placeholder="e.g. (401) 555-0123"><small>Required for account contact. Phone verification is not enabled yet.</small></label>
 <label class="field-label" id="signup-sms-consent-label" hidden><input id="signup-sms-consent" type="checkbox" style="width:18px;min-height:18px;margin-top:3px;display:inline-block"><span>I'd like to receive PokePrizePool restock and account alert text messages when SMS alerts become available. Consent is optional; message/data rates may apply, and I can opt out later.</span></label>
 <label class="field-label">Email<input id="email" name="email" type="email" autocomplete="email" required maxlength="254"></label>
-<label class="field-label">Password<input id="password" name="password" type="password" autocomplete="current-password" required minlength="1" maxlength="128"><small id="password-help">Enter your password.</small></label>
+<label class="field-label">Password<input id="password" name="password" type="password" autocomplete="current-password" required minlength="1" maxlength="128"><button id="toggle-password" type="button" class="btn" aria-controls="password" aria-pressed="false" style="margin-top:6px">Show password</button><small id="password-help">Enter your password.</small></label>
 <button id="submit" class="btn btn--primary" type="submit">Log in</button>
+<button id="forgot-password" type="button" class="btn">Forgot password?</button>
 </form>
 <p id="message" class="account-message" role="status" aria-live="polite" hidden></p>
+<section id="forgot-panel" hidden aria-labelledby="forgot-heading">
+<h2 id="forgot-heading">Reset your password</h2>
+<p>Enter the email address you used to sign up. If an account exists, we'll send a reset link that expires in 30 minutes.</p>
+<form id="forgot-form" class="account-form">
+<label class="field-label">Email<input id="forgot-email" type="email" autocomplete="email" required maxlength="254"></label>
+<button id="forgot-submit" class="btn btn--primary" type="submit">Send reset link</button>
+<button id="forgot-back" class="btn" type="button">Back to log in</button>
+</form>
+<p id="forgot-message" class="account-message" role="status" aria-live="polite" hidden></p>
+</section>
+<section id="reset-panel" hidden aria-labelledby="reset-heading">
+<h2 id="reset-heading">Choose a new password</h2>
+<p>Use at least 10 characters. This will sign out other sessions for your protection.</p>
+<form id="reset-form" class="account-form">
+<label class="field-label">New password<input id="reset-password" type="password" autocomplete="new-password" required minlength="10" maxlength="128"></label>
+<button id="toggle-reset-password" type="button" class="btn" aria-controls="reset-password" aria-pressed="false">Show password</button>
+<button id="reset-submit" class="btn btn--primary" type="submit">Save new password</button>
+</form>
+<p id="reset-message" class="account-message" role="status" aria-live="polite" hidden></p>
+<a href="/account.html">Back to log in</a>
+</section>
 </section>
 
 <section id="dashboard" class="account-panel account-panel--dashboard" hidden>
@@ -591,6 +613,18 @@
   }catch(error){message.hidden=false;message.textContent=error.message||'Something went wrong.';}
   finally{submit.disabled=false;submit.textContent=mode==='register'?'Create account':'Log in';}
  });
+ const togglePassword=document.getElementById('toggle-password');
+ togglePassword.addEventListener('click',()=>{const show=password.type==='password';password.type=show?'text':'password';togglePassword.textContent=show?'Hide password':'Show password';togglePassword.setAttribute('aria-pressed',String(show));});
+ const accountSwitch=document.querySelector('.account-switch'),forgotButton=document.getElementById('forgot-password'),forgotPanel=document.getElementById('forgot-panel'),resetPanel=document.getElementById('reset-panel'),forgotForm=document.getElementById('forgot-form'),forgotMessage=document.getElementById('forgot-message'),resetForm=document.getElementById('reset-form'),resetMessage=document.getElementById('reset-message');
+ function showRecoveryPanel(panel){form.hidden=true;if(accountSwitch)accountSwitch.hidden=true;forgotPanel.hidden=panel!=='forgot';resetPanel.hidden=panel!=='reset';message.hidden=true;}
+ forgotButton.addEventListener('click',()=>{showRecoveryPanel('forgot');document.getElementById('forgot-email').value=document.getElementById('email').value.trim();forgotMessage.hidden=true;});
+ document.getElementById('forgot-back').addEventListener('click',()=>{form.hidden=false;if(accountSwitch)accountSwitch.hidden=false;forgotPanel.hidden=true;resetPanel.hidden=true;});
+ forgotForm.addEventListener('submit',async event=>{event.preventDefault();forgotMessage.hidden=true;const button=document.getElementById('forgot-submit');button.disabled=true;button.textContent='Sending…';try{const response=await fetch('/api/account/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('forgot-email').value.trim()})});const data=await response.json();if(!response.ok||!data.ok){const errors={password_reset_email_not_configured:'Password reset email is not configured yet. Please contact support so we can help restore access.',password_reset_email_failed:'We could not send the email right now. Please try again shortly.',invalid_email:'Enter a valid email address.'};throw new Error(errors[data.error]||'We could not request a reset link. Please try again.');}forgotMessage.hidden=false;forgotMessage.textContent=data.message||'If an account exists for that email, a password reset link will be sent shortly.';}catch(error){forgotMessage.hidden=false;forgotMessage.textContent=error.message||'Could not request a reset link.';}finally{button.disabled=false;button.textContent='Send reset link';}});
+ const toggleResetPassword=document.getElementById('toggle-reset-password'),resetPassword=document.getElementById('reset-password');
+ toggleResetPassword.addEventListener('click',()=>{const show=resetPassword.type==='password';resetPassword.type=show?'text':'password';toggleResetPassword.textContent=show?'Hide password':'Show password';toggleResetPassword.setAttribute('aria-pressed',String(show));});
+ resetForm.addEventListener('submit',async event=>{event.preventDefault();resetMessage.hidden=true;const token=new URLSearchParams(window.location.search).get('reset')||'';const button=document.getElementById('reset-submit');button.disabled=true;button.textContent='Saving…';try{const response=await fetch('/api/account/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,password:resetPassword.value})});const data=await response.json();if(!response.ok||!data.ok){const errors={password_requirements:'Your password must be between 10 and 128 characters.',invalid_or_expired_reset_link:'This reset link has expired or has already been used. Request a new one.'};throw new Error(errors[data.error]||'Could not reset the password. Please request a new link.');}resetMessage.hidden=false;resetMessage.textContent='Password updated. You can now log in with your new password.';resetPassword.value='';window.history.replaceState({},'', '/account.html');}catch(error){resetMessage.hidden=false;resetMessage.textContent=error.message||'Could not reset the password.';}finally{button.disabled=false;button.textContent='Save new password';}});
+ const resetToken=new URLSearchParams(window.location.search).get('reset');
+ if(resetToken){showRecoveryPanel('reset');}
  setMode('login');checkSession();
 })();
 </script>
