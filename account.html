@@ -425,6 +425,8 @@
     } else {
       membershipSummary.hidden=true;
       tierSelect.disabled=false;intervalSelect.disabled=false;
+      // Vendor and Event Organizer account types use the combined Vendor+ subscription.
+      tierSelect.value=['vendor','organizer'].includes(a.account_type)?'vendor':'collector_plus';
       checkoutButton.disabled=false;checkoutButton.textContent='Continue';
       document.getElementById('membership-change-options').hidden=false;
       document.getElementById('manage-membership-options').hidden=true;
