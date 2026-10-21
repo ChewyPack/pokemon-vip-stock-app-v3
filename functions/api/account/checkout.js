@@ -49,7 +49,7 @@ export async function onRequestPost({ request, env }) {
     if (account.membership_status === 'active') {
       return json({ ok: false, error: 'membership_already_active' }, 409);
     }
-    if (tier === 'vendor' && account.account_type !== 'vendor') return json({ ok: false, error: 'choose_vendor_account_type' }, 400);
+    if (tier === 'vendor' && !['vendor', 'organizer'].includes(account.account_type)) return json({ ok: false, error: 'choose_vendor_account_type' }, 400);
     if (tier === 'organizer' && account.account_type !== 'organizer') return json({ ok: false, error: 'choose_organizer_account_type' }, 400);
     if (tier === 'collector_plus' && !['free', 'collector'].includes(account.account_type)) return json({ ok: false, error: 'choose_collector_account_type' }, 400);
     const priceId = PRICES[tier][interval];
@@ -80,12 +80,12 @@ export async function onRequestPost({ request, env }) {
     });
     const result = await response.json();
     if (!response.ok || !result.url) {
-      console.error('Staging Stripe checkout creation failed:', response.status, result.error?.type || 'unknown');
+      console.error('Account Stripe checkout creation failed:', response.status, result.error?.type || 'unknown');
       return json({ ok: false, error: 'stripe_checkout_failed' }, 502);
     }
     return json({ ok: true, url: result.url });
   } catch (error) {
-    console.error('Staging account checkout failed:', error);
+    console.error('Account checkout failed:', error);
     return json({ ok: false, error: 'checkout_failed' }, 500);
   }
 }
