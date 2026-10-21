@@ -195,9 +195,32 @@ function renderEntryPanel(data){
   draw.textContent=ended?'Draw random winner':'Draw winner after end date';
  }
  if(!entries.length){entryList.textContent='No one has entered this giveaway yet.';return;}
- entryList.innerHTML='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:600px"><thead><tr><th style="text-align:left;padding:8px">#</th><th style="text-align:left;padding:8px">Collector</th><th style="text-align:left;padding:8px">Email</th><th style="text-align:left;padding:8px">Entered</th><th style="text-align:left;padding:8px">Status</th></tr></thead><tbody>'+entries.map(function(entry,index){
-  return '<tr style="border-top:1px solid #ffffff22"><td style="padding:8px">'+(index+1)+'</td><td style="padding:8px">'+esc(entry.display_name)+(entry.username?'<br><span class="muted">@'+esc(entry.username)+'</span>':'')+'</td><td style="padding:8px">'+esc(entry.email||'—')+'</td><td style="padding:8px">'+esc(dateLabel(entry.entered_at))+'</td><td style="padding:8px">'+(entry.winner?'<span class="pill gold">Winner</span>':'Entered')+'</td></tr>';
+ entryList.innerHTML='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:840px"><thead><tr><th style="text-align:left;padding:8px">#</th><th style="text-align:left;padding:8px">Collector</th><th style="text-align:left;padding:8px">Email</th><th style="text-align:left;padding:8px">Entered</th><th style="text-align:left;padding:8px">Bonus</th><th style="text-align:left;padding:8px">Total tickets</th><th style="text-align:left;padding:8px">Status / action</th></tr></thead><tbody>'+entries.map(function(entry,index){
+  return '<tr style="border-top:1px solid #ffffff22"><td style="padding:8px">'+(index+1)+'</td><td style="padding:8px">'+esc(entry.display_name)+(entry.username?'<br><span class="muted">@'+esc(entry.username)+'</span>':'')+'</td><td style="padding:8px">'+esc(entry.email||'—')+'</td><td style="padding:8px">'+esc(dateLabel(entry.entered_at))+'</td><td style="padding:8px">'+Number(entry.bonus_entries||0)+'</td><td style="padding:8px"><strong>'+(1+Number(entry.bonus_entries||0))+'</strong></td><td style="padding:8px">'+(entry.winner?'<span class="pill gold">Winner</span>':'Entered')+'<br><button type="button" class="award-bonus" data-entry-id="'+Number(entry.id)+'" data-entry-name="'+esc(entry.username?'@'+entry.username:entry.display_name)+'" '+(data.giveaway&&data.giveaway.winner_entry_id?'disabled':'')+'>Award bonus entries</button></td></tr>';
  }).join('')+'</tbody></table></div>';
+ entryList.querySelectorAll('.award-bonus').forEach(function(button){
+  button.addEventListener('click',async function(){
+   var amountText=prompt('How many EXTRA entries should be awarded to '+button.dataset.entryName+'? Enter 1–1000.');
+   if(amountText===null)return;
+   var extra=Number(amountText);
+   if(!Number.isInteger(extra)||extra<1||extra>1000){say('Enter a whole number between 1 and 1000.','error');return;}
+   var reason=prompt('Record the reason for this bonus award (required for the audit log):');
+   if(reason===null)return;
+   if(!reason.trim()){say('A reason is required to award bonus entries.','error');return;}
+   button.disabled=true;
+   try{
+    var award=await api('/api/giveaway-entries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'award_bonus',giveaway_id:Number(data.giveaway.id),entry_id:Number(button.dataset.entryId),extra_entries:extra,reason:reason.trim()})});
+    say('Awarded '+extra+' extra entries to '+award.display_name+'. Their total is now '+award.total_entries_for_account+'.','success');
+    await load();
+    selectedGiveaway=giveaways.find(function(item){return Number(item.id)===Number(data.giveaway.id);})||selectedGiveaway;
+    if(selectedGiveaway)await viewEntries(selectedGiveaway);
+   }catch(error){
+    var msgs={winner_already_selected:'A winner has already been selected; bonus entries are locked.',entry_not_found:'That entry is no longer available.',invalid_bonus_count:'Use a whole number between 1 and 1000.',bonus_reason_required:'A reason is required.'};
+    say('Could not award bonus entries: '+(msgs[error.message]||error.message),'error');
+    button.disabled=false;
+   }
+  });
+ });
 }
 async function viewEntries(g){
  selectedGiveaway=g;
