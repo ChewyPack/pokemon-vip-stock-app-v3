@@ -207,14 +207,36 @@ window.GIVEAWAY_CONFIG = {
   // GET endpoint returning an array of giveaways (or {giveaways:[...]}). Leave '' until wired.
   apiUrl: '/api/giveaways',
   // Optional: GET endpoint returning winners array. Leave '' to hide the winners section.
-  winnersUrl: '',
+  winnersUrl: '/api/giveaway-entries?winners=1',
   // Existing account page for collectors to sign up or manage VIP membership.
   checkoutUrl: '/account.html',
   // Existing published rules page.
   rulesUrl: '',
-  // REQUIRED to enable entering: async (giveaway) => ({ok:true,message:'...', entries?:number}) | ({ok:false,message:'...'})
-  // Wire this to your EXISTING entry flow. It must never fake success.
-  enterGiveaway: null,
+  // A successful entry is reported only after the server saves it.
+  enterGiveaway: async (giveaway) => {
+    const response = await fetch('/api/giveaway-entry', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ giveaway_id: Number(giveaway.id) })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) {
+      const messages = {
+        login_required: 'Please sign in or create a free account before entering.',
+        already_entered: 'You already have one entry for this giveaway.',
+        vip_membership_required: 'This giveaway is for active VIP members. Sign in with your VIP account or learn about membership.',
+        giveaway_not_open: 'This giveaway has not opened yet.',
+        giveaway_ended: 'This giveaway has closed and is no longer accepting entries.',
+        giveaway_closed: 'This giveaway is closed because a winner has already been selected.',
+        giveaway_not_found: 'This giveaway is no longer available.',
+        giveaway_dates_unavailable: 'This giveaway’s entry dates are not configured correctly.',
+        origin_not_allowed: 'Please refresh the page and try again.'
+      };
+      return { ok: false, error: data.error || 'entry_failed', message: messages[data.error] || 'We could not save your entry. Please try again.' };
+    }
+    return { ok: true, message: data.message || 'Your entry is confirmed. Good luck!', entries: Number(data.entries || 0) };
+  },
   // Map your API field names to the fields this page reads. Edit if yours differ.
   normalize(r){return{
     id:r.id, title:r.title||r.name, description:r.description||'', image:r.image_url||r.image||'',
@@ -228,7 +250,7 @@ window.GIVEAWAY_CONFIG = {
 
 const C = window.GIVEAWAY_CONFIG;
 const $ = (s, el = document) => el.querySelector(s);
-const state = { all: [], filter: 'all', q: '', sort: 'end', opener: null, timer: null };
+const state = { all: [], enteredIds: new Set(), filter: 'all', q: '', sort: 'end', opener: null, timer: null };
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeUrl = u => /^(https?:\/\/|\/)/i.test(u || '') ? u : '';
@@ -263,6 +285,13 @@ async function load() {
       const d = await getJSON(C.apiUrl);
       state.all = (Array.isArray(d) ? d : d.giveaways || []).map(r => { const g = C.normalize(r); g._s = statusOf(g); return g; }).filter(g => g.title);
     }
+    try {
+      const entryStatus = await getJSON('/api/giveaway-entry');
+      state.enteredIds = new Set((entryStatus.entered_ids || []).map(Number));
+    } catch (entryStatusError) {
+      state.enteredIds = new Set();
+    }
+    state.all.forEach(g => { g.entered = state.enteredIds.has(Number(g.id)); });
     grid.setAttribute('aria-busy', 'false');
     renderAll();
   } catch (e) {
@@ -371,21 +400,43 @@ function renderStatic() {
 function openModal(g, opener) {
   state.opener = opener;
   const m = $('#modal');
-  m.innerHTML = `<button class="m-x" aria-label="Close details">✕</button><div class="m-grid"><div class="m-img">${img(g)}</div><div class="m-body"><div>${badge(g)}</div><h2 id="mTitle" style="font-size:2.2rem">${esc(g.title)}</h2>${money(g.value) ? `<p class="val">Estimated retail value ${money(g.value)}</p>` : ''}<p class="muted" style="white-space:pre-line">${esc(g.description)}</p>${g.start ? `<p><strong>Starts:</strong> ${esc(when(g.start))}</p>` : ''}${g.end ? `<p><strong>${g._s === 'ended' ? 'Ended' : 'Deadline'}:</strong> ${esc(when(g.end))}</p>` : ''}${cdHTML(g)}${g.eligibility ? `<p><strong>Eligibility:</strong> ${esc(g.eligibility)}</p>` : g.vipOnly ? '<p><strong>Eligibility:</strong> VIP members only.</p>' : ''}${g.rules ? `<p><strong>Rules:</strong> <span class="muted" style="white-space:pre-line">${esc(g.rules)}</span></p>` : ''}${g.entries != null ? `<p class="muted">${(+g.entries).toLocaleString()} entries</p>` : ''}<p class="msg" id="msg" role="status" aria-live="polite"></p><div class="cta"><button class="btn pri" id="enter" ${g._s !== 'live' ? 'disabled' : ''}>${g._s === 'live' ? 'Enter Giveaway' : g._s === 'upcoming' ? 'Not open yet' : 'Giveaway ended'}</button></div></div></div>`;
+  m.innerHTML = `<button class="m-x" aria-label="Close details">✕</button><div class="m-grid"><div class="m-img">${img(g)}</div><div class="m-body"><div>${badge(g)}</div><h2 id="mTitle" style="font-size:2.2rem">${esc(g.title)}</h2>${money(g.value) ? `<p class="val">Estimated retail value ${money(g.value)}</p>` : ''}<p class="muted" style="white-space:pre-line">${esc(g.description)}</p>${g.start ? `<p><strong>Starts:</strong> ${esc(when(g.start))}</p>` : ''}${g.end ? `<p><strong>${g._s === 'ended' ? 'Ended' : 'Deadline'}:</strong> ${esc(when(g.end))}</p>` : ''}${cdHTML(g)}${g.eligibility ? `<p><strong>Eligibility:</strong> ${esc(g.eligibility)}</p>` : g.vipOnly ? '<p><strong>Eligibility:</strong> VIP members only.</p>' : ''}${g.rules ? `<p><strong>Rules:</strong> <span class="muted" style="white-space:pre-line">${esc(g.rules)}</span></p>` : ''}${g.entries != null ? `<p class="muted">${(+g.entries).toLocaleString()} entries</p>` : ''}<p class="muted" style="font-size:.85rem">One entry per account. Sign in is required. VIP-only giveaways require an active VIP membership.</p><p class="msg" id="msg" role="status" aria-live="polite"></p><div class="cta"><button class="btn pri" id="enter" ${g.entered || g._s !== 'live' ? 'disabled' : ''}>${g.entered ? 'Already entered' : g._s === 'live' ? 'Enter Giveaway' : g._s === 'upcoming' ? 'Not open yet' : 'Giveaway ended'}</button></div></div></div>`;
   $('.m-x', m).onclick = () => m.close();
   $('#enter', m).onclick = () => enter(g);
   m.showModal(); tickCountdowns();
 }
 async function enter(g) {
   const btn = $('#enter'), msg = $('#msg');
-  if (typeof C.enterGiveaway !== 'function') { msg.className = 'msg err'; msg.textContent = 'Entry isn’t connected on this page yet.'; return; }
+  if (g.entered) { msg.className = 'msg ok'; msg.textContent = 'You already have an entry for this giveaway.'; return; }
   btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Submitting your entry…';
   try {
     const r = await C.enterGiveaway(g);
     msg.className = 'msg ' + (r && r.ok ? 'ok' : 'err');
-    msg.textContent = (r && r.message) || (r && r.ok ? 'You’re entered. Good luck!' : 'We couldn’t complete your entry.');
-    if (r && r.ok && r.entries != null) g.entries = r.entries; /* only from confirmed server response */
-    if (!(r && r.ok)) btn.disabled = false; else { renderStats(); renderGrid(); }
+    msg.textContent = (r && r.message) || (r && r.ok ? 'Your entry is confirmed. Good luck!' : 'We couldn’t complete your entry.');
+    if (r && r.ok) {
+      g.entered = true;
+      state.enteredIds.add(Number(g.id));
+      if (r.entries != null) g.entries = r.entries;
+      btn.textContent = 'Entry confirmed';
+      renderStats(); renderGrid();
+    } else {
+      if (r && r.error === 'login_required') {
+        const link = document.createElement('a');
+        link.href = '/account.html?next=' + encodeURIComponent('/giveaways.html');
+        link.textContent = 'Sign in / create account';
+        link.className = 'btn';
+        msg.appendChild(document.createTextNode(' '));
+        msg.appendChild(link);
+      } else if (r && r.error === 'vip_membership_required') {
+        const link = document.createElement('a');
+        link.href = '/account.html';
+        link.textContent = 'Membership details';
+        link.className = 'btn';
+        msg.appendChild(document.createTextNode(' '));
+        msg.appendChild(link);
+      }
+      btn.disabled = false;
+    }
   } catch (e) { msg.className = 'msg err'; msg.textContent = 'Something went wrong. Please try again.'; btn.disabled = false; }
 }
 $('#modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
