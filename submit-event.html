@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Submit an Event | PokePrizePool</title>
+<meta name="description" content="Submit a Pokémon card show, trade night, tournament, or store event for review by PokePrizePool.">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+body{margin:0;background:#07142e;color:#f6f8ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{width:min(900px,calc(100% - 32px));margin:auto;padding:30px 0 70px}
+.card{background:#09193d;border:1px solid #ffffff25;border-radius:16px;padding:clamp(16px,3vw,28px);margin:20px 0}
+.muted{color:#bac9e8;line-height:1.6}
+label{display:block;margin:13px 0 6px;font-weight:700;color:#e6edff}
+input,textarea,select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #52688f;border-radius:8px;background:#08142d;color:#fff;font:inherit}
+textarea{min-height:120px;resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+button,.button{display:inline-block;padding:12px 16px;border:1px solid #7e9bce;border-radius:9px;background:#174a9c;color:#fff;font:inherit;font-weight:800;cursor:pointer;text-decoration:none}
+button:disabled{opacity:.6;cursor:wait}
+#status{padding:12px 0;white-space:pre-wrap}.error{color:#ffb4bd}.success{color:#b6f3d0}
+.notice{padding:14px;border-radius:10px;border:1px solid #395882;background:#101f3c}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="wrap">
+<h1>Submit an Event</h1>
+<p class="muted">Know about a Pokémon card show, trade night, tournament, or store event? Send it to PokePrizePool for review. Submissions are not published automatically; an admin checks the details before adding an approved event to the calendar.</p>
+<div class="card">
+<p id="status" role="status" aria-live="polite">Checking your account…</p>
+<form id="event-form" hidden>
+<div class="grid">
+<div><label for="title">Event title *</label><input id="title" name="title" maxlength="180" required placeholder="e.g. Sunday Pokémon Trade Night"></div>
+<div><label for="event_type">Event type *</label><select id="event_type" name="event_type" required><option value="show">Card show / convention</option><option value="trade">Trade night / meetup</option><option value="tournament">Tournament / organized play</option><option value="store">Store event</option><option value="restock">Restock report</option><option value="release">TCG product release</option></select></div>
+<div><label for="event_date">Date *</label><input id="event_date" name="event_date" type="date" required></div>
+<div><label for="price">Admission / price</label><input id="price" name="price" maxlength="100" placeholder="Free, $5, etc."></div>
+<div><label for="start_time">Start time</label><input id="start_time" name="start_time" type="time"></div>
+<div><label for="end_time">End time</label><input id="end_time" name="end_time" type="time"></div>
+<div><label for="venue">Venue / store name</label><input id="venue" name="venue" maxlength="160" placeholder="Venue or store name"></div>
+<div><label for="url">Official event details URL</label><input id="url" name="url" type="url" maxlength="1000" placeholder="https://…"></div>
+<div><label for="address">Street address</label><input id="address" name="address" maxlength="300"></div>
+<div><label for="city">City / town</label><input id="city" name="city" maxlength="160"></div>
+<div><label for="state">State / area</label><select id="state" name="state"><option value="">Choose state</option><option value="RI">Rhode Island</option><option value="MA">Massachusetts</option><option value="CT">Connecticut</option><option value="NH">New Hampshire</option><option value="VT">Vermont</option><option value="ME">Maine</option><option value="ONLINE">Online / nationwide</option><option value="OTHER">Other</option></select></div>
+<div><label for="zip">ZIP / postal code</label><input id="zip" name="zip" maxlength="12"></div>
+</div>
+<label for="description">Event details *</label><textarea id="description" name="description" maxlength="4000" required placeholder="Include organizer details, registration info, schedule, what attendees can expect, or how this information was confirmed."></textarea>
+<p class="muted small">Please submit events you believe are accurate. We may contact you or check the official organizer listing before approving. Do not submit private personal information.</p>
+<div style="margin-top:18px"><button id="submit-button" type="submit">Submit for approval</button></div>
+</form>
+</div>
+<div class="notice muted">Once approved, the event will appear on the public Events Calendar. PokePrizePool may edit or decline submissions that are incomplete, unverifiable, expired, or duplicate entries.</div>
+</main>
+<script src="/js/ui/site-nav.js"></script>
+<script>
+(function(){
+'use strict';
+var status=document.getElementById('status'),form=document.getElementById('event-form'),button=document.getElementById('submit-button');
+function say(text,kind){status.textContent=text;status.className=kind||'';}
+fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(data){
+ if(!data||!data.ok||!data.authenticated){say('Sign in or create a free PokePrizePool account to submit an event. Redirecting to sign in…','');setTimeout(function(){location.href='/account.html?next='+encodeURIComponent('/submit-event.html');},500);return;}
+ form.hidden=false;say('Signed in. Complete the details below and submit the event for review.','success');
+}).catch(function(){say('Could not verify your account. Refresh this page or sign in again.','error');});
+form.addEventListener('submit',async function(event){
+ event.preventDefault();button.disabled=true;button.textContent='Submitting…';
+ var data={};
+ Array.from(form.elements).forEach(function(input){if(input.name&&input.type!=='submit')data[input.name]=input.value;});
+ try{
+  var response=await fetch('/api/event-submissions',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)});
+  var result=await response.json().catch(function(){return {};});
+  if(!response.ok||!result.ok){
+   var messages={login_required:'Your session expired. Sign in again and resubmit.',title_required:'Enter a title with at least four characters.',valid_event_date_required:'Choose a valid event date.',invalid_event_type:'Choose a valid event type.',invalid_event_time:'Check the event start and end times.',event_url_must_be_https:'Use an official HTTPS event link.',event_location_or_url_required:'Enter the venue/city or an official event link.'};
+   throw new Error(messages[result.error]||result.error||'Submission failed. Please try again.');
+  }
+  form.reset();say(result.message||'Your event was submitted for approval.','success');
+ }catch(error){say('Could not submit event: '+error.message,'error');}
+ finally{button.disabled=false;button.textContent='Submit for approval';}
+});
+})();
+</script>
+<script src="/js/ui/pokereport-sidebar.js"></script>
+</body>
+</html>
