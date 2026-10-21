@@ -15,7 +15,7 @@ function getCookie(request, name) {
 }
 function base64Url(bytes) {
   return btoa(String.fromCharCode(...new Uint8Array(bytes)))
-    .replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 async function sha256(value) {
   return base64Url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
@@ -64,7 +64,7 @@ async function requireAdmin(request, env) {
 }
 function validDateTime(value) {
   if (!value) return true;
-  return /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
 }
 function uploadedImageIsValid(value, requestUrl) {
   if (!value) return true;
@@ -74,7 +74,7 @@ function uploadedImageIsValid(value, requestUrl) {
     const key = image.searchParams.get('key') || '';
     return image.origin === origin &&
       image.pathname === '/api/vendor/image' &&
-      /^giveaways\\/[a-f0-9-]+\\.(jpg|png|webp|avif)$/i.test(key);
+      /^giveaways\/[a-f0-9-]+\.(jpg|png|webp|avif)$/i.test(key);
   } catch {
     return false;
   }
