@@ -68,7 +68,7 @@ function originAllowed(request) {
 function isVip(account) {
   const status = String(account.membership_status || '').toLowerCase();
   const tier = String(account.membership_entitlement_tier || account.membership_tier || '').toLowerCase().trim();
-  const normalized = tier.replace(/[\s+-]+/g, '_');
+  const normalized = tier.replace(/\+/g, '_plus').replace(/[\s-]+/g, '_');
   return ['active', 'trialing'].includes(status) &&
     ['collector_plus', 'vendor', 'vendor_plus', 'organizer', 'organizer_plus', 'vip'].includes(normalized);
 }
