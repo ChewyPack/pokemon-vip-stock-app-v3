@@ -83,9 +83,9 @@ form.addEventListener('submit',async function(event){
   var result=await response.json().catch(function(){return {};});
   if(!response.ok||!result.ok){
    var messages={login_required:'Your session expired. Sign in again and resubmit.',title_required:'Enter a title with at least four characters.',valid_event_date_required:'Choose a valid event date.',invalid_event_type:'Choose a valid event type.',invalid_event_time:'Check the event start and end times.',event_url_must_be_https:'Use an official HTTPS event link.',event_location_or_url_required:'Enter the venue/city or an official event link.',invalid_recurrence_frequency:'Choose one-time, weekly, monthly, or yearly.',valid_recurrence_end_required:'Choose a repeat-until date on or after the first event date.',recurrence_limit_exceeded:'That schedule includes too many occurrences. Shorten the repeat-until date and try again.'};
-   throw new Error(messages[result.error]||result.error||'Submission failed. Please try again.');
+   throw new Error(messages[result.error]||result.message||result.error||'Submission failed. Please try again.');
   }
-  form.reset();say(result.message||'Your event was submitted for approval.','success');
+  form.reset();syncRecurrence();say(result.message||'Your event was submitted for approval.','success');
  }catch(error){say('Could not submit event: '+error.message,'error');}
  finally{button.disabled=false;button.textContent='Submit for approval';}
 });
