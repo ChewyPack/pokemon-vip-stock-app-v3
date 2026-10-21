@@ -10,6 +10,8 @@ This feature is for the `feature/collector-account-login` staging branch only. D
 - `functions/api/chat/socket.js`: authenticated WebSocket handshake.
 - `functions/_lib/chat.js`: uses the existing `collector_session` login cookie and broadcasts events.
 - `workers/chat-realtime/`: Cloudflare Durable Object WebSocket room for live message delivery.
+- `functions/api/chat/mentions.js`: authenticated username autocomplete for registered collectors.
+- Ordinary chat messages can mention registered usernames with `@username`; in-app notifications and preference-enabled browser push notifications are sent to mentioned members.
 - `migrations/staging_community_chat.sql`: channels and message tables.
 
 All registered accounts can read and post in chat; VIP status is not required. A logged-in session is required. The initial channels are General, Restocks & Finds, Market Talk, Trades & Collections, and Help Desk.
