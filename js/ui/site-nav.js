@@ -102,19 +102,11 @@
  // Report authenticated collector presence per browser tab, so chat and admin tabs do not overwrite each other.
  (function(){
   var page = location.pathname || "/";
-  var tabKey = "ppp_presence_tab_id";
-  var tabId = "";
-  try {
-   tabId = sessionStorage.getItem(tabKey) || "";
-   if (!/^[a-zA-Z0-9_-]{8,100}$/.test(tabId)) {
-    tabId = (window.crypto && typeof window.crypto.randomUUID === "function")
-      ? window.crypto.randomUUID().replace(/-/g, "")
-      : "tab_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    sessionStorage.setItem(tabKey, tabId);
-   }
-  } catch (e) {
-   tabId = "tab_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-  }
+  // Generate an in-memory ID for this page instance. sessionStorage can be copied
+  // when a tab is duplicated, causing two tabs to overwrite the same presence row.
+  var tabId = (window.crypto && typeof window.crypto.randomUUID === "function")
+    ? window.crypto.randomUUID().replace(/-/g, "")
+    : "tab_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
   function beat(){
    if(document.visibilityState === "hidden") return;
    fetch("/api/presence", {method:"POST",credentials:"include",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({page:page,tab_id:tabId})}).catch(function(){});
