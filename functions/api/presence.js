@@ -44,7 +44,7 @@ export async function onRequestGet({ request, env }) {
       FROM accounts a
       LEFT JOIN collector_profiles p ON p.account_id = a.id
       LEFT JOIN site_presence s ON s.account_id = a.id
-      WHERE s.last_seen_at >= datetime('now', '-24 hours')
+      WHERE datetime(s.last_seen_at) >= datetime('now', '-24 hours')
       ORDER BY s.last_seen_at DESC
       LIMIT 500
     `).all();
