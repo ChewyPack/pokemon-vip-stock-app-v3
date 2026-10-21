@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>In-Store Line Standing &amp; Purchasing Service | PokePrizePool</title>
+<meta name="description" content="Reservation-based in-store line standing and purchasing for high-demand Pokémon TCG releases. Compare Member and VIP pricing and estimate your service fee.">
+<style>
+:root{--bg:#0a0d16;--bg2:#10141f;--line:rgba(255,255,255,.12);--text:#e9edf7;--mut:#a9b2c7;--blue:#3da5ff;--pur:#8b5cf6;--yel:#ffcb05;--bad:#ff6b6b;--ok:#4ade80}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:12px}
+body{margin:0;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+a{color:var(--blue)}
+:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px}
+section{padding:52px 0}
+h1,h2,h3{font-family:Impact,"Arial Narrow Bold","Roboto Condensed",sans-serif;font-weight:700;letter-spacing:.03em;text-transform:uppercase;line-height:1.1;margin:0 0 .5em}
+h1{font-size:clamp(2.4rem,9vw,4.6rem)}
+h2{font-size:clamp(1.6rem,5vw,2.3rem)}
+h3{font-size:1.2rem}
+.lead,.mut{color:var(--mut)}
+.glass{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:20px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 20px;border-radius:10px;border:1px solid var(--blue);background:rgba(61,165,255,.14);color:var(--text);font:inherit;font-weight:700;text-decoration:none;cursor:pointer;transition:transform .15s,background .2s}
+.btn:hover{background:rgba(61,165,255,.3);transform:translateY(-1px)}
+.btn.pri{background:linear-gradient(90deg,var(--yel),#ffb300);border-color:var(--yel);color:#17120a}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.hero{padding:64px 0 36px;background:radial-gradient(ellipse at 15% 0,rgba(139,92,246,.3),transparent 55%),radial-gradient(ellipse at 90% 10%,rgba(61,165,255,.22),transparent 50%);position:relative}
+.hero .cards{position:absolute;right:4%;top:40px;width:180px;height:240px;opacity:.5;pointer-events:none}
+.hero .cards i{position:absolute;inset:0;border:2px solid var(--blue);border-radius:12px;background:linear-gradient(135deg,rgba(61,165,255,.15),rgba(139,92,246,.2))}
+.hero .cards i:nth-child(1){transform:rotate(-10deg)}.hero .cards i:nth-child(2){transform:rotate(4deg);border-color:var(--pur)}.hero .cards i:nth-child(3){transform:rotate(16deg);border-color:var(--yel)}
+@media(max-width:720px){.hero .cards{display:none}}
+.hero .in{position:relative;max-width:700px}
+.pills{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}
+.pill{padding:6px 14px;border:1px solid var(--line);border-radius:99px;font-size:.9rem;background:rgba(255,255,255,.05)}
+.disc{border-left:4px solid var(--yel);background:rgba(255,203,5,.08);padding:10px 14px;border-radius:6px;font-size:.95rem}
+.step b{display:block;color:var(--yel);font-family:Impact,sans-serif;font-size:2rem}
+label{display:block;font-weight:600;margin:12px 0 4px}
+input,select,textarea{width:100%;min-height:46px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:#0b0f1a;color:var(--text);font:inherit}
+textarea{min-height:90px}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{flex:1 1 120px;min-height:46px;border-radius:8px;border:1px solid var(--line);background:#0b0f1a;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--blue);color:#06101c;border-color:var(--blue)}
+.res table{width:100%;border-collapse:collapse}
+.res td{padding:7px 0;border-bottom:1px solid var(--line)}
+.res td:last-child{text-align:right;font-weight:600}
+.total{font:700 2.6rem Impact,sans-serif;color:var(--yel)}
+.note{padding:10px 12px;border-radius:8px;background:rgba(61,165,255,.1);border:1px solid rgba(61,165,255,.35);font-size:.92rem;margin:10px 0}
+.price h3{color:var(--blue)}.price .big{font:700 1.8rem Impact,sans-serif}
+.pay .glass{border-width:2px}.pay .a{border-color:var(--yel)}.pay .b{border-color:var(--blue)}
+.err{color:var(--bad);font-size:.88rem;min-height:1.2em;margin:2px 0 0}
+.steps{display:flex;gap:6px;margin-bottom:16px}.steps i{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.12)}.steps i.on{background:var(--yel)}
+.ack{display:flex;gap:10px;align-items:flex-start;font-weight:400;margin:10px 0}.ack input{width:22px;min-height:22px;flex:none;margin-top:3px}
+pre{white-space:pre-wrap;background:#0b0f1a;border:1px solid var(--line);border-radius:8px;padding:12px;font:.88rem/1.5 ui-monospace,Consolas,monospace}
+details{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:700;min-height:48px;display:flex;align-items:center;list-style:none}
+summary::after{content:"+";margin-left:auto;color:var(--yel);font-size:1.4rem}
+details[open] summary::after{content:"–"}
+details p{margin:0 0 14px;color:var(--mut)}
+[hidden]{display:none!important}
+footer{text-align:center;padding:50px 0 70px}
+</style>
+</head>
+<body>
+<main>
+<header class="hero"><div class="cards" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="wrap in">
+<h1>You collect.<br>I'll handle the line.</h1>
+<p class="lead">High-demand Pokémon releases can mean hours in line, freezing temperatures, and early mornings. PokePrizePool's In-Store Line Standing &amp; Purchasing Service helps collectors secure their target products without spending their entire day waiting outside.</p>
+<div class="row"><a class="btn pri" href="#calculator">Calculate My Cost</a><a class="btn" href="#reserve">Request a Reservation</a></div>
+<div class="pills"><span class="pill">Real time and effort invested</span><span class="pill">Member and VIP pricing</span><span class="pill">Reservation-based service</span></div>
+<p class="disc"><b>Product availability, store purchase limits, and successful purchases are never guaranteed.</b></p>
+</div></header>
+
+<section><div class="wrap"><h2>How it works</h2>
+<div class="grid">
+<div class="glass step"><b>01</b><h3>Plan your drop</h3><p class="mut">Tell us the store location, release date, and exact products you're targeting.</p></div>
+<div class="glass step"><b>02</b><h3>Secure your reservation</h3><p class="mut">We confirm availability, applicable pricing, and reservation details. Your service fee must be paid upfront.</p></div>
+<div class="glass step"><b>03</b><h3>Get ready for drop day</h3><p class="mut">Provide the full product budget before the store opens. I handle the agreed-upon line-standing and purchasing attempt, subject to store policies, inventory, and purchase limits.</p></div>
+</div></div></section>
+
+<section id="calculator"><div class="wrap"><h2>Pricing calculator</h2>
+<p class="lead">An estimate only. It does not confirm availability or create a booking.</p>
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+<div class="glass">
+<label id="l1">Customer type</label><div class="seg" role="group" aria-labelledby="l1" data-k="tier"><button type="button" data-v="member" aria-pressed="true">Member</button><button type="button" data-v="vip" aria-pressed="false">VIP</button></div>
+<label id="l2">Service type</label><div class="seg" role="group" aria-labelledby="l2" data-k="svc"><button type="button" data-v="std" aria-pressed="true">Standard / Off-Day</button><button type="button" data-v="high" aria-pressed="false">High-Demand / Extreme Weather</button></div>
+<label id="l3">Booking</label><div class="seg" role="group" aria-labelledby="l3" data-k="mode"><button type="button" data-v="hourly" aria-pressed="true">Hourly</button><button type="button" data-v="pkg" aria-pressed="false">10-hour package</button></div>
+<div id="hoursBox"><label for="hours">Hours (minimum 3)</label><input id="hours" type="number" min="3" max="24" step="1" value="3" inputmode="numeric"><p class="mut" style="font-size:.9rem;margin:6px 0 0">All hourly bookings have a 3-hour minimum.</p></div>
+</div>
+<div class="glass res" aria-live="polite">
+<table><tr><td>Service type</td><td id="rSvc"></td></tr><tr><td>Customer tier</td><td id="rTier"></td></tr><tr><td>Duration</td><td id="rDur"></td></tr><tr><td>Applicable rate</td><td id="rRate"></td></tr><tr id="rSaveRow"><td>Savings vs. hourly</td><td id="rSave"></td></tr></table>
+<p class="mut" style="margin:14px 0 0">Estimated service fee</p><div class="total" id="rTotal"></div>
+<div class="note" id="rNote"></div>
+<p class="mut" style="font-size:.9rem">Product costs are separate from service fees and are not included here.</p>
+<button class="btn pri" id="toForm" type="button">Request this booking</button>
+</div></div></div></section>
+
+<section><div class="wrap"><h2>Pricing at a glance</h2>
+<div class="grid" id="cards"></div>
+<p class="mut" style="margin-top:14px">VIP rates lower the cost of your time. They do not promise priority booking. High-demand pricing may apply to major releases, such as premium collection boxes and UPCs, or challenging conditions such as snow and freezing temperatures. The applicable rate is confirmed before you pay.</p></div></section>
+
+<section><div class="wrap"><h2>Before you book, let's make sure it makes sense.</h2>
+<div class="glass"><p>This service isn't for everyone, and that's completely understandable. High-demand Pokémon releases can require 7–10 hours of waiting, sometimes outdoors in freezing temperatures. You're paying for the time, effort, planning, and commitment required to make the purchasing attempt.</p>
+<p>Best suited for collectors who want to maximize their available store purchase limits, subject to the retailer's rules:</p>
+<ul><li>Multiple eligible products</li><li>Premium boxes and high-demand releases</li><li>Full 2-per-SKU allowances where the store permits them</li></ul>
+<p class="note">If you're looking for just one or two lower-priced items, the service fee may outweigh the value of the purchase. Use the calculator to decide whether it makes financial sense for you. Never spend beyond your budget.</p></div></div></section>
+
+<section class="pay"><div class="wrap"><h2>Payment rules</h2>
+<p class="lead">You pay two separate amounts: the service fee and your product budget.</p>
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+<div class="glass a"><h3>1. Service fee: paid upfront</h3><ul><li>Paid in advance to secure the reservation.</li><li>Every hourly booking has a 3-hour minimum.</li><li>A reservation isn't confirmed until availability is confirmed and payment requirements are satisfied.</li></ul></div>
+<div class="glass b"><h3>2. Product funds: before opening</h3><ul><li>The full budget for the requested products must be provided before the store opens.</li><li>Product funds are separate from the service fee.</li><li>No product funds means no purchase attempt.</li></ul></div>
+</div>
+<p class="note">Refund, cancellation, and reimbursement terms have not been defined here and must be confirmed directly before you pay.</p></div></section>
+
+<section><div class="wrap"><h2>Reservation rules</h2>
+<div class="grid"><div class="glass"><h3>Standard / off-day</h3><p class="mut">First-come, first-served, subject to availability.</p></div>
+<div class="glass"><h3>Major releases / scheduled drops</h3><p class="mut">Slots may be assigned through a lottery or first-come, first-served process following an official announcement for the specific drop.</p></div></div>
+<p class="disc" style="margin-top:14px">Submitting a request does not guarantee a reservation. Wait for confirmation before treating your slot as secured.</p></div></section>
+
+<section id="reserve"><div class="wrap"><h2>Reservation inquiry</h2>
+<p class="lead">Do not enter payment card details. This form only sends an inquiry.</p>
+<form class="glass" id="form" novalidate>
+<div class="steps" id="bar"><i></i><i></i><i></i><i></i></div>
+<div data-s="0"><h3>Your information</h3>
+<label for="name">Name</label><input id="name" required autocomplete="name"><p class="err" data-e="name"></p>
+<label for="discord">Discord username</label><input id="discord" required><p class="err" data-e="discord"></p>
+<label for="email">Email address</label><input id="email" type="email" required autocomplete="email"><p class="err" data-e="email"></p>
+<label for="tier">Customer type</label><select id="tier"><option value="member">Member</option><option value="vip">VIP</option></select></div>
+<div data-s="1" hidden><h3>Drop details</h3>
+<label for="store">Store name</label><input id="store" required><p class="err" data-e="store"></p>
+<label for="addr">Store location / address</label><input id="addr" required><p class="err" data-e="addr"></p>
+<label for="date">Requested date</label><input id="date" type="date" required><p class="err" data-e="date"></p>
+<label for="open">Expected opening time (optional)</label><input id="open" type="time">
+<label for="rel">Release name or description</label><input id="rel" required><p class="err" data-e="rel"></p>
+<label for="svc">Service type</label><select id="svc"><option value="std">Standard / Off-Day</option><option value="high">High-Demand / Extreme Weather</option></select>
+<label for="mode">Requested duration</label><select id="mode"><option value="hourly">Hourly</option><option value="pkg">10-hour package</option></select>
+<div id="fHoursBox"><label for="fhours">Hours (minimum 3)</label><input id="fhours" type="number" min="3" max="24" value="3"><p class="err" data-e="fhours"></p></div></div>
+<div data-s="2" hidden><h3>Product request</h3>
+<label for="prod">Exact product names</label><textarea id="prod" required placeholder="One product per line"></textarea><p class="err" data-e="prod"></p>
+<label for="qty">Requested quantities</label><input id="qty" required placeholder="e.g. 2 of each, or match the lines above"><p class="err" data-e="qty"></p>
+<label for="budget">Estimated product budget (USD, separate from service fee)</label><input id="budget" type="number" min="0" step="1" inputmode="decimal"><p class="err" data-e="budget"></p>
+<label for="notes">Notes (optional)</label><textarea id="notes"></textarea></div>
+<div data-s="3" hidden><h3>Review and submit</h3><pre id="sum"></pre>
+<p class="note">Product funds are separate and are not included in the estimated service fee.</p>
+<label class="ack"><input type="checkbox" class="ak"><span>I understand hourly bookings have a 3-hour minimum.</span></label>
+<label class="ack"><input type="checkbox" class="ak"><span>The service fee is paid upfront.</span></label>
+<label class="ack"><input type="checkbox" class="ak"><span>Product funds must be provided before the store opens.</span></label>
+<label class="ack"><input type="checkbox" class="ak"><span>Product availability and successful purchasing are not guaranteed.</span></label>
+<label class="ack"><input type="checkbox" class="ak"><span>My request is not a confirmed reservation until accepted.</span></label>
+<p class="err" data-e="ack"></p>
+<div id="fallback" hidden class="note"><b>No submission service is connected.</b> Copy your request below and send it through the confirmed contact method (<span id="contactName">to be provided</span>). Nothing has been sent.
+<div class="row" style="margin-top:8px"><button class="btn" id="copy" type="button">Copy request</button></div><p id="copied" class="mut" role="status"></p></div>
+<p class="err" id="subErr" role="alert"></p></div>
+<div class="row" style="margin-top:18px"><button class="btn" type="button" id="back" hidden>Back</button><button class="btn pri" type="button" id="next">Next</button><button class="btn pri" type="submit" id="submit" hidden>Submit request</button></div>
+</form>
+<div class="glass" id="done" hidden role="status"><h3>Request received</h3><p>Your request was received. Submitting does not guarantee a reservation. Wait for confirmation before treating your slot as secured.</p></div>
+</div></section>
+
+<section><div class="wrap"><h2>FAQ</h2><div id="faq"></div></div></section>
+
+<footer><div class="wrap"><h2>Your time matters. My time matters.</h2>
+<p class="lead" style="max-width:62ch;margin:0 auto 22px">The goal is simple: help fellow collectors secure the products they want without having to spend their own day standing in line. Every drop takes planning, effort, and commitment. If the service makes sense for your next release, let's talk.</p>
+<div class="row" style="justify-content:center"><a class="btn pri" href="#calculator">Calculate My Cost</a><a class="btn" href="#reserve">Request a Reservation</a></div>
+<p style="margin-top:28px"><b>PokePrizePool</b> · <a href="https://pokeprizepool.com">pokeprizepool.com</a></p></div></footer>
+</main>
+
+<script>
+(function(){
+// CONFIG: set endpoint to a verified submission URL (POST JSON). Leave "" until one exists.
+var CONFIG={endpoint:"",contactName:""};
+var $=function(i){return document.getElementById(i)};
+var RATES={std:{member:[25,220],vip:[20,180]},high:{member:[30,260],vip:[25,225]}};
+var SV={std:"Standard / Off-Day",high:"High-Demand / Extreme Weather"},TN={member:"Member",vip:"VIP"};
+var st={tier:"member",svc:"std",mode:"hourly"};
+function money(n){return"$"+n}
+function est(tier,svc,mode,h){var r=RATES[svc][tier],hr=r[0],pk=r[1],o={hourly:hr,note:""};
+if(mode==="pkg"){o.hours=10;o.total=pk;o.save=hr*10-pk;o.note="The 10-hour package covers exactly 10 hours. Time beyond 10 hours requires confirmation.";}
+else{h=Math.floor(Number(h))||3;o.clamped=h<3;if(h<3)h=3;o.hours=h;o.total=hr*h;o.save=null;
+o.note=h>10?"Hourly rate applies to every hour. Please confirm longer bookings before paying.":(o.clamped?"Hourly bookings have a 3-hour minimum, so 3 hours is used.":"Hourly estimate. Hourly bookings have a 3-hour minimum.");}
+return o}
+function calc(){var e=est(st.tier,st.svc,st.mode,$("hours").value);
+$("rSvc").textContent=SV[st.svc];$("rTier").textContent=TN[st.tier];
+$("rDur").textContent=st.mode==="pkg"?"10-hour package":e.hours+" hours";
+$("rRate").textContent=st.mode==="pkg"?money(RATES[st.svc][st.tier][1])+" package":money(e.hourly)+"/hour";
+$("rSaveRow").hidden=st.mode!=="pkg";if(st.mode==="pkg")$("rSave").textContent=money(e.save);
+$("rTotal").textContent=money(e.total);$("rNote").textContent=e.note;$("hoursBox").hidden=st.mode==="pkg";}
+document.querySelectorAll(".seg").forEach(function(g){g.addEventListener("click",function(ev){var b=ev.target.closest("button");if(!b)return;
+g.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b)});st[g.dataset.k]=b.dataset.v;calc()})});
+$("hours").addEventListener("input",calc);
+
+var cards=$("cards");
+[["std","member"],["std","vip"],["high","member"],["high","vip"]].forEach(function(p){var r=RATES[p[0]][p[1]],d=document.createElement("div");d.className="glass price";
+d.innerHTML="<h3>"+(p[0]==="std"?"Standard":"High-Demand")+" "+TN[p[1]]+"</h3><div class='big'>"+money(r[0])+"<small>/hour</small></div><p class='mut'>or "+money(r[1])+" for 10 hours<br>Saves "+money(r[0]*10-r[1])+" vs. ten hourly hours</p>";cards.appendChild(d)});
+
+// form
+var cur=0,steps=document.querySelectorAll("[data-s]");
+function fmode(){$("fHoursBox").hidden=$("mode").value==="pkg"}
+$("mode").addEventListener("change",fmode);
+function setErr(k,m){var e=document.querySelector('[data-e="'+k+'"]');if(e)e.textContent=m||""}
+function v(id){return $(id).value.trim()}
+function validate(s){var ok=true;function need(id,msg){if(!v(id)){setErr(id,msg||"This field is required.");ok=false}else setErr(id,"")}
+if(s===0){need("name");need("discord");if(!v("email")||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v("email"))){setErr("email","Enter a valid email address.");ok=false}else setErr("email","")}
+if(s===1){need("store");need("addr");need("rel");
+if(!v("date")){setErr("date","Choose a date.");ok=false}else if(new Date(v("date")+"T23:59:59")<new Date()){setErr("date","Choose a date in the future.");ok=false}else setErr("date","");
+if($("mode").value==="hourly"){var h=Number($("fhours").value);if(!(h>=3)||h%1){setErr("fhours","Enter a whole number of at least 3 hours.");ok=false}else setErr("fhours","")}}
+if(s===2){need("prod");need("qty");var b=v("budget");if(b!==""&&!(Number(b)>=0)){setErr("budget","Enter a valid amount.");ok=false}else setErr("budget","")}
+return ok}
+function summary(){var e=est(v("tier"),$("svc").value,$("mode").value,$("fhours").value);
+return["PokePrizePool Line Service Request (inquiry, not a confirmed reservation)","Name: "+v("name"),"Discord: "+v("discord"),"Email: "+v("email"),"Customer type: "+TN[v("tier")],"Store: "+v("store"),"Address: "+v("addr"),"Date: "+v("date"),"Opening time: "+(v("open")||"not provided"),"Release: "+v("rel"),"Service type: "+SV[$("svc").value],"Duration: "+($("mode").value==="pkg"?"10-hour package":e.hours+" hours"),"Estimated service fee: "+money(e.total)+" (confirm before paying)","Products: "+v("prod").replace(/\n/g,"; "),"Quantities: "+v("qty"),"Estimated product budget (separate): "+(v("budget")?money(v("budget")):"not provided"),"Notes: "+(v("notes")||"none")].join("\n")}
+function show(n){cur=n;steps.forEach(function(s,i){s.hidden=i!==n});
+document.querySelectorAll("#bar i").forEach(function(b,i){b.className=i<=n?"on":""});
+$("back").hidden=n===0;$("next").hidden=n===3;$("submit").hidden=n!==3;
+if(n===3){$("sum").textContent=summary();$("fallback").hidden=!!CONFIG.endpoint;if(CONFIG.contactName)$("contactName").textContent=CONFIG.contactName}
+$("form").scrollIntoView({block:"start"})}
+$("next").onclick=function(){if(validate(cur))show(cur+1)};
+$("back").onclick=function(){show(cur-1)};
+$("copy").onclick=function(){var t=summary(),m=$("copied");
+function ok(){m.textContent="Copied. Nothing has been sent yet."}
+function fb(){var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");ok()}catch(e){m.textContent="Copy failed. Select the summary above and copy it manually."}document.body.removeChild(ta)}
+if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()};
+$("form").addEventListener("submit",function(ev){ev.preventDefault();$("subErr").textContent="";
+var all=[0,1,2].every(function(i){return validate(i)});if(!all){$("subErr").textContent="Please go back and fix the highlighted fields.";return}
+if(document.querySelectorAll(".ak:checked").length<5){setErr("ack","Please acknowledge every statement.");return}setErr("ack","");
+if(!CONFIG.endpoint){$("subErr").textContent="Submission isn't connected yet, so nothing was sent. Use Copy request above.";return}
+var b=$("submit");b.disabled=true;b.textContent="Sending…";
+fetch(CONFIG.endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({summary:summary(),name:v("name"),discord:v("discord"),email:v("email")})})
+.then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);$("form").hidden=true;$("done").hidden=false;$("done").scrollIntoView()})
+.catch(function(){$("subErr").textContent="We couldn't send your request. Please try again, or copy it and send it manually.";b.disabled=false;b.textContent="Submit request"})});
+$("toForm").onclick=function(){$("tier").value=st.tier;$("svc").value=st.svc;$("mode").value=st.mode;if(st.mode==="hourly")$("fhours").value=Math.max(3,Math.floor(Number($("hours").value))||3);fmode();show(0);$("reserve").scrollIntoView()};
+
+var FAQ=[
+["How much does the service cost?","Standard: Member $25/hour or $220 for 10 hours; VIP $20/hour or $180. High-demand: Member $30/hour or $260; VIP $25/hour or $225. Product costs are separate."],
+["What's the difference between standard and high-demand pricing?","High-demand pricing may apply to major releases, such as premium collection boxes and UPCs, or challenging conditions such as snow and freezing temperatures. The applicable rate is confirmed before you pay."],
+["Why is there a 3-hour minimum?","Every hourly booking has a 3-hour minimum to cover the time, planning, and commitment involved."],
+["Is the product cost included in the service fee?","No. The service fee and your product budget are two separate amounts."],
+["When do I need to send product funds?","The full budget for the requested products must be provided before the store opens. No product funds means no purchase attempt."],
+["Does booking guarantee that I get the products?","No. Availability, store purchase limits, and successful purchases are never guaranteed."],
+["How are major release reservations assigned?","Slots may be assigned through a lottery or first-come, first-served process following an official announcement for the specific drop. Standard requests are first-come, first-served, subject to availability."],
+["What happens if a store sells out?","This policy hasn't been defined here and will be confirmed directly before the reservation is accepted."],
+["Can I request a specific store?","Yes, you provide the store location in your request. Availability is confirmed before the reservation is accepted."],
+["How do VIP rates work?","VIP customers pay lower hourly and package rates. VIP does not promise priority booking."],
+["What happens if I need more than 10 hours?","The 10-hour package isn't applied to longer bookings. Additional time requires confirmation."]];
+var f=$("faq");FAQ.forEach(function(q){var d=document.createElement("details");d.innerHTML="<summary>"+q[0]+"</summary><p>"+q[1]+"</p>";f.appendChild(d)});
+calc();fmode();
+})();
+</script>
+</body>
+</html>
