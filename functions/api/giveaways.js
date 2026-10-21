@@ -27,7 +27,7 @@ function truthy(value) {
   return value === true || value === 1 || value === '1' || value === 'true' || value === 'on';
 }
 async function ensureTable(env) {
-  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaways (
+  await env.DB.prepare(\`CREATE TABLE IF NOT EXISTS poke_prize_giveaways (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
@@ -42,9 +42,24 @@ async function ensureTable(env) {
     vip_only INTEGER NOT NULL DEFAULT 0 CHECK(vip_only IN (0,1)),
     entry_count INTEGER,
     published_at TEXT,
+    winner_entry_id INTEGER,
+    winner_selected_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
+  )\`).run();
+  const columns = await env.DB.prepare('PRAGMA table_info(poke_prize_giveaways)').all();
+  const names = new Set((columns.results || []).map(column => column.name));
+  if (!names.has('winner_entry_id')) await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_entry_id INTEGER').run();
+  if (!names.has('winner_selected_at')) await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_selected_at TEXT').run();
+  await env.DB.prepare(\`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    giveaway_id INTEGER NOT NULL,
+    account_id INTEGER NOT NULL,
+    entered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_winner INTEGER NOT NULL DEFAULT 0 CHECK(is_winner IN (0,1)),
+    UNIQUE(giveaway_id, account_id)
+  )\`).run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaway_entries_giveaway ON poke_prize_giveaway_entries(giveaway_id, entered_at)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_giveaways_status ON poke_prize_giveaways(status, featured, end_at)').run();
 }
 async function currentAccount(request, env) {
@@ -85,7 +100,9 @@ function shape(row) {
     ...row,
     featured: Number(row.featured || 0) === 1,
     vip_only: Number(row.vip_only || 0) === 1,
-    entry_count: row.entry_count == null ? null : Number(row.entry_count)
+    entry_count: Number(row.actual_entry_count ?? row.entry_count ?? 0),
+    winner_name: row.winner_name || null,
+    winner_username: row.winner_username || null
   };
 }
 
@@ -98,12 +115,20 @@ export async function onRequestGet({ request, env }) {
       const access = await requireAdmin(request, env);
       if (access.response) return access.response;
       const rows = await env.DB.prepare(
-        'SELECT * FROM poke_prize_giveaways ORDER BY updated_at DESC, id DESC LIMIT 500'
+        `SELECT g.*,
+        (SELECT COUNT(*) FROM poke_prize_giveaway_entries e WHERE e.giveaway_id = g.id) AS actual_entry_count,
+        (SELECT a.display_name FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.id = g.winner_entry_id LIMIT 1) AS winner_name,
+        (SELECT p.username FROM poke_prize_giveaway_entries e JOIN collector_profiles p ON p.account_id = e.account_id WHERE e.id = g.winner_entry_id LIMIT 1) AS winner_username
+       FROM poke_prize_giveaways g ORDER BY g.updated_at DESC, g.id DESC LIMIT 500`
       ).all();
       return json({ ok: true, giveaways: (rows.results || []).map(shape) });
     }
     const rows = await env.DB.prepare(
-      "SELECT id, title, description, prize_value, image_url, start_at, end_at, eligibility, rules, status, featured, vip_only, entry_count, published_at, created_at FROM poke_prize_giveaways WHERE status = 'published' ORDER BY featured DESC, id DESC LIMIT 500"
+      `SELECT g.id, g.title, g.description, g.prize_value, g.image_url, g.start_at, g.end_at, g.eligibility, g.rules, g.status, g.featured, g.vip_only,
+        (SELECT COUNT(*) FROM poke_prize_giveaway_entries e WHERE e.giveaway_id = g.id) AS actual_entry_count,
+        g.published_at, g.created_at, g.winner_selected_at,
+        (SELECT p.username FROM poke_prize_giveaway_entries e JOIN collector_profiles p ON p.account_id = e.account_id WHERE e.id = g.winner_entry_id LIMIT 1) AS winner_username
+       FROM poke_prize_giveaways g WHERE g.status = 'published' ORDER BY g.featured DESC, g.id DESC LIMIT 500`
     ).all();
     return json({ ok: true, giveaways: (rows.results || []).map(shape) });
   } catch (error) {
@@ -179,6 +204,7 @@ export async function onRequestDelete({ request, env }) {
   if (!Number.isSafeInteger(id) || id < 1) return json({ ok: false, error: 'valid_giveaway_id_required' }, 400);
   try {
     await ensureTable(env);
+    await env.DB.prepare('DELETE FROM poke_prize_giveaway_entries WHERE giveaway_id = ?').bind(id).run();
     const result = await env.DB.prepare('DELETE FROM poke_prize_giveaways WHERE id = ?').bind(id).run();
     if (!result.meta || result.meta.changes !== 1) return json({ ok: false, error: 'giveaway_not_found' }, 404);
     return json({ ok: true });
