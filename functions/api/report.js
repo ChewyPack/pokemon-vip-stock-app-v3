@@ -51,6 +51,20 @@ async function sha256Base64Url(value) {
 }
 
 async function requireActivePaidAccount(request, env) {
+  // Existing VIP subscribers use vip_session and the production users table.
+  // Honor their current active session without requiring a duplicate account.
+  const vipToken = getCookie(request, 'vip_session');
+  if (vipToken) {
+    const vipMember = await env.DB.prepare(
+      `SELECT id, session_expires_at, membership_status, membership_type
+       FROM users WHERE session_token_hash = ? AND membership_status = 'active' LIMIT 1`
+    ).bind(await sha256Base64Url(vipToken)).first();
+
+    if (vipMember && vipMember.session_expires_at && Number(vipMember.session_expires_at) > Date.now()) {
+      return { ok: true, account: vipMember, legacyVip: true };
+    }
+  }
+
   const token = getCookie(request, ACCOUNT_COOKIE);
   if (!token) return { ok: false, status: 401, error: 'login_required' };
 
