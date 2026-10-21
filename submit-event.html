@@ -34,6 +34,8 @@ button:disabled{opacity:.6;cursor:wait}
 <div><label for="title">Event title *</label><input id="title" name="title" maxlength="180" required placeholder="e.g. Sunday Pokémon Trade Night"></div>
 <div><label for="event_type">Event type *</label><select id="event_type" name="event_type" required><option value="show">Card show / convention</option><option value="trade">Trade night / meetup</option><option value="tournament">Tournament / organized play</option><option value="store">Store event</option><option value="restock">Restock report</option><option value="release">TCG product release</option></select></div>
 <div><label for="event_date">Date *</label><input id="event_date" name="event_date" type="date" required></div>
+<div><label for="recurrence_frequency">How often does it happen?</label><select id="recurrence_frequency" name="recurrence_frequency"><option value="once">One-time event</option><option value="weekly">Recurring weekly</option><option value="monthly">Recurring monthly</option><option value="yearly">Recurring yearly</option></select></div>
+<div id="recurrence-until-wrap" hidden><label for="recurrence_until">Repeat until (last date included) *</label><input id="recurrence_until" name="recurrence_until" type="date"><p class="muted" style="font-size:.85rem;margin:6px 0 0">Each occurrence up to this date will be listed separately after approval. Weekly series are limited to 53 dates, monthly to 60, and yearly to 10.</p></div>
 <div><label for="price">Admission / price</label><input id="price" name="price" maxlength="100" placeholder="Free, $5, etc."></div>
 <div><label for="start_time">Start time</label><input id="start_time" name="start_time" type="time"></div>
 <div><label for="end_time">End time</label><input id="end_time" name="end_time" type="time"></div>
@@ -56,6 +58,17 @@ button:disabled{opacity:.6;cursor:wait}
 (function(){
 'use strict';
 var status=document.getElementById('status'),form=document.getElementById('event-form'),button=document.getElementById('submit-button');
+var recurrenceSelect=document.getElementById('recurrence_frequency'),recurrenceUntil=document.getElementById('recurrence_until'),recurrenceWrap=document.getElementById('recurrence-until-wrap'),eventDate=document.getElementById('event_date');
+function syncRecurrence(){
+ var recurring=recurrenceSelect.value!=='once';
+ recurrenceWrap.hidden=!recurring;recurrenceUntil.required=recurring;
+ recurrenceUntil.min=eventDate.value||'';
+ if(recurring&&eventDate.value&&recurrenceUntil.value&&recurrenceUntil.value<eventDate.value)recurrenceUntil.value=eventDate.value;
+ if(!recurring)recurrenceUntil.value='';
+}
+recurrenceSelect.addEventListener('change',syncRecurrence);
+eventDate.addEventListener('change',syncRecurrence);
+syncRecurrence();
 function say(text,kind){status.textContent=text;status.className=kind||'';}
 fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(data){
  if(!data||!data.ok||!data.authenticated){say('Sign in or create a free PokePrizePool account to submit an event. Redirecting to sign in…','');setTimeout(function(){location.href='/account.html?next='+encodeURIComponent('/submit-event.html');},500);return;}
@@ -69,7 +82,7 @@ form.addEventListener('submit',async function(event){
   var response=await fetch('/api/event-submissions',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)});
   var result=await response.json().catch(function(){return {};});
   if(!response.ok||!result.ok){
-   var messages={login_required:'Your session expired. Sign in again and resubmit.',title_required:'Enter a title with at least four characters.',valid_event_date_required:'Choose a valid event date.',invalid_event_type:'Choose a valid event type.',invalid_event_time:'Check the event start and end times.',event_url_must_be_https:'Use an official HTTPS event link.',event_location_or_url_required:'Enter the venue/city or an official event link.'};
+   var messages={login_required:'Your session expired. Sign in again and resubmit.',title_required:'Enter a title with at least four characters.',valid_event_date_required:'Choose a valid event date.',invalid_event_type:'Choose a valid event type.',invalid_event_time:'Check the event start and end times.',event_url_must_be_https:'Use an official HTTPS event link.',event_location_or_url_required:'Enter the venue/city or an official event link.',invalid_recurrence_frequency:'Choose one-time, weekly, monthly, or yearly.',valid_recurrence_end_required:'Choose a repeat-until date on or after the first event date.',recurrence_limit_exceeded:'That schedule includes too many occurrences. Shorten the repeat-until date and try again.'};
    throw new Error(messages[result.error]||result.error||'Submission failed. Please try again.');
   }
   form.reset();say(result.message||'Your event was submitted for approval.','success');
