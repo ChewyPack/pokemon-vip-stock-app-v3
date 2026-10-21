@@ -354,10 +354,17 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   const field=kind==='avatar'?'avatar_url':'cover_url',fileInput=$(kind==='avatar'?'profile-photo-file':'profile-cover-file');
   setStatus('view-status','Preparing '+(kind==='avatar'?'profile photo':'cover photo')+'…');
   try{
-   const dataUrl=await compressProfileImage(file,kind),payload={username:profile.username,bio:profile.bio||'',avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1};
-   payload[field]=dataUrl;setStatus('view-status','Saving '+(kind==='avatar'?'profile photo':'cover photo')+'…');
+   const dataUrl=await compressProfileImage(file,kind);
+   const comma=dataUrl.indexOf(','),header=dataUrl.slice(0,comma),mime=header.slice(5,header.indexOf(';')),encoded=dataUrl.slice(comma+1);
+   if(comma<0||!header.endsWith(';base64')||!['image/webp','image/jpeg'].includes(mime))throw new Error('Could not prepare that image for upload.');
+   const binary=atob(encoded),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+   setStatus('view-status','Uploading '+(kind==='avatar'?'profile photo':'cover photo')+'…');
+   const uploadResponse=await fetch('/api/collector/upload?kind='+encodeURIComponent(kind),{method:'POST',credentials:'include',headers:{'Content-Type':mime},body:new Blob([bytes],{type:mime})}),upload=await uploadResponse.json();
+   if(!uploadResponse.ok||!upload.ok){const messages={login_required:'Your session expired. Please sign in again.',image_storage_not_configured:'Photo storage is not configured yet. Please contact support.',unsupported_image_type:'That image type is not supported.',image_too_large:'Choose a smaller image.'};throw new Error(messages[upload.error]||'Photo upload failed ('+(upload.error||'unknown error')+').');}
+   const payload={username:profile.username,bio:profile.bio||'',avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1};
+   payload[field]=upload.url;setStatus('view-status','Saving '+(kind==='avatar'?'profile photo':'cover photo')+'…');
    const response=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),result=await response.json();
-   if(!response.ok||!result.ok){const messages={login_required:'Your session expired. Please sign in again.',invalid_avatar_url:'Profile photo is too large or invalid.',invalid_cover_url:'Cover photo is too large or invalid.',profile_save_failed:'Could not save the image. Check the staging database setup.'};throw new Error(messages[result.error]||'Could not save image ('+(result.error||'unknown error')+').');}
+   if(!response.ok||!result.ok){const messages={login_required:'Your session expired. Please sign in again.',invalid_avatar_url:'Uploaded profile photo URL was rejected.',invalid_cover_url:'Uploaded cover photo URL was rejected.',profile_save_failed:'Could not save the image. Please try again.'};throw new Error(messages[result.error]||'Could not save image ('+(result.error||'unknown error')+').');}
    profile={...profile,...result.profile};showProfile(profile,document.getElementById('display-name').textContent);setStatus('view-status',(kind==='avatar'?'Profile photo':'Cover photo')+' updated successfully.');
   }catch(error){setStatus('view-status',error.message||'Could not update image.');}finally{fileInput.value='';}
  }
