@@ -7,3 +7,5 @@ Production site: https://pokeprizepool.com
 Production deploys from the `main` branch.
 
 Production environment setting changes require a new Cloudflare Pages deployment to take effect.
+
+Production deployments should use the latest commit on `main`.
