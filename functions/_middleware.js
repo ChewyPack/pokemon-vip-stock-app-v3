@@ -40,7 +40,7 @@ a.secondary{background:#1b2b47;color:#fff;border:1px solid #40516e}
 <main>
 <div class="eyebrow">PokePrizePool Membership</div>
 <h1>This feature is for paid members.</h1>
-<p>You need an active paid PokePrizePool membership to access Live Stock Alerts and Market Intelligence.</p>
+<p>You need an active paid PokePrizePool membership to access this resource and other paid member features.</p>
 <p>Sign in to your existing account to check your membership. If you already pay for a membership and believe this is a mistake, please contact PokePrizePool support before purchasing another plan.</p>
 <div class="actions"><a href="/account.html">Sign in / View account</a><a class="secondary" href="/">Return to PokePrizePool</a></div>
 </main>
@@ -57,7 +57,8 @@ export async function onRequest({ request, env, next }) {
   const isAlertsApi = pathname === '/api/alerts';
   if (pathname === '/alerts.html') return next(); // Free accounts may view delayed report history.
   if (isAlertsApi) return next(); // The API applies paid-live vs. delayed-history access itself.
-  if (pathname !== '/alerts.html' && pathname !== '/market-intelligence.html' && !isAlertsApi) {
+  const isSecuringProduct = pathname === '/resources/securing-product' || pathname === '/resources/securing-product.html';
+  if (pathname !== '/alerts.html' && pathname !== '/market-intelligence.html' && !isAlertsApi && !isSecuringProduct) {
     return next();
   }
 
