@@ -6,6 +6,45 @@ function cookie(request,name){for(const part of (request.headers.get('Cookie')||
 function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 async function sha256(value){return b64(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));}
 function clean(v,max=1000){return String(v??'').trim().slice(0,max);}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+async function sendBuyoutNotice(env,row){
+ const from=clean(env.INSTANT_BUYOUT_FROM||env.LINE_SERVICE_FROM||env.PASSWORD_RESET_FROM,250);
+ if(!env.RESEND_API_KEY||!from)return {sent:false,error:'email_not_configured'};
+ const subject='New PokePrizePool instant buyout request #'+row.id;
+ const summary=[
+  'New Instant Buyout request #'+row.id,
+  'Submitted by: '+row.seller_name+' <'+row.seller_email+'>',
+  'Category: '+row.category,
+  'Title: '+row.title,
+  'Quantity / lot size: '+(row.quantity||'Not specified'),
+  'Asking price: '+(row.asking_price_cents==null?'Not provided':'$'+(Number(row.asking_price_cents)/100).toFixed(2)),
+  '',
+  'Details:',row.details,'',
+  'Condition / grading notes:',row.condition_notes||'Not provided','',
+  'Photo links:',row.photo_urls||'Not provided','',
+  'Review this request in PokePrizePool Admin: https://pokeprizepool.com/admin.html'
+ ].join('\n');
+ let response;
+ try{
+  response=await fetch('https://api.resend.com/emails',{
+   method:'POST',
+   headers:{Authorization:'Bearer '+env.RESEND_API_KEY,'Content-Type':'application/json'},
+   body:JSON.stringify({
+    from,to:['pokeprizepool@gmail.com'],subject,text:summary,
+    html:'<h2>New Instant Buyout request #'+row.id+'</h2><p><strong>Submitted by:</strong> '+escapeHtml(row.seller_name)+' &lt;'+escapeHtml(row.seller_email)+'&gt;</p><p><strong>Category:</strong> '+escapeHtml(row.category)+'<br><strong>Title:</strong> '+escapeHtml(row.title)+'<br><strong>Quantity:</strong> '+escapeHtml(row.quantity||'Not specified')+'<br><strong>Asking price:</strong> '+escapeHtml(row.asking_price_cents==null?'Not provided':'$'+(Number(row.asking_price_cents)/100).toFixed(2))+'</p><h3>Details</h3><pre style="font:14px/1.5 Arial,sans-serif;white-space:pre-wrap">'+escapeHtml(row.details)+'</pre><h3>Condition / grading notes</h3><p>'+escapeHtml(row.condition_notes||'Not provided')+'</p><h3>Photo links</h3><pre style="font:14px/1.5 Arial,sans-serif;white-space:pre-wrap">'+escapeHtml(row.photo_urls||'Not provided')+'</pre><p><a href="https://pokeprizepool.com/admin.html">Review in PokePrizePool Admin</a></p>'
+   })
+  });
+ }catch(error){
+  console.error('Instant Buyout notification request failed:',String(error).slice(0,300));
+  return {sent:false,error:'email_delivery_failed'};
+ }
+ if(!response.ok){
+  const detail=await response.text().catch(()=> '');
+  console.error('Instant Buyout notification failed:',response.status,detail.slice(0,300));
+  return {sent:false,error:'email_provider_rejected_'+response.status};
+ }
+ return {sent:true,error:''};
+}
 function dollarsToCents(v){if(v===undefined||v===null||String(v).trim()==='')return null;const n=Number(v);if(!Number.isFinite(n)||n<0||n>10000000)return NaN;return Math.round(n*100);}
 async function currentAccount(request,env){
  const token=cookie(request,COOKIE);if(!token)return null;
@@ -49,7 +88,9 @@ export async function onRequestPost({request,env}){
    if(photos.some(url=>{try{return new URL(url).protocol!=='https:';}catch{return true;}}))return json({ok:false,error:'photo_urls_must_be_https'},400);
    const created=await env.DB.prepare('INSERT INTO instant_buyout_requests (account_id,category,title,details,quantity,condition_notes,photo_urls,asking_price_cents) VALUES (?,?,?,?,?,?,?,?)')
     .bind(account.id,category,title,details,quantity,condition,photos.join('\n'),asking).run();
-   return json({ok:true,id:Number(created.meta?.last_row_id),status:'submitted'},201);
+   const id=Number(created.meta?.last_row_id);
+   const notice=await sendBuyoutNotice(env,{id,seller_name:account.display_name||'Collector',seller_email:account.email||'',category,title,details,quantity,condition_notes:condition,photo_urls:photos.join('\n'),asking_price_cents:asking});
+   return json({ok:true,id,status:'submitted',email_sent:notice.sent,email_error:notice.sent?null:notice.error},201);
   }
   if(action==='admin_vendor_approval'){
    if(Number(account.is_admin)!==1)return json({ok:false,error:'admin_required'},403);
