@@ -57,7 +57,8 @@ export async function onRequest({ request, env, next }) {
   const isAlertsApi = pathname === '/api/alerts';
   if (pathname === '/alerts.html') return next(); // Free accounts may view delayed report history.
   if (isAlertsApi) return next(); // The API applies paid-live vs. delayed-history access itself.
-  if (pathname !== '/alerts.html' && pathname !== '/market-intelligence.html' && !isAlertsApi) {
+  const isSecuringProduct = pathname === '/resources/securing-product' || pathname === '/resources/securing-product.html';
+  if (pathname !== '/alerts.html' && pathname !== '/market-intelligence.html' && !isAlertsApi && !isSecuringProduct) {
     return next();
   }
 
