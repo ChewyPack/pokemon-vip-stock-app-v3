@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Giveaway Manager | PokePrizePool</title>
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+:root{color-scheme:dark}
+body{margin:0;background:#07142e;color:#f6f8ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{width:min(1180px,calc(100% - 32px));margin:auto;padding:30px 0 70px}
+.card{background:#09193d;border:1px solid #ffffff25;border-radius:15px;padding:20px;margin:18px 0;box-shadow:0 10px 28px #0002}
+h1,h2,h3{margin-top:0}
+.muted{color:#bac9e8;line-height:1.55}
+.status{padding:12px 0;white-space:pre-wrap}
+.success{color:#b6f3d0}.error{color:#ffb4bd}
+label{display:block;margin:12px 0 6px;font-weight:700;color:#e6edff}
+input,textarea,select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #52688f;border-radius:8px;background:#08142d;color:#fff;font:inherit}
+textarea{min-height:100px;resize:vertical}
+input[type=checkbox]{width:auto;accent-color:#58c7ff;transform:scale(1.15);margin-right:8px}
+.checks{display:flex;gap:20px;flex-wrap:wrap;margin-top:10px}
+.checks label{display:flex;align-items:center;gap:5px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+button,.button-link{padding:10px 14px;border:1px solid #7e9bce;border-radius:8px;background:#174a9c;color:white;font:inherit;font-weight:700;cursor:pointer}
+button.secondary{background:transparent}
+button.danger{background:#692738;border-color:#b85a6a}
+button:disabled{opacity:.6;cursor:wait}
+.notice{padding:12px 14px;border-radius:10px;background:#101f3c;border:1px solid #2f4c76}
+.item{padding:16px 0;border-bottom:1px solid #ffffff22;display:flex;gap:16px;justify-content:space-between;align-items:flex-start}
+.item:last-child{border-bottom:0}
+.item-main{min-width:0}
+.item h3{margin-bottom:7px}
+.pill{display:inline-block;padding:3px 9px;border:1px solid #65b98c;border-radius:999px;color:#b6f3d0;font-size:.78rem;margin:0 5px 5px 0}
+.pill.off{border-color:#9a6067;color:#ffb4bd}
+.pill.gold{border-color:#a28b42;color:#ffe5a1}
+.list-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.small{font-size:.85rem}
+#image-status{font-size:.86rem;color:#bac9e8;display:block;margin-top:6px}
+.hidden{display:none!important}
+@media(max-width:680px){.grid{grid-template-columns:1fr}.card{padding:15px}.item{display:block}.list-actions{justify-content:flex-start;margin-top:12px}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="wrap">
+<h1>Giveaway Manager</h1>
+<p class="muted">Create and manage PokePrizePool giveaways. Save drafts privately, or publish them to the public giveaways page. Prize photos are uploaded to PokePrizePool.</p>
+<p class="notice muted">Publishing controls whether a giveaway appears publicly. Giveaway entry submissions are a separate feature and are not enabled by this manager yet.</p>
+<p id="status" class="status" role="status" aria-live="polite">Checking admin access…</p>
+<section id="editor" class="hidden">
+<div class="card">
+<h2 id="form-heading">Create a giveaway</h2>
+<form id="giveaway-form">
+<input type="hidden" name="id">
+<div class="grid">
+<label>Giveaway / prize title *<input name="title" maxlength="180" required placeholder="e.g. Pokémon TCG Booster Bundle Giveaway"></label>
+<label>Estimated prize value (USD)<input name="prize_value" type="number" min="0" max="10000000" step="0.01" placeholder="e.g. 50"></label>
+<label>Start date and time *<input name="start_at" type="datetime-local"></label>
+<label>End date and time *<input name="end_at" type="datetime-local"></label>
+<div><label>Prize image upload</label><input name="image_file" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><input name="image_url" type="hidden"><span id="image-status">Choose an image file to upload a prize photo. JPG, PNG, WebP, or AVIF up to 5 MB.</span></div>
+<div class="checks">
+<label><input name="featured" type="checkbox">Feature on the giveaways page</label>
+<label><input name="vip_only" type="checkbox">VIP members only</label>
+</div>
+</div>
+<label>Description</label><textarea name="description" maxlength="4000" placeholder="Describe the prize and what makes this giveaway special."></textarea>
+<label>Eligibility</label><textarea name="eligibility" maxlength="1500" placeholder="Who can enter? Include any age, location, or membership restrictions."></textarea>
+<label>Giveaway rules</label><textarea name="rules" maxlength="8000" placeholder="Describe entry requirements, how the winner will be selected, prize delivery, and any other rules."></textarea>
+<div class="actions">
+<button type="submit" data-status="draft">Save draft</button>
+<button type="submit" data-status="published">Publish giveaway</button>
+<button type="button" id="new-giveaway" class="secondary">Clear / New giveaway</button>
+</div>
+</form>
+</div>
+<div class="card">
+<h2>Saved giveaways</h2>
+<p class="muted">Edit a listing, publish a draft, unpublish a live listing, or permanently delete one.</p>
+<div id="giveaway-list">Loading giveaways…</div>
+</div>
+</section>
+</main>
+<script src="/js/ui/site-nav.js"></script>
+<script>
+(function(){
+'use strict';
+var form=document.getElementById('giveaway-form');
+var message=document.getElementById('status');
+var editor=document.getElementById('editor');
+var list=document.getElementById('giveaway-list');
+var giveaways=[];
+function say(text,kind){message.textContent=text;message.className='status '+(kind||'');}
+function api(url,options){
+ return fetch(url,Object.assign({credentials:'include',cache:'no-store'},options||{})).then(function(r){
+  return r.json().catch(function(){return {};}).then(function(data){
+   if(!r.ok||!data.ok){var e=new Error(data.message||data.error||'Request failed');e.status=r.status;throw e;}
+   return data;
+  });
+ });
+}
+function dateLabel(value){if(!value)return 'Not set';var d=new Date(value);return isNaN(d.getTime())?String(value):d.toLocaleString();}
+function localDateTime(value){return value?String(value).slice(0,16):'';}
+function field(name){return form.elements[name];}
+function reset(){
+ form.reset();field('id').value='';field('image_url').value='';
+ document.getElementById('form-heading').textContent='Create a giveaway';
+ document.getElementById('image-status').textContent='Choose an image file to upload a prize photo. JPG, PNG, WebP, or AVIF up to 5 MB.';
+}
+function edit(g){
+ field('id').value=g.id||'';
+ field('title').value=g.title||'';
+ field('prize_value').value=g.prize_value==null?'':g.prize_value;
+ field('start_at').value=localDateTime(g.start_at);
+ field('end_at').value=localDateTime(g.end_at);
+ field('image_url').value=g.image_url||'';
+ field('image_file').value='';
+ field('featured').checked=!!g.featured;
+ field('vip_only').checked=!!g.vip_only;
+ field('description').value=g.description||'';
+ field('eligibility').value=g.eligibility||'';
+ field('rules').value=g.rules||'';
+ document.getElementById('form-heading').textContent='Edit giveaway #'+g.id;
+ document.getElementById('image-status').textContent=g.image_url?'A prize photo is already uploaded. Choose a file to replace it.':'No prize photo uploaded.';
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function makeButton(label,fn,kind){
+ var b=document.createElement('button');b.type='button';b.textContent=label;if(kind)b.className=kind;b.addEventListener('click',fn);return b;
+}
+function render(){
+ list.replaceChildren();
+ if(!giveaways.length){var empty=document.createElement('p');empty.className='muted';empty.textContent='No giveaways saved yet. Create your first one above.';list.appendChild(empty);return;}
+ giveaways.forEach(function(g){
+  var row=document.createElement('div');row.className='item';
+  var info=document.createElement('div');info.className='item-main';
+  var title=document.createElement('h3');title.textContent=g.title||'Untitled giveaway';info.appendChild(title);
+  var statusPill=document.createElement('span');statusPill.className='pill '+(g.status==='published'?'':'off');statusPill.textContent=g.status==='published'?'Published':'Draft';info.appendChild(statusPill);
+  if(g.featured){var feat=document.createElement('span');feat.className='pill gold';feat.textContent='Featured';info.appendChild(feat);}
+  if(g.vip_only){var vip=document.createElement('span');vip.className='pill gold';vip.textContent='VIP only';info.appendChild(vip);}
+  var meta=document.createElement('p');meta.className='muted small';meta.textContent='Prize value: '+(g.prize_value==null?'Not set':'$'+Number(g.prize_value).toLocaleString())+' · Starts: '+dateLabel(g.start_at)+' · Ends: '+dateLabel(g.end_at);info.appendChild(meta);
+  var actions=document.createElement('div');actions.className='list-actions';
+  actions.appendChild(makeButton('Edit',function(){edit(g);}));
+  if(g.status==='published'){
+   actions.appendChild(makeButton('Unpublish',function(){if(confirm('Unpublish this giveaway? It will disappear from the public page.'))save(Object.assign({},g,{status:'draft'}));},'secondary'));
+  }else{
+   actions.appendChild(makeButton('Publish',function(){if(confirm('Publish this giveaway on the public page? Make sure dates and rules are correct.'))save(Object.assign({},g,{status:'published'}));}));
+  }
+  actions.appendChild(makeButton('Delete',function(){if(!confirm('Permanently delete "'+(g.title||'this giveaway')+'"? This cannot be undone.'))return;api('/api/giveaways?id='+encodeURIComponent(g.id),{method:'DELETE'}).then(function(){say('Giveaway deleted.','success');return load();}).catch(function(e){say('Could not delete giveaway: '+e.message,'error');});},'danger'));
+  row.appendChild(info);row.appendChild(actions);list.appendChild(row);
+ });
+}
+async function load(){
+ var data=await api('/api/giveaways?admin=1');
+ giveaways=data.giveaways||[];
+ render();
+}
+async function save(data){
+ await api('/api/giveaways',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+ say(data.status==='published'?'Giveaway published.':'Giveaway saved as a draft.','success');
+ reset();
+ await load();
+}
+form.addEventListener('submit',async function(event){
+ event.preventDefault();
+ var submitter=event.submitter;
+ var wantedStatus=submitter&&submitter.dataset.status==='published'?'published':'draft';
+ submitter.disabled=true;
+ try{
+  var file=field('image_file').files[0];
+  if(file){
+   document.getElementById('image-status').textContent='Uploading prize image…';
+   var upload=await fetch('/api/admin-image-upload?kind=giveaway',{method:'POST',credentials:'include',headers:{'Content-Type':file.type},body:file});
+   var uploadData=await upload.json().catch(function(){return {};});
+   if(!upload.ok||!uploadData.ok){
+    var uploadMessage=uploadData.error==='image_storage_not_configured'?'Image storage is not configured in Cloudflare.':(uploadData.error==='image_too_large'?'Image files must be 5 MB or smaller.':(uploadData.error||'Prize image upload failed.'));
+    throw new Error(uploadMessage);
+   }
+   field('image_url').value=uploadData.url;
+   document.getElementById('image-status').textContent='Prize photo uploaded successfully.';
+  }
+  var data={
+   id:Number(field('id').value)||undefined,
+   title:field('title').value,
+   prize_value:field('prize_value').value===''?null:Number(field('prize_value').value),
+   start_at:field('start_at').value,
+   end_at:field('end_at').value,
+   image_url:field('image_url').value,
+   featured:field('featured').checked,
+   vip_only:field('vip_only').checked,
+   description:field('description').value,
+   eligibility:field('eligibility').value,
+   rules:field('rules').value,
+   status:wantedStatus
+  };
+  await save(data);
+ }catch(e){
+  var errors={title_required:'Enter a giveaway title.',invalid_prize_value:'Enter a valid, non-negative prize value.',invalid_date_time:'Enter valid start and end dates.',end_must_follow_start:'The end date must be after the start date.',published_dates_required:'Add both a start date and an end date before publishing.',image_must_be_uploaded:'Choose a prize image using the file uploader.'};
+  say('Could not save giveaway: '+(errors[e.message]||e.message),'error');
+ }finally{submitter.disabled=false;}
+});
+document.getElementById('new-giveaway').addEventListener('click',reset);
+api('/api/giveaways?admin=1').then(function(data){
+ editor.classList.remove('hidden');
+ giveaways=data.giveaways||[];
+ render();
+ say('Admin access confirmed.','success');
+}).catch(function(e){
+ if(e.status===401){say('Please sign in to your PokePrizePool account. Redirecting to login…','error');setTimeout(function(){location.href='/account.html?next='+encodeURIComponent('/giveaways-admin.html');},800);}
+ else if(e.status===403){say('This account does not have admin permission.','error');}
+ else{say('Could not verify admin access: '+e.message+'. Refresh the page to try again.','error');}
+});
+})();
+</script>
+<script src="/js/ui/pokereport-sidebar.js"></script>
+</body>
+</html>
