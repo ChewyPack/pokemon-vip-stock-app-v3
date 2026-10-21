@@ -125,7 +125,7 @@ export async function onRequestDelete({ request, env }) {
     const existing = await env.DB.prepare("SELECT id, channel_id, account_id FROM chat_messages WHERE id = ? AND deleted_at IS NULL").bind(id).first();
     if (!existing) return chatJson({ ok: false, error: "message_not_found" }, 404);
     if (Number(existing.account_id) !== account.id && !account.is_admin) return chatJson({ ok: false, error: "not_allowed" }, 403);
-    await env.DB.prepare("UPDATE chat_messages SET deleted_at = CURRENT_TIMESTAMP, body = '' WHERE id = ?").bind(id).run();
+    await env.DB.prepare("UPDATE chat_messages SET deleted_at = CURRENT_TIMESTAMP, body = 'Message deleted' WHERE id = ?").bind(id).run();
     let realtime = true;
     try { await publishChatEvent(env, { type: "delete", id, channel_id: Number(existing.channel_id) }); }
     catch (error) { realtime = false; console.error("Chat delete saved but live broadcast failed:", error); }
