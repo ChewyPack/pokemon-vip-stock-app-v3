@@ -5,5 +5,12 @@
 .ppp-ad-slot--rail{position:fixed;top:175px;display:none;width:100px;height:520px;padding:24px 8px 8px;border-radius:10px}
 .ppp-ad-slot--left{left:6px}
 .ppp-ad-slot--right{right:6px}
-@media(min-width:1500px){.ppp-ad-slot--rail{display:flex}}
+@media(min-width:1280px){
+ .ppp-ad-slot--rail{display:flex}
+ body[data-view="home"] .wrap{max-width:min(1180px,calc(100% - 230px))}
+ body .chat-wrap{width:min(1260px,calc(100% - 230px))}
+ body .events-main{width:min(1180px,calc(100% - 230px))}
+ body[data-page="giveaways"] .wrap{max-width:min(1180px,calc(100% - 230px))}
+}
+@media(max-width:1279px){.ppp-ad-slot--rail{display:none!important}}
 @media(max-width:600px){.ppp-ad-slot--top{min-height:70px;margin:12px auto 18px;font-size:10px}}
