@@ -7,19 +7,8 @@
 
 PRAGMA foreign_keys = ON;
 
--- Extend the existing production report schema without replacing or deleting old reports.
--- The old reports table does not contain product_type; this migration does not add it.
-ALTER TABLE reports ADD COLUMN product_located TEXT NOT NULL DEFAULT '';
-ALTER TABLE reports ADD COLUMN seen_at TEXT NOT NULL DEFAULT '';
-ALTER TABLE reports ADD COLUMN still_there TEXT NOT NULL DEFAULT '';
-ALTER TABLE reports ADD COLUMN state TEXT NOT NULL DEFAULT '';
-ALTER TABLE reports ADD COLUMN branch_id TEXT NOT NULL DEFAULT '';
-ALTER TABLE reports ADD COLUMN store_town TEXT NOT NULL DEFAULT '';
-ALTER TABLE reports ADD COLUMN store_address TEXT NOT NULL DEFAULT '';
-ALTER TABLE reports ADD COLUMN product_name TEXT NOT NULL DEFAULT '';
-ALTER TABLE reports ADD COLUMN quantity_text TEXT NOT NULL DEFAULT '';
-ALTER TABLE reports ADD COLUMN shelf_price REAL;
-ALTER TABLE reports ADD COLUMN msrp REAL;
+-- The existing production reports table already has the location/product detail columns listed in the schema check.
+-- Add only the three new report fields still missing; preserve all existing report rows and columns.
 ALTER TABLE reports ADD COLUMN report_type TEXT NOT NULL DEFAULT 'stock';
 ALTER TABLE reports ADD COLUMN line_count INTEGER;
 ALTER TABLE reports ADD COLUMN stocked_by TEXT;
