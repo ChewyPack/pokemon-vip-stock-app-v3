@@ -70,7 +70,7 @@ function requestRow(data) {
 function validate(d) {
   if (!d.name || !d.discord || !validEmail(d.email) || !d.store || !d.address || !d.request_date || !d.release || !d.products || !d.quantities || !d.summary) return "required_fields_missing";
   if (!["member", "vip"].includes(d.tier) || !["std", "high"].includes(d.service_type) || !["hourly", "pkg"].includes(d.duration_mode)) return "invalid_selection";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.request_date) || d.request_date < new Date().toISOString().slice(0, 10)) return "invalid_request_date";
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(d.request_date)) return "invalid_request_date";
   if (d.duration_mode === "hourly" && (!Number.isInteger(Number(d.hours)) || Number(d.hours) < 3 || Number(d.hours) > 24)) return "invalid_duration";
   if (d.budget && (!Number.isFinite(Number(d.budget)) || Number(d.budget) < 0 || Number(d.budget) > 10000000)) return "invalid_budget";
   return "";
