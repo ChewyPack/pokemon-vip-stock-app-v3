@@ -71,7 +71,7 @@ async function requireActivePaidAccount(request, env) {
   const account = await env.DB.prepare(
     `SELECT id, session_expires_at, membership_status, membership_tier,
             membership_entitlement_tier, membership_current_period_end,
-            stripe_subscription_id
+            membership_source, stripe_subscription_id
      FROM accounts WHERE session_token_hash = ? LIMIT 1`
   ).bind(await sha256Base64Url(token)).first();
 
@@ -80,11 +80,15 @@ async function requireActivePaidAccount(request, env) {
   }
 
   const tier = String(account.membership_entitlement_tier || account.membership_tier || '').trim().toLowerCase();
-  if (account.membership_status !== 'active' || !PAID_TIERS.has(tier) || !account.stripe_subscription_id) {
+  // Admin-granted memberships are explicitly recorded in D1 as membership_source='admin_grant'.
+  // They do not have a Stripe subscription or billing-period end, but receive the same tier access.
+  const adminGrant = String(account.membership_source || '').trim().toLowerCase() === 'admin_grant';
+  if (account.membership_status !== 'active' || !PAID_TIERS.has(tier) ||
+      (!adminGrant && !account.stripe_subscription_id)) {
     return { ok: false, status: 403, error: 'paid_membership_required' };
   }
 
-  if (account.membership_current_period_end) {
+  if (!adminGrant && account.membership_current_period_end) {
     const rawEnd = account.membership_current_period_end;
     const numericEnd = Number(rawEnd);
     const endMs = Number.isFinite(numericEnd) && numericEnd > 0
