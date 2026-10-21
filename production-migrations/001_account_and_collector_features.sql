@@ -1,14 +1,6 @@
--- PRODUCTION D1 migration for PokePrizePool's separate website-account system.
--- Run ONLY after reviewing the release and confirming the DB binding is pokemon-vip-members.
--- This creates new account/collector feature tables; it intentionally does NOT alter users,
--- legacy VIP sessions/subscriptions, or existing report rows.
--- Apply this file explicitly through the production D1 SQL console. Do not run the staging
--- migrations as a group, and do not run this against pokemon-vip-members-staging.
 
 PRAGMA foreign_keys = ON;
 
--- The existing production reports table already has the location/product detail columns listed in the schema check.
--- Add only the three new report fields still missing; preserve all existing report rows and columns.
 ALTER TABLE reports ADD COLUMN report_type TEXT NOT NULL DEFAULT 'stock';
 ALTER TABLE reports ADD COLUMN line_count INTEGER;
 ALTER TABLE reports ADD COLUMN stocked_by TEXT;
