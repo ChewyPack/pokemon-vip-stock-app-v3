@@ -190,6 +190,59 @@
         accountLink.href = '/collector.html';
         accountLink.textContent = 'Profile';
         accountLink.setAttribute('aria-label', 'Open your collector profile');
+
+        var profileWrap = h('div', { class: 'site-nav__profile-wrap' });
+        var trigger = h('button', {
+          class: 'site-nav__profile-menu-trigger',
+          type: 'button',
+          'aria-label': 'Profile menu',
+          'aria-expanded': 'false'
+        }, '▾');
+        var menu = h('div', { class: 'site-nav__profile-menu', hidden: true });
+        var settings = h('a', {
+          class: 'site-nav__profile-menu-settings',
+          href: '/account.html#nearby-collector-settings'
+        }, 'Settings');
+        var logout = h('button', { type: 'button' }, 'Log Out');
+
+        logout.addEventListener('click', function () {
+          logout.disabled = true;
+          logout.textContent = 'Logging out…';
+          fetch('/api/account/logout', { method: 'POST', credentials: 'include' })
+            .then(function (response) {
+              if (!response.ok) throw new Error('Logout failed');
+              window.location.href = '/account.html';
+            })
+            .catch(function () {
+              logout.disabled = false;
+              logout.textContent = 'Log Out';
+            });
+        });
+
+        trigger.addEventListener('click', function () {
+          var open = menu.hidden;
+          menu.hidden = !open;
+          trigger.setAttribute('aria-expanded', String(open));
+        });
+
+        menu.appendChild(settings);
+        menu.appendChild(logout);
+        profileWrap.appendChild(accountLink);
+        profileWrap.appendChild(trigger);
+        profileWrap.appendChild(menu);
+        accountLink.parentNode.insertBefore(profileWrap, accountLink);
+        profileWrap.appendChild(accountLink);
+
+        var profileStyle = h('style', {});
+        profileStyle.textContent =
+          '.site-nav__profile-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}' +
+          '.site-nav__profile-menu-trigger{min-height:40px;border:1px solid #b9c9e6;border-radius:8px;background:#f3f7ff;color:#17386c;font:900 1rem Nunito,system-ui,sans-serif;cursor:pointer}' +
+          '.site-nav__profile-menu{position:absolute;z-index:1000;right:0;top:calc(100% + 6px);min-width:130px;padding:5px;background:#fff;border:1px solid #d5e0f2;border-radius:9px;box-shadow:0 8px 22px #07194d22}' +
+          '.site-nav__profile-menu[hidden]{display:none!important}' +
+          '.site-nav__profile-menu button,.site-nav__profile-menu-settings{box-sizing:border-box;display:block;width:100%;padding:10px;border:0;border-radius:6px;background:#fff;color:#17386c;text-align:left;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;cursor:pointer}' +
+          '.site-nav__profile-menu-settings{border-bottom:1px solid #e2e9f5;border-radius:6px 6px 0 0}' +
+          '.site-nav__profile-menu button{color:#a32222}';
+        nav.prepend(profileStyle);
       })
       .catch(function (error) {
         console.warn('Could not refresh account navigation:', error);
