@@ -103,9 +103,11 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
 @media(max-width:430px){.chat-send{padding:0 12px}.chat-room-hash{flex-basis:36px;width:36px;height:36px}.chat-room-title h2{font-size:1rem}.chat-composer-hint{font-size:.7rem}}
 [hidden]{display:none!important}
 </style>
+<link rel="stylesheet" href="/css/ad-placements.css">
 </head>
 <body>
 <div id="site-navigation"></div>
+<aside class="ppp-ad-slot ppp-ad-slot--top" data-ad-slot="chat-top" aria-label="Advertisement placement: chat top">Ad placement · chat · top</aside>
 <main class="chat-wrap">
   <header class="chat-hero">
     <div><p class="chat-eyebrow">The collector community</p><h1>PokePrizePool Chat</h1><p>Real-time conversation with collectors. Share finds, talk market, show off your collection, and help each other out.</p></div>
@@ -244,6 +246,8 @@ window.addEventListener('beforeunload',()=>{if(state.retryTimer)clearTimeout(sta
 start();
 })();
 </script>
+<aside class="ppp-ad-slot ppp-ad-slot--rail ppp-ad-slot--left" data-ad-slot="chat-left" aria-label="Advertisement placement: chat left">Ad placement · chat · left</aside>
+<aside class="ppp-ad-slot ppp-ad-slot--rail ppp-ad-slot--right" data-ad-slot="chat-right" aria-label="Advertisement placement: chat right">Ad placement · chat · right</aside>
 <script src="/js/ui/ad-placements.js"></script>
 </body>
 </html>
