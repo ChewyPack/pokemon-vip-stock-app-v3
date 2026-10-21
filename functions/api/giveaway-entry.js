@@ -144,7 +144,7 @@ export async function onRequestPost({ request, env }) {
     }
     const entryId = Number(inserted.meta?.last_row_id || 0);
     const count = await env.DB.prepare(
-      'SELECT COUNT(*) AS total FROM poke_prize_giveaway_entries WHERE giveaway_id = ?'
+      'SELECT COUNT(*) AS total FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = ?'
     ).bind(giveawayId).first();
     return json({
       ok: true,
