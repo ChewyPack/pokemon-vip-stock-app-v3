@@ -1,24 +1,10 @@
 /*
  * POST /api/account/checkout
- * Staging-only Stripe Test Mode checkout for website account memberships.
- * Requires STRIPE_TEST_SECRET_KEY (must start with sk_test_).
- * Does not change the legacy /api/checkout endpoint or VIP webhook.
+ * Preview stays in Test Mode; live billing requires STRIPE_ACCOUNT_MODE=live.
+ * Kept separate from legacy /api/checkout and /api/stripe handlers.
  */
+import { accountStripeConfig, accountStripeConfigError } from '../../_lib/account-stripe.js';
 const COOKIE = 'collector_session';
-const PRICES = {
-  collector_plus: {
-    monthly: 'price_1UQVNSGXWs1THDBR6RhAZ3dI',
-    yearly: 'price_1UQVNSGXWs1THDBRvoZUm24d'
-  },
-  vendor: {
-    monthly: 'price_1UQVOUGXWs1THDBRYzlRnDDy',
-    yearly: 'price_1UQVOUGXWs1THDBRsL4w405C'
-  },
-  organizer: {
-    monthly: 'price_1UQVQLGXWs1THDBR39ZABaOC',
-    yearly: 'price_1UQVQLGXWs1THDBRe7oCo2FN'
-  }
-};
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -41,9 +27,9 @@ async function sha256(value) {
 }
 export async function onRequestPost({ request, env }) {
   if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
-  if (typeof env.STRIPE_TEST_SECRET_KEY !== 'string' || !env.STRIPE_TEST_SECRET_KEY.startsWith('sk_test_')) {
-    return json({ ok: false, error: 'stripe_test_key_not_configured' }, 503);
-  }
+  const stripe = accountStripeConfig(env);
+  if (!stripe) return json({ ok: false, error: accountStripeConfigError(env) }, 503);
+  const PRICES = stripe.prices;
   let data;
   try { data = await request.json(); } catch { return json({ ok: false, error: 'bad_request' }, 400); }
   const tier = typeof data.tier === 'string' ? data.tier : '';
@@ -67,7 +53,8 @@ export async function onRequestPost({ request, env }) {
     if (tier === 'organizer' && account.account_type !== 'organizer') return json({ ok: false, error: 'choose_organizer_account_type' }, 400);
     if (tier === 'collector_plus' && !['free', 'collector'].includes(account.account_type)) return json({ ok: false, error: 'choose_collector_account_type' }, 400);
     const priceId = PRICES[tier][interval];
-    const origin = new URL(request.url).origin;
+  if (!priceId) return json({ ok: false, error: 'plan_not_configured' }, 503);
+    const origin = stripe.origin || new URL(request.url).origin;
     const params = new URLSearchParams();
     params.set('mode', 'subscription');
     params.set('line_items[0][price]', priceId);
@@ -79,14 +66,16 @@ export async function onRequestPost({ request, env }) {
     params.set('billing_address_collection', 'auto');
     params.set('allow_promotion_codes', 'true');
     params.set('metadata[account_id]', String(account.id));
+    params.set('metadata[membership_system]', 'pokeprizepool_accounts');
     params.set('metadata[membership_tier]', tier);
     params.set('metadata[billing_interval]', interval);
     params.set('subscription_data[metadata][account_id]', String(account.id));
+    params.set('subscription_data[metadata][membership_system]', 'pokeprizepool_accounts');
     params.set('subscription_data[metadata][membership_tier]', tier);
     params.set('subscription_data[metadata][billing_interval]', interval);
     const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + env.STRIPE_TEST_SECRET_KEY, 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { Authorization: 'Bearer ' + stripe.secretKey, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params
     });
     const result = await response.json();
