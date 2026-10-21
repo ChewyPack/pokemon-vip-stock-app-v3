@@ -34,7 +34,7 @@ async function fetchSubscription(id, stripe) {
     headers: { Authorization: 'Bearer ' + stripe.secretKey }
   });
   if (!response.ok) {
-    console.error('Could not verify Test Mode subscription:', response.status);
+    console.error('Could not verify Stripe subscription:', response.status);
     return null;
   }
   return response.json();
@@ -67,7 +67,7 @@ async function saveSubscription(subscription, env, stripe, forcedStatus) {
     'UPDATE accounts SET membership_tier = ?, membership_entitlement_tier = CASE WHEN membership_scheduled_price_id = ? THEN ? ELSE COALESCE(membership_entitlement_tier, ?) END, membership_status = ?, stripe_customer_id = ?, stripe_subscription_id = ?, stripe_price_id = ?, membership_current_period_end = ?, membership_source = ?, membership_interval = ?, membership_cancel_at_period_end = ?, membership_scheduled_tier = CASE WHEN membership_scheduled_price_id = ? THEN NULL ELSE membership_scheduled_tier END, membership_scheduled_interval = CASE WHEN membership_scheduled_price_id = ? THEN NULL ELSE membership_scheduled_interval END, membership_scheduled_price_id = CASE WHEN membership_scheduled_price_id = ? THEN NULL ELSE membership_scheduled_price_id END, membership_scheduled_at = CASE WHEN membership_scheduled_price_id = ? THEN NULL ELSE membership_scheduled_at END, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
   ).bind(tier, priceId, tier, tier, status, customerId || null, subscription.id, priceId, periodEnd, stripe.source, interval, cancelAtPeriodEnd, priceId, priceId, priceId, priceId, accountId).run();
   if (!result.meta || result.meta.changes !== 1) {
-    console.error('No staging account matched Stripe account_id metadata:', accountId);
+    console.error('No website account matched Stripe account_id metadata:', accountId);
     return false;
   }
   return true;
