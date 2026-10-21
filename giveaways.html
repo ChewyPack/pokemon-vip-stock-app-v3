@@ -218,7 +218,7 @@ window.GIVEAWAY_CONFIG = {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ giveaway_id: Number(giveaway.id) })
+      body: JSON.stringify({ giveaway_id: Number(giveaway.id), rules_accepted: true })
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.ok) {
@@ -231,7 +231,8 @@ window.GIVEAWAY_CONFIG = {
         giveaway_closed: 'This giveaway is closed because a winner has already been selected.',
         giveaway_not_found: 'This giveaway is no longer available.',
         giveaway_dates_unavailable: 'This giveaway’s entry dates are not configured correctly.',
-        origin_not_allowed: 'Please refresh the page and try again.'
+        origin_not_allowed: 'Please refresh the page and try again.',
+        rules_acceptance_required: 'Please confirm that you meet the eligibility requirements and agree to the rules.'
       };
       return { ok: false, error: data.error || 'entry_failed', message: messages[data.error] || 'We could not save your entry. Please try again.' };
     }
@@ -400,7 +401,7 @@ function renderStatic() {
 function openModal(g, opener) {
   state.opener = opener;
   const m = $('#modal');
-  m.innerHTML = `<button class="m-x" aria-label="Close details">✕</button><div class="m-grid"><div class="m-img">${img(g)}</div><div class="m-body"><div>${badge(g)}</div><h2 id="mTitle" style="font-size:2.2rem">${esc(g.title)}</h2>${money(g.value) ? `<p class="val">Estimated retail value ${money(g.value)}</p>` : ''}<p class="muted" style="white-space:pre-line">${esc(g.description)}</p>${g.start ? `<p><strong>Starts:</strong> ${esc(when(g.start))}</p>` : ''}${g.end ? `<p><strong>${g._s === 'ended' ? 'Ended' : 'Deadline'}:</strong> ${esc(when(g.end))}</p>` : ''}${cdHTML(g)}${g.eligibility ? `<p><strong>Eligibility:</strong> ${esc(g.eligibility)}</p>` : g.vipOnly ? '<p><strong>Eligibility:</strong> VIP members only.</p>' : ''}${g.rules ? `<p><strong>Rules:</strong> <span class="muted" style="white-space:pre-line">${esc(g.rules)}</span></p>` : ''}${g.entries != null ? `<p class="muted">${(+g.entries).toLocaleString()} entries</p>` : ''}<p class="muted" style="font-size:.85rem">One entry per account. Sign in is required. VIP-only giveaways require an active VIP membership.</p><p class="msg" id="msg" role="status" aria-live="polite"></p><div class="cta"><button class="btn pri" id="enter" ${g.entered || g._s !== 'live' ? 'disabled' : ''}>${g.entered ? 'Already entered' : g._s === 'live' ? 'Enter Giveaway' : g._s === 'upcoming' ? 'Not open yet' : 'Giveaway ended'}</button></div></div></div>`;
+  m.innerHTML = `<button class="m-x" aria-label="Close details">✕</button><div class="m-grid"><div class="m-img">${img(g)}</div><div class="m-body"><div>${badge(g)}</div><h2 id="mTitle" style="font-size:2.2rem">${esc(g.title)}</h2>${money(g.value) ? `<p class="val">Estimated retail value ${money(g.value)}</p>` : ''}<p class="muted" style="white-space:pre-line">${esc(g.description)}</p>${g.start ? `<p><strong>Starts:</strong> ${esc(when(g.start))}</p>` : ''}${g.end ? `<p><strong>${g._s === 'ended' ? 'Ended' : 'Deadline'}:</strong> ${esc(when(g.end))}</p>` : ''}${cdHTML(g)}${g.eligibility ? `<p><strong>Eligibility:</strong> ${esc(g.eligibility)}</p>` : g.vipOnly ? '<p><strong>Eligibility:</strong> VIP members only.</p>' : ''}${g.rules ? `<p><strong>Rules:</strong> <span class="muted" style="white-space:pre-line">${esc(g.rules)}</span></p>` : ''}${g.entries != null ? `<p class="muted">${(+g.entries).toLocaleString()} entries</p>` : ''}<p class="muted" style="font-size:.85rem">One entry per account. Sign in is required. VIP-only giveaways require an active VIP membership.</p><label style="display:flex;align-items:flex-start;gap:9px;font-size:.9rem;color:var(--mut)"><input id="agree-rules" type="checkbox" style="margin-top:5px;accent-color:var(--blue)"><span>I confirm I meet the eligibility requirements and agree to the rules shown above.</span></label><p class="msg" id="msg" role="status" aria-live="polite"></p><div class="cta"><button class="btn pri" id="enter" ${g.entered || g._s !== 'live' ? 'disabled' : ''}>${g.entered ? 'Already entered' : g._s === 'live' ? 'Enter Giveaway' : g._s === 'upcoming' ? 'Not open yet' : 'Giveaway ended'}</button></div></div></div>`;
   $('.m-x', m).onclick = () => m.close();
   $('#enter', m).onclick = () => enter(g);
   m.showModal(); tickCountdowns();
@@ -408,6 +409,8 @@ function openModal(g, opener) {
 async function enter(g) {
   const btn = $('#enter'), msg = $('#msg');
   if (g.entered) { msg.className = 'msg ok'; msg.textContent = 'You already have an entry for this giveaway.'; return; }
+  const consent = $('#agree-rules');
+  if (!consent || !consent.checked) { msg.className = 'msg err'; msg.textContent = 'Please confirm you meet the eligibility requirements and agree to the rules before entering.'; return; }
   btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Submitting your entry…';
   try {
     const r = await C.enterGiveaway(g);
