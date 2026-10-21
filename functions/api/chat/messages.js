@@ -2,7 +2,7 @@ import { chatJson, currentChatAccount, publishChatEvent, chatError } from "../..
 import { sendWebPush } from "../../_lib/web-push.js";
 
 async function notifyChatMentions(env, sender, body, channelId) {
-  const names = [...new Set(Array.from(body.matchAll(/(?:^|\\s)@([a-zA-Z0-9_.-]{2,30})/g), match => match[1].toLowerCase()))];
+  const names = [...new Set(Array.from(body.matchAll(/(?:^|\s)@([a-zA-Z0-9_.-]{2,30})/g), match => match[1].toLowerCase()))];
   if (!names.length) return;
   const { results = [] } = await env.DB.prepare(`
     SELECT a.id, a.display_name, p.username
@@ -75,7 +75,7 @@ export async function onRequestPost({ request, env }) {
   try {
     const account = await currentChatAccount(request, env);
     if (!account) return chatJson({ ok: false, error: "login_required" }, 401);
-    if (!realtimeReady(env)) return chatJson({ ok: false, error: "chat_realtime_not_configured", message: "Real-time chat is not configured on staging yet." }, 503);
+    if (!realtimeReady(env)) return chatJson({ ok: false, error: "chat_realtime_not_configured", message: "Real-time chat is not configured for this environment yet." }, 503);
     let data;
     try { data = await request.json(); } catch { return chatJson({ ok: false, error: "bad_request" }, 400); }
     const channelId = Number(data.channel_id);
