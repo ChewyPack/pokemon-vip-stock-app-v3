@@ -25,7 +25,7 @@ async function loadSubmissions(){
    const approve=document.createElement('button');approve.type='button';approve.textContent='Approve & publish';approve.addEventListener('click',async function(){
     if(!confirm('Approve and publish "'+sub.title+'" on the public Events Calendar?'))return;
     approve.disabled=true;
-    try{const result=await api('/api/event-submissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'approve',id:Number(sub.id)})});say(result.message||'Event approved and published.');await loadSubmissions();await load();}
+    try{const result=await api('/api/event-submissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'approve',id:Number(sub.id)})});say(result.message||'Event approved and published.');await load();}
     catch(e){say('Could not approve event: '+e.message);approve.disabled=false;}
    });actions.appendChild(approve);
    const reject=document.createElement('button');reject.type='button';reject.className='danger';reject.textContent='Reject';reject.addEventListener('click',async function(){
