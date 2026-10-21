@@ -59,6 +59,6 @@ Save the binding and trigger a production deployment so Pages Functions receive 
 
 If a step fails, stop before changing D1 or Stripe settings. Check the production Pages binding and that the production Pages secret exactly matches the production Worker secret.
 
-## Important
+## @username mentions
 
-The existing chat API currently has no general-member @username autocomplete or notification workflow wired into ordinary chat posts. Do not consider mentions complete until a separate code change is reviewed and tested with two accounts. This setup alone configures real-time delivery; it does not implement mentions.
+The code in this branch adds authenticated username autocomplete to the chat composer. Sending a message containing `@username` creates an in-app mention notification for that registered account and sends browser push when enabled in that member's notification preferences. Test with two accounts after deploying the Pages code. Mentions do not require admin privileges or a paid membership.
