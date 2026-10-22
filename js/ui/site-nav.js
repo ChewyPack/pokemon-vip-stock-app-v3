@@ -95,8 +95,34 @@
   link('Sign up / Log in','/account.html','site-nav__link account-nav-link'),
   inbox
  ]);
+ var installPromptEvent=null;
+ var installButton=el('button',{class:'site-nav__link pwa-install-button',type:'button',text:'Install App'});
+ installButton.hidden=true;
+ installButton.addEventListener('click',async function(){
+  if(installPromptEvent){
+   var promptEvent=installPromptEvent;installPromptEvent=null;installButton.disabled=true;
+   try{await promptEvent.prompt();var choice=await promptEvent.userChoice;if(choice&&choice.outcome==='accepted')installButton.hidden=true;}
+   catch(error){console.warn('PWA install prompt failed:',error);}
+   finally{installButton.disabled=false;}
+   return;
+  }
+  if(/iPhone|iPad|iPod/i.test(navigator.userAgent)){
+   window.alert('To install PokePrizePool on iPhone or iPad, open the Share menu in Safari and choose “Add to Home Screen.”');
+  }
+ });
+ window.addEventListener('beforeinstallprompt',function(event){
+  event.preventDefault();installPromptEvent=event;installButton.hidden=false;
+ });
+ window.addEventListener('appinstalled',function(){installPromptEvent=null;installButton.hidden=true;});
+ if(/iPhone|iPad|iPod/i.test(navigator.userAgent))installButton.hidden=false;
+ nav.appendChild(installButton);
  var header=el('header',{class:'site-nav-header'},[el('div',{class:'wrap site-nav-header__inner'},[nav])]);
  root.replaceChildren(header);
+ if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+   navigator.serviceWorker.register('/service-worker.js',{scope:'/'}).catch(function(error){console.warn('PokePrizePool offline support could not be registered:',error);});
+  });
+ }
  var inboxStyle=el('style',{},[]);inboxStyle.textContent='.site-nav__inbox-link{position:relative;display:inline-flex;flex:0 0 108px;align-items:center;justify-content:center;gap:0;width:108px;min-width:108px;height:108px;min-height:108px;padding:0!important;margin:0 2px;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline-offset:3px;vertical-align:middle}.site-nav__inbox-link:hover,.site-nav__inbox-link:focus-visible{border:0!important;background:transparent!important;box-shadow:none!important;transform:none!important}.site-nav__inbox-image{width:108px;height:108px;object-fit:contain;display:block;border:0!important;outline:0;box-shadow:none}.site-nav .site-nav__inbox-link:last-child{flex:0 0 108px!important;width:108px;min-width:108px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:inherit!important}.site-nav__inbox-badge:not([hidden]){position:absolute;top:auto;right:0;bottom:0;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#ef233c;color:#fff;font-size:.7rem;font-weight:700;line-height:1;box-shadow:0 0 0 2px #06174a;z-index:2}.site-nav__inbox-badge[hidden]{display:none!important}@media(max-width:560px){.site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-image{width:96px;height:96px}.site-nav .site-nav__inbox-link:last-child{flex-basis:48px!important;width:96px;min-width:96px}}';root.prepend(inboxStyle);
  function refreshInboxBadge(){fetch('/api/collector/trades',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(!d||!d.ok)return;var count=(d.offers||[]).filter(function(o){return o.direction==='incoming'&&!o.recipient_read_at;}).length;inboxBadge.hidden=count<1;inboxBadge.textContent=count>99?'99+':String(count);inboxBadge.setAttribute('aria-label',count+' unread offer'+(count===1?'':'s'));inbox.setAttribute('aria-label',count+' unread offer'+(count===1?'':'s'));}).catch(function(){});}
  refreshInboxBadge();setInterval(refreshInboxBadge,60000);window.addEventListener('collector-offers-updated',refreshInboxBadge);
