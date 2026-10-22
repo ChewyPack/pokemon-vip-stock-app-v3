@@ -27,7 +27,7 @@ export class ChatRoom {
 
       let event;
       try { event = await request.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
-      if (!event || !["message", "delete"].includes(event.type)) {
+      if (!event || !["message", "delete", "reaction"].includes(event.type)) {
         return json({ ok: false, error: "invalid_event" }, 400);
       }
       this.broadcast(event);
