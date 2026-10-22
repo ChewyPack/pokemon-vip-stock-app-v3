@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06174A">
+<title>Official Store | PokePrizePool</title>
+<meta name="description" content="Browse the official PokePrizePool store for cards and merchandise sold directly by PokePrizePool.">
+<link rel="stylesheet" href="/css/styles.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+.store-wrap{width:min(1040px,calc(100% - 28px));margin:28px auto 72px;color:#0b2a6b}
+.store-hero{padding:clamp(22px,4vw,42px);border:3px solid #0b2a6b;border-radius:16px;background:linear-gradient(135deg,#fff,#edf4ff);box-shadow:7px 7px 0 #000}
+.store-kicker{margin:0 0 8px;color:#31558e;font-weight:900;text-transform:uppercase;letter-spacing:.12em;font-size:.8rem}
+.store-title{font:400 clamp(2.5rem,7vw,4.4rem)/1 var(--font-display);margin:0}
+.store-intro{max-width:720px;color:#445c87;line-height:1.65;font-size:1.05rem}
+.store-categories{display:flex;gap:9px;flex-wrap:wrap;margin:22px 0}
+.store-categories a{display:inline-flex;align-items:center;padding:9px 12px;border:2px solid #b9c9e6;border-radius:9px;background:#fff;color:#0b2a6b;text-decoration:none;font-weight:800}
+.store-categories a[aria-current=page]{background:#0b2a6b;color:#fff;border-color:#0b2a6b}
+.store-panel{padding:clamp(20px,4vw,32px);margin-top:20px;border:2px dashed #bfd0ea;border-radius:14px;background:#fff;text-align:center}
+.store-panel h2{font:400 clamp(1.7rem,4vw,2.5rem)/1.1 var(--font-display);margin:0 0 10px}
+.store-panel p{max-width:650px;margin:8px auto;color:#52648b;line-height:1.65}
+.store-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+.store-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;border-radius:8px;border:2px solid #0b2a6b;text-decoration:none;font-weight:900}
+.store-actions .primary{background:#0b2a6b;color:#fff}
+.store-note{color:#52648b;font-size:.88rem;line-height:1.6;margin-top:16px}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="store-wrap">
+<section class="store-hero">
+<p class="store-kicker">Official PokePrizePool Store</p>
+<h1 class="store-title">Cards, merch, and more.</h1>
+<p class="store-intro">This storefront is for products sold directly by PokePrizePool. It is separate from the Collector Marketplace, where community members publish listings through their own shop profiles.</p>
+<nav class="store-categories" aria-label="Official store categories">
+<a href="/store.html?category=Singles">Singles</a>
+<a href="/store.html?category=Sealed">Sealed</a>
+<a href="/store.html?category=Graded%20cards">Graded cards / slabs</a>
+<a href="/store.html?category=Collections">Collections</a>
+<a href="/store.html?category=Clothing">Clothing</a>
+<a href="/store.html?category=Plushies">Plushies</a>
+<a href="/store.html?category=Accessories">Accessories</a>
+<a href="/store.html?category=Other">Other</a>
+</nav>
+</section>
+<section class="store-panel" aria-live="polite">
+<h2 id="store-category-title">Official store catalog</h2>
+<p id="store-category-copy">PokePrizePool's own product listings will appear here.</p>
+<p>The official product catalog and checkout are not connected to this page yet. Community listings are not mixed into this storefront.</p>
+<div class="store-actions">
+<a class="primary" href="/marketplace.html">Browse Collector Marketplace</a>
+<a href="mailto:pokeprizepool@gmail.com">Contact PokePrizePool</a>
+</div>
+</section>
+<p class="store-note">Only products sold directly by PokePrizePool belong in this store. Listings from other collectors and vendors belong in the Collector Marketplace.</p>
+</main>
+<script src="/js/ui/site-nav.js"></script>
+<script>
+(function(){
+ const categories={
+  'Singles':'Pokémon singles sold directly by PokePrizePool.',
+  'Sealed':'Sealed Pokémon TCG products sold directly by PokePrizePool.',
+  'Graded cards':'Graded cards and slabs sold directly by PokePrizePool.',
+  'Collections':'Collections and lots sold directly by PokePrizePool.',
+  'Clothing':'PokePrizePool clothing and apparel.',
+  'Plushies':'Plushies offered by the official PokePrizePool store.',
+  'Accessories':'Accessories offered by the official PokePrizePool store.',
+  'Other':'Other merchandise sold directly by PokePrizePool.'
+ };
+ const requested=new URLSearchParams(location.search).get('category')||'';
+ const selected=Object.prototype.hasOwnProperty.call(categories,requested)?requested:'';
+ document.getElementById('store-category-title').textContent=selected?selected+' — Official PokePrizePool Store':'Official store catalog';
+ document.getElementById('store-category-copy').textContent=selected?categories[selected]:'PokePrizePool product listings will appear here.';
+ document.querySelectorAll('.store-categories a').forEach(link=>{
+  const url=new URL(link.href,location.origin),value=url.searchParams.get('category')||'';
+  if(value===selected){link.setAttribute('aria-current','page');}
+  else link.removeAttribute('aria-current');
+ });
+})();
+</script>
+</body>
+</html>
