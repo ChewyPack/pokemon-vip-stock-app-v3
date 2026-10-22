@@ -61,8 +61,8 @@ export async function onRequestGet({request,env}){
           a.is_admin=1 OR (
             LOWER(COALESCE(a.membership_status,'')) IN ('active','trialing')
             AND (
-              LOWER(REPLACE(COALESCE(a.membership_entitlement_tier,''),'+','_plus')) IN (${tiers})
-              OR LOWER(REPLACE(COALESCE(a.membership_tier,''),'+','_plus')) IN (${tiers})
+              LOWER(REPLACE(REPLACE(REPLACE(COALESCE(a.membership_entitlement_tier,''),'+','_plus'),' ','_'),'-','_')) IN (${tiers})
+              OR LOWER(REPLACE(REPLACE(REPLACE(COALESCE(a.membership_tier,''),'+','_plus'),' ','_'),'-','_')) IN (${tiers})
             )
           )
         )
