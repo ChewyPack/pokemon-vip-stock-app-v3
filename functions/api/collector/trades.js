@@ -1,3 +1,5 @@
+import { notifyCollector } from '../../_lib/collector-notifications.js';
+
 const COOKIE = 'collector_session';
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
@@ -104,6 +106,19 @@ export async function onRequestPost({ request, env }) {
     if (!offerId) return json({ ok: false, error: 'trade_create_failed' }, 500);
     for (const item of validOffering) await env.DB.prepare('INSERT INTO collector_trade_offer_items (offer_id, collector_item_id, side, quantity) VALUES (?, ?, ?, ?)').bind(offerId, item.id, 'offering', item.quantity).run();
     for (const item of validRequesting) await env.DB.prepare('INSERT INTO collector_trade_offer_items (offer_id, collector_item_id, side, quantity) VALUES (?, ?, ?, ?)').bind(offerId, item.id, 'requesting', item.quantity).run();
+
+    const actor = await env.DB.prepare(
+      'SELECT p.username, a.display_name FROM collector_profiles p JOIN accounts a ON a.id = p.account_id WHERE p.account_id = ? LIMIT 1'
+    ).bind(account.id).first().catch(() => null);
+    const actorName = actor?.display_name || actor?.username || 'A collector';
+    const offerLabel = offerType === 'cash' ? 'cash offer' : 'trade offer';
+    await notifyCollector(env, recipient.account_id, {
+      type: 'trade_offer',
+      title: 'New ' + offerLabel + ' from ' + actorName,
+      body: message.length > 180 ? message.slice(0, 177) + '…' : message,
+      url: '/inbox.html?tab=offers',
+      data: { kind: 'trade_offer', offer_id: offerId, from: actor?.username || '', offer_type: offerType }
+    });
     return json({ ok: true, offer_id: offerId, status: 'pending', offer_type: offerType }, 201);
   } catch (error) {
     console.error('Trade offer create failed:', error);
@@ -127,6 +142,12 @@ export async function onRequestPatch({ request, env }) {
       await env.DB.prepare('UPDATE collector_trade_offers SET recipient_read_at = COALESCE(recipient_read_at, CURRENT_TIMESTAMP) WHERE id = ?').bind(id).run();
       return json({ ok: true, read: true });
     }
+    const otherId = me === proposer ? recipient : proposer;
+    const actor = await env.DB.prepare(
+      'SELECT p.username, a.display_name FROM collector_profiles p JOIN accounts a ON a.id = p.account_id WHERE p.account_id = ? LIMIT 1'
+    ).bind(me).first().catch(() => null);
+    const actorName = actor?.display_name || actor?.username || 'The other collector';
+    const offerLabel = offer.offer_type === 'cash' ? 'cash offer' : 'trade offer';
     let next = '';
     if (action === 'accept' || action === 'decline') {
       if (me !== recipient || offer.status !== 'pending') return json({ ok: false, error: 'trade_action_not_allowed' }, 403);
@@ -136,16 +157,50 @@ export async function onRequestPatch({ request, env }) {
       next = 'cancelled';
     } else {
       if ((me !== proposer && me !== recipient) || offer.status !== 'accepted') return json({ ok: false, error: 'trade_action_not_allowed' }, 403);
-      const other = me === proposer ? recipient : proposer;
-      const confirmed = await env.DB.prepare('SELECT 1 FROM collector_trade_completions WHERE offer_id = ? AND account_id = ? LIMIT 1').bind(id, other).first().catch(() => null);
-      if (!confirmed) {
-        await env.DB.prepare('INSERT OR IGNORE INTO collector_trade_completions (offer_id, account_id) VALUES (?, ?)').bind(id, me).run();
-        const count = await env.DB.prepare('SELECT COUNT(*) AS total FROM collector_trade_completions WHERE offer_id = ?').bind(id).first();
-        if (Number(count?.total || 0) < 2) return json({ ok: true, status: 'accepted', completion_confirmed: true, waiting_for_other: true });
+      const meAlreadyConfirmed = await env.DB.prepare(
+        'SELECT 1 FROM collector_trade_completions WHERE offer_id = ? AND account_id = ? LIMIT 1'
+      ).bind(id, me).first().catch(() => null);
+      const otherAlreadyConfirmed = await env.DB.prepare(
+        'SELECT 1 FROM collector_trade_completions WHERE offer_id = ? AND account_id = ? LIMIT 1'
+      ).bind(id, otherId).first().catch(() => null);
+      let addedConfirmation = false;
+      if (!meAlreadyConfirmed) {
+        const insertedConfirmation = await env.DB.prepare(
+          'INSERT OR IGNORE INTO collector_trade_completions (offer_id, account_id) VALUES (?, ?)'
+        ).bind(id, me).run();
+        addedConfirmation = Number(insertedConfirmation.meta?.changes || 0) > 0;
+      }
+      if (!otherAlreadyConfirmed) {
+        if (addedConfirmation) {
+          await notifyCollector(env, otherId, {
+            type: 'trade_completion_confirmation',
+            title: 'Trade completion needs your confirmation',
+            body: actorName + ' marked the ' + offerLabel + ' as completed. Please review and confirm it in Inbox → Offers.',
+            url: '/inbox.html?tab=offers',
+            data: { kind: 'trade_completion_confirmation', offer_id: id, status: 'awaiting_confirmation', from: actor?.username || '' }
+          });
+        }
+        return json({ ok: true, status: 'accepted', completion_confirmed: true, waiting_for_other: true });
       }
       next = 'completed';
     }
     await env.DB.prepare('UPDATE collector_trade_offers SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(next, id).run();
+    const statusMessages = {
+      accepted: { title: 'Offer accepted', body: actorName + ' accepted your ' + offerLabel + '.' },
+      declined: { title: 'Offer declined', body: actorName + ' declined your ' + offerLabel + '.' },
+      cancelled: { title: 'Offer cancelled', body: actorName + ' cancelled the ' + offerLabel + '.' },
+      completed: { title: 'Offer marked complete', body: 'You and ' + actorName + ' confirmed the ' + offerLabel + ' as complete.' }
+    };
+    const notification = statusMessages[next];
+    if (notification) {
+      await notifyCollector(env, otherId, {
+        type: 'trade_offer_status',
+        title: notification.title,
+        body: notification.body,
+        url: '/inbox.html?tab=offers',
+        data: { kind: 'trade_offer_status', offer_id: id, status: next, from: actor?.username || '' }
+      });
+    }
     return json({ ok: true, status: next });
   } catch (error) {
     console.error('Trade offer update failed:', error);
