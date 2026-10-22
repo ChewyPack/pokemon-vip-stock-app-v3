@@ -7,9 +7,9 @@
 
   VIP.siteConfig = {
     brand: {
-      name: 'Pokémon VIP',
-      headline: 'Pokémon VIP',
-      lead: 'See Pokémon cards in a store? Tell the crew in under a minute and the VIP Discord gets the alert.'
+      name: 'PokePrizePool',
+      headline: 'PokePrizePool',
+      lead: 'Real-time restock intelligence, market insights, giveaways, and a marketplace built for collectors.'
     },
 
     // Paste your Discord server invite here (e.g. 'https://discord.gg/yourcode').
