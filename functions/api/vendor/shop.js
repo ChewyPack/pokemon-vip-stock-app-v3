@@ -1,23 +1,15 @@
-const SHOP_TIERS=new Set(['collector_plus','vendor','vendor_plus','organizer','organizer_plus','event_organizer','event_organizer_plus','vip','lifetime','lifetime_vip']);
 function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});}
-function normalizeTier(value){return String(value||'').trim().toLowerCase().replace(/\+/g,'_plus').replace(/[\s-]+/g,'_');}
-function canUseShop(shop){
- if(!shop)return false;
- if(Number(shop.is_admin||0)===1)return true;
- return ['active','trialing'].includes(String(shop.membership_status||'').toLowerCase())&&
-  [shop.membership_entitlement_tier,shop.membership_tier].some(tier=>SHOP_TIERS.has(normalizeTier(tier)));
-}
 export async function onRequestGet({request,env}){
  if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
  const username=(new URL(request.url).searchParams.get('user')||'').trim();
  if(!/^[a-zA-Z0-9_]{3,24}$/.test(username))return json({ok:false,error:'invalid_username'},400);
  try{
-  const shop=await env.DB.prepare(`SELECT p.account_id,p.shop_name,p.logo_key,p.cover_key,p.bio,p.website_url,p.social_links,cp.username,cp.is_public,a.is_admin,a.membership_status,a.membership_tier,a.membership_entitlement_tier
+  const shop=await env.DB.prepare(`SELECT p.account_id,p.shop_name,p.logo_key,p.cover_key,p.bio,p.website_url,p.social_links,cp.username,cp.is_public
    FROM vendor_profiles p
    JOIN collector_profiles cp ON cp.account_id=p.account_id
    JOIN accounts a ON a.id=p.account_id
    WHERE cp.username=? COLLATE NOCASE LIMIT 1`).bind(username).first();
-  if(!shop||Number(shop.is_public)!==1||!canUseShop(shop))return json({ok:true,shop:null,items:[]});
+  if(!shop||Number(shop.is_public)!==1)return json({ok:true,shop:null,items:[]});
   const result=await env.DB.prepare(`SELECT id,item_name,category,quantity_hint,price_cents,condition_label,image_key,notes,event_id,created_at
    FROM vendor_inventory
    WHERE account_id=? AND is_for_sale=1 AND listing_status='active'
