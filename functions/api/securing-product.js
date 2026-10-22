@@ -93,7 +93,7 @@ ${errorMessage}<p>${message}</p>
 </div>
 <p class="fine">You’ll return to Securing Product after signing in. Your access is checked securely against your account membership.</p>
 </section></main>
-<script src="/js/ui/site-nav.js"></script>
+<script src="/js/ui/site-nav.js?v=20261022-inbox-dropdown-counts"></script>
 </body>
 </html>`;
 }
