@@ -35,6 +35,79 @@ async function notifyChatMentions(env, sender, body, channelId) {
   }
 }
 
+const REACTION_EMOJIS = new Set(["👍","❤️","😂","😮","🔥","👀","🎉","🤝"]);
+
+async function ensureReactionTable(env) {
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS chat_message_reactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      message_id INTEGER NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+      account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      emoji TEXT NOT NULL CHECK (emoji IN ('👍','❤️','😂','😮','🔥','👀','🎉','🤝')),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(message_id, account_id, emoji)
+    )
+  `).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_chat_message_reactions_message ON chat_message_reactions(message_id, emoji)").run();
+}
+
+async function getReactions(env, messageIds, accountId) {
+  const ids = [...new Set(messageIds.map(Number).filter(id => Number.isSafeInteger(id) && id > 0))];
+  const output = new Map();
+  if (!ids.length) return output;
+  await ensureReactionTable(env);
+  const result = await env.DB.prepare(`
+    SELECT message_id, emoji, COUNT(*) AS total,
+      SUM(CASE WHEN account_id = ? THEN 1 ELSE 0 END) AS reacted_by_me
+    FROM chat_message_reactions
+    WHERE message_id IN (${ids.map(() => "?").join(",")})
+    GROUP BY message_id, emoji
+    ORDER BY emoji
+  `).bind(accountId, ...ids).all();
+  for (const row of result.results || []) {
+    const messageId = Number(row.message_id);
+    if (!output.has(messageId)) output.set(messageId, []);
+    output.get(messageId).push({
+      emoji: row.emoji,
+      count: Number(row.total || 0),
+      reacted_by_me: Number(row.reacted_by_me || 0) > 0
+    });
+  }
+  return output;
+}
+
+async function toggleReaction(env, account, data) {
+  const id = Number(data.id);
+  const emoji = typeof data.emoji === "string" ? data.emoji : "";
+  if (!Number.isSafeInteger(id) || id < 1) return chatJson({ ok: false, error: "invalid_message" }, 400);
+  if (!REACTION_EMOJIS.has(emoji)) return chatJson({ ok: false, error: "invalid_reaction" }, 400);
+  await ensureReactionTable(env);
+  const message = await env.DB.prepare(
+    "SELECT id, channel_id FROM chat_messages WHERE id = ? AND deleted_at IS NULL LIMIT 1"
+  ).bind(id).first();
+  if (!message) return chatJson({ ok: false, error: "message_not_found" }, 404);
+  const existing = await env.DB.prepare(
+    "SELECT id FROM chat_message_reactions WHERE message_id = ? AND account_id = ? AND emoji = ? LIMIT 1"
+  ).bind(id, account.id, emoji).first();
+  if (existing) {
+    await env.DB.prepare("DELETE FROM chat_message_reactions WHERE id = ?").bind(existing.id).run();
+  } else {
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO chat_message_reactions (message_id, account_id, emoji) VALUES (?, ?, ?)"
+    ).bind(id, account.id, emoji).run();
+  }
+  const summary = await getReactions(env, [id], account.id);
+  const reactions = summary.get(id) || [];
+  let realtime = true;
+  try {
+    await publishChatEvent(env, { type: "reaction", id, channel_id: Number(message.channel_id), reactions });
+  } catch (error) {
+    realtime = false;
+    console.warn("Chat reaction saved but live broadcast failed:", error);
+  }
+  return chatJson({ ok: true, id, channel_id: Number(message.channel_id), emoji, reacted: !existing, reactions, realtime });
+}
+
 function realtimeReady(env) {
   return Boolean(env.CHAT_ROOM && env.CHAT_INTERNAL_SECRET);
 }
@@ -43,6 +116,7 @@ export async function onRequestGet({ request, env }) {
   try {
     const account = await currentChatAccount(request, env);
     if (!account) return chatJson({ ok: false, error: "login_required" }, 401);
+    await ensureReactionTable(env);
     const url = new URL(request.url);
     const channelId = Number(url.searchParams.get("channel"));
     const before = Number(url.searchParams.get("before") || 0);
@@ -59,11 +133,14 @@ export async function onRequestGet({ request, env }) {
         "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, m.body, m.created_at, m.edited_at, m.deleted_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.channel_id = ? ORDER BY m.id DESC LIMIT 100"
       ).bind(channelId).all();
     }
-    const messages = (result.results || []).reverse().map(m => ({
+    const rows = (result.results || []).reverse();
+    const reactionMap = await getReactions(env, rows.map(m => m.id), account.id);
+    const messages = rows.map(m => ({
       id: Number(m.id), channel_id: Number(m.channel_id), account_id: Number(m.account_id),
       display_name: m.display_name || "Collector", username: m.username || "", avatar_url: m.avatar_url || "",
       body: m.deleted_at ? "" : m.body, created_at: m.created_at,
-      edited_at: m.edited_at, deleted: Boolean(m.deleted_at), mine: Number(m.account_id) === account.id
+      edited_at: m.edited_at, deleted: Boolean(m.deleted_at), mine: Number(m.account_id) === account.id,
+      reactions: reactionMap.get(Number(m.id)) || []
     }));
     return chatJson({ ok: true, messages, realtime_ready: realtimeReady(env) });
   } catch (error) {
@@ -75,9 +152,10 @@ export async function onRequestPost({ request, env }) {
   try {
     const account = await currentChatAccount(request, env);
     if (!account) return chatJson({ ok: false, error: "login_required" }, 401);
-    if (!realtimeReady(env)) return chatJson({ ok: false, error: "chat_realtime_not_configured", message: "Real-time chat is not configured for this environment yet." }, 503);
     let data;
     try { data = await request.json(); } catch { return chatJson({ ok: false, error: "bad_request" }, 400); }
+    if (data && data.action === "reaction") return await toggleReaction(env, account, data);
+    if (!realtimeReady(env)) return chatJson({ ok: false, error: "chat_realtime_not_configured", message: "Real-time chat is not configured for this environment yet." }, 503);
     const channelId = Number(data.channel_id);
     const body = typeof data.body === "string" ? data.body.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim() : "";
     if (!Number.isSafeInteger(channelId) || channelId < 1) return chatJson({ ok: false, error: "invalid_channel" }, 400);
