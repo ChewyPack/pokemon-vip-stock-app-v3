@@ -45,7 +45,7 @@ body{min-height:100vh;margin:0;background:#eef3ff;color:#07194d;font-family:Nuni
 <script>
 (function(){
 'use strict';
-const $=id=>document.getElementById(id);let offers=[],filter='all',conversations=[],activeUsername=(new URLSearchParams(location.search).get('user')||'').trim();
+const $=id=>document.getElementById(id);const queryParams=new URLSearchParams(location.search);let offers=[],filter='all',conversations=[],activeUsername=(queryParams.get('user')||'').trim();const initialTab=queryParams.get('tab')==='offers'&&!activeUsername?'offers':'messages';
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);
 const itemLabel=i=>[i.product_name,i.set_name,i.card_number?'#'+i.card_number:'',i.product_type==='sealed'?'Sealed product':i.product_type==='graded'?'Graded card':'Single card'].filter(Boolean).join(' · ');
@@ -56,7 +56,7 @@ function tab(tabName){
  $('messages-panel').hidden=!messages;$('offers-panel').hidden=messages;
  $('inbox-tab-messages').setAttribute('aria-selected',String(messages));
  $('inbox-tab-offers').setAttribute('aria-selected',String(!messages));
- if(messages)loadMessages();
+ if(messages)loadMessages();else load();
 }
 document.querySelectorAll('[data-inbox-tab]').forEach(button=>button.addEventListener('click',()=>tab(button.dataset.inboxTab)));
 function updateInboxCounts(){
@@ -134,8 +134,7 @@ $('inbox-list').innerHTML=visible.map(o=>{const incoming=o.direction==='incoming
 async function load(){ $('inbox-status').textContent='Loading offers…';try{const d=await api('/api/collector/trades');offers=d.offers||[];render();$('inbox-status').textContent=offers.length?offers.length+' offer'+(offers.length===1?'':'s')+' total.':'No offers yet.';updateInboxCounts();}catch(e){$('inbox-status').textContent=e.message;$('inbox-list').innerHTML='';}}
 $('refresh-offers').addEventListener('click',load);document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));render();}));
 $('inbox-list').addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(b){b.disabled=true;$('inbox-status').textContent='Updating offer…';try{const d=await api('/api/collector/trades',{method:'PATCH',body:JSON.stringify({id:Number(b.dataset.id),action:b.dataset.action})});$('inbox-status').textContent=d.waiting_for_other?'Your confirmation is recorded. Waiting for the other member.':'Offer updated: '+d.status+'.';await load();}catch(err){$('inbox-status').textContent=err.message;b.disabled=false;}return;}const card=e.target.closest('[data-offer-id]');if(!card)return;const offer=offers.find(o=>Number(o.id)===Number(card.dataset.offerId));if(!offer||offer.direction!=='incoming'||offer.recipient_read_at)return;try{await api('/api/collector/trades',{method:'PATCH',body:JSON.stringify({id:Number(offer.id),action:'mark_read'})});offer.recipient_read_at=new Date().toISOString();render();window.dispatchEvent(new Event('collector-offers-updated'));$('inbox-status').textContent='Offer marked as read.';}catch(err){$('inbox-status').textContent=err.message;}});
-load();
-loadMessages();
+tab(initialTab);
 })();
 </script>
 </body>
