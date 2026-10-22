@@ -181,7 +181,7 @@
             h('button', {
               class: 'site-nav__link site-nav__inbox-link',
               type: 'button',
-              'aria-label': 'Open Notifications or Offer Inbox',
+              'aria-label': 'Open Notifications or Inbox',
               'aria-expanded': 'false',
               'aria-controls': 'site-nav-inbox-menu'
             },
@@ -190,7 +190,7 @@
             ),
             h('div', { class: 'site-nav__inbox-menu', id: 'site-nav-inbox-menu', hidden: true },
               h('a', { class: 'site-nav__inbox-menu-link', href: '/notifications.html' }, 'Notifications'),
-              h('a', { class: 'site-nav__inbox-menu-link', href: '/inbox.html' }, 'Offer Inbox')
+              h('a', { class: 'site-nav__inbox-menu-link', href: '/inbox.html' }, 'Inbox')
             )
           )
         )
@@ -223,17 +223,23 @@
     function refreshInboxBadge() {
       Promise.all([
         fetch('/api/collector/trades', { credentials: 'include', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
-        fetch('/api/notifications', { credentials: 'include', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+        fetch('/api/notifications', { credentials: 'include', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+        fetch('/api/collector/direct-messages', { credentials: 'include', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
       ]).then(function (results) {
         var offers = results[0] && results[0].ok ? (results[0].offers || []).filter(function (offer) {
-          return offer.direction === 'incoming' && !offer.recipient_read_at;
+          return offer.direction === 'incoming' && !offer.recipient_read_at && offer.status === 'pending';
         }).length : 0;
-        var notifications = results[1] && results[1].ok ? Number(results[1].unread || 0) : 0;
-        var count = offers + notifications;
+        var notifications = results[1] && results[1].ok ? (results[1].notifications || []).filter(function (item) {
+          return !item.read_at && item.notification_type !== 'direct_message';
+        }).length : 0;
+        var messages = results[2] && results[2].ok ? (results[2].conversations || []).reduce(function (sum, item) {
+          return sum + Number(item.unread_count || 0);
+        }, 0) : 0;
+        var count = offers + notifications + messages;
         inboxBadge.hidden = count < 1;
         inboxBadge.textContent = count > 99 ? '99+' : String(count);
-        inboxBadge.setAttribute('aria-label', count + ' unread notifications and offers');
-        inbox.setAttribute('aria-label', 'Open Notifications or Offer Inbox' + (count ? ' (' + count + ' unread)' : ''));
+        inboxBadge.setAttribute('aria-label', count + ' unread Inbox items and notifications');
+        inbox.setAttribute('aria-label', 'Open Notifications or Inbox' + (count ? ' (' + count + ' unread)' : ''));
       });
     }
     refreshInboxBadge();

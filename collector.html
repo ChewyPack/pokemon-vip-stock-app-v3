@@ -701,7 +701,7 @@ async function searchCollectors(query){
  
  $('copy-profile').addEventListener('click',async()=>{if(!profile?.username){setStatus('owner-status','Save a username first to create your public profile link.');return;}const url=location.origin+'/collector.html?user='+encodeURIComponent(profile.username);try{await navigator.clipboard.writeText(url);setStatus('owner-status','Profile link copied! '+url);}catch{setStatus('owner-status','Your profile link: '+url);}});
  $('make-offer-button').addEventListener('click',openMakeOffer);
- $('send-message-button').addEventListener('click',()=>{if(profile?.username)location.href='/messages.html?user='+encodeURIComponent(profile.username);});
+ $('send-message-button').addEventListener('click',()=>{if(profile?.username)location.href='/inbox.html?user='+encodeURIComponent(profile.username);});
  $('offer-type-cash').addEventListener('click',()=>setOfferMode('cash'));$('offer-type-trade').addEventListener('click',()=>setOfferMode('trade'));
  $('make-offer-close').addEventListener('click',()=>$('make-offer-modal').hidden=true);$('make-offer-cancel').addEventListener('click',()=>$('make-offer-modal').hidden=true);
  $('make-offer-modal').addEventListener('click',event=>{if(event.target===$('make-offer-modal'))$('make-offer-modal').hidden=true;});

@@ -2,35 +2,140 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#06174A">
-<title>Offer Inbox | PokePrizePool</title>
+<title>Inbox | PokePrizePool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/styles.css">
 <style>
-body{min-height:100vh;margin:0;background:#eef3ff;color:#07194d;font-family:Nunito,system-ui,sans-serif}.inbox-main{width:min(1050px,calc(100% - 28px));margin:30px auto 70px}.inbox-hero{padding:clamp(20px,4vw,34px);border:3px solid #0b2a6b;border-radius:16px;background:#fff;box-shadow:6px 6px 0 #07194d;margin-bottom:18px}.inbox-hero h1{font:400 clamp(2rem,5vw,3rem)/1.05 Bangers,cursive;margin:0 0 8px;color:#0b2a6b}.inbox-hero p{margin:0;color:#4b5f8f;line-height:1.6}.inbox-tools{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:14px 0}.inbox-tabs{display:flex;gap:8px;flex-wrap:wrap}.inbox-tabs button,.inbox-btn{min-height:42px;border:2px solid #0b2a6b;border-radius:9px;padding:9px 13px;background:#eaf4ff;color:#0b2a6b;font:inherit;font-weight:900;cursor:pointer}.inbox-tabs button[aria-pressed=true],.inbox-btn.primary{background:#ffd21f}.inbox-btn:disabled{opacity:.55;cursor:wait}.inbox-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.offer-card{min-width:0;border:2px solid #d5e0f2;border-radius:13px;padding:16px;background:#fff;box-shadow:0 4px 14px #07194d0a}.offer-card.is-unread{border-color:#ef233c;box-shadow:0 0 0 2px #ef233c22}.offer-unread{display:inline-flex;align-items:center;border-radius:999px;padding:3px 7px;background:#ef233c;color:#fff;font-size:.72rem;font-weight:900;margin-left:6px}.offer-card h2{font:400 1.45rem/1.15 Bangers,cursive;margin:0 0 9px;color:#0b2a6b;overflow-wrap:anywhere}.offer-card p{font-size:.91rem;color:#334a7c;line-height:1.55;overflow-wrap:anywhere;margin:6px 0}.trade-sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.trade-side{min-width:0;border:1px solid #d5e0f2;border-radius:10px;padding:11px;background:#f7faff}.trade-side.offer-side{border-top:4px solid #1f8a58}.trade-side.ask-side{border-top:4px solid #e0a400}.trade-side h3{margin:0 0 8px;font:900 .84rem/1.2 Nunito,system-ui,sans-serif;color:#0b2a6b;text-transform:uppercase;letter-spacing:.04em}.trade-item{padding:7px 0;border-top:1px solid #e1e8f5;font-size:.88rem;line-height:1.4;overflow-wrap:anywhere}.trade-item:first-of-type{border-top:0}.trade-item small{display:block;color:#53658a;margin-top:2px}.trade-empty{font-size:.84rem;color:#697b9e;font-style:italic}@media(max-width:520px){.trade-sides{grid-template-columns:1fr}}.offer-card .offer-status{display:inline-flex;padding:5px 9px;border-radius:99px;background:#fff3b3;color:#604900;font-size:.78rem;font-weight:900;text-transform:capitalize}.offer-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.offer-empty{grid-column:1/-1;padding:26px;border:2px dashed #b9c9e6;border-radius:12px;text-align:center;color:#4b5f8f;background:#fff;line-height:1.6}.inbox-status{min-height:24px;color:#31517f;line-height:1.5}.offer-card a{color:#174b9b;font-weight:900}@media(max-width:680px){.inbox-list{grid-template-columns:1fr}.inbox-main{margin-top:20px}}
+body{min-height:100vh;margin:0;background:#eef3ff;color:#07194d;font-family:Nunito,system-ui,sans-serif}.inbox-main{width:min(1050px,calc(100% - 28px));margin:30px auto 70px}.inbox-hero{padding:clamp(20px,4vw,34px);border:3px solid #0b2a6b;border-radius:16px;background:#fff;box-shadow:6px 6px 0 #07194d;margin-bottom:18px}.inbox-hero h1{font:400 clamp(2rem,5vw,3rem)/1.05 Bangers,cursive;margin:0 0 8px;color:#0b2a6b}.inbox-hero p{margin:0;color:#4b5f8f;line-height:1.6}.inbox-tools{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:14px 0}.inbox-tabs{display:flex;gap:8px;flex-wrap:wrap}.inbox-tabs button,.inbox-btn{min-height:42px;border:2px solid #0b2a6b;border-radius:9px;padding:9px 13px;background:#eaf4ff;color:#0b2a6b;font:inherit;font-weight:900;cursor:pointer}.inbox-tabs button[aria-pressed=true],.inbox-btn.primary{background:#ffd21f}.inbox-btn:disabled{opacity:.55;cursor:wait}.inbox-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.offer-card{min-width:0;border:2px solid #d5e0f2;border-radius:13px;padding:16px;background:#fff;box-shadow:0 4px 14px #07194d0a}.offer-card.is-unread{border-color:#ef233c;box-shadow:0 0 0 2px #ef233c22}.offer-unread{display:inline-flex;align-items:center;border-radius:999px;padding:3px 7px;background:#ef233c;color:#fff;font-size:.72rem;font-weight:900;margin-left:6px}.offer-card h2{font:400 1.45rem/1.15 Bangers,cursive;margin:0 0 9px;color:#0b2a6b;overflow-wrap:anywhere}.offer-card p{font-size:.91rem;color:#334a7c;line-height:1.55;overflow-wrap:anywhere;margin:6px 0}.trade-sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.trade-side{min-width:0;border:1px solid #d5e0f2;border-radius:10px;padding:11px;background:#f7faff}.trade-side.offer-side{border-top:4px solid #1f8a58}.trade-side.ask-side{border-top:4px solid #e0a400}.trade-side h3{margin:0 0 8px;font:900 .84rem/1.2 Nunito,system-ui,sans-serif;color:#0b2a6b;text-transform:uppercase;letter-spacing:.04em}.trade-item{padding:7px 0;border-top:1px solid #e1e8f5;font-size:.88rem;line-height:1.4;overflow-wrap:anywhere}.trade-item:first-of-type{border-top:0}.trade-item small{display:block;color:#53658a;margin-top:2px}.trade-empty{font-size:.84rem;color:#697b9e;font-style:italic}@media(max-width:520px){.trade-sides{grid-template-columns:1fr}}.offer-card .offer-status{display:inline-flex;padding:5px 9px;border-radius:99px;background:#fff3b3;color:#604900;font-size:.78rem;font-weight:900;text-transform:capitalize}.offer-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.offer-empty{grid-column:1/-1;padding:26px;border:2px dashed #b9c9e6;border-radius:12px;text-align:center;color:#4b5f8f;background:#fff;line-height:1.6}.inbox-status{min-height:24px;color:#31517f;line-height:1.5}.offer-card a{color:#174b9b;font-weight:900}.inbox-primary-tabs{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0 18px}.inbox-primary-tabs button{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:10px 18px;border:2px solid #0b2a6b;border-radius:10px;background:#fff;color:#0b2a6b;font:900 1rem Nunito,system-ui,sans-serif;cursor:pointer}.inbox-primary-tabs button[aria-selected=true]{background:#ffd21f}.inbox-tab-count:not([hidden]){display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#ef233c;color:#fff;font-size:.72rem}.inbox-panel[hidden],[hidden]{display:none!important}.message-conversations{display:grid;gap:9px}.message-conversation{display:flex;align-items:center;gap:12px;min-width:0;width:100%;padding:12px;border:1px solid #d5e0f2;border-radius:11px;background:#f8faff;color:#07194d;text-align:left;text-decoration:none}.message-conversation:hover{background:#edf4ff;border-color:#9bb5e2}.message-avatar{width:44px;height:44px;flex:0 0 44px;border-radius:50%;object-fit:cover;background:#eaf1ff}.message-conversation-main{flex:1;min-width:0}.message-conversation-main strong{display:block;overflow-wrap:anywhere}.message-conversation-main span{display:block;color:#53658a;font-size:.84rem;line-height:1.4;overflow-wrap:anywhere;margin-top:3px}.message-unread{display:inline-flex;padding:3px 7px;border-radius:999px;background:#ef233c;color:#fff;font-size:.72rem;font-weight:900}.message-empty{padding:24px 14px;border:2px dashed #b9c9e6;border-radius:12px;text-align:center;color:#53658a;background:#fff;line-height:1.6}.message-thread-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:12px}.message-thread-header{display:flex;align-items:center;gap:11px;padding:12px 0;border-top:1px solid #e0e8f5;border-bottom:1px solid #e0e8f5}.message-thread-header h2{margin:0 0 4px;font-size:1.05rem;overflow-wrap:anywhere}.message-thread-header a{color:#174b9b;text-decoration:none;font-weight:900}.message-history{display:grid;gap:9px;max-height:58vh;overflow:auto;padding:12px 3px}.message-bubble{width:fit-content;max-width:min(78%,620px);padding:10px 13px;border-radius:13px;background:#f0f4fc;border:1px solid #dbe4f4;overflow-wrap:anywhere;white-space:pre-wrap}.message-bubble.own{justify-self:end;background:#e3eeff;border-color:#b9cfee}.message-bubble p{margin:0;line-height:1.5}.message-bubble small{display:block;margin-top:5px;color:#607096;font-size:.72rem}.message-compose{display:grid;gap:9px;padding-top:12px;border-top:1px solid #e0e8f5}.message-compose textarea{box-sizing:border-box;width:100%;min-height:82px;resize:vertical;border:1px solid #b9c9e6;border-radius:10px;padding:11px;font:inherit;color:#07194d}.message-compose-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.message-compose-footer small{color:#53658a;line-height:1.4}.message-thread-tools .inbox-btn{white-space:normal}@media(max-width:560px){.message-bubble{max-width:90%}.message-history{max-height:62vh}.inbox-primary-tabs button{flex:1;justify-content:center}}@media(max-width:680px){.inbox-list{grid-template-columns:1fr}.inbox-main{margin-top:20px}}
 .inbox-hero h1{display:flex;align-items:center;gap:12px}.inbox-hero-icon{width:42px;height:42px;object-fit:contain;flex:0 0 auto}@media(max-width:560px){.inbox-hero-icon{width:34px;height:34px}}
 </style>
 </head>
 <body>
 <div id="site-navigation"></div>
 <main class="inbox-main">
-<header class="inbox-hero"><h1><img class="inbox-hero-icon" src="/inbox-icon.png" alt="" width="42" height="42"> Offer Inbox</h1><p>Manage cash offers and collection trades in one place. Accepting an offer does not process payment or automatically transfer items.</p></header>
+<header class="inbox-hero"><h1><img class="inbox-hero-icon" src="/inbox-icon.png" alt="" width="42" height="42"> Inbox</h1><p>Private collector messages and cash or trade offers in one place.</p></header>
+<div class="inbox-primary-tabs" role="tablist" aria-label="Inbox type">
+<button type="button" id="inbox-tab-messages" data-inbox-tab="messages" role="tab" aria-selected="true" aria-controls="messages-panel">Messages <span class="inbox-tab-count" id="message-unread-count" hidden></span></button>
+<button type="button" id="inbox-tab-offers" data-inbox-tab="offers" role="tab" aria-selected="false" aria-controls="offers-panel">Offers <span class="inbox-tab-count" id="offer-unread-count" hidden></span></button>
+</div>
+<section id="messages-panel" class="inbox-panel" role="tabpanel" aria-labelledby="inbox-tab-messages">
+<div id="message-conversation-view">
+<div class="inbox-tools"><h2 style="margin:0">Your messages</h2><button class="inbox-btn" id="refresh-messages" type="button">↻ Refresh</button></div>
+<p class="inbox-status" id="messages-status" role="status" aria-live="polite">Loading conversations…</p>
+<section class="message-conversations" id="message-conversations" aria-label="Private message conversations"></section>
+</div>
+<div id="message-thread-view" hidden>
+<div class="message-thread-tools"><button type="button" class="inbox-btn" id="back-to-conversations">← All messages</button><a class="inbox-btn" id="message-profile-link" href="#">View profile</a></div>
+<div class="message-thread-header"><img id="message-target-avatar" class="message-avatar" alt="" hidden><div><h2 id="message-target-name">Collector</h2><a id="message-target-handle" href="#">@collector</a></div></div>
+<p class="inbox-status" id="message-thread-status" role="status" aria-live="polite">Loading messages…</p>
+<div class="message-history" id="message-history" aria-live="polite"></div>
+<form class="message-compose" id="message-form">
+<label for="message-body"><strong>Send a message</strong></label>
+<textarea id="message-body" maxlength="2000" required placeholder="Write a private message…"></textarea>
+<div class="message-compose-footer"><small>Keep messages respectful. Maximum 2,000 characters.</small><button class="inbox-btn primary" id="send-message" type="submit">Send Message</button></div>
+<p class="inbox-status" id="send-status" role="status" aria-live="polite"></p>
+</form>
+</div>
+</section>
+<section id="offers-panel" class="inbox-panel" role="tabpanel" aria-labelledby="inbox-tab-offers" hidden>
 <div class="inbox-tools"><div class="inbox-tabs" role="group" aria-label="Filter offers"><button type="button" data-filter="all" aria-pressed="true">All offers</button><button type="button" data-filter="incoming" aria-pressed="false">Received</button><button type="button" data-filter="outgoing" aria-pressed="false">Sent</button></div><button class="inbox-btn" id="refresh-offers" type="button">↻ Refresh</button></div>
 <p class="inbox-status" id="inbox-status" role="status" aria-live="polite">Loading offers…</p><section class="inbox-list" id="inbox-list" aria-label="Offers"></section>
+</section>
 </main>
 <script src="/js/ui/site-nav.js"></script>
 <script>
 (function(){
 'use strict';
-const $=id=>document.getElementById(id);let offers=[],filter='all';
+const $=id=>document.getElementById(id);let offers=[],filter='all',conversations=[],activeUsername=(new URLSearchParams(location.search).get('user')||'').trim();
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);
 const itemLabel=i=>[i.product_name,i.set_name,i.card_number?'#'+i.card_number:'',i.product_type==='sealed'?'Sealed product':i.product_type==='graded'?'Graded card':'Single card'].filter(Boolean).join(' · ');
-async function api(url,options={}){const r=await fetch(url,{credentials:'include',cache:'no-store',...options,headers:{...(options.headers||{}),...(options.body?{'Content-Type':'application/json'}:{})}});const d=await r.json().catch(()=>({ok:false,error:'bad_response'}));if(r.status===401){location.href='/account.html';throw new Error('Please sign in to your collector account.');}if(!r.ok||!d.ok)throw new Error(d.error||'Request failed');return d;}
+async function api(url,options={}){const r=await fetch(url,{credentials:'include',cache:'no-store',...options,headers:{...(options.headers||{}),...(options.body?{'Content-Type':'application/json'}:{})}});const d=await r.json().catch(()=>({ok:false,error:'bad_response'}));if(r.status===401){location.href='/account.html?next='+encodeURIComponent(location.pathname+location.search);throw new Error('Please sign in to your collector account.');}if(!r.ok||!d.ok)throw new Error(d.error||'Request failed');return d;}
+
+function tab(tabName){
+ const messages=tabName==='messages';
+ $('messages-panel').hidden=!messages;$('offers-panel').hidden=messages;
+ $('inbox-tab-messages').setAttribute('aria-selected',String(messages));
+ $('inbox-tab-offers').setAttribute('aria-selected',String(!messages));
+ if(messages)loadMessages();
+}
+document.querySelectorAll('[data-inbox-tab]').forEach(button=>button.addEventListener('click',()=>tab(button.dataset.inboxTab)));
+function updateInboxCounts(){
+ const unreadMessages=conversations.reduce((sum,item)=>sum+Number(item.unread_count||0),0);
+ const unreadOffers=offers.filter(item=>item.direction==='incoming'&&!item.recipient_read_at&&item.status==='pending').length;
+ const messageBadge=$('message-unread-count'),offerBadge=$('offer-unread-count');
+ messageBadge.hidden=unreadMessages<1;messageBadge.textContent=unreadMessages>99?'99+':String(unreadMessages);
+ offerBadge.hidden=unreadOffers<1;offerBadge.textContent=unreadOffers>99?'99+':String(unreadOffers);
+}
+function renderConversations(){
+ const root=$('message-conversations');
+ if(!conversations.length){
+  root.innerHTML='<div class="message-empty">No private messages yet. Visit a collector’s profile and select <strong>Send Message</strong> to start a conversation.</div>';return;
+ }
+ root.innerHTML=conversations.map(item=>'<a class="message-conversation" href="/inbox.html?user='+encodeURIComponent(item.username)+'">'+
+  (item.avatar_url?'<img class="message-avatar" src="'+safe(item.avatar_url)+'" alt="" loading="lazy">':'<span class="message-avatar"></span>')+
+  '<div class="message-conversation-main"><strong>'+safe(item.display_name||item.username)+'</strong><span>@'+safe(item.username)+' · '+safe(item.last_message||'')+'</span></div>'+
+  (Number(item.unread_count)>0?'<span class="message-unread">'+Number(item.unread_count)+'</span>':'')+'</a>').join('');
+}
+async function loadConversations(){
+ $('messages-status').textContent='Loading conversations…';
+ try{
+  const d=await api('/api/collector/direct-messages');conversations=d.conversations||[];
+  renderConversations();
+  const unread=conversations.reduce((sum,item)=>sum+Number(item.unread_count||0),0);
+  $('messages-status').textContent=conversations.length?conversations.length+' conversation'+(conversations.length===1?'':'s')+(unread?' · '+unread+' unread message'+(unread===1?'':'s'):''):'';
+  updateInboxCounts();
+ }catch(error){$('messages-status').textContent=error.message;$('message-conversations').replaceChildren();}
+}
+function renderMessageThread(data){
+ const target=data.target;
+ $('message-conversation-view').hidden=true;$('message-thread-view').hidden=false;
+ $('message-target-name').textContent=target.display_name||target.username;
+ $('message-target-handle').textContent='@'+target.username;
+ $('message-target-handle').href='/collector.html?user='+encodeURIComponent(target.username);
+ $('message-profile-link').href='/collector.html?user='+encodeURIComponent(target.username);
+ const avatar=$('message-target-avatar');
+ if(target.avatar_url){avatar.src=target.avatar_url;avatar.hidden=false;}else{avatar.removeAttribute('src');avatar.hidden=true;}
+ const history=$('message-history'),messages=data.messages||[];
+ if(!messages.length){history.innerHTML='<div class="message-empty">This is the start of your conversation. Send a friendly hello!</div>';return;}
+ history.innerHTML=messages.map(message=>'<article class="message-bubble '+(message.is_own?'own':'')+'"><p>'+safe(message.body)+'</p><small>'+safe(message.is_own?'You':(message.sender_name||message.sender_username))+' · '+safe(message.created_at||'')+(message.is_own&&message.read_at?' · Read':'')+'</small></article>').join('');
+ history.scrollTop=history.scrollHeight;
+}
+async function loadThread(){
+ $('message-conversation-view').hidden=true;$('message-thread-view').hidden=false;
+ $('message-thread-status').textContent='Loading messages…';$('message-history').replaceChildren();
+ try{
+  const d=await api('/api/collector/direct-messages?username='+encodeURIComponent(activeUsername));
+  renderMessageThread(d);$('message-thread-status').textContent='';
+  await loadConversations();
+ }catch(error){$('message-thread-status').textContent=error.message;}
+}
+async function loadMessages(){
+ if(activeUsername){await loadThread();return;}
+ $('message-conversation-view').hidden=false;$('message-thread-view').hidden=true;
+ await loadConversations();
+}
+$('refresh-messages').addEventListener('click',loadMessages);
+$('back-to-conversations').addEventListener('click',()=>{location.href='/inbox.html';});
+$('message-form').addEventListener('submit',async event=>{
+ event.preventDefault();const body=$('message-body').value.trim(),button=$('send-message');
+ if(!body)return;
+ if(body.length>2000){$('send-status').textContent='Messages can be up to 2,000 characters.';return;}
+ button.disabled=true;$('send-status').textContent='Sending…';
+ try{
+  await api('/api/collector/direct-messages',{method:'POST',body:JSON.stringify({username:activeUsername,body})});
+  $('message-body').value='';$('send-status').textContent='Message sent.';
+  await loadThread();window.dispatchEvent(new Event('collector-messages-updated'));
+ }catch(error){$('send-status').textContent=error.message;}
+ finally{button.disabled=false;}
+});
+
 function render(){const visible=offers.filter(o=>filter==='all'||o.direction===filter);if(!visible.length){$('inbox-list').innerHTML='<div class="offer-empty">'+(filter==='incoming'?'You have not received any offers yet.':filter==='outgoing'?'You have not sent any offers yet.':'Your inbox is clear. Cash offers and collection trades will appear here when sent or received.')+'</div>';return;}
 $('inbox-list').innerHTML=visible.map(o=>{const incoming=o.direction==='incoming',other=incoming?o.proposer_username:o.recipient_username,isCash=o.offer_type==='cash';const giving=(o.items||[]).filter(i=>i.side==='offering'),asking=(o.items||[]).filter(i=>i.side==='requesting');const sideHtml=(label,items,kind)=>'<section class="trade-side '+kind+'"><h3>'+label+'</h3>'+(items.length?items.map(i=>'<div class="trade-item"><strong>'+safe(i.product_name)+'</strong><small>'+safe([i.set_name,i.card_number?'#'+i.card_number:'',i.product_type==='sealed'?'Sealed product':i.product_type==='graded'?'Graded card':'Single card'].filter(Boolean).join(' · '))+' · Qty '+Number(i.quantity||1)+'</small></div>').join(''):'<div class="trade-empty">No items listed</div>')+'</section>';let actions='';if(o.status==='pending'&&incoming)actions='<button class="inbox-btn primary" data-action="accept" data-id="'+Number(o.id)+'">Accept</button><button class="inbox-btn" data-action="decline" data-id="'+Number(o.id)+'">Decline</button>';if(o.status==='pending'&&!incoming)actions='<button class="inbox-btn" data-action="cancel" data-id="'+Number(o.id)+'">Cancel offer</button>';if(o.status==='accepted')actions='<button class="inbox-btn primary" data-action="complete" data-id="'+Number(o.id)+'">Confirm '+(isCash?'transaction':'trade')+' complete</button>';return '<article class="offer-card'+(incoming&&!o.recipient_read_at?' is-unread':'')+'" data-offer-id="'+Number(o.id)+'"><h2>'+(isCash?' Cash Offer':' Trade Offer')+' · '+(incoming?'From ':'To ')+'<a href="/collector.html?user='+encodeURIComponent(other)+'">@'+safe(other)+'</a>'+(incoming&&!o.recipient_read_at?'<span class="offer-unread">Unread</span>':'')+'</h2>'+(isCash?'<p><strong>Cash offered: '+money(o.cash_amount_cents)+'</strong></p>':'<div class="trade-sides">'+sideHtml(incoming?'THEY OFFER':'YOU OFFER',giving,'offer-side')+sideHtml(incoming?'THEY ASK FOR':'YOU ASK FOR',asking,'ask-side')+'</div>')+(o.message?'<p><strong>Message:</strong> '+safe(o.message)+'</p>':'')+'<p><span class="offer-status">'+safe(o.status)+'</span></p><p><small>'+safe(o.created_at||'')+'</small></p>'+(actions?'<div class="offer-actions">'+actions+'</div>':'')+'</article>';}).join('');}
-async function load(){ $('inbox-status').textContent='Loading offers…';try{const d=await api('/api/collector/trades');offers=d.offers||[];render();$('inbox-status').textContent=offers.length?offers.length+' offer'+(offers.length===1?'':'s')+' total.':'No offers yet.';}catch(e){$('inbox-status').textContent=e.message;$('inbox-list').innerHTML='';}}
+async function load(){ $('inbox-status').textContent='Loading offers…';try{const d=await api('/api/collector/trades');offers=d.offers||[];render();$('inbox-status').textContent=offers.length?offers.length+' offer'+(offers.length===1?'':'s')+' total.':'No offers yet.';updateInboxCounts();}catch(e){$('inbox-status').textContent=e.message;$('inbox-list').innerHTML='';}}
 $('refresh-offers').addEventListener('click',load);document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));render();}));
 $('inbox-list').addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(b){b.disabled=true;$('inbox-status').textContent='Updating offer…';try{const d=await api('/api/collector/trades',{method:'PATCH',body:JSON.stringify({id:Number(b.dataset.id),action:b.dataset.action})});$('inbox-status').textContent=d.waiting_for_other?'Your confirmation is recorded. Waiting for the other member.':'Offer updated: '+d.status+'.';await load();}catch(err){$('inbox-status').textContent=err.message;b.disabled=false;}return;}const card=e.target.closest('[data-offer-id]');if(!card)return;const offer=offers.find(o=>Number(o.id)===Number(card.dataset.offerId));if(!offer||offer.direction!=='incoming'||offer.recipient_read_at)return;try{await api('/api/collector/trades',{method:'PATCH',body:JSON.stringify({id:Number(offer.id),action:'mark_read'})});offer.recipient_read_at=new Date().toISOString();render();window.dispatchEvent(new Event('collector-offers-updated'));$('inbox-status').textContent='Offer marked as read.';}catch(err){$('inbox-status').textContent=err.message;}});
 load();
+loadMessages();
 })();
 </script>
 </body>

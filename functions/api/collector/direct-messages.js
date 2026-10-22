@@ -159,7 +159,7 @@ export async function onRequestPost({request,env}) {
     const excerpt=body.length>180?body.slice(0,177)+'…':body;
     await notifyCollector(env,target.account_id,{
       type:'direct_message',title:'New message from '+(actor.display_name||actor.username),
-      body:excerpt,url:'/messages.html?user='+encodeURIComponent(actor.username),
+      body:excerpt,url:'/inbox.html?user='+encodeURIComponent(actor.username),
       data:{kind:'direct_message',message_id:id,from:actor.username}
     });
     return json({ok:true,id,created_at:new Date().toISOString()},201);
