@@ -189,8 +189,14 @@
               h('span', { class: 'site-nav__inbox-badge', hidden: true, 'aria-live': 'polite' })
             ),
             h('div', { class: 'site-nav__inbox-menu', id: 'site-nav-inbox-menu', hidden: true },
-              h('a', { class: 'site-nav__inbox-menu-link', href: '/notifications.html' }, 'Notifications'),
-              h('a', { class: 'site-nav__inbox-menu-link', href: '/inbox.html' }, 'Inbox')
+              h('a', { class: 'site-nav__inbox-menu-link', href: '/notifications.html' },
+                h('span', { class: 'site-nav__inbox-menu-label' }, 'Notifications'),
+                h('span', { class: 'site-nav__menu-count site-nav__notification-count', hidden: true, 'aria-label': '0 unread notifications' })
+              ),
+              h('a', { class: 'site-nav__inbox-menu-link', href: '/inbox.html' },
+                h('span', { class: 'site-nav__inbox-menu-label' }, 'Inbox'),
+                h('span', { class: 'site-nav__menu-count site-nav__inbox-count', hidden: true, 'aria-label': '0 unread Inbox items' })
+              )
             )
           )
         )
@@ -202,6 +208,8 @@
     var inboxMenu = nav.querySelector('.site-nav__inbox-menu');
     var inboxWrap = nav.querySelector('.site-nav__inbox-wrap');
     var inboxBadge = nav.querySelector('.site-nav__inbox-badge');
+    var notificationMenuBadge = nav.querySelector('.site-nav__notification-count');
+    var inboxMenuBadge = nav.querySelector('.site-nav__inbox-count');
     inbox.addEventListener('click', function (event) {
       event.stopPropagation();
       var open = inboxMenu.hidden;
@@ -235,10 +243,18 @@
         var messages = results[2] && results[2].ok ? (results[2].conversations || []).reduce(function (sum, item) {
           return sum + Number(item.unread_count || 0);
         }, 0) : 0;
-        var count = offers + notifications + messages;
+        var inboxCount = offers + messages;
+        var count = inboxCount + notifications;
+        function setMenuCount(badge, value, label) {
+          badge.hidden = value < 1;
+          badge.textContent = value > 99 ? '99+' : String(value);
+          badge.setAttribute('aria-label', value + ' unread ' + label);
+        }
+        setMenuCount(notificationMenuBadge, notifications, 'notifications');
+        setMenuCount(inboxMenuBadge, inboxCount, 'Inbox items');
         inboxBadge.hidden = count < 1;
         inboxBadge.textContent = count > 99 ? '99+' : String(count);
-        inboxBadge.setAttribute('aria-label', count + ' unread Inbox items and notifications');
+        inboxBadge.setAttribute('aria-label', count + ' unread items in Notifications and Inbox');
         inbox.setAttribute('aria-label', 'Open Notifications or Inbox' + (count ? ' (' + count + ' unread)' : ''));
       });
     }
@@ -259,8 +275,10 @@
       '.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{font:inherit;color:inherit;cursor:pointer;flex:0 0 108px;width:108px;min-width:108px;height:108px;min-height:108px}' +
       '.site-nav__inbox-menu{position:absolute;z-index:1100;right:0;top:calc(100% + 6px);min-width:170px;padding:6px;background:#fff;border:1px solid #d5e0f2;border-radius:10px;box-shadow:0 8px 24px #07194d22}' +
       '.site-nav__inbox-menu[hidden]{display:none!important}' +
-      '.site-nav__inbox-menu-link{display:block;padding:10px;border-radius:7px;color:#17386c!important;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;white-space:nowrap}' +
+      '.site-nav__inbox-menu-link{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:10px;border-radius:7px;color:#17386c!important;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;white-space:nowrap}' +
       '.site-nav__inbox-menu-link:hover,.site-nav__inbox-menu-link:focus-visible{background:#f3f7ff}' +
+      '.site-nav__menu-count:not([hidden]){display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 6px;border-radius:999px;background:#ef233c;color:#fff;font:900 .72rem/1 Nunito,system-ui,sans-serif;box-shadow:0 1px 3px #07194d22}' +
+      '.site-nav__menu-count[hidden]{display:none!important}' +
       '@media(max-width:560px){.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-menu{min-width:160px}}';
     document.head.appendChild(inboxStyle);
 
