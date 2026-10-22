@@ -1,6 +1,6 @@
 'use strict';
 
-const SHELL_CACHE = 'pokeprizepool-shell-v2';
+const SHELL_CACHE = 'pokeprizepool-shell-v3';
 const CORE_NAVIGATION = new Set([
   '/', '/index.html', '/account.html', '/collector.html',
   '/chat.html', '/events.html', '/marketplace.html', '/vendor.html',
@@ -8,7 +8,7 @@ const CORE_NAVIGATION = new Set([
 ]);
 const CORE_ASSETS = [
   '/offline.html',
-  '/assets/pokeprizepool-pwa-192.jpg',
+  '/assets/pokeprizepool-pwa-192.jpg?v=3',
   '/manifest.webmanifest'
 ];
 
