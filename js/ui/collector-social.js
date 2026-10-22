@@ -12,7 +12,7 @@
     if (document.getElementById('social-media-layout-style')) return;
     const style = document.createElement('style');
     style.id = 'social-media-layout-style';
-    style.textContent = '.social-composer-row,.cp-social-composer-row{grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto!important}.social-composer-media-inputs,.cp-social-media-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}.social-media-preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.social-media-preview:empty{display:none}.social-media-preview__item{min-width:0;display:grid;gap:4px;padding:6px;border:1px solid #dbe4f4;border-radius:9px;background:#f5f7fc;color:#31517f;font-size:.75rem;font-weight:800;overflow:hidden}.social-media-preview__item img,.social-media-preview__item video{display:block;width:100%;height:88px;object-fit:contain;background:#eaf1ff;border-radius:5px}.social-media-preview__note{grid-column:1/-1;margin:0;color:#a32222;font-size:.82rem;font-weight:800}.social-post-media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.social-post-media-grid.is-single{grid-template-columns:minmax(0,1fr)}.social-post-media-item{min-width:0;overflow:hidden;border-radius:11px;background:#f3f6fc}.social-post-media-item .social-post-image,.social-post-video{display:block;width:100%;height:100%;max-height:560px;object-fit:contain;background:#f3f6fc;border-radius:11px;margin:0}.social-post-video{aspect-ratio:16/9;min-height:150px}@media(max-width:640px){.social-composer-row,.cp-social-composer-row{grid-template-columns:1fr!important}.social-composer-media-inputs,.cp-social-media-inputs{grid-template-columns:1fr}.social-media-preview{grid-template-columns:repeat(2,minmax(0,1fr))}.social-post-media-grid{gap:6px}.social-post-video{min-height:100px}}';
+    style.textContent = '.social-composer-row,.cp-social-composer-row{grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto!important}.social-composer-media-inputs,.cp-social-media-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}.social-media-preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.social-media-preview:empty{display:none}.social-media-preview__item{min-width:0;display:grid;gap:4px;padding:6px;border:1px solid #dbe4f4;border-radius:9px;background:#f5f7fc;color:#31517f;font-size:.75rem;font-weight:800;overflow:hidden}.social-media-preview__item img,.social-media-preview__item video{display:block;width:100%;height:88px;object-fit:contain;background:#eaf1ff;border-radius:5px}.social-media-preview__note{grid-column:1/-1;margin:0;color:#a32222;font-size:.82rem;font-weight:800}.social-post-media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.social-post-media-grid.is-single{grid-template-columns:minmax(0,1fr)}.social-post-media-item{min-width:0;overflow:hidden;border-radius:11px;background:#f3f6fc}.social-post-media-item .social-post-image,.social-post-video{display:block;width:100%;height:100%;max-height:560px;object-fit:contain;background:#f3f6fc;border-radius:11px;margin:0}.social-post-video{aspect-ratio:16/9;min-height:150px}.social-stat-button{border:0;background:transparent;color:#607096;font:inherit;font-size:.82rem;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}.social-stat-button:hover,.social-stat-button:focus-visible{color:#0b2a6b}.social-view-count{color:#607096;font-size:.82rem}.social-likers-thread{margin:8px 0;padding:11px;border:1px solid #dbe4f4;border-radius:10px;background:#f7faff}.social-likers-thread[hidden]{display:none!important}.social-likers-list{display:grid;gap:8px}.social-liker{display:flex;align-items:center;gap:9px;min-width:0;padding:6px;border-radius:8px;background:#fff}.social-liker-avatar{width:34px;height:34px;flex:0 0 34px;object-fit:cover;border-radius:50%;background:#eaf1ff}.social-liker-name{min-width:0;overflow-wrap:anywhere}.social-liker-name a{color:#0b2a6b;text-decoration:none;font-weight:900}.social-liker-name span{display:block;color:#607096;font-size:.78rem}@media(max-width:640px){.social-composer-row,.cp-social-composer-row{grid-template-columns:1fr!important}.social-composer-media-inputs,.cp-social-media-inputs{grid-template-columns:1fr}.social-media-preview{grid-template-columns:repeat(2,minmax(0,1fr))}.social-post-media-grid{gap:6px}.social-post-video{min-height:100px}}';
     document.head.appendChild(style);
   }
   ensureMediaStyles();
@@ -56,11 +56,95 @@
       '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">' + safe(post.display_name || post.username) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">@' + safe(post.username) + '</a><span> · ' + safe(dateText(post.created_at)) + '</span></div></div>' +
       '<span class="social-post-type">' + safe(labels[post.post_type] || 'Status') + '</span></header>' +
       (post.body ? '<p class="social-post-body">' + safe(post.body).replace(/\n/g, '<br>') + '</p>' : '') + mediaMarkup +
-      '<div class="social-post-stats"><span data-like-count>' + Number(post.like_count || 0) + ' likes</span><span data-comment-count>' + Number(post.comment_count || 0) + ' comments</span></div>' +
+      '<div class="social-post-stats"><button type="button" class="social-stat-button" data-post-likers="' + Number(post.id) + '" data-like-count aria-label="See who liked this post">' + Number(post.like_count || 0) + ' likes</button><button type="button" class="social-stat-button" data-post-open-comments="' + Number(post.id) + '" data-comment-count aria-label="See comments on this post">' + Number(post.comment_count || 0) + (Number(post.comment_count || 0) === 1 ? ' comment' : ' comments') + '</button><span class="social-view-count" data-view-count>' + Number(post.view_count || 0) + ' views</span></div>' +
+      '<section class="social-likers-thread" data-likers-thread="' + Number(post.id) + '" hidden><p class="social-inline-status" data-likes-status role="status" aria-live="polite"></p><div class="social-likers-list" data-likes-list></div></section>' +
       '<div class="social-post-actions"><button type="button" data-post-like="' + Number(post.id) + '" data-liked="' + String(!!post.liked_by_me) + '" aria-pressed="' + String(!!post.liked_by_me) + '" class="' + (post.liked_by_me ? 'is-liked' : '') + '">♥ ' + (post.liked_by_me ? 'Liked' : 'Like') + '</button><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button>' +
       (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report</button>' : '<button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete</button>') + '</div>' +
       '<section class="social-comments" data-comments-thread="' + Number(post.id) + '" hidden><div class="social-comment-list" data-comment-list></div>' +
       '<form class="social-comment-form" data-comment-form="' + Number(post.id) + '"><label class="sr-only" for="social-comment-' + Number(post.id) + '">Write a comment</label><textarea id="social-comment-' + Number(post.id) + '" name="body" maxlength="1000" required rows="2" placeholder="Add a comment…"></textarea><button type="submit">Reply</button></form><p class="social-inline-status" data-comment-status role="status" aria-live="polite"></p></section></article>';
+  }
+  async function loadLikers(root, postId) {
+    const section = $(root, '[data-likers-thread="' + postId + '"]');
+    if (!section) return;
+    const status = $(section, '[data-likes-status]');
+    const list = $(section, '[data-likes-list]');
+    status.textContent = 'Loading likes…';
+    list.replaceChildren();
+    try {
+      const data = await api('/api/collector/post-like?id=' + encodeURIComponent(postId));
+      const users = data.users || [];
+      status.textContent = users.length ? users.length + (users.length === 1 ? ' collector liked this post.' : ' collectors liked this post.') : 'No likes yet.';
+      list.innerHTML = users.map(user => '<article class="social-liker">' +
+        (user.avatar_url ? '<img class="social-liker-avatar" src="' + safe(user.avatar_url) + '" alt="" loading="lazy">' : '<span class="social-liker-avatar social-avatar-placeholder">P</span>') +
+        '<div class="social-liker-name"><a href="/collector.html?user=' + encodeURIComponent(user.username) + '">' + safe(user.display_name || user.username) + '</a><span>@' + safe(user.username) + '</span></div></article>').join('');
+      section.dataset.loaded = 'true';
+    } catch (error) { status.textContent = error.message || 'Could not load who liked this post.'; }
+  }
+  async function openComments(root, postId) {
+    const thread = $(root, '[data-comments-thread="' + postId + '"]');
+    if (!thread) return;
+    thread.hidden = !thread.hidden;
+    if (!thread.hidden && thread.dataset.loaded !== 'true') await loadComments(root, postId);
+  }
+  let viewObserver = null;
+  const attemptedPostViews = new Set();
+  function browserViewerKey() {
+    try {
+      let value = localStorage.getItem('ppp-collector-viewer-key');
+      if (!value || !/^[a-f0-9-]{36}$/i.test(value)) {
+        value = window.crypto && typeof window.crypto.randomUUID === 'function'
+          ? window.crypto.randomUUID()
+          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, ch => {
+              const r = Math.random() * 16 | 0;
+              return (ch === 'x' ? r : (r & 3 | 8)).toString(16);
+            });
+        localStorage.setItem('ppp-collector-viewer-key', value);
+      }
+      return value;
+    } catch (_) {
+      if (!window.__pppCollectorViewerKey) {
+        window.__pppCollectorViewerKey = window.crypto && typeof window.crypto.randomUUID === 'function'
+          ? window.crypto.randomUUID()
+          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, ch => ((Math.random()*16)|0).toString(16));
+      }
+      return window.__pppCollectorViewerKey;
+    }
+  }
+  async function recordPostView(postId, card) {
+    if (attemptedPostViews.has(postId)) return;
+    attemptedPostViews.add(postId);
+    try {
+      const response = await fetch('/api/collector/post-view', {
+        method:'POST',credentials:'include',cache:'no-store',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({post_id:Number(postId),viewer_key:browserViewerKey()})
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.ok && card) {
+        const count = $(card, '[data-view-count]');
+        if (count) count.textContent = Number(data.view_count || 0) + ' views';
+      } else { attemptedPostViews.delete(postId); }
+    } catch (_) { attemptedPostViews.delete(postId); }
+  }
+  function observePostViews(root, posts) {
+    if (viewObserver) viewObserver.disconnect();
+    if ('IntersectionObserver' in window) {
+      viewObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting || entry.intersectionRatio < 0.5) return;
+          const card = entry.target;
+          viewObserver.unobserve(card);
+          const post = posts.find(item => Number(item.id) === Number(card.dataset.postCard));
+          if (post && !post.is_own) recordPostView(post.id, card);
+        });
+      }, {threshold:[0.5]});
+      root.querySelectorAll('[data-post-card]').forEach(card => viewObserver.observe(card));
+    } else {
+      root.querySelectorAll('[data-post-card]').forEach(card => {
+        const post = posts.find(item => Number(item.id) === Number(card.dataset.postCard));
+        if (post && !post.is_own) recordPostView(post.id, card);
+      });
+    }
   }
   function renderComments(root, postId, comments) {
     const thread = $(root, '[data-comments-thread="' + postId + '"]');
@@ -98,6 +182,12 @@
       const posts = d.posts || [];
       list.innerHTML = posts.length ? posts.map(postCard).join('') : '<div class="social-empty-state"><strong>No posts yet.</strong><span>' + (state.mode === 'profile' ? 'When this collector shares an update, it will appear here.' : 'Be the first to share something with the community.') + '</span></div>';
       status.textContent = posts.length ? posts.length + (posts.length === 1 ? ' post' : ' posts') : '';
+      observePostViews(root, posts);
+      const requestedPost = new URLSearchParams(location.search).get('post');
+      if (requestedPost) {
+        const focusCard = $(list, '[data-post-card="' + Number(requestedPost) + '"]');
+        if (focusCard) focusCard.scrollIntoView({behavior:'smooth',block:'center'});
+      }
     } catch (e) {
       status.textContent = e.message;
       if (String(e.message).includes('database setup')) list.innerHTML = '<div class="social-empty-state"><strong>Community Feed setup needed</strong><span>The Community Feed database tables are unavailable. Please contact support before using the feed.</span></div>';
@@ -267,15 +357,29 @@
       try {
         const d=await api('/api/collector/post-like?id='+encodeURIComponent(id),{method:was?'DELETE':'POST'});
         like.dataset.liked=String(d.liked);like.setAttribute('aria-pressed',String(d.liked));like.classList.toggle('is-liked',d.liked);like.textContent=d.liked?'♥ Liked':'♥ Like';
-        const card=like.closest('[data-post-card]'),count=card.querySelector('[data-like-count]');if(count)count.textContent=Number(d.like_count)+' likes';
+        const card=like.closest('[data-post-card]'),count=card.querySelector('[data-like-count]');if(count)count.textContent=Number(d.like_count)+' likes';const likesThread=card.querySelector('[data-likers-thread]');if(likesThread&&likesThread.dataset.loaded==='true')loadLikers(root,id);
       } catch(e) { if(e.message==='Please sign in to do that.')location.href='/account.html';else alert(e.message); }
       finally {like.disabled=false;}
       return;
     }
+    const likers = event.target.closest('[data-post-likers]');
+    if (likers) {
+      const id = likers.dataset.postLikers;
+      const section = $(root, '[data-likers-thread="' + id + '"]');
+      if (section) {
+        section.hidden = !section.hidden;
+        if (!section.hidden) await loadLikers(root, id);
+      }
+      return;
+    }
+    const commentCount = event.target.closest('[data-post-open-comments]');
+    if (commentCount) {
+      await openComments(root, commentCount.dataset.postOpenComments);
+      return;
+    }
     const comments = event.target.closest('[data-post-comments]');
     if (comments) {
-      const id=comments.dataset.postComments,thread=$(root,'[data-comments-thread="'+id+'"]');
-      if(thread){thread.hidden=!thread.hidden;if(!thread.hidden&&thread.dataset.loaded!=='true')await loadComments(root,id);}
+      await openComments(root, comments.dataset.postComments);
       return;
     }
     const del = event.target.closest('[data-post-delete]');
