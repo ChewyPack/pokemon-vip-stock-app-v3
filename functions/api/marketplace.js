@@ -1,7 +1,3 @@
-const SHOP_TIERS = [
-  'collector_plus','vendor','vendor_plus','organizer','organizer_plus',
-  'event_organizer','event_organizer_plus','vip','lifetime','lifetime_vip'
-];
 const CATEGORIES = ['Singles','Sealed','Graded cards','Collections','Accessories','Clothing','Plushies','Other'];
 
 function json(body,status=200){
@@ -27,7 +23,6 @@ export async function onRequestGet({request,env}){
   const category=requestedCategory?normalizeCategory(requestedCategory):'';
   if(requestedCategory&&!category)return json({ok:false,error:'invalid_category',message:'Choose a valid marketplace category.'},400);
   const limit=Math.max(1,Math.min(100,Number.parseInt(url.searchParams.get('limit')||'60',10)||60));
-  const tiers=SHOP_TIERS.map(()=>'?').join(',');
   const pattern='%'+search+'%';
   try{
     const result=await env.DB.prepare(`
@@ -57,21 +52,11 @@ export async function onRequestGet({request,env}){
         AND i.listing_status='active'
         AND TRIM(COALESCE(p.shop_name,''))<>''
         AND cp.is_public=1
-        AND (
-          a.is_admin=1 OR (
-            LOWER(COALESCE(a.membership_status,'')) IN ('active','trialing')
-            AND (
-              LOWER(REPLACE(REPLACE(REPLACE(COALESCE(a.membership_entitlement_tier,''),'+','_plus'),' ','_'),'-','_')) IN (${tiers})
-              OR LOWER(REPLACE(REPLACE(REPLACE(COALESCE(a.membership_tier,''),'+','_plus'),' ','_'),'-','_')) IN (${tiers})
-            )
-          )
-        )
         AND (?='' OR LOWER(i.category)=LOWER(?))
         AND (?='' OR i.item_name LIKE ? OR i.notes LIKE ? OR p.shop_name LIKE ? OR cp.username LIKE ?)
       ORDER BY COALESCE(i.updated_at,i.created_at) DESC, i.id DESC
       LIMIT ?
     `).bind(
-      ...SHOP_TIERS,...SHOP_TIERS,
       category,category,
       search,pattern,pattern,pattern,pattern,
       limit
