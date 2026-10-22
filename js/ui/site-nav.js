@@ -86,7 +86,8 @@
    {title:'Collector Marketplace (New)',description:'Browse listings posted by member shops',href:'/marketplace.html'},
    {title:'Manage My Shop',description:'Create or edit your member shop profile and listings',href:'/collector.html#shop'}
   ]),
-  link('Community Feed','/community.html'),\n  link('Giveaways','/giveaways.html'),
+  link('Community Feed','/community.html'),
+  link('Giveaways','/giveaways.html'),
   link('Chat','/chat.html'),
   dropdown('Resources',[
    {title:'Securing Product',href:'/resources/securing-product.html'},
