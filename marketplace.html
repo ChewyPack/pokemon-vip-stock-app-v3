@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06174A">
+<title>Collector Marketplace | PokePrizePool</title>
+<meta name="description" content="Browse Pokémon cards, sealed products, graded cards, and collector listings from PokePrizePool shops.">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+.market-wrap{width:min(1180px,calc(100% - 28px));margin:28px auto 72px;color:#0b2a6b}
+.market-hero{padding:clamp(22px,4vw,38px);border:3px solid #0b2a6b;border-radius:17px;background:linear-gradient(130deg,#fff,#edf4ff);box-shadow:7px 7px 0 #000}
+.market-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.market-kicker{margin:0 0 6px;color:#31558e;font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-size:.78rem}
+.market-title{margin:0;font:400 clamp(2.4rem,6vw,4rem)/1.02 var(--font-display);overflow-wrap:anywhere}
+.market-intro{max-width:760px;color:#445c87;line-height:1.6;margin:12px 0 0}
+.market-actions{display:flex;gap:10px;flex-wrap:wrap}
+.market-filters{display:grid;grid-template-columns:minmax(220px,1fr) minmax(170px,250px) auto;gap:10px;margin:22px 0 12px}
+.market-filters input,.market-filters select{width:100%;min-height:46px;padding:10px 12px;border:2px solid #b9c9e6;border-radius:9px;background:#fff;color:#0b2a6b;font:inherit}
+.market-status{min-height:1.5em;color:#52648b;line-height:1.5;margin:12px 0}
+.market-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;align-items:stretch}
+.market-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;background:#fff;border:2px solid #d1def2;border-radius:13px;box-shadow:0 4px 13px #07194d0b}
+.market-card-image{display:grid;place-items:center;width:100%;height:230px;padding:12px;background:linear-gradient(150deg,#f5f8ff,#e8efff);color:#7b8bac;text-align:center;overflow:hidden}
+.market-card-image img{width:100%;height:100%;object-fit:contain}
+.market-card-body{display:flex;flex:1;flex-direction:column;padding:13px;min-width:0}
+.market-card h2{font-size:1.02rem;line-height:1.32;margin:0 0 7px;overflow-wrap:anywhere}
+.market-meta{color:#52648b;font-size:.84rem;line-height:1.5;margin:4px 0;overflow-wrap:anywhere}
+.market-price{font-size:1.3rem;font-weight:900;color:#0b2a6b;margin:7px 0}
+.market-card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:13px}
+.market-card-footer a{font-weight:900;font-size:.86rem}
+.market-card-footer .market-view-shop{display:inline-flex;padding:9px 11px;border-radius:8px;background:#0b2a6b;color:#fff;text-decoration:none}
+.market-empty{grid-column:1/-1;padding:30px 18px;border:2px dashed #bfd0ea;border-radius:13px;background:#fff;text-align:center;color:#52648b;line-height:1.6}
+.market-fine-print{font-size:.85rem;color:#52648b;line-height:1.6;margin:22px 0 0}
+@media(max-width:900px){.market-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.market-filters{grid-template-columns:1fr}.market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.market-card-image{height:190px}.market-card-body{padding:10px}}
+@media(max-width:430px){.market-grid{grid-template-columns:1fr}.market-card{display:grid;grid-template-columns:112px minmax(0,1fr)}.market-card-image{height:100%;min-height:175px;padding:6px}.market-card-footer{justify-content:flex-start}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="market-wrap">
+<section class="market-hero">
+<div class="market-top"><div><p class="market-kicker">Collector-to-collector listings</p><h1 class="market-title">PokePrizePool Marketplace</h1><p class="market-intro">Discover singles, sealed products, graded cards, collections, and accessories posted by PokePrizePool shops. Active Collector+ members and higher tiers can create a shop and publish their listings here.</p></div><div class="market-actions"><a class="btn btn--primary" href="/vendor.html">Manage my shop</a></div></div>
+</section>
+<form id="market-filters" class="market-filters" role="search">
+<input id="market-search" type="search" maxlength="100" placeholder="Search items, shop names, or usernames…" aria-label="Search marketplace listings" autocomplete="off">
+<select id="market-category" aria-label="Filter by category">
+<option value="">All categories</option><option value="Singles">Singles</option><option value="Sealed">Sealed</option><option value="Graded cards">Graded cards / slabs</option><option value="Collections">Collections</option><option value="Accessories">Accessories</option><option value="Other">Other</option>
+</select>
+<button class="btn" type="submit">Search</button>
+</form>
+<p id="market-status" class="market-status" role="status" aria-live="polite">Loading marketplace listings…</p>
+<section id="market-listings" class="market-grid" aria-label="Marketplace listings"><div class="market-empty">Loading listings…</div></section>
+<p class="market-fine-print">Listings are maintained by the shops that post them. Prices and availability may change. Checkout is not processed on this page; use a seller’s shop and contact links to coordinate a purchase.</p>
+</main>
+<script src="/js/ui/site-nav.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const form=$('market-filters'),search=$('market-search'),category=$('market-category'),status=$('market-status'),list=$('market-listings');
+let requestNumber=0,timer=0;
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function priceLabel(cents){return cents===null||cents===undefined?'Contact for price':'$'+(Number(cents)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function render(items){
+ if(!items.length){list.innerHTML='<div class="market-empty"><strong>No matching listings yet.</strong><br>Try a different search or category. Shop owners can add listings from <a href="/vendor.html">Manage my shop</a>.</div>';return;}
+ list.innerHTML=items.map(item=>{
+  const image=item.image_url?'<img loading="lazy" alt="'+escapeHtml(item.item_name)+'" src="'+escapeHtml(item.image_url)+'">':'<span>No photo</span>';
+  return '<article class="market-card"><div class="market-card-image">'+image+'</div><div class="market-card-body"><h2>'+escapeHtml(item.item_name)+'</h2><p class="market-meta">'+escapeHtml(item.category||'Other')+(item.condition_label?' · '+escapeHtml(item.condition_label):'')+'</p><p class="market-price">'+escapeHtml(priceLabel(item.price_cents))+'</p>'+(item.quantity_hint?'<p class="market-meta">'+escapeHtml(item.quantity_hint)+'</p>':'')+(item.notes?'<p class="market-meta">'+escapeHtml(item.notes)+'</p>':'')+(item.event_name?'<p class="market-meta">Featured at: '+escapeHtml(item.event_name)+'</p>':'')+'<div class="market-card-footer"><a class="market-view-shop" href="'+escapeHtml(item.shop_url)+'">View shop</a><a href="'+escapeHtml(item.profile_url)+'">@'+escapeHtml(item.username)+'</a></div></div></article>';
+ }).join('');
+}
+async function load(){
+ const thisRequest=++requestNumber,params=new URLSearchParams();
+ const query=search.value.trim();
+ if(query)params.set('q',query);
+ if(category.value)params.set('category',category.value);
+ status.textContent='Loading listings…';status.setAttribute('aria-busy','true');
+ try{
+  const response=await fetch('/api/marketplace?'+params.toString(),{credentials:'same-origin',cache:'no-store'});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.message||'Marketplace listings could not be loaded.');
+  if(thisRequest!==requestNumber)return;
+  render(data.listings||[]);
+  status.textContent=(data.count||0)+' listing'+(data.count===1?'':'s')+' found.';
+ }catch(error){
+  if(thisRequest!==requestNumber)return;
+  list.innerHTML='<div class="market-empty">The marketplace could not be loaded right now. Please refresh the page to try again.</div>';
+  status.textContent=error.message||'Marketplace unavailable.';
+ }finally{if(thisRequest===requestNumber)status.removeAttribute('aria-busy');}
+}
+function scheduleLoad(){clearTimeout(timer);timer=setTimeout(load,250);}
+form.addEventListener('submit',function(event){event.preventDefault();clearTimeout(timer);load();});
+search.addEventListener('input',scheduleLoad);
+category.addEventListener('change',load);
+const params=new URLSearchParams(location.search);
+const initialCategory=params.get('category')||'';
+const aliases={singles:'Singles',single:'Singles',sealed:'Sealed',slabs:'Graded cards',slab:'Graded cards','graded cards':'Graded cards',collections:'Collections',collection:'Collections',accessories:'Accessories',other:'Other'};
+if(initialCategory){const selected=aliases[initialCategory.toLowerCase()]||initialCategory;category.value=Array.from(category.options).some(o=>o.value===selected)?selected:'';}
+load();
+})();
+</script>
+</body>
+</html>
