@@ -44,6 +44,10 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-btn:disabled{opacity:.55;cursor:wait}
 .cp-status{font-size:.88rem;line-height:1.5;color:#31517f;overflow-wrap:anywhere}
 .cp-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.cp-tabs [role="tab"][aria-selected="true"]{background:var(--blue);color:#fff;border-color:var(--blue)}
+.cp-layout.cp-shop-active #owner-tools{display:none!important}.cp-layout.cp-shop-active>section{grid-column:1/-1;min-width:0}
+.cp-shop-tab{display:grid;gap:14px}.cp-shop-editor-card{padding:16px;border:1px solid var(--line);border-radius:13px;background:#f8faff;min-width:0}.cp-shop-editor-card h3{font:1.5rem Bangers,cursive;margin:0 0 6px;color:var(--navy)}.cp-shop-muted{font-size:.88rem;color:var(--muted);line-height:1.5;margin:5px 0 10px}.cp-shop-form{display:grid;gap:10px}.cp-shop-form label{display:grid;gap:5px;font-weight:900;font-size:.86rem;color:var(--navy)}.cp-shop-form input:not([type=checkbox]):not([type=file]),.cp-shop-form textarea,.cp-shop-form select{width:100%;min-height:42px;padding:9px 10px;border:1px solid #b9c9e6;border-radius:8px;background:#fff;color:var(--navy);font:inherit;box-sizing:border-box}.cp-shop-form textarea{min-height:74px;resize:vertical}.cp-shop-form input[type=file]{width:100%;font:inherit;max-width:100%}.cp-shop-form-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cp-shop-check{display:flex!important;align-items:center;gap:8px}.cp-shop-check input{width:18px;height:18px}.cp-shop-listings{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:10px;margin-top:14px}.cp-shop-listing{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px;min-width:0}.cp-shop-listing img{width:100%;height:145px;object-fit:contain;background:#eef3fc;border-radius:8px}.cp-shop-listing h4{font-size:.96rem;line-height:1.35;margin:8px 0 4px;overflow-wrap:anywhere}.cp-shop-listing p{font-size:.82rem;color:var(--muted);margin:4px 0;line-height:1.45;overflow-wrap:anywhere}.cp-shop-listing-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.cp-shop-listing-actions button{font-size:.8rem;padding:7px 9px}.cp-shop-public-profile{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:15px;border:1px solid var(--line);border-radius:12px;background:#fff}.cp-shop-public-profile img{width:78px;height:78px;object-fit:cover;border-radius:13px;border:1px solid var(--line)}.cp-shop-public-profile h3{font:1.7rem Bangers,cursive;margin:0;color:var(--navy)}.cp-shop-public-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:12px}.cp-shop-notice{padding:18px;border:1px solid #d4dded;border-radius:12px;background:#f8faff}.cp-shop-notice h3{font:1.6rem Bangers,cursive;margin:0 0 8px}.cp-shop-notice p{color:var(--muted);line-height:1.55}.cp-shop-tab[hidden],#shop-owner-editor[hidden],#shop-public-view[hidden],#shop-upgrade-panel[hidden]{display:none!important}
+@media(max-width:520px){.cp-shop-form-row{grid-template-columns:1fr}.cp-shop-listings,.cp-shop-public-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .cp-tabs button[aria-pressed=true]{background:var(--blue);color:#fff}
 .cp-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .cp-tools .cp-search{flex:1;min-width:180px}
@@ -116,6 +120,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <aside id="owner-tools" class="cp-panel">
 <h2>Add to your lists</h2>
 <form id="item-form">
+<input type="hidden" id="item-id" value="">
 <label class="cp-field">List<select id="list-type"><option value="collection">My Collection</option><option value="wishlist">My Wishlist</option></select></label>
 <div class="cp-catalog">
 <p class="cp-catalog-title">Add a card or sealed product</p><p class="cp-catalog-status">Choose Single card / Graded card to search cards, or Sealed product to search booster boxes, ETBs, tins, bundles, and collections.</p>
@@ -135,17 +140,53 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <label class="cp-field">Estimated value in USD (optional)<input id="estimated-value" type="number" min="0" max="1000000" step="0.01" placeholder="Leave blank if unknown"></label>
 <label class="cp-field">Image URL (optional)<input id="image-url" type="url" placeholder="https://…"></label>
 <label class="cp-field">Notes (optional)<textarea id="notes" maxlength="500" placeholder="Language, variant, target price, etc."></textarea></label>
-<button class="cp-btn" type="submit">Add item</button>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="item-save-button" class="cp-btn" type="submit">Add item</button><button id="item-cancel-edit" class="cp-btn secondary" type="button" hidden>Cancel edit</button></div>
 </form>
 <p class="cp-public-note">Catalog search uses PokePrizePool's daily-synced TCGCSV Pokémon catalog. Results show TCGplayer market prices by available printing or sealed-product variant. Selecting a result fills the matching catalog details and market-price estimate. Graded-slab values must be researched separately from raw-card prices.</p>
 <p id="owner-status" class="cp-status" role="status" aria-live="polite"></p>
 </aside>
-<section class="cp-panel">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h2 id="list-heading">Collection showcase</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="make-offer-button" class="cp-btn" type="button" hidden> Make an Offer</button><button id="visit-shop" class="cp-btn" type="button">Visit Shop</button><button id="copy-profile" class="cp-btn secondary" type="button">Copy profile link</button></div></div>
-<div class="cp-tabs" role="group" aria-label="Choose list"><button class="cp-btn" type="button" data-list="collection" aria-pressed="true">My Collection</button><button class="cp-btn secondary" type="button" data-list="wishlist" aria-pressed="false">My Wishlist</button></div>
-<div class="cp-tools"><input id="search" class="cp-search" type="search" placeholder="Search this collection…"><select id="type-filter" class="cp-search" style="max-width:190px"><option value="all">All product types</option><option value="card">Singles</option><option value="graded">Graded</option><option value="sealed">Sealed</option></select></div>
+<section class="cp-panel" id="profile-content-panel">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h2 id="list-heading">Collection showcase</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="make-offer-button" class="cp-btn" type="button" hidden>Make an Offer</button><button id="copy-profile" class="cp-btn secondary" type="button">Copy profile link</button></div></div>
+<div class="cp-tabs" role="tablist" aria-label="Profile sections">
+<button class="cp-btn" type="button" role="tab" data-list="collection" aria-selected="true" aria-pressed="true">Collection</button>
+<button class="cp-btn secondary" type="button" role="tab" data-list="wishlist" aria-selected="false" aria-pressed="false">Wishlist</button>
+<button class="cp-btn secondary" type="button" role="tab" data-list="shop" aria-selected="false" aria-pressed="false">Shop</button>
+</div>
+<div id="collection-view">
+<div class="cp-tools"><input id="search" class="cp-search" type="search" placeholder="Search this collection…" aria-label="Search collection or wishlist"><select id="type-filter" class="cp-search" style="max-width:190px"><option value="all">All product types</option><option value="card">Singles</option><option value="graded">Graded</option><option value="sealed">Sealed</option></select></div>
 <div id="items" class="cp-items"><div class="cp-empty">Loading your collection…</div></div>
 <p id="view-status" class="cp-status" role="status" aria-live="polite"></p>
+</div>
+<div id="shop-tab-content" class="cp-shop-tab" hidden>
+<p id="shop-tab-status" class="cp-status" role="status" aria-live="polite">Loading shop…</p>
+<section id="shop-upgrade-panel" class="cp-shop-notice" hidden><h3>Open your collector shop</h3><p>An active Collector+ membership or higher is required to create a shop profile and publish marketplace listings.</p><a class="cp-btn" href="/account.html#settings-membership">View membership options</a></section>
+<div id="shop-owner-editor" hidden>
+<section class="cp-shop-editor-card"><h3>Shop profile</h3><p class="cp-shop-muted">This profile appears on your public shop page and in the marketplace.</p>
+<form id="profile-shop-form" class="cp-shop-form">
+<label>Shop name *<input name="shop_name" maxlength="100" required placeholder="Your shop name"></label>
+<input type="hidden" name="logo_key"><input type="hidden" name="cover_key"><input type="hidden" name="logo_url"><input type="hidden" name="cover_url">
+<div class="cp-shop-form-row"><label>Shop logo<input name="logo_file" type="file" accept="image/jpeg,image/png,image/webp,image/avif"></label><label>Cover photo<input name="cover_file" type="file" accept="image/jpeg,image/png,image/webp,image/avif"></label></div>
+<label>About your shop<textarea name="bio" maxlength="1000" placeholder="What do you collect or specialize in?"></textarea></label>
+<label>Website URL<input name="website_url" type="url" placeholder="https://…"></label><label>Social profile URL<input name="social_links" type="url" placeholder="https://…"></label>
+<button class="cp-btn" id="profile-shop-save" type="submit">Save shop profile</button><p id="profile-shop-status" class="cp-status" role="status" aria-live="polite"></p>
+</form></section>
+<section class="cp-shop-editor-card"><h3>Marketplace listings</h3><p class="cp-shop-muted">Add a listing here and it can appear on the public marketplace while marked for sale.</p>
+<form id="profile-listing-form" class="cp-shop-form">
+<input type="hidden" name="id"><input type="hidden" name="image_key">
+<label>Item name *<input name="item_name" maxlength="160" required placeholder="e.g. Charizard ex, ETB, PSA 10 slab"></label>
+<div class="cp-shop-form-row"><label>Category<select name="category"><option>Singles</option><option>Sealed</option><option>Graded cards</option><option>Collections</option><option>Accessories</option><option>Clothing</option><option>Plushies</option><option>Other</option></select></label><label>Price (USD)<input name="price" type="number" min="0" max="10000000" step="0.01" placeholder="Leave blank to ask"></label></div>
+<div class="cp-shop-form-row"><label>Condition / grade<input name="condition_label" maxlength="80" placeholder="Near Mint, PSA 10…"></label><label>Quantity / availability note<input name="quantity_hint" maxlength="80" placeholder="1 available"></label></div>
+<label>Product photo<input name="item_file" type="file" accept="image/jpeg,image/png,image/webp,image/avif"></label>
+<label>Details<textarea name="notes" maxlength="500" placeholder="Set, language, details, or pickup information"></textarea></label>
+<label class="cp-shop-check"><input name="is_for_sale" type="checkbox" checked> Publish this item to the marketplace</label>
+<div class="cp-shop-form-row"><button class="cp-btn" id="profile-listing-save" type="submit">Add listing</button><button class="cp-btn secondary" id="profile-listing-cancel" type="button" hidden>Cancel edit</button></div>
+<p id="profile-listing-status" class="cp-status" role="status" aria-live="polite"></p>
+</form>
+<div id="profile-shop-listings" class="cp-shop-listings"><p class="cp-shop-muted">Loading your listings…</p></div>
+</section>
+</div>
+<div id="shop-public-view" hidden><div id="shop-public-profile"></div><div id="shop-public-items" class="cp-shop-public-items"></div></div>
+</div>
 </section>
 </div>
 </main>
@@ -456,7 +497,7 @@ async function searchCollectors(query){
  async function removeItem(id){if(!confirm('Remove this item from your list?'))return;try{const r=await fetch('/api/collector/items?id='+encodeURIComponent(id),{method:'DELETE',credentials:'include'}),d=await r.json();if(!r.ok||!d.ok)throw new Error('Could not remove item.');items=items.filter(x=>String(x.id)!==String(id));stats();render();setStatus('owner-status','Item removed.');}catch(e){setStatus('owner-status',e.message||'Could not remove item.');}}
  document.querySelectorAll('[data-list]').forEach(b=>b.addEventListener('click',()=>{activeList=b.dataset.list;document.querySelectorAll('[data-list]').forEach(x=>{x.setAttribute('aria-pressed',String(x===b));x.classList.toggle('secondary',x!==b);});render();}));
  $('search').addEventListener('input',render);$('type-filter').addEventListener('change',render);
- $('visit-shop').addEventListener('click',()=>{if(!profile?.username){setStatus('view-status','Save your collector username first.');return;}location.href='/shop.html?user='+encodeURIComponent(profile.username);});
+ 
  $('copy-profile').addEventListener('click',async()=>{if(!profile?.username){setStatus('owner-status','Save a username first to create your public profile link.');return;}const url=location.origin+'/collector.html?user='+encodeURIComponent(profile.username);try{await navigator.clipboard.writeText(url);setStatus('owner-status','Profile link copied! '+url);}catch{setStatus('owner-status','Your profile link: '+url);}});
  $('make-offer-button').addEventListener('click',openMakeOffer);
  $('offer-type-cash').addEventListener('click',()=>setOfferMode('cash'));$('offer-type-trade').addEventListener('click',()=>setOfferMode('trade'));
