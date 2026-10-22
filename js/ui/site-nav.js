@@ -70,20 +70,21 @@
   dropdown('Alerts',alertsItems),
   link('Line Services','/line-services.html'),
   dropdown('Shop',[
-   {title:'Cards',children:[
-    {title:'Singles',href:'/marketplace.html?category=Singles'},
-    {title:'Sealed',href:'/marketplace.html?category=Sealed'},
-    {title:'Graded cards / slabs',href:'/marketplace.html?category=Graded%20cards'},
-    {title:'Collections',href:'/marketplace.html?category=Collections'}
+   {title:'PokePrizePool Store',description:'Shop cards and merchandise sold directly by PokePrizePool',href:'/store.html'},
+   {title:'Cards · PokePrizePool Store',description:'Official PokePrizePool card inventory',children:[
+    {title:'Singles',href:'/store.html?category=Singles'},
+    {title:'Sealed',href:'/store.html?category=Sealed'},
+    {title:'Graded cards / slabs',href:'/store.html?category=Graded%20cards'},
+    {title:'Collections',href:'/store.html?category=Collections'}
    ]},
-   {title:'Merch',children:[
-    {title:'Clothing',href:'/marketplace.html?category=Clothing'},
-    {title:'Plushies',href:'/marketplace.html?category=Plushies'},
-    {title:'Accessories',href:'/marketplace.html?category=Accessories'},
-    {title:'Other',href:'/marketplace.html?category=Other'}
+   {title:'Merch · PokePrizePool Store',description:'Official PokePrizePool merchandise',children:[
+    {title:'Clothing',href:'/store.html?category=Clothing'},
+    {title:'Plushies',href:'/store.html?category=Plushies'},
+    {title:'Accessories',href:'/store.html?category=Accessories'},
+    {title:'Other',href:'/store.html?category=Other'}
    ]},
-   {title:'Marketplace (New)',description:'Browse all listings from collector shops',href:'/marketplace.html'},
-   {title:'Manage My Shop',description:'Create your shop profile and listings',href:'/collector.html#shop'}
+   {title:'Collector Marketplace (New)',description:'Browse listings posted by member shops',href:'/marketplace.html'},
+   {title:'Manage My Shop',description:'Create or edit your member shop profile and listings',href:'/collector.html#shop'}
   ]),
   link('Giveaways','/giveaways.html'),
   link('Chat','/chat.html'),
