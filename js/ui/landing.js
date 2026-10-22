@@ -177,13 +177,21 @@
             href: '/account.html',
             id: 'account-nav-link'
           }, 'Log In / Sign Up'),
-          h('a', {
-            class: 'site-nav__link site-nav__inbox-link',
-            href: '/inbox.html',
-            'aria-label': 'Offer inbox'
-          },
-            h('img', { src: '/inbox-icon.png', alt: '', class: 'site-nav__inbox-image' }),
-            h('span', { class: 'site-nav__inbox-badge', hidden: true, 'aria-live': 'polite' })
+          h('div', { class: 'site-nav__inbox-wrap' },
+            h('button', {
+              class: 'site-nav__link site-nav__inbox-link',
+              type: 'button',
+              'aria-label': 'Open Notifications or Offer Inbox',
+              'aria-expanded': 'false',
+              'aria-controls': 'site-nav-inbox-menu'
+            },
+              h('img', { src: '/inbox-icon.png', alt: '', class: 'site-nav__inbox-image' }),
+              h('span', { class: 'site-nav__inbox-badge', hidden: true, 'aria-live': 'polite' })
+            ),
+            h('div', { class: 'site-nav__inbox-menu', id: 'site-nav-inbox-menu', hidden: true },
+              h('a', { class: 'site-nav__inbox-menu-link', href: '/notifications.html' }, 'Notifications'),
+              h('a', { class: 'site-nav__inbox-menu-link', href: '/inbox.html' }, 'Offer Inbox')
+            )
           )
         )
       )
@@ -191,21 +199,42 @@
 
     // Keep the offer inbox utility available on the homepage just like every other page.
     var inbox = nav.querySelector('.site-nav__inbox-link');
+    var inboxMenu = nav.querySelector('.site-nav__inbox-menu');
+    var inboxWrap = nav.querySelector('.site-nav__inbox-wrap');
     var inboxBadge = nav.querySelector('.site-nav__inbox-badge');
+    inbox.addEventListener('click', function (event) {
+      event.stopPropagation();
+      var open = inboxMenu.hidden;
+      inboxMenu.hidden = !open;
+      inbox.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', function (event) {
+      if (!inboxWrap.contains(event.target)) {
+        inboxMenu.hidden = true;
+        inbox.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        inboxMenu.hidden = true;
+        inbox.setAttribute('aria-expanded', 'false');
+      }
+    });
     function refreshInboxBadge() {
-      fetch('/api/collector/trades', { credentials: 'include', cache: 'no-store' })
-        .then(function (response) { return response.ok ? response.json() : null; })
-        .then(function (data) {
-          if (!data || !data.ok || !inboxBadge || !inbox) return;
-          var count = (data.offers || []).filter(function (offer) {
-            return offer.direction === 'incoming' && !offer.recipient_read_at;
-          }).length;
-          inboxBadge.hidden = count < 1;
-          inboxBadge.textContent = count > 99 ? '99+' : String(count);
-          inboxBadge.setAttribute('aria-label', count + ' unread offer' + (count === 1 ? '' : 's'));
-          inbox.setAttribute('aria-label', count + ' unread offer' + (count === 1 ? '' : 's'));
-        })
-        .catch(function () {});
+      Promise.all([
+        fetch('/api/collector/trades', { credentials: 'include', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+        fetch('/api/notifications', { credentials: 'include', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+      ]).then(function (results) {
+        var offers = results[0] && results[0].ok ? (results[0].offers || []).filter(function (offer) {
+          return offer.direction === 'incoming' && !offer.recipient_read_at;
+        }).length : 0;
+        var notifications = results[1] && results[1].ok ? Number(results[1].unread || 0) : 0;
+        var count = offers + notifications;
+        inboxBadge.hidden = count < 1;
+        inboxBadge.textContent = count > 99 ? '99+' : String(count);
+        inboxBadge.setAttribute('aria-label', count + ' unread notifications and offers');
+        inbox.setAttribute('aria-label', 'Open Notifications or Offer Inbox' + (count ? ' (' + count + ' unread)' : ''));
+      });
     }
     refreshInboxBadge();
     window.setInterval(refreshInboxBadge, 60000);
@@ -219,6 +248,14 @@
       '.site-nav__inbox-badge:not([hidden]){position:absolute;top:auto;right:0;bottom:0;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#ef233c;color:#fff;font-size:.7rem;font-weight:700;line-height:1;box-shadow:0 0 0 2px #06174a;z-index:2}' +
       '.site-nav__inbox-badge[hidden]{display:none!important}' +
       '@media(max-width:560px){.site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-image{width:96px;height:96px}}';
+    inboxStyle.textContent +=
+      '.site-nav__inbox-wrap{position:relative;display:inline-flex;align-items:center;flex:0 0 auto}' +
+      '.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{font:inherit;color:inherit;cursor:pointer;flex:0 0 108px;width:108px;min-width:108px;height:108px;min-height:108px}' +
+      '.site-nav__inbox-menu{position:absolute;z-index:1100;right:0;top:calc(100% + 6px);min-width:170px;padding:6px;background:#fff;border:1px solid #d5e0f2;border-radius:10px;box-shadow:0 8px 24px #07194d22}' +
+      '.site-nav__inbox-menu[hidden]{display:none!important}' +
+      '.site-nav__inbox-menu-link{display:block;padding:10px;border-radius:7px;color:#17386c!important;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;white-space:nowrap}' +
+      '.site-nav__inbox-menu-link:hover,.site-nav__inbox-menu-link:focus-visible{background:#f3f7ff}' +
+      '@media(max-width:560px){.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-menu{min-width:160px}}';
     document.head.appendChild(inboxStyle);
 
     fetch('/api/account/me', { credentials: 'include', cache: 'no-store' })
