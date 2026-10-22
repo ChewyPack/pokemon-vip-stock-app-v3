@@ -100,7 +100,7 @@ async function toggleReaction(env, account, data) {
   const reactions = summary.get(id) || [];
   let realtime = true;
   try {
-    await publishChatEvent(env, { type: "reaction", id, channel_id: Number(message.channel_id), reactions });
+    await publishChatEvent(env, { type: "reaction", id, channel_id: Number(message.channel_id), emoji, actor_account_id: account.id, reacted: !existing, reactions: reactions.map(item => ({ emoji: item.emoji, count: item.count })) });
   } catch (error) {
     realtime = false;
     console.warn("Chat reaction saved but live broadcast failed:", error);
