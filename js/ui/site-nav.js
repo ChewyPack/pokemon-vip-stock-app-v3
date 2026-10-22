@@ -70,13 +70,20 @@
   dropdown('Alerts',alertsItems),
   link('Line Services','/line-services.html'),
   dropdown('Shop',[
-   {title:'Marketplace',description:'Browse listings from collector shops',href:'/marketplace.html'},
-   {title:'Singles',description:'Individual cards listed by collectors',href:'/marketplace.html?category=Singles'},
-   {title:'Sealed',description:'Sealed Pokémon TCG products',href:'/marketplace.html?category=Sealed'},
-   {title:'Graded cards / slabs',description:'Graded cards listed by shops',href:'/marketplace.html?category=Graded%20cards'},
-   {title:'Collections',description:'Collection lots and bundles',href:'/marketplace.html?category=Collections'},
-   {title:'Accessories',description:'Collector supplies and accessories',href:'/marketplace.html?category=Accessories'},
-   {title:'Manage My Shop',description:'Create your shop profile and listings',href:'/vendor.html'}
+   {title:'Cards',children:[
+    {title:'Singles',href:'/marketplace.html?category=Singles'},
+    {title:'Sealed',href:'/marketplace.html?category=Sealed'},
+    {title:'Graded cards / slabs',href:'/marketplace.html?category=Graded%20cards'},
+    {title:'Collections',href:'/marketplace.html?category=Collections'}
+   ]},
+   {title:'Merch',children:[
+    {title:'Clothing',href:'/marketplace.html?category=Clothing'},
+    {title:'Plushies',href:'/marketplace.html?category=Plushies'},
+    {title:'Accessories',href:'/marketplace.html?category=Accessories'},
+    {title:'Other',href:'/marketplace.html?category=Other'}
+   ]},
+   {title:'Marketplace (New)',description:'Browse all listings from collector shops',href:'/marketplace.html'},
+   {title:'Manage My Shop',description:'Create your shop profile and listings',href:'/collector.html#shop'}
   ]),
   link('Giveaways','/giveaways.html'),
   link('Chat','/chat.html'),
