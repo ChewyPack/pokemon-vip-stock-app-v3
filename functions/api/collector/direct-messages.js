@@ -21,17 +21,23 @@ async function currentAccount(request, env) {
   const account = await env.DB.prepare('SELECT id, session_expires_at FROM accounts WHERE session_token_hash = ? LIMIT 1').bind(await sha256(token)).first();
   return account && account.session_expires_at && Number(account.session_expires_at) > Date.now() ? account : null;
 }
+let directMessagesTableReady = null;
 async function ensureTable(db) {
-  await db.prepare(`CREATE TABLE IF NOT EXISTS collector_direct_messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender_account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    recipient_account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    body TEXT NOT NULL CHECK(length(trim(body)) BETWEEN 1 AND 2000),
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    read_at TEXT
-  )`).run();
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_collector_direct_messages_conversation ON collector_direct_messages(sender_account_id, recipient_account_id, id DESC)').run();
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_collector_direct_messages_recipient_unread ON collector_direct_messages(recipient_account_id, read_at, id DESC)').run();
+  if (!directMessagesTableReady) {
+    directMessagesTableReady = (async () => {
+      await db.prepare(`CREATE TABLE IF NOT EXISTS collector_direct_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        recipient_account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        body TEXT NOT NULL CHECK(length(trim(body)) BETWEEN 1 AND 2000),
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        read_at TEXT
+      )`).run();
+      await db.prepare('CREATE INDEX IF NOT EXISTS idx_collector_direct_messages_conversation ON collector_direct_messages(sender_account_id, recipient_account_id, id DESC)').run();
+      await db.prepare('CREATE INDEX IF NOT EXISTS idx_collector_direct_messages_recipient_unread ON collector_direct_messages(recipient_account_id, read_at, id DESC)').run();
+    })().catch(error => { directMessagesTableReady = null; throw error; });
+  }
+  await directMessagesTableReady;
 }
 async function profileByUsername(env, username) {
   return env.DB.prepare(`SELECT p.account_id,p.username,p.avatar_url,p.is_public,a.display_name
@@ -74,6 +80,10 @@ export async function onRequestGet({request,env}) {
       const target = found.target;
       await env.DB.prepare(`UPDATE collector_direct_messages SET read_at=CURRENT_TIMESTAMP
         WHERE sender_account_id=? AND recipient_account_id=? AND read_at IS NULL`).bind(target.account_id,account.id).run();
+      // Opening a conversation also clears its corresponding in-site DM notifications.
+      await env.DB.prepare(`UPDATE notifications SET read_at=CURRENT_TIMESTAMP
+        WHERE account_id=? AND notification_type='direct_message'
+        AND json_extract(data_json,'$.from')=? AND read_at IS NULL`).bind(account.id,target.username).run().catch(()=>{});
       const result = await env.DB.prepare(`SELECT m.id,m.sender_account_id,m.recipient_account_id,m.body,m.created_at,m.read_at,
         sp.username AS sender_username,sa.display_name AS sender_name,sp.avatar_url AS sender_avatar,rp.username AS recipient_username
         FROM collector_direct_messages m
