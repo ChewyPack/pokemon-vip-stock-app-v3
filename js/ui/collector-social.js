@@ -131,13 +131,13 @@
     if ('IntersectionObserver' in window) {
       viewObserver = new IntersectionObserver(entries => {
         entries.forEach(entry => {
-          if (!entry.isIntersecting || entry.intersectionRatio < 0.5) return;
+          if (!entry.isIntersecting || entry.intersectionRatio < 0.15) return;
           const card = entry.target;
           viewObserver.unobserve(card);
           const post = posts.find(item => Number(item.id) === Number(card.dataset.postCard));
           if (post && !post.is_own) recordPostView(post.id, card);
         });
-      }, {threshold:[0.5]});
+      }, {threshold:[0.15]});
       root.querySelectorAll('[data-post-card]').forEach(card => viewObserver.observe(card));
     } else {
       root.querySelectorAll('[data-post-card]').forEach(card => {
@@ -402,13 +402,13 @@
       catch(e){alert(e.message);} finally {report.disabled=false;}
     }
     const removeComment=event.target.closest('[data-comment-delete]');
-    if(removeComment){if(!confirm('Delete your comment?'))return;try{await api('/api/collector/post-comments?id='+encodeURIComponent(removeComment.dataset.commentDelete),{method:'DELETE'});const card=removeComment.closest('[data-post-card]');const id=card.dataset.postCard;await loadComments(root,id);const count=card.querySelector('[data-comment-count]');const n=Number((count.textContent.match(/\d+/)||['0'])[0]);count.textContent=Math.max(0,n-1)+' comments';}catch(e){alert(e.message);}}
+    if(removeComment){if(!confirm('Delete your comment?'))return;try{await api('/api/collector/post-comments?id='+encodeURIComponent(removeComment.dataset.commentDelete),{method:'DELETE'});const card=removeComment.closest('[data-post-card]');const id=card.dataset.postCard;await loadComments(root,id);const count=card.querySelector('[data-comment-count]');const n=Number((count.textContent.match(/\d+/)||['0'])[0]);const nextCount=Math.max(0,n-1);count.textContent=nextCount+(nextCount===1?' comment':' comments');}catch(e){alert(e.message);}}
   }
   async function handleCommentSubmit(event,root,state){
     const form=event.target.closest('[data-comment-form]');if(!form)return;
     event.preventDefault();const id=form.dataset.commentForm,body=form.elements.body.value.trim(),status=form.parentElement.querySelector('[data-comment-status]'),button=form.querySelector('[type="submit"]');if(!body)return;
     button.disabled=true;status.textContent='Sending…';
-    try{await api('/api/collector/post-comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:Number(id),body})});form.reset();await loadComments(root,id);const card=form.closest('[data-post-card]'),count=card.querySelector('[data-comment-count]'),n=Number((count.textContent.match(/\d+/)||['0'])[0]);count.textContent=(n+1)+' comments';status.textContent='Comment added.';}
+    try{await api('/api/collector/post-comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:Number(id),body})});form.reset();await loadComments(root,id);const card=form.closest('[data-post-card]'),count=card.querySelector('[data-comment-count]'),n=Number((count.textContent.match(/\d+/)||['0'])[0]);const nextCount=n+1;count.textContent=nextCount+(nextCount===1?' comment':' comments');status.textContent='Comment added.';}
     catch(e){status.textContent=e.message;if(e.message==='Please sign in to do that.')location.href='/account.html';}
     finally{button.disabled=false;}
   }
