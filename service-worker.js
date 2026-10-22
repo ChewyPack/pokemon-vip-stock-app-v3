@@ -63,8 +63,8 @@ self.addEventListener('push', event => {
   const title = String(data.title || 'PokePrizePool alert');
   const options = {
     body: String(data.body || 'There is a new update for collectors.'),
-    icon: '/assets/pwa-icon-192.svg',
-    badge: '/assets/pwa-icon-192.svg',
+    icon: '/inbox-icon.png',
+    badge: '/inbox-icon.png',
     tag: String(data.tag || 'pokeprizepool-alert'),
     renotify: false,
     data: { url: String(data.url || '/notifications.html') }
