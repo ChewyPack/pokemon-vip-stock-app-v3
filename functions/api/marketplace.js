@@ -2,7 +2,7 @@ const SHOP_TIERS = [
   'collector_plus','vendor','vendor_plus','organizer','organizer_plus',
   'event_organizer','event_organizer_plus','vip','lifetime','lifetime_vip'
 ];
-const CATEGORIES = ['Singles','Sealed','Graded cards','Collections','Accessories','Other'];
+const CATEGORIES = ['Singles','Sealed','Graded cards','Collections','Accessories','Clothing','Plushies','Other'];
 
 function json(body,status=200){
   return new Response(JSON.stringify(body),{
@@ -15,7 +15,7 @@ function clean(value,max=100){
 }
 function normalizeCategory(value){
   const key=String(value||'').trim().toLowerCase();
-  const aliases={'single':'Singles','singles':'Singles','sealed':'Sealed','slab':'Graded cards','slabs':'Graded cards','graded':'Graded cards','graded cards':'Graded cards','collection':'Collections','collections':'Collections','accessories':'Accessories','other':'Other'};
+  const aliases={'single':'Singles','singles':'Singles','sealed':'Sealed','slab':'Graded cards','slabs':'Graded cards','graded':'Graded cards','graded cards':'Graded cards','collection':'Collections','collections':'Collections','accessories':'Accessories','clothing':'Clothing','plushies':'Plushies','other':'Other'};
   return aliases[key]||'';
 }
 
