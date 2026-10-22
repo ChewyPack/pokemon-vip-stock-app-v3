@@ -48,7 +48,7 @@ export async function onRequestPost({ request, env }) {
   if (!account) return json({ ok: false, error: 'login_required' }, 401);
 
   const kind = new URL(request.url).searchParams.get('kind');
-  if (!['avatar', 'cover'].includes(kind)) return json({ ok: false, error: 'invalid_image_kind' }, 400);
+  if (!['avatar', 'cover', 'post'].includes(kind)) return json({ ok: false, error: 'invalid_image_kind' }, 400);
 
   const contentType = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
   const extensions = {
