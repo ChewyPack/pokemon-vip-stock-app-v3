@@ -35,13 +35,34 @@ async function ensureTable(env) {
     excerpt TEXT NOT NULL DEFAULT '',
     content TEXT NOT NULL DEFAULT '',
     image_url TEXT NOT NULL DEFAULT '',
+    image_urls_json TEXT NOT NULL DEFAULT '[]',
     category TEXT NOT NULL DEFAULT 'News',
     status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),
     published_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`).run();
+  const columns = await env.DB.prepare('PRAGMA table_info(poke_report_stories)').all();
+  if (!(columns.results || []).some(column => column.name === 'image_urls_json')) {
+    try { await env.DB.prepare("ALTER TABLE poke_report_stories ADD COLUMN image_urls_json TEXT NOT NULL DEFAULT '[]'").run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_report_stories_status_date ON poke_report_stories(status, published_at DESC)').run();
+}
+function storyImages(story) {
+  let images = [];
+  try {
+    const parsed = JSON.parse(story.image_urls_json || '[]');
+    if (Array.isArray(parsed)) images = parsed;
+  } catch (_) {}
+  images = images.filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()).slice(0, 3);
+  if (!images.length && story.image_url) images = [story.image_url];
+  return images;
+}
+function shapeStory(story) {
+  if (!story) return story;
+  const images = storyImages(story);
+  return { ...story, image_urls: images, image_url: images[0] || story.image_url || '' };
 }
 
 async function currentAccount(request, env) {
@@ -82,31 +103,31 @@ export async function onRequestGet({ request, env }) {
       const access = await requireAdmin(request, env);
       if (access.error) return access.error;
       const rows = await env.DB.prepare(
-        'SELECT id, slug, title, excerpt, content, image_url, category, status, published_at, created_at, updated_at FROM poke_report_stories ORDER BY updated_at DESC, id DESC LIMIT 200'
+        'SELECT id, slug, title, excerpt, content, image_url, image_urls_json, category, status, published_at, created_at, updated_at FROM poke_report_stories ORDER BY updated_at DESC, id DESC LIMIT 200'
       ).all();
-      return json({ ok: true, stories: rows.results || [] });
+      return json({ ok: true, stories: (rows.results || []).map(shapeStory) });
     }
 
     if (storySlug) {
       const story = await env.DB.prepare(
-        'SELECT slug, title, excerpt, content, image_url, category, published_at FROM poke_report_stories WHERE slug = ? AND status = \'published\' LIMIT 1'
+        'SELECT slug, title, excerpt, content, image_url, image_urls_json, category, published_at FROM poke_report_stories WHERE slug = ? AND status = \'published\' LIMIT 1'
       ).bind(storySlug).first();
       if (!story) return json({ ok: false, error: 'story_not_found' }, 404);
-      return json({ ok: true, story });
+      return json({ ok: true, story: shapeStory(story) });
     }
 
     const categoryFilter = cleanText(url.searchParams.get('category') || '', 40);
     let rows;
     if (['News', 'Updates', 'Market Intelligence', 'Events'].includes(categoryFilter)) {
       rows = await env.DB.prepare(
-        'SELECT slug, title, excerpt, image_url, category, published_at FROM poke_report_stories WHERE status = \'published\' AND category = ? ORDER BY published_at DESC, id DESC LIMIT 100'
+        'SELECT slug, title, excerpt, image_url, image_urls_json, category, published_at FROM poke_report_stories WHERE status = \'published\' AND category = ? ORDER BY published_at DESC, id DESC LIMIT 100'
       ).bind(categoryFilter).all();
     } else {
       rows = await env.DB.prepare(
-        'SELECT slug, title, excerpt, image_url, category, published_at FROM poke_report_stories WHERE status = \'published\' ORDER BY published_at DESC, id DESC LIMIT 100'
+        'SELECT slug, title, excerpt, image_url, image_urls_json, category, published_at FROM poke_report_stories WHERE status = \'published\' ORDER BY published_at DESC, id DESC LIMIT 100'
       ).all();
     }
-    return json({ ok: true, stories: rows.results || [] });
+    return json({ ok: true, stories: (rows.results || []).map(shapeStory) });
   } catch (error) {
     console.error('Poke Report story read failed:', error);
     return json({ ok: false, error: 'news_read_failed' }, 500);
@@ -125,7 +146,11 @@ export async function onRequestPost({ request, env }) {
   const excerpt = cleanText(data.excerpt, 500);
   const content = cleanText(data.content, 30000);
   const category = cleanText(data.category, 40) || 'News';
-  const imageUrl = cleanText(data.image_url, 1000);
+  const rawImageUrls = Array.isArray(data.image_urls) ? data.image_urls : (data.image_url ? [data.image_url] : []);
+  if (rawImageUrls.length > 3) return json({ ok: false, error: 'too_many_images', message: 'Each article can have at most 3 images.' }, 400);
+  const imageUrls = Array.from(new Set(rawImageUrls.map(value => cleanText(value, 1000)).filter(Boolean)));
+  const imageUrl = imageUrls[0] || '';
+  const imageUrlsJson = JSON.stringify(imageUrls);
   const status = data.status === 'published' ? 'published' : 'draft';
   let slug = makeSlug(data.slug || title);
 
@@ -133,7 +158,9 @@ export async function onRequestPost({ request, env }) {
   if (!content) return json({ ok: false, error: 'content_required' }, 400);
   if (!slug) return json({ ok: false, error: 'valid_slug_required' }, 400);
   if (!['News', 'Updates', 'Market Intelligence', 'Events'].includes(category)) return json({ ok: false, error: 'invalid_category' }, 400);
-  if (imageUrl && !imageUrl.toLowerCase().startsWith('https://')) return json({ ok: false, error: 'image_must_use_https_url' }, 400);
+  if (imageUrls.some(value => {
+    try { return new URL(value).protocol !== 'https:'; } catch (_) { return true; }
+  })) return json({ ok: false, error: 'image_must_use_https_url' }, 400);
 
   try {
     await ensureTable(env);
@@ -142,17 +169,17 @@ export async function onRequestPost({ request, env }) {
     const publishedAt = status === 'published' ? (existing?.published_at || new Date().toISOString()) : null;
     if (existing) {
       await env.DB.prepare(
-        'UPDATE poke_report_stories SET slug=?, title=?, excerpt=?, content=?, image_url=?, category=?, status=?, published_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'
-      ).bind(slug, title, excerpt, content, imageUrl, category, status, publishedAt, id).run();
+        'UPDATE poke_report_stories SET slug=?, title=?, excerpt=?, content=?, image_url=?, image_urls_json=?, category=?, status=?, published_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'
+      ).bind(slug, title, excerpt, content, imageUrl, imageUrlsJson, category, status, publishedAt, id).run();
     } else {
       await env.DB.prepare(
-        'INSERT INTO poke_report_stories (slug,title,excerpt,content,image_url,category,status,published_at) VALUES (?,?,?,?,?,?,?,?)'
-      ).bind(slug, title, excerpt, content, imageUrl, category, status, publishedAt).run();
+        'INSERT INTO poke_report_stories (slug,title,excerpt,content,image_url,image_urls_json,category,status,published_at) VALUES (?,?,?,?,?,?,?,?,?)'
+      ).bind(slug, title, excerpt, content, imageUrl, imageUrlsJson, category, status, publishedAt).run();
     }
     const saved = await env.DB.prepare(
-      'SELECT id, slug, title, excerpt, content, image_url, category, status, published_at, created_at, updated_at FROM poke_report_stories WHERE slug = ? LIMIT 1'
+      'SELECT id, slug, title, excerpt, content, image_url, image_urls_json, category, status, published_at, created_at, updated_at FROM poke_report_stories WHERE slug = ? LIMIT 1'
     ).bind(slug).first();
-    return json({ ok: true, story: saved });
+    return json({ ok: true, story: shapeStory(saved) });
   } catch (error) {
     if (String(error && error.message || '').toLowerCase().includes('unique')) return json({ ok: false, error: 'slug_already_used' }, 409);
     console.error('Poke Report story save failed:', error);
