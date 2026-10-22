@@ -14,8 +14,8 @@
   var COLLAGE = 'assets/backgrounds/vip-collage.jpg';
 
   VIP.assets = {
-    // The hero poster on the landing page.
-    heroPoster: { src: 'assets/pokeprizepool-pwa-192.jpg', alt: 'PokePrizePool — Collect, Trade, Win' },
+    // Cache-busted so mobile browsers fetch the latest replacement logo.
+    heroPoster: { src: 'assets/pokeprizepool-pwa-192.jpg?v=3', alt: 'PokePrizePool — Collect, Trade, Win' },
 
     // Card art per universe. `src: null` renders the generic card back.
     universeArt: {
