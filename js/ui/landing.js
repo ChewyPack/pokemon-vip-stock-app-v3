@@ -226,6 +226,11 @@
         });
 
         menu.appendChild(settings);
+        var newsFeed = h('a', {
+          class: 'site-nav__profile-menu-settings site-nav__profile-menu-newsfeed',
+          href: 'https://pokeprizepool.com/community?utm_source=chatgpt.com'
+        }, 'News Feed');
+        menu.appendChild(newsFeed);
         menu.appendChild(logout);
         var accountParent = accountLink.parentNode;
         accountParent.insertBefore(profileWrap, accountLink);
