@@ -12,7 +12,7 @@
  *   DB -> pokemon-vip-members
  *
  * Access:
- *   Requires a signed-in account with an active, verified paid membership.
+ *   Requires an active paid membership or a signed-in admin account.
  *
  * Notifications:
  *   Saved reports fan out to the in-site inbox and opted-in browser push subscriptions.
@@ -69,7 +69,7 @@ async function requireActivePaidAccount(request, env) {
   if (!token) return { ok: false, status: 401, error: 'login_required' };
 
   const account = await env.DB.prepare(
-    `SELECT id, session_expires_at, membership_status, membership_tier,
+    `SELECT id, is_admin, session_expires_at, membership_status, membership_tier,
             membership_entitlement_tier, membership_current_period_end,
             membership_source, stripe_subscription_id
      FROM accounts WHERE session_token_hash = ? LIMIT 1`
@@ -77,6 +77,10 @@ async function requireActivePaidAccount(request, env) {
 
   if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) {
     return { ok: false, status: 401, error: 'login_required' };
+  }
+
+  if (Number(account.is_admin || 0) === 1) {
+    return { ok: true, account, isAdmin: true };
   }
 
   const tier = String(account.membership_entitlement_tier || account.membership_tier || '').trim().toLowerCase();
