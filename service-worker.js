@@ -1,6 +1,6 @@
 'use strict';
 
-const SHELL_CACHE = 'pokeprizepool-shell-v3';
+const SHELL_CACHE = 'pokeprizepool-shell-v4';
 const CORE_NAVIGATION = new Set([
   '/', '/index.html', '/account.html', '/collector.html',
   '/chat.html', '/events.html', '/marketplace.html', '/vendor.html',
@@ -8,7 +8,9 @@ const CORE_NAVIGATION = new Set([
 ]);
 const CORE_ASSETS = [
   '/offline.html',
-  '/assets/pokeprizepool-pwa-192.jpg?v=3',
+  '/pokeprizepool-pwa-192.png?v=4',
+  '/pokeprizepool-pwa-512.png?v=4',
+  '/apple-touch-icon.png?v=4',
   '/manifest.webmanifest'
 ];
 
@@ -64,8 +66,8 @@ self.addEventListener('push', event => {
   const title = String(data.title || 'PokePrizePool alert');
   const options = {
     body: String(data.body || 'There is a new update for collectors.'),
-    icon: '/inbox-icon.png',
-    badge: '/inbox-icon.png',
+    icon: '/pokeprizepool-pwa-192.png',
+    badge: '/pokeprizepool-pwa-192.png',
     tag: String(data.tag || 'pokeprizepool-alert'),
     renotify: false,
     data: { url: String(data.url || '/notifications.html') }
