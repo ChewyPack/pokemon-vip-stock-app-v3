@@ -35,6 +35,33 @@ export async function onRequestPost({request,env}){
   return json({ok:true,id:result.meta?.last_row_id||null},201);
  }catch(error){console.error('Collector item save failed:',error);const detail=String(error&&error.message||'').toLowerCase();if(detail.includes('no such table')||detail.includes('no such column')||detail.includes('has no column named'))return json({ok:false,error:'collector_database_migration_required'},500);return json({ok:false,error:'item_save_failed'},500);}
 }
+export async function onRequestPatch({request,env}){
+ if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
+ const account=await currentAccount(request,env);if(!account)return json({ok:false,error:'login_required'},401);
+ let data;try{data=await request.json();}catch{return json({ok:false,error:'bad_request'},400);}
+ const id=Number(data.id);
+ if(!Number.isSafeInteger(id)||id<1)return json({ok:false,error:'invalid_item_id'},400);
+ const listType=['collection','wishlist'].includes(data.list_type)?data.list_type:'collection';
+ const productType=['card','sealed','graded'].includes(data.product_type)?data.product_type:'card';
+ const name=typeof data.product_name==='string'?data.product_name.trim():'';
+ const setName=typeof data.set_name==='string'?data.set_name.trim():'';
+ const number=typeof data.card_number==='string'?data.card_number.trim():'';
+ const condition=typeof data.condition==='string'?data.condition.trim():'';
+ const notes=typeof data.notes==='string'?data.notes.trim():'';
+ const image=typeof data.image_url==='string'?data.image_url.trim():'';
+ const quantity=Number(data.quantity||1);
+ const value=data.estimated_value===undefined||data.estimated_value===null||data.estimated_value===''?null:Number(data.estimated_value);
+ if(!name||name.length>160||setName.length>120||number.length>40||condition.length>60||notes.length>500)return json({ok:false,error:'invalid_item'},400);
+ if(!Number.isInteger(quantity)||quantity<1||quantity>9999)return json({ok:false,error:'invalid_quantity'},400);
+ if(image.length>500||(image&&!/^https:\/\//i.test(image)))return json({ok:false,error:'invalid_image_url'},400);
+ if(value!==null&&(!Number.isFinite(value)||value<0||value>100000000))return json({ok:false,error:'invalid_estimated_value'},400);
+ try{
+  const result=await env.DB.prepare('UPDATE collector_items SET list_type=?,product_type=?,product_name=?,set_name=?,card_number=?,condition=?,quantity=?,notes=?,image_url=?,estimated_value_cents=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND account_id=?')
+   .bind(listType,productType,name,setName,number,condition,quantity,notes,image,value===null?null:Math.round(value*100),id,account.id).run();
+  if(!result.meta?.changes)return json({ok:false,error:'item_not_found'},404);
+  return json({ok:true,id});
+ }catch(error){console.error('Collector item update failed:',error);const detail=String(error&&error.message||'').toLowerCase();if(detail.includes('no such column'))return json({ok:false,error:'collector_database_migration_required'},500);return json({ok:false,error:'item_update_failed'},500);}
+}
 export async function onRequestDelete({request,env}){
  if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
  const account=await currentAccount(request,env);if(!account)return json({ok:false,error:'login_required'},401);
