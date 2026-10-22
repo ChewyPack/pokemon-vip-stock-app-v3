@@ -11,6 +11,46 @@
         .catch(function (error) { console.warn('PokePrizePool offline support could not be registered:', error); });
     });
   }
+
+  // The homepage has a custom navigation, so provide its own install control.
+  var deferredInstallPrompt = null;
+  var homeInstallButton = document.createElement('button');
+  homeInstallButton.type = 'button';
+  homeInstallButton.id = 'pwa-install-home';
+  homeInstallButton.textContent = 'Install PokePrizePool';
+  homeInstallButton.hidden = true;
+  homeInstallButton.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2000;border:0;border-radius:999px;padding:12px 17px;background:#ffd21f;color:#07142e;font:800 14px system-ui,sans-serif;box-shadow:0 6px 20px #0004;cursor:pointer';
+  document.body.appendChild(homeInstallButton);
+  homeInstallButton.addEventListener('click', async function () {
+    if (!deferredInstallPrompt) {
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        window.alert('To install PokePrizePool on iPhone or iPad, open the Share menu in Safari and choose “Add to Home Screen.”');
+      }
+      return;
+    }
+    var promptEvent = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    homeInstallButton.disabled = true;
+    try {
+      await promptEvent.prompt();
+      var choice = await promptEvent.userChoice;
+      if (choice && choice.outcome === 'accepted') homeInstallButton.hidden = true;
+    } catch (error) {
+      console.warn('PWA install prompt failed:', error);
+    } finally {
+      homeInstallButton.disabled = false;
+    }
+  });
+  window.addEventListener('beforeinstallprompt', function (event) {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    homeInstallButton.hidden = false;
+  });
+  window.addEventListener('appinstalled', function () {
+    deferredInstallPrompt = null;
+    homeInstallButton.hidden = true;
+  });
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) homeInstallButton.hidden = false;
   var VIP = (window.VIP = window.VIP || {});
   var h = VIP.h;
 
