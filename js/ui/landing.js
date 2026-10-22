@@ -306,6 +306,97 @@
     );
   }
 
+
+  function buildHomepagePreviews() {
+    var styleId = 'ppp-home-previews-style';
+    if (!document.getElementById(styleId)) {
+      var style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = '.poster--logo{display:grid;place-items:center;aspect-ratio:1;max-width:470px;width:100%;margin-inline:auto;background:transparent;border:0;box-shadow:none;transform:none;overflow:visible}.poster--logo img{width:min(100%,430px);aspect-ratio:1;object-fit:contain;border-radius:22px;filter:drop-shadow(0 16px 30px rgba(0,0,0,.28))}.poster--logo::after{display:none}.ppp-home-previews{padding:42px 0 56px;background:linear-gradient(180deg,rgba(3,10,29,.2),rgba(3,10,29,.58))}.ppp-home-previews__intro{margin-bottom:22px}.ppp-home-previews__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ppp-home-previews__panel{min-width:0;padding:18px;border:2px solid rgba(255,255,255,.15);border-radius:15px;background:rgba(6,18,48,.9);box-shadow:0 10px 30px rgba(0,0,0,.18)}.ppp-home-previews__panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.ppp-home-previews__panel h3{margin:0;color:#ffd21f;font-size:1.5rem;line-height:1.1}.ppp-home-previews__panel-head>a{font-size:.82rem;font-weight:900;white-space:nowrap}.ppp-home-previews__feed{display:grid;gap:10px}.ppp-home-previews__item{display:grid;grid-template-columns:76px minmax(0,1fr);gap:11px;align-items:center;padding:9px;border-radius:10px;color:#fff;text-decoration:none;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);min-width:0}.ppp-home-previews__item:hover{border-color:rgba(255,210,31,.6);background:rgba(255,255,255,.08)}.ppp-home-previews__thumb{display:block;width:76px;height:76px;object-fit:cover;border-radius:8px;background:#10244f}.ppp-home-previews__text{min-width:0}.ppp-home-previews__meta{display:block;color:#9fb5de;font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}.ppp-home-previews__item strong{display:block;font-size:.95rem;line-height:1.3;overflow-wrap:anywhere}.ppp-home-previews__item p{font-size:.82rem;color:#cedaf1;line-height:1.45;margin:4px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ppp-home-previews__empty{padding:18px 10px;color:#a9b9d8;font-size:.88rem;line-height:1.5;text-align:center}.ppp-home-previews__empty a{font-weight:900}@media(max-width:650px){.ppp-home-previews{padding:28px 0 40px}.ppp-home-previews__grid{grid-template-columns:1fr}.ppp-home-previews__panel{padding:14px}.ppp-home-previews__item{grid-template-columns:64px minmax(0,1fr)}.ppp-home-previews__thumb{width:64px;height:64px}}';
+      document.head.appendChild(style);
+    }
+    var section = document.createElement('section');
+    section.className = 'ppp-home-previews';
+    section.setAttribute('aria-labelledby','ppp-home-previews-title');
+    var wrap = document.createElement('div'); wrap.className = 'wrap';
+    var intro = document.createElement('div'); intro.className = 'ppp-home-previews__intro';
+    var heading = document.createElement('h2'); heading.className = 'section__title'; heading.id = 'ppp-home-previews-title'; heading.textContent = 'Explore PokePrizePool';
+    var subtitle = document.createElement('p'); subtitle.className = 'section__sub'; subtitle.textContent = 'The latest from the collector community — all in one place.';
+    intro.append(heading,subtitle);
+    var grid = document.createElement('div'); grid.className = 'ppp-home-previews__grid';
+    wrap.append(intro,grid); section.appendChild(wrap);
+
+    function node(tag,cls,text){var el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;}
+    function shorten(value,max){var s=String(value||'').trim();return s.length>max?s.slice(0,max-1)+'…':s;}
+    function panel(title,href,cta,emptyCopy){
+      var card=node('article','ppp-home-previews__panel');
+      var head=node('div','ppp-home-previews__panel-head');
+      head.appendChild(node('h3','',title));
+      var more=node('a','',cta);more.href=href;head.appendChild(more);
+      var feed=node('div','ppp-home-previews__feed');
+      card.append(head,feed);grid.appendChild(card);
+      return {feed:feed,href:href,emptyCopy:emptyCopy};
+    }
+    function empty(target,message){
+      target.feed.replaceChildren();
+      target.feed.appendChild(node('p','ppp-home-previews__empty',message));
+    }
+    function dateLabel(value){
+      if(!value)return '';
+      var date=new Date(String(value).replace(' ','T'));
+      return Number.isNaN(date.getTime())?'':date.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    }
+    function addItem(target,opts){
+      var link=node('a','ppp-home-previews__item');link.href=opts.href||target.href;
+      if(opts.image){
+        var img=node('img','ppp-home-previews__thumb');img.src=opts.image;img.alt='';img.loading='lazy';img.onerror=function(){img.remove();};
+        link.appendChild(img);
+      }else{
+        var mark=node('span','ppp-home-previews__thumb','✦');mark.setAttribute('aria-hidden','true');
+        mark.style.display='grid';mark.style.placeItems='center';mark.style.color='#ffd21f';mark.style.fontSize='1.6rem';link.appendChild(mark);
+      }
+      var copy=node('div','ppp-home-previews__text');
+      if(opts.meta)copy.appendChild(node('span','ppp-home-previews__meta',opts.meta));
+      copy.appendChild(node('strong','',opts.title||'PokePrizePool update'));
+      if(opts.copy)copy.appendChild(node('p','',shorten(opts.copy,140)));
+      link.appendChild(copy);target.feed.appendChild(link);
+    }
+    var news = panel('Latest News','/news.html','All news ↗','News stories will appear here when published.');
+    var markets = panel('Market Intelligence','/market-intelligence.html','Market info ↗','Market updates and analysis will appear here when published.');
+    var giveaways = panel('Giveaways','/giveaways.html#gallery','All giveaways ↗','New giveaways will appear here when published.');
+    var listings = panel('Collector Marketplace','/marketplace.html','Browse listings ↗','Member shop listings will appear here as members publish them.');
+
+    fetch('/api/news?category=News',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('news unavailable');return r.json();}).then(function(data){
+      var rows=Array.isArray(data.stories)?data.stories.slice(0,2):[];
+      if(!rows.length){empty(news,news.emptyCopy);return;}
+      news.feed.replaceChildren();
+      rows.forEach(function(story){addItem(news,{title:story.title,copy:story.excerpt,meta:[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · '),image:story.image_url,href:'/news.html?story='+encodeURIComponent(story.slug)});});
+    }).catch(function(){empty(news,'Latest news could not load right now.');});
+
+    fetch('/api/news?category=Market%20Intelligence',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('market intelligence unavailable');return r.json();}).then(function(data){
+      var rows=Array.isArray(data.stories)?data.stories.slice(0,2):[];
+      if(!rows.length){empty(markets,markets.emptyCopy);return;}
+      markets.feed.replaceChildren();
+      rows.forEach(function(story){addItem(markets,{title:story.title,copy:story.excerpt,meta:[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · '),image:story.image_url,href:'/news.html?story='+encodeURIComponent(story.slug)});});
+    }).catch(function(){empty(markets,'Market intelligence could not load right now.');});
+
+    fetch('/api/giveaways',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('giveaways unavailable');return r.json();}).then(function(data){
+      var rows=Array.isArray(data.giveaways)?data.giveaways.slice(0,2):[];
+      if(!rows.length){empty(giveaways,giveaways.emptyCopy);return;}
+      giveaways.feed.replaceChildren();
+      rows.forEach(function(g){addItem(giveaways,{title:g.title,copy:g.description,meta:g.prize_value!=null?'Prize value · $'+Number(g.prize_value).toLocaleString('en-US'):'Giveaway',image:g.image_url,href:'/giveaways.html#gallery'});});
+    }).catch(function(){empty(giveaways,'Giveaways could not load right now.');});
+
+    fetch('/api/marketplace?limit=4',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('marketplace unavailable');return r.json();}).then(function(data){
+      var rows=Array.isArray(data.listings)?data.listings.slice(0,2):[];
+      if(!rows.length){empty(listings,listings.emptyCopy);return;}
+      listings.feed.replaceChildren();
+      rows.forEach(function(listing){var price=listing.price_cents==null?'Contact for price':'$'+(Number(listing.price_cents)/100).toFixed(2);addItem(listings,{title:listing.item_name,copy:[listing.shop_name||listing.username,price].filter(Boolean).join(' · '),meta:listing.category||'Member listing',image:listing.image_url,href:listing.shop_url||'/marketplace.html'});});
+    }).catch(function(){empty(listings,'Marketplace listings could not load right now.');});
+
+    return section;
+  }
+
   VIP.landing = {
     render: function (root) {
       var cfg = VIP.siteConfig;
@@ -323,17 +414,17 @@
           h(
             'h1',
             { class: 'wordmark' },
-            h('span', { class: 'wordmark__top' }, 'Pokémon'),
-            h('span', { class: 'wordmark__bottom' }, 'VIP')
+            h('span', { class: 'wordmark__top' }, 'PokePrize'),
+            h('span', { class: 'wordmark__bottom' }, 'Pool')
           ),
           h(
             'figure',
-            { class: 'poster' },
+            { class: 'poster poster--logo' },
             h('img', {
               src: poster.src,
               alt: poster.alt,
-              width: '1376',
-              height: '768',
+              width: '512',
+              height: '512',
               fetchpriority: 'high'
             })
           ),
@@ -468,6 +559,7 @@
       }, 'Ad placement · home · top');
       root.appendChild(homeAdTop);
       root.appendChild(hero);
+      root.appendChild(buildHomepagePreviews());
       root.appendChild(universes);
       root.appendChild(how);
       root.appendChild(cta);
