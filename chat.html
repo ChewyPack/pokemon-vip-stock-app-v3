@@ -271,8 +271,29 @@ async function toggleReaction(id,emoji){
   const data=await api('/api/chat/messages',{method:'POST',body:JSON.stringify({action:'reaction',id:Number(id),emoji})});
   const message=[...state.messages.values()].flat().find(item=>Number(item.id)===Number(id));
   if(message){message.reactions=data.reactions||[];const article=$('chat-history').querySelector('[data-message-id="'+Number(id)+'"]');if(article)renderReactionControls(article,message);}
-  if(data.realtime===false)alertBox('Your reaction was saved, but live updates are temporarily unavailable.');
+  // The polling fallback syncs saved reactions when the separate realtime Worker
+  // is temporarily behind the Pages deployment, so a saved reaction is not shown as an error.
  }catch(error){alertBox(error.message||'Could not update your reaction.');}
+}
+let reactionRefreshTimer=null;
+async function refreshCurrentChannelReactions(){
+ const channelId=Number(state.channelId);
+ if(!channelId||document.visibilityState==='hidden')return;
+ try{
+  const data=await api('/api/chat/messages?channel='+encodeURIComponent(channelId));
+  if(!Array.isArray(data.messages))return;
+  const cached=state.messages.get(channelId)||[];
+  const byId=new Map(cached.map(message=>[Number(message.id),message]));
+  for(const latest of data.messages){
+   const message=byId.get(Number(latest.id));
+   if(!message)continue;
+   const next=Array.isArray(latest.reactions)?latest.reactions:[];
+   if(JSON.stringify(message.reactions||[])===JSON.stringify(next))continue;
+   message.reactions=next;
+   const article=$('chat-history').querySelector('[data-message-id="'+Number(message.id)+'"]');
+   if(article)renderReactionControls(article,message);
+  }
+ }catch(error){/* Keep the chat usable if a background refresh fails. */}
 }
 let mentionTimer=null;let mentionResults=[];let mentionIndex=0;
 function hideMentionSuggestions(){const box=$('chat-mention-suggestions');box.hidden=true;box.replaceChildren();mentionResults=[];mentionIndex=0;}
@@ -294,11 +315,11 @@ function chooseMention(username){
 }
 function updateCount(){$('chat-char-count').textContent=$('chat-input').value.length.toLocaleString()+' / 1,200';}
 async function start(){
- try{const d=await api('/api/chat/channels');state.account=d.account;state.channels=d.channels||[];if(!state.channels.length)throw new Error('No chat channels are available yet. The site administrator needs to finish chat setup.');showApp();state.channelId=Number(state.channels[0].id);renderChannels();await selectChannel(state.channelId);connect();}
+ try{const d=await api('/api/chat/channels');state.account=d.account;state.channels=d.channels||[];if(!state.channels.length)throw new Error('No chat channels are available yet. The site administrator needs to finish chat setup.');showApp();state.channelId=Number(state.channels[0].id);renderChannels();await selectChannel(state.channelId);if(reactionRefreshTimer)window.clearInterval(reactionRefreshTimer);reactionRefreshTimer=window.setInterval(refreshCurrentChannelReactions,7000);connect();}
  catch(e){if(e.message==='login_required')return;showGate('Community Chat is almost ready',e.message);$('chat-gate-copy').textContent=e.message;}
 }
 $('chat-form').addEventListener('submit',sendMessage);$('chat-input').addEventListener('input',()=>{updateCount();updateMentionSuggestions();});$('chat-input').addEventListener('keydown',e=>{if(! $('chat-mention-suggestions').hidden && mentionResults.length && (e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();mentionIndex=(mentionIndex+(e.key==='ArrowDown'?1:mentionResults.length-1))%mentionResults.length;const buttons=$('chat-mention-suggestions').querySelectorAll('button');buttons.forEach((button,index)=>button.setAttribute('aria-selected',String(index===mentionIndex)));return;}if(! $('chat-mention-suggestions').hidden && e.key==='Enter'&&!e.shiftKey){e.preventDefault();chooseMention(mentionResults[mentionIndex].username);return;}if(e.key==='Escape')hideMentionSuggestions();if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chat-form').requestSubmit();}});$('chat-input').addEventListener('blur',()=>setTimeout(hideMentionSuggestions,160));
-window.addEventListener('beforeunload',()=>{if(state.retryTimer)clearTimeout(state.retryTimer);if(state.socket)state.socket.close();});
+window.addEventListener('beforeunload',()=>{if(state.retryTimer)clearTimeout(state.retryTimer);if(reactionRefreshTimer)window.clearInterval(reactionRefreshTimer);if(state.socket)state.socket.close();});
 start();
 })();
 </script>
