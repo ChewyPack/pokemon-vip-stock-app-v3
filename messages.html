@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#06174A">
+<meta name="description" content="Private messages between PokePrizePool collectors.">
+<title>Messages | PokePrizePool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+body{margin:0;min-height:100vh;background:#eef3ff;color:#07194d;font-family:Nunito,system-ui,sans-serif}
+.messages-main{width:min(920px,calc(100% - 28px));margin:26px auto 70px}
+.messages-hero,.messages-panel{background:#fff;border:2px solid #d5e0f2;border-radius:16px;padding:clamp(17px,3vw,27px);margin-bottom:15px;box-shadow:0 5px 18px #07194d0a}
+.messages-hero{border:3px solid #0b2a6b;box-shadow:6px 6px 0 #07194d}
+.messages-hero h1{font:400 clamp(2rem,5vw,3rem)/1 Bangers,cursive;color:#0b2a6b;margin:0 0 7px}
+.messages-muted,.messages-status{color:#53658a;line-height:1.55}
+.messages-status{min-height:22px;font-size:.9rem;overflow-wrap:anywhere}
+.messages-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.messages-link,.messages-button{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 13px;border:2px solid #0b2a6b;border-radius:9px;background:#eaf4ff;color:#0b2a6b;font:900 .92rem Nunito,system-ui,sans-serif;text-decoration:none;cursor:pointer}
+.messages-button.primary{background:#ffd21f}.messages-button:disabled{opacity:.55;cursor:wait}
+.messages-conversations{display:grid;gap:8px;margin-top:12px}
+.messages-conversation{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:1px solid #d5e0f2;border-radius:11px;background:#f8faff;color:#07194d;text-align:left;text-decoration:none}
+.messages-conversation:hover{background:#edf4ff;border-color:#9bb5e2}
+.messages-avatar{width:44px;height:44px;flex:0 0 44px;border-radius:50%;object-fit:cover;background:#eaf1ff}
+.messages-conversation-main{flex:1;min-width:0}.messages-conversation-main strong{display:block;overflow-wrap:anywhere}.messages-conversation-main span{display:block;color:#53658a;font-size:.84rem;line-height:1.4;overflow-wrap:anywhere;margin-top:3px}
+.messages-unread{display:inline-flex;padding:3px 7px;border-radius:999px;background:#ef233c;color:white;font-size:.72rem;font-weight:900}
+.messages-thread{display:grid;gap:10px}
+.messages-thread-header{display:flex;align-items:center;gap:11px;padding-bottom:12px;border-bottom:1px solid #e0e8f5}
+.messages-thread-header h2{margin:0;font-size:1.05rem;overflow-wrap:anywhere}.messages-thread-header a{color:#174b9b;text-decoration:none;font-weight:900}
+.messages-history{display:grid;gap:9px;max-height:58vh;overflow-y:auto;padding:10px 3px}
+.messages-bubble{width:fit-content;max-width:min(78%,620px);padding:10px 13px;border-radius:13px;background:#f0f4fc;border:1px solid #dbe4f4;overflow-wrap:anywhere;white-space:pre-wrap}
+.messages-bubble.own{justify-self:end;background:#e3eeff;border-color:#b9cfee}.messages-bubble p{margin:0;line-height:1.5}.messages-bubble small{display:block;margin-top:5px;color:#607096;font-size:.72rem}
+.messages-empty{padding:23px 14px;border:2px dashed #b9c9e6;border-radius:12px;text-align:center;color:#53658a;background:#f9fbff;line-height:1.6}
+.messages-compose{display:grid;gap:9px;padding-top:12px;border-top:1px solid #e0e8f5}
+.messages-compose textarea{box-sizing:border-box;width:100%;min-height:82px;resize:vertical;border:1px solid #b9c9e6;border-radius:10px;padding:11px;font:inherit;color:#07194d}
+.messages-compose-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+[hidden]{display:none!important}
+@media(max-width:560px){.messages-main{margin-top:18px}.messages-bubble{max-width:90%}.messages-history{max-height:62vh}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="messages-main">
+<header class="messages-hero"><h1 id="messages-title">Messages</h1><p class="messages-muted" id="messages-subtitle">Private conversations with other PokePrizePool collectors.</p></header>
+<section class="messages-panel" id="conversation-list-panel">
+<div class="messages-tools"><h2 style="margin:0">Your conversations</h2><button class="messages-button" id="refresh-conversations" type="button">↻ Refresh</button></div>
+<p class="messages-status" id="conversation-status" role="status" aria-live="polite">Loading conversations…</p>
+<div class="messages-conversations" id="conversations"></div>
+</section>
+<section class="messages-panel" id="thread-panel" hidden>
+<div class="messages-thread">
+<div class="messages-tools"><a class="messages-link" href="/messages.html">← All messages</a><a id="profile-link" class="messages-link" href="#">View profile</a></div>
+<div class="messages-thread-header"><img class="messages-avatar" id="target-avatar" alt="" hidden><div><h2 id="target-name">Collector</h2><a id="target-handle" href="#">@collector</a></div></div>
+<p class="messages-status" id="thread-status" role="status" aria-live="polite">Loading messages…</p>
+<div class="messages-history" id="message-history" aria-live="polite"></div>
+<form class="messages-compose" id="message-form">
+<label for="message-body"><strong>Send a message</strong></label>
+<textarea id="message-body" maxlength="2000" required placeholder="Write a private message…"></textarea>
+<div class="messages-compose-footer"><small class="messages-muted">Keep messages respectful. Maximum 2,000 characters.</small><button class="messages-button primary" id="send-message" type="submit">Send Message</button></div>
+<p class="messages-status" id="send-status" role="status" aria-live="polite"></p>
+</form>
+</div>
+</section>
+</main>
+<script src="/js/ui/site-nav.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const params=new URLSearchParams(location.search);
+let username=(params.get('user')||'').trim();
+let lastMessages=[];
+const safe=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const when=value=>{const d=new Date(value);return Number.isNaN(d.getTime())?'':d.toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});};
+async function api(url,options){
+ const r=await fetch(url,Object.assign({credentials:'include',cache:'no-store'},options||{}));
+ const d=await r.json().catch(()=>({ok:false,error:'Could not read the response.'}));
+ if(r.status===401){const next=location.pathname+location.search;location.href='/account.html?next='+encodeURIComponent(next);throw new Error('Please sign in to send messages.');}
+ if(!r.ok||!d.ok){const messages={profile_not_found:'This profile is private or no longer available.',cannot_message_self:'You cannot message your own profile.',messages_unavailable:'Messaging is unavailable because one of you has blocked the other.',message_required_or_too_long:'Enter a message of up to 2,000 characters.'};throw new Error(messages[d.error]||d.error||'The request failed.');}
+ return d;
+}
+function showConversationList(){username='';$('conversation-list-panel').hidden=false;$('thread-panel').hidden=true;$('messages-title').textContent='Messages';$('messages-subtitle').textContent='Private conversations with other PokePrizePool collectors.';loadConversations();}
+function renderConversations(rows){
+ const list=$('conversations');
+ if(!rows.length){list.innerHTML='<div class="messages-empty">No private messages yet. Visit a collector’s profile and choose <strong>Send Message</strong> to start a conversation.</div>';return;}
+ list.innerHTML=rows.map(row=>'<a class="messages-conversation" href="/messages.html?user='+encodeURIComponent(row.username)+'">'+(row.avatar_url?'<img class="messages-avatar" src="'+safe(row.avatar_url)+'" alt="" loading="lazy">':'<span class="messages-avatar"></span>')+'<div class="messages-conversation-main"><strong>'+safe(row.display_name||row.username)+'</strong><span>@'+safe(row.username)+' · '+safe(row.last_message||'')+'</span></div>'+(Number(row.unread_count)>0?'<span class="messages-unread">'+Number(row.unread_count)+'</span>':'')+'</a>').join('');
+}
+async function loadConversations(){
+ $('conversation-status').textContent='Loading conversations…';
+ try{const d=await api('/api/collector/direct-messages');renderConversations(d.conversations||[]);$('conversation-status').textContent=(d.conversations||[]).length+' conversation'+((d.conversations||[]).length===1?'':'s');}
+ catch(e){$('conversation-status').textContent=e.message;$('conversations').replaceChildren();}
+}
+function renderThread(data){
+ const target=data.target;
+ $('conversation-list-panel').hidden=true;$('thread-panel').hidden=false;
+ $('messages-title').textContent='Message '+(target.display_name||target.username);
+ $('messages-subtitle').textContent='Private conversation with this collector.';
+ $('target-name').textContent=target.display_name||target.username;
+ $('target-handle').textContent='@'+target.username;$('target-handle').href='/collector.html?user='+encodeURIComponent(target.username);
+ $('profile-link').href='/collector.html?user='+encodeURIComponent(target.username);
+ const avatar=$('target-avatar');if(target.avatar_url){avatar.src=target.avatar_url;avatar.hidden=false;}else avatar.hidden=true;
+ const history=$('message-history'),messages=data.messages||[];lastMessages=messages;
+ if(!messages.length){history.innerHTML='<div class="messages-empty">This is the start of your conversation. Send a friendly hello!</div>';return;}
+ history.innerHTML=messages.map(m=>'<article class="messages-bubble '+(m.is_own?'own':'')+'"><p>'+safe(m.body)+'</p><small>'+safe(m.is_own?'You':(m.sender_name||m.sender_username))+' · '+safe(when(m.created_at))+'</small></article>').join('');
+ history.scrollTop=history.scrollHeight;
+}
+async function loadThread(){
+ $('thread-status').textContent='Loading messages…';
+ try{const d=await api('/api/collector/direct-messages?username='+encodeURIComponent(username));renderThread(d);$('thread-status').textContent='';}
+ catch(e){$('thread-status').textContent=e.message;$('message-history').replaceChildren();}
+}
+$('refresh-conversations').addEventListener('click',loadConversations);
+$('message-form').addEventListener('submit',async event=>{
+ event.preventDefault();const body=$('message-body').value.trim(),button=$('send-message');if(!body)return;
+ if(body.length>2000){$('send-status').textContent='Messages can be up to 2,000 characters.';return;}
+ button.disabled=true;$('send-status').textContent='Sending…';
+ try{await api('/api/collector/direct-messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,body})});$('message-body').value='';$('send-status').textContent='Message sent.';await loadThread();window.dispatchEvent(new Event('collector-messages-updated'));}
+ catch(e){$('send-status').textContent=e.message;}
+ finally{button.disabled=false;}
+});
+if(username){$('conversation-list-panel').hidden=true;$('thread-panel').hidden=false;loadThread();}
+else showConversationList();
+})();
+</script>
+</body>
+</html>
