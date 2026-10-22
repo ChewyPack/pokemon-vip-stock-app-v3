@@ -161,7 +161,7 @@ export async function onRequestGet({request, env}) {
         image_url:firstImage ? firstImage.url : '', media,
         created_at:p.created_at, updated_at:p.updated_at, username:p.username,
         display_name:p.display_name || p.username, avatar_url:p.avatar_url || '',
-        like_count:Number(p.like_count || 0), comment_count:Number(p.comment_count || 0), view_count:Number(p.view_count || 0),
+        like_count:Number(p.like_count || 0), comment_count:Number(p.comment_count || 0), view_count:Number(p.is_own || 0) === 1 ? Number(p.view_count || 0) : 0,
         liked_by_me:Number(p.liked_by_me || 0) === 1, is_own:Number(p.is_own || 0) === 1
       };
     });
