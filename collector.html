@@ -211,9 +211,9 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <label class="cp-social-label">What’s happening in your collection?<textarea name="body" maxlength="2000" rows="3" placeholder="Share a card pull, collection update, question, or new find…"></textarea></label>
 <div class="cp-social-composer-row">
 <label class="cp-social-label">Post type<select name="post_type"><option value="status">Status</option><option value="pull">Card pull</option><option value="collection">Collection update</option><option value="trade">Trade interest</option><option value="question">Question</option><option value="event">Event</option><option value="restock">Restock sighting</option></select></label>
-<label class="cp-social-label">Add a photo<input name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif"></label>
+<div class="cp-social-media-inputs"><label class="cp-social-label">Photos (up to 3, 5 MB each)<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple></label><label class="cp-social-label">Video (1 MP4/WebM, up to 25 MB)<input name="video" type="file" accept="video/mp4,video/webm"></label></div>
 <button class="cp-btn" type="submit">Post</button>
-</div><p class="cp-status" data-composer-status role="status" aria-live="polite"></p>
+</div><div class="social-media-preview" data-media-preview aria-live="polite"></div><p class="cp-status" data-composer-status role="status" aria-live="polite"></p>
 </form>
 </div>
 <p class="cp-status" data-social-feed-status role="status" aria-live="polite">Loading posts…</p>
