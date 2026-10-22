@@ -23,5 +23,5 @@ CREATE TABLE IF NOT EXISTS collector_post_views (
 );
 CREATE INDEX IF NOT EXISTS idx_collector_post_views_post
   ON collector_post_views(post_id, viewed_at DESC);
-CREATE INDEX IF NOT EXISTS idx_collector_post_views_creator
+CREATE INDEX IF NOT EXISTS idx_collector_post_views_viewer
   ON collector_post_views(viewer_account_id, viewed_at DESC);
