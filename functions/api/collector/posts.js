@@ -36,7 +36,10 @@ async function ensureCollectorProfile(env, accountId) {
 }
 const TYPES = new Set(['status','pull','collection','trade','question','event','restock']);
 
-function cleanImageUrl(value, accountId, requestUrl) {
+const IMAGE_EXTENSIONS = new Set(['jpg','png','webp','avif']);
+const VIDEO_EXTENSIONS = new Set(['mp4','webm']);
+
+function cleanMediaUrl(value, accountId, requestUrl, expectedType) {
   if (!value) return '';
   if (typeof value !== 'string' || value.length > 1000) return null;
   try {
@@ -45,11 +48,55 @@ function cleanImageUrl(value, accountId, requestUrl) {
     const key = parsed.searchParams.get('key') || '';
     const prefix = 'collectors/' + Number(accountId) + '/post/';
     if (!key.startsWith(prefix)) return null;
-    const name = key.slice(prefix.length).split('.');
-    if (name.length !== 2 || name[0].length !== 36 || !['jpg','png','webp','avif'].includes(name[1].toLowerCase())) return null;
-    for (const ch of name[0]) if (!'0123456789abcdef-'.includes(ch.toLowerCase())) return null;
+    const match = /^([0-9a-f-]{36})\.(jpg|png|webp|avif|mp4|webm)$/i.exec(key.slice(prefix.length));
+    if (!match) return null;
+    const extension = match[2].toLowerCase();
+    const type = VIDEO_EXTENSIONS.has(extension) ? 'video' : 'image';
+    if (type !== expectedType) return null;
     return '/api/vendor/image?key=' + encodeURIComponent(key);
   } catch (_) { return null; }
+}
+
+function requestPostMedia(data, accountId, requestUrl) {
+  // Backward compatibility for older clients that submit a single image_url.
+  if (!Object.prototype.hasOwnProperty.call(data, 'media')) {
+    const legacy = cleanMediaUrl(data.image_url || '', accountId, requestUrl, 'image');
+    return legacy === null ? {error:'invalid_media_url'} : {media:legacy ? [{type:'image',url:legacy}] : []};
+  }
+  if (!Array.isArray(data.media) || data.media.length > 4) return {error:'post_media_limit_exceeded'};
+  const media = [];
+  let images = 0, videos = 0;
+  const seen = new Set();
+  for (const item of data.media) {
+    if (!item || (item.type !== 'image' && item.type !== 'video') || typeof item.url !== 'string') return {error:'invalid_media_url'};
+    if (item.type === 'image' && ++images > 3) return {error:'too_many_photos'};
+    if (item.type === 'video' && ++videos > 1) return {error:'too_many_videos'};
+    const url = cleanMediaUrl(item.url, accountId, requestUrl, item.type);
+    if (!url) return {error:'invalid_media_url'};
+    if (seen.has(url)) return {error:'duplicate_media'};
+    seen.add(url);
+    media.push({type:item.type,url});
+  }
+  return {media};
+}
+
+function storedMediaValue(media) {
+  if (!media.length) return '';
+  // Preserve legacy storage for a single image; multi-media posts use JSON in the same column.
+  if (media.length === 1 && media[0].type === 'image') return media[0].url;
+  return JSON.stringify(media);
+}
+
+function mediaFromStored(value) {
+  if (!value) return [];
+  const text = String(value);
+  if (text.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) return parsed.filter(item => item && (item.type === 'image' || item.type === 'video') && typeof item.url === 'string' && item.url.length <= 1000).slice(0,4);
+    } catch (_) {}
+  }
+  return [{type:'image',url:text}];
 }
 
 function postQueryWhere(viewerId, mode, username) {
@@ -96,13 +143,18 @@ export async function onRequestGet({request, env}) {
       'FROM collector_posts p JOIN collector_profiles cp ON cp.account_id=p.account_id JOIN accounts a ON a.id=p.account_id ' +
       'WHERE ' + whereParts.where + ' ORDER BY ' + order + ' LIMIT ?';
     const result = await env.DB.prepare(sql).bind(viewerId, viewerId, viewerId, viewerId, ...whereParts.params, limitValue).all();
-    const posts = (result.results || []).map(p => ({
-      id:Number(p.id), body:p.body, post_type:p.post_type, image_url:p.image_url || '',
-      created_at:p.created_at, updated_at:p.updated_at, username:p.username,
-      display_name:p.display_name || p.username, avatar_url:p.avatar_url || '',
-      like_count:Number(p.like_count || 0), comment_count:Number(p.comment_count || 0),
-      liked_by_me:Number(p.liked_by_me || 0) === 1, is_own:Number(p.is_own || 0) === 1
-    }));
+    const posts = (result.results || []).map(p => {
+      const media = mediaFromStored(p.image_url);
+      const firstImage = media.find(item => item.type === 'image');
+      return {
+        id:Number(p.id), body:p.body, post_type:p.post_type,
+        image_url:firstImage ? firstImage.url : '', media,
+        created_at:p.created_at, updated_at:p.updated_at, username:p.username,
+        display_name:p.display_name || p.username, avatar_url:p.avatar_url || '',
+        like_count:Number(p.like_count || 0), comment_count:Number(p.comment_count || 0),
+        liked_by_me:Number(p.liked_by_me || 0) === 1, is_own:Number(p.is_own || 0) === 1
+      };
+    });
     return json({ok:true, posts, feed:username ? 'profile' : mode});
   } catch (error) {
     console.error('Collector posts read failed:', error);
@@ -120,14 +172,16 @@ export async function onRequestPost({request, env}) {
   try { data = await request.json(); } catch (_) { return json({ok:false,error:'invalid_json'}, 400); }
   const body = typeof data.body === 'string' ? data.body.trim() : '';
   const type = TYPES.has(data.post_type) ? data.post_type : 'status';
-  const imageUrl = cleanImageUrl(data.image_url || '', account.id, request.url);
-  if (imageUrl === null) return json({ok:false,error:'invalid_image_url'}, 400);
-  if (!body && !imageUrl) return json({ok:false,error:'post_content_required'}, 400);
+  const requestedMedia = requestPostMedia(data, account.id, request.url);
+  if (requestedMedia.error) return json({ok:false,error:requestedMedia.error}, 400);
+  const media = requestedMedia.media;
+  const mediaValue = storedMediaValue(media);
+  if (!body && !media.length) return json({ok:false,error:'post_content_required'}, 400);
   if (body.length > 2000) return json({ok:false,error:'post_too_long'}, 400);
   try {
     const profile = await ensureCollectorProfile(env, account.id);
     if (!profile) return json({ok:false,error:'collector_profile_missing'}, 400);
-    const result = await env.DB.prepare('INSERT INTO collector_posts(account_id,body,post_type,image_url) VALUES(?,?,?,?)').bind(account.id, body, type, imageUrl).run();
+    const result = await env.DB.prepare('INSERT INTO collector_posts(account_id,body,post_type,image_url) VALUES(?,?,?,?)').bind(account.id, body, type, mediaValue).run();
     return json({ok:true,id:Number(result.meta && result.meta.last_row_id || 0)}, 201);
   } catch (error) {
     console.error('Collector post create failed:', error);
@@ -146,13 +200,15 @@ export async function onRequestPatch({request, env}) {
   const id = Number(data.id);
   const body = typeof data.body === 'string' ? data.body.trim() : '';
   const type = TYPES.has(data.post_type) ? data.post_type : 'status';
-  const imageUrl = cleanImageUrl(data.image_url || '', account.id, request.url);
+  const requestedMedia = requestPostMedia(data, account.id, request.url);
   if (!Number.isInteger(id) || id < 1) return json({ok:false,error:'invalid_post_id'}, 400);
-  if (imageUrl === null) return json({ok:false,error:'invalid_image_url'}, 400);
-  if (!body && !imageUrl) return json({ok:false,error:'post_content_required'}, 400);
+  if (requestedMedia.error) return json({ok:false,error:requestedMedia.error}, 400);
+  const media = requestedMedia.media;
+  const mediaValue = storedMediaValue(media);
+  if (!body && !media.length) return json({ok:false,error:'post_content_required'}, 400);
   if (body.length > 2000) return json({ok:false,error:'post_too_long'}, 400);
   try {
-    const result = await env.DB.prepare('UPDATE collector_posts SET body=?,post_type=?,image_url=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND account_id=? AND deleted_at IS NULL').bind(body,type,imageUrl,id,account.id).run();
+    const result = await env.DB.prepare('UPDATE collector_posts SET body=?,post_type=?,image_url=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND account_id=? AND deleted_at IS NULL').bind(body,type,mediaValue,id,account.id).run();
     if (!result.meta || !result.meta.changes) return json({ok:false,error:'post_not_found'}, 404);
     return json({ok:true});
   } catch (error) {
