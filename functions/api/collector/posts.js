@@ -131,6 +131,13 @@ export async function onRequestGet({request, env}) {
     }
     const viewerId = viewer ? viewer.id : null;
     const whereParts = postQueryWhere(viewerId, mode, username);
+    const whereParams = [...whereParts.params];
+    const requestedPostId = Number(url.searchParams.get('post_id') || 0);
+    let whereClause = whereParts.where;
+    if (Number.isSafeInteger(requestedPostId) && requestedPostId > 0) {
+      whereClause += ' AND p.id = ?';
+      whereParams.push(requestedPostId);
+    }
     const order = mode === 'for-you' && !username
       ? '(SELECT COUNT(*) FROM collector_post_likes lx WHERE lx.post_id=p.id) * 3 + (SELECT COUNT(*) FROM collector_post_comments cx WHERE cx.post_id=p.id AND cx.deleted_at IS NULL) * 2 DESC, p.created_at DESC, p.id DESC'
       : 'p.created_at DESC, p.id DESC';
@@ -144,8 +151,8 @@ export async function onRequestGet({request, env}) {
       'CASE WHEN ? IS NOT NULL AND EXISTS (SELECT 1 FROM collector_post_likes ml WHERE ml.post_id=p.id AND ml.account_id=?) THEN 1 ELSE 0 END AS liked_by_me,' +
       'CASE WHEN ? IS NOT NULL AND ?=p.account_id THEN 1 ELSE 0 END AS is_own ' +
       'FROM collector_posts p JOIN collector_profiles cp ON cp.account_id=p.account_id JOIN accounts a ON a.id=p.account_id ' +
-      'WHERE ' + whereParts.where + ' ORDER BY ' + order + ' LIMIT ?';
-    const result = await env.DB.prepare(sql).bind(viewerId, viewerId, viewerId, viewerId, ...whereParts.params, limitValue).all();
+      'WHERE ' + whereClause + ' ORDER BY ' + order + ' LIMIT ?';
+    const result = await env.DB.prepare(sql).bind(viewerId, viewerId, viewerId, viewerId, ...whereParams, limitValue).all();
     const posts = (result.results || []).map(p => {
       const media = mediaFromStored(p.image_url);
       const firstImage = media.find(item => item.type === 'image');
