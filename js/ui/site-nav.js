@@ -50,9 +50,19 @@
  var inboxImage=el('img',{src:'/inbox-icon.png',alt:'',class:'site-nav__inbox-image'});
  var inboxBadge=el('span',{class:'site-nav__inbox-badge',hidden:'hidden','aria-live':'polite'});
  inbox.appendChild(inboxImage);inbox.appendChild(inboxBadge);
+ var notificationMenuBadge=el('span',{class:'site-nav__menu-count site-nav__notification-count',hidden:'hidden','aria-label':'0 unread notifications'});
+ var inboxMenuBadge=el('span',{class:'site-nav__menu-count site-nav__inbox-count',hidden:'hidden','aria-label':'0 unread Inbox items'});
+ var notificationMenuLink=el('a',{class:'site-nav__inbox-menu-link',href:'/notifications.html'},[
+  el('span',{class:'site-nav__inbox-menu-label',text:'Notifications'}),
+  notificationMenuBadge
+ ]);
+ var inboxMenuLink=el('a',{class:'site-nav__inbox-menu-link',href:'/inbox.html'},[
+  el('span',{class:'site-nav__inbox-menu-label',text:'Inbox'}),
+  inboxMenuBadge
+ ]);
  var inboxMenu=el('div',{class:'site-nav__inbox-menu',id:'site-nav-inbox-menu',hidden:'hidden'},[
-  el('a',{class:'site-nav__inbox-menu-link',href:'/notifications.html',text:'Notifications'}),
-  el('a',{class:'site-nav__inbox-menu-link',href:'/inbox.html',text:'Inbox'})
+  notificationMenuLink,
+  inboxMenuLink
  ]);
  inboxWrap.appendChild(inbox);inboxWrap.appendChild(inboxMenu);
  inbox.addEventListener('click',function(event){event.stopPropagation();var open=inboxMenu.hidden;inboxMenu.hidden=!open;inbox.setAttribute('aria-expanded',String(open));});
@@ -132,7 +142,7 @@
    navigator.serviceWorker.register('/service-worker.js',{scope:'/'}).catch(function(error){console.warn('PokePrizePool offline support could not be registered:',error);});
   });
  }
- var inboxStyle=el('style',{},[]);inboxStyle.textContent='.site-nav__inbox-link{position:relative;display:inline-flex;flex:0 0 108px;align-items:center;justify-content:center;gap:0;width:108px;min-width:108px;height:108px;min-height:108px;padding:0!important;margin:0 2px;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline-offset:3px;vertical-align:middle}.site-nav__inbox-link:hover,.site-nav__inbox-link:focus-visible{border:0!important;background:transparent!important;box-shadow:none!important;transform:none!important}.site-nav__inbox-image{width:108px;height:108px;object-fit:contain;display:block;border:0!important;outline:0;box-shadow:none}.site-nav .site-nav__inbox-link:last-child{flex:0 0 108px!important;width:108px;min-width:108px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:inherit!important}.site-nav__inbox-badge:not([hidden]){position:absolute;top:auto;right:0;bottom:0;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#ef233c;color:#fff;font-size:.7rem;font-weight:700;line-height:1;box-shadow:0 0 0 2px #06174a;z-index:2}.site-nav__inbox-badge[hidden]{display:none!important}@media(max-width:560px){.site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-image{width:96px;height:96px}.site-nav .site-nav__inbox-link:last-child{flex-basis:48px!important;width:96px;min-width:96px}}';inboxStyle.textContent += '.site-nav__inbox-wrap{position:relative;display:inline-flex;align-items:center;flex:0 0 auto}.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{font:inherit;color:inherit;cursor:pointer;flex:0 0 108px;width:108px;min-width:108px;height:108px;min-height:108px}.site-nav__inbox-menu{position:absolute;z-index:1100;right:0;top:calc(100% + 6px);min-width:170px;padding:6px;background:#fff;border:1px solid #d5e0f2;border-radius:10px;box-shadow:0 8px 24px #07194d22}.site-nav__inbox-menu[hidden]{display:none!important}.site-nav__inbox-menu-link{display:block;padding:10px;border-radius:7px;color:#17386c!important;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;white-space:nowrap}.site-nav__inbox-menu-link:hover,.site-nav__inbox-menu-link:focus-visible{background:#f3f7ff}@media(max-width:560px){.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-menu{min-width:160px}}';root.prepend(inboxStyle);
+ var inboxStyle=el('style',{},[]);inboxStyle.textContent='.site-nav__inbox-link{position:relative;display:inline-flex;flex:0 0 108px;align-items:center;justify-content:center;gap:0;width:108px;min-width:108px;height:108px;min-height:108px;padding:0!important;margin:0 2px;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline-offset:3px;vertical-align:middle}.site-nav__inbox-link:hover,.site-nav__inbox-link:focus-visible{border:0!important;background:transparent!important;box-shadow:none!important;transform:none!important}.site-nav__inbox-image{width:108px;height:108px;object-fit:contain;display:block;border:0!important;outline:0;box-shadow:none}.site-nav .site-nav__inbox-link:last-child{flex:0 0 108px!important;width:108px;min-width:108px;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:inherit!important}.site-nav__inbox-badge:not([hidden]){position:absolute;top:auto;right:0;bottom:0;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#ef233c;color:#fff;font-size:.7rem;font-weight:700;line-height:1;box-shadow:0 0 0 2px #06174a;z-index:2}.site-nav__inbox-badge[hidden]{display:none!important}@media(max-width:560px){.site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-image{width:96px;height:96px}.site-nav .site-nav__inbox-link:last-child{flex-basis:48px!important;width:96px;min-width:96px}}';inboxStyle.textContent += '.site-nav__inbox-wrap{position:relative;display:inline-flex;align-items:center;flex:0 0 auto}.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{font:inherit;color:inherit;cursor:pointer;flex:0 0 108px;width:108px;min-width:108px;height:108px;min-height:108px}.site-nav__inbox-menu{position:absolute;z-index:1100;right:0;top:calc(100% + 6px);min-width:170px;padding:6px;background:#fff;border:1px solid #d5e0f2;border-radius:10px;box-shadow:0 8px 24px #07194d22}.site-nav__inbox-menu[hidden]{display:none!important}.site-nav__inbox-menu-link{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:10px;border-radius:7px;color:#17386c!important;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;white-space:nowrap}.site-nav__inbox-menu-link:hover,.site-nav__inbox-menu-link:focus-visible{background:#f3f7ff}.site-nav__menu-count:not([hidden]){display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 6px;border-radius:999px;background:#ef233c;color:#fff;font:900 .72rem/1 Nunito,system-ui,sans-serif;box-shadow:0 1px 3px #07194d22}.site-nav__menu-count[hidden]{display:none!important}@media(max-width:560px){.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-menu{min-width:160px}}';root.prepend(inboxStyle);
  function refreshInboxBadge(){
   Promise.all([
    fetch('/api/collector/trades',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
@@ -142,9 +152,16 @@
    var offers=results[0]&&results[0].ok?(results[0].offers||[]).filter(function(o){return o.direction==='incoming'&&!o.recipient_read_at&&o.status==='pending';}).length:0;
    var notes=results[1]&&results[1].ok?(results[1].notifications||[]).filter(function(n){return !n.read_at&&n.notification_type!=='direct_message';}).length:0;
    var messages=results[2]&&results[2].ok?(results[2].conversations||[]).reduce(function(sum,m){return sum+Number(m.unread_count||0);},0):0;
-   var count=offers+notes+messages;
+   var inboxCount=offers+messages;
+   var count=inboxCount+notes;
+   function setMenuCount(badge,value,label){
+    badge.hidden=value<1;badge.textContent=value>99?'99+':String(value);
+    badge.setAttribute('aria-label',value+' unread '+label);
+   }
+   setMenuCount(notificationMenuBadge,notes,'notifications');
+   setMenuCount(inboxMenuBadge,inboxCount,'Inbox items');
    inboxBadge.hidden=count<1;inboxBadge.textContent=count>99?'99+':String(count);
-   inboxBadge.setAttribute('aria-label',count+' unread inbox items and notifications');
+   inboxBadge.setAttribute('aria-label',count+' unread items in Notifications and Inbox');
    inbox.setAttribute('aria-label','Open Notifications or Inbox'+(count?' ('+count+' unread)':''));
   });
  }
