@@ -162,7 +162,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 </div>
 <div id="shop-tab-content" class="cp-shop-tab" hidden>
 <p id="shop-tab-status" class="cp-status" role="status" aria-live="polite">Loading shop…</p>
-<section id="shop-upgrade-panel" class="cp-shop-notice" hidden><h3>Open your collector shop</h3><p>An active Collector+ membership or higher is required to create a shop profile and publish marketplace listings.</p><a class="cp-btn" href="/account.html#settings-membership">View membership options</a></section>
+<section id="shop-upgrade-panel" class="cp-shop-notice" hidden><h3>Open your collector shop</h3><p>Any signed-in PokePrizePool member, including free members, can create a shop profile and publish marketplace listings.</p><a class="cp-btn" href="/account.html">Sign in or create an account</a></section>
 <div id="shop-owner-editor" hidden>
 <section class="cp-shop-editor-card"><h3>Shop profile</h3><p class="cp-shop-muted">This profile appears on your public shop page and in the marketplace.</p>
 <form id="profile-shop-form" class="cp-shop-form">
@@ -527,7 +527,7 @@ async function searchCollectors(query){
  let shopTabRequest=0,shopState={shop:{},events:[],inventory:[]};
   function profileShopApi(payload){
    return fetch('/api/vendor',{method:payload?'POST':'GET',credentials:'include',cache:'no-store',headers:payload?{'Content-Type':'application/json'}:undefined,body:payload?JSON.stringify(payload):undefined})
-    .then(async response=>{const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok){const labels={login_required:'Please sign in again to manage your shop.',shop_membership_required:'An active Collector+ membership or higher is required to manage a shop.',shop_name_required:'Enter a shop name.',https_urls_only:'Website and social links must use HTTPS.',item_name_required:'Enter an item name.'};throw new Error(labels[data.error]||data.message||data.error||'The shop request failed.');}return data;});
+    .then(async response=>{const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok){const labels={login_required:'Please sign in again to manage your shop.',shop_membership_required:'Shop profiles are available to all signed-in members, including free members. Refresh and try again.',shop_name_required:'Enter a shop name.',https_urls_only:'Website and social links must use HTTPS.',item_name_required:'Enter an item name.'};throw new Error(labels[data.error]||data.message||data.error||'The shop request failed.');}return data;});
   }
   function setShopMessage(message){setStatus('shop-tab-status',message);}
   function fillShopForm(form,data){Object.keys(data||{}).forEach(key=>{if(form.elements[key])form.elements[key].value=data[key]??'';});}
@@ -548,7 +548,7 @@ async function searchCollectors(query){
    $('shop-owner-editor').hidden=true;$('shop-upgrade-panel').hidden=true;$('shop-public-view').hidden=false;
    const shop=data.shop;
    if(!shop||!shop.shop_name){
-    $('shop-public-profile').innerHTML='<div class="cp-empty">This collector has not opened a public shop yet, or their shop is not currently eligible to appear.</div>';
+    $('shop-public-profile').innerHTML='<div class="cp-empty">This collector has not opened a public shop yet.</div>';
     $('shop-public-items').innerHTML='';setShopMessage('No public shop is available for this collector yet.');return;
    }
    const logo=shop.logo_key?'/api/vendor/image?key='+encodeURIComponent(shop.logo_key):(shop.logo_url&&/^https:\/\//i.test(shop.logo_url)?shop.logo_url:'');
@@ -566,7 +566,7 @@ async function searchCollectors(query){
     if(own){
      const response=await fetch('/api/vendor',{credentials:'include',cache:'no-store'}),data=await response.json().catch(()=>({}));
      if(requestId!==shopTabRequest)return;
-     if(response.status===403&&data.error==='shop_membership_required'){$('shop-upgrade-panel').hidden=false;setShopMessage('');return;}
+     
      if(!response.ok||!data.ok)throw new Error(data.error==='login_required'?'Please sign in again to manage your shop.':data.message||data.error||'Your shop could not be loaded.');
      renderOwnerShop(data);
     }else{
@@ -582,7 +582,7 @@ async function searchCollectors(query){
    if(!file)return;if(file.size>5*1024*1024){setStatus(statusId,'Choose an image no larger than 5 MB.');return;}
    setStatus(statusId,'Uploading photo…');
    try{const response=await fetch('/api/vendor/upload',{method:'POST',credentials:'include',headers:{'Content-Type':file.type},body:file}),data=await response.json().catch(()=>({}));
-    if(!response.ok||!data.ok)throw new Error(data.error==='image_storage_not_configured'?'Photo storage is not configured for this deployment.':data.error==='shop_membership_required'?'An active Collector+ membership or higher is required.':'Photo upload failed.');
+    if(!response.ok||!data.ok)throw new Error(data.error==='image_storage_not_configured'?'Photo storage is not configured for this deployment.':data.error==='shop_membership_required'?'Shop photos are available to all signed-in members. Refresh and try again.':'Photo upload failed.');
     keyInput.value=data.key;setStatus(statusId,'Photo uploaded. Save to apply it.');
    }catch(error){setStatus(statusId,error.message);}
   }
