@@ -150,22 +150,13 @@
           ]),
           navLink('Line Services', '/line-services.html'),
           dropdown('Shop', [
-            {
-              title: 'Cards',
-              children: [
-                { title: 'Sealed', href: '/shop.html?category=sealed' },
-                { title: 'Slabs', href: '/shop.html?category=slabs' },
-                { title: 'Singles', href: '/shop.html?category=singles' }
-              ]
-            },
-            {
-              title: 'Merch',
-              children: [
-                { title: 'Clothing', href: '/shop.html?category=clothing' },
-                { title: 'Plushies', href: '/shop.html?category=plushies' },
-                { title: 'Other', href: '/shop.html?category=other' }
-              ]
-            }
+            { title: 'Marketplace', href: '/marketplace.html', description: 'Browse listings from collector shops' },
+            { title: 'Singles', href: '/marketplace.html?category=Singles', description: 'Individual cards listed by collectors' },
+            { title: 'Sealed', href: '/marketplace.html?category=Sealed', description: 'Sealed Pokémon TCG products' },
+            { title: 'Graded cards / slabs', href: '/marketplace.html?category=Graded%20cards', description: 'Graded cards listed by shops' },
+            { title: 'Collections', href: '/marketplace.html?category=Collections', description: 'Collection lots and bundles' },
+            { title: 'Accessories', href: '/marketplace.html?category=Accessories', description: 'Collector supplies and accessories' },
+            { title: 'Manage My Shop', href: '/vendor.html', description: 'Create your shop profile and listings' }
           ]),
           navLink('Giveaways', '/giveaways.html'),
           navLink('Chat', '/chat.html'),
