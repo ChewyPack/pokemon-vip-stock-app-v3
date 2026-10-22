@@ -167,6 +167,7 @@
           ]),
           navLink('Giveaways', '/giveaways.html'),
           navLink('Chat', '/chat.html'),
+          navLink('News Feed', '/newsfeed'),
           dropdown('Resources', [
             { title: 'Securing Product', href: '/resources/securing-product.html' },
             { title: 'Spotting Fakes', href: '/resources/spotting-fakes.html' },
@@ -266,7 +267,7 @@
 
         var newsFeed = h('a', {
           class: 'site-nav__profile-menu-settings site-nav__profile-menu-newsfeed',
-          href: 'https://pokeprizepool.com/community?utm_source=chatgpt.com'
+          href: '/newsfeed'
         }, 'News Feed');
         menu.appendChild(newsFeed);
         menu.appendChild(settings);
