@@ -136,7 +136,6 @@ $('refresh-offers').addEventListener('click',load);document.querySelectorAll('[d
 $('inbox-list').addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(b){b.disabled=true;$('inbox-status').textContent='Updating offer…';try{const d=await api('/api/collector/trades',{method:'PATCH',body:JSON.stringify({id:Number(b.dataset.id),action:b.dataset.action})});$('inbox-status').textContent=d.waiting_for_other?'Your confirmation is recorded. Waiting for the other member.':'Offer updated: '+d.status+'.';await load();}catch(err){$('inbox-status').textContent=err.message;b.disabled=false;}return;}const card=e.target.closest('[data-offer-id]');if(!card)return;const offer=offers.find(o=>Number(o.id)===Number(card.dataset.offerId));if(!offer||offer.direction!=='incoming'||offer.recipient_read_at)return;try{await api('/api/collector/trades',{method:'PATCH',body:JSON.stringify({id:Number(offer.id),action:'mark_read'})});offer.recipient_read_at=new Date().toISOString();render();window.dispatchEvent(new Event('collector-offers-updated'));$('inbox-status').textContent='Offer marked as read.';}catch(err){$('inbox-status').textContent=err.message;}});
 load();
 loadMessages();
-if(activeUsername)tab('messages');
 })();
 </script>
 </body>
