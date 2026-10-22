@@ -151,19 +151,18 @@
           navLink('Line Services', '/line-services.html'),
           dropdown('Shop', [
             { title: 'PokePrizePool Store', href: '/store.html', description: 'Shop cards and merchandise sold directly by PokePrizePool' },
-            { title: 'Cards · PokePrizePool Store', description: 'Official PokePrizePool card inventory', children: [
+            { title: 'Cards', description: 'Browse official PokePrizePool cards', children: [
               { title: 'Singles', href: '/store.html?category=Singles' },
               { title: 'Sealed', href: '/store.html?category=Sealed' },
-              { title: 'Graded cards / slabs', href: '/store.html?category=Graded%20cards' },
-              { title: 'Collections', href: '/store.html?category=Collections' }
+              { title: 'Graded', href: '/store.html?category=Graded%20cards' }
             ]},
-            { title: 'Merch · PokePrizePool Store', description: 'Official PokePrizePool merchandise', children: [
+            { title: 'Merch', description: 'Shop official PokePrizePool merchandise', children: [
               { title: 'Clothing', href: '/store.html?category=Clothing' },
               { title: 'Plushies', href: '/store.html?category=Plushies' },
               { title: 'Accessories', href: '/store.html?category=Accessories' },
               { title: 'Other', href: '/store.html?category=Other' }
             ]},
-            { title: 'Collector Marketplace (New)', href: '/marketplace.html', description: 'Browse listings posted by member shops' },
+            { title: 'Collector Marketplace', href: '/marketplace.html', description: 'Browse listings posted by member shops' },
             { title: 'Manage My Shop', href: '/collector.html#shop', description: 'Create or edit your member shop profile and listings' }
           ]),
           navLink('Giveaways', '/giveaways.html'),
@@ -177,10 +176,50 @@
             class: 'site-nav__link account-nav-link',
             href: '/account.html',
             id: 'account-nav-link'
-          }, 'Sign up / Log in')
+          }, 'Log In / Sign Up'),
+          h('a', {
+            class: 'site-nav__link site-nav__inbox-link',
+            href: '/inbox.html',
+            'aria-label': 'Offer inbox'
+          },
+            h('img', { src: '/inbox-icon.png', alt: '', class: 'site-nav__inbox-image' }),
+            h('span', { class: 'site-nav__inbox-badge', hidden: true, 'aria-live': 'polite' })
+          )
         )
       )
     );
+
+    // Keep the offer inbox utility available on the homepage just like every other page.
+    var inbox = nav.querySelector('.site-nav__inbox-link');
+    var inboxBadge = nav.querySelector('.site-nav__inbox-badge');
+    function refreshInboxBadge() {
+      fetch('/api/collector/trades', { credentials: 'include', cache: 'no-store' })
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .then(function (data) {
+          if (!data || !data.ok || !inboxBadge || !inbox) return;
+          var count = (data.offers || []).filter(function (offer) {
+            return offer.direction === 'incoming' && !offer.recipient_read_at;
+          }).length;
+          inboxBadge.hidden = count < 1;
+          inboxBadge.textContent = count > 99 ? '99+' : String(count);
+          inboxBadge.setAttribute('aria-label', count + ' unread offer' + (count === 1 ? '' : 's'));
+          inbox.setAttribute('aria-label', count + ' unread offer' + (count === 1 ? '' : 's'));
+        })
+        .catch(function () {});
+    }
+    refreshInboxBadge();
+    window.setInterval(refreshInboxBadge, 60000);
+    window.addEventListener('collector-offers-updated', refreshInboxBadge);
+
+    var inboxStyle = document.createElement('style');
+    inboxStyle.textContent =
+      '.site-nav__inbox-link{position:relative;display:inline-flex;flex:0 0 108px;align-items:center;justify-content:center;gap:0;width:108px;min-width:108px;height:108px;min-height:108px;padding:0!important;margin:0 2px;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline-offset:3px;vertical-align:middle}' +
+      '.site-nav__inbox-link:hover,.site-nav__inbox-link:focus-visible{border:0!important;background:transparent!important;box-shadow:none!important;transform:none!important}' +
+      '.site-nav__inbox-image{width:108px;height:108px;object-fit:contain;display:block;border:0!important;outline:0;box-shadow:none}' +
+      '.site-nav__inbox-badge:not([hidden]){position:absolute;top:auto;right:0;bottom:0;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#ef233c;color:#fff;font-size:.7rem;font-weight:700;line-height:1;box-shadow:0 0 0 2px #06174a;z-index:2}' +
+      '.site-nav__inbox-badge[hidden]{display:none!important}' +
+      '@media(max-width:560px){.site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-image{width:96px;height:96px}}';
+    document.head.appendChild(inboxStyle);
 
     fetch('/api/account/me', { credentials: 'include', cache: 'no-store' })
       .then(function (response) { return response.ok ? response.json() : null; })
