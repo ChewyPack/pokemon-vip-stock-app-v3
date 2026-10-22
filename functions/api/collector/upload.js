@@ -1,5 +1,6 @@
 const COOKIE = 'collector_session';
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -55,19 +56,21 @@ export async function onRequestPost({ request, env }) {
     'image/jpeg': 'jpg',
     'image/png': 'png',
     'image/webp': 'webp',
-    'image/avif': 'avif'
+    'image/avif': 'avif',
+    'video/mp4': 'mp4',
+    'video/webm': 'webm'
   };
   const extension = extensions[contentType];
-  if (!extension) return json({ ok: false, error: 'unsupported_image_type' }, 415);
-
+  const isVideo = contentType.startsWith('video/');
+  if (!extension || (isVideo && kind !== 'post')) return json({ ok: false, error: 'unsupported_media_type' }, 415);
+  const maxBytes = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
   const declaredLength = Number(request.headers.get('content-length') || 0);
-  if (declaredLength > MAX_BYTES) return json({ ok: false, error: 'image_too_large' }, 413);
+  if (declaredLength > maxBytes) return json({ ok: false, error: isVideo ? 'video_too_large' : 'image_too_large' }, 413);
 
   try {
     const bytes = await request.arrayBuffer();
-    if (!bytes.byteLength || bytes.byteLength > MAX_BYTES) {
-      return json({ ok: false, error: 'image_too_large_or_empty' }, 413);
-    }
+    if (!bytes.byteLength) return json({ ok: false, error: 'empty_upload' }, 400);
+    if (bytes.byteLength > maxBytes) return json({ ok: false, error: isVideo ? 'video_too_large' : 'image_too_large' }, 413);
 
     const key = 'collectors/' + account.id + '/' + kind + '/' + crypto.randomUUID() + '.' + extension;
     await env.VENDOR_MEDIA.put(key, bytes, {
@@ -81,7 +84,7 @@ export async function onRequestPost({ request, env }) {
     imageUrl.searchParams.set('key', key);
     return json({ ok: true, key, url: imageUrl.toString() }, 201);
   } catch (error) {
-    console.error('Collector photo upload failed:', error);
+    console.error('Collector media upload failed:', error);
     return json({ ok: false, error: 'image_upload_failed' }, 500);
   }
 }
