@@ -62,8 +62,8 @@ footer{padding:40px 0 60px;text-align:center}
 </style>
 </head>
 <body>
-<!-- TODO: insert the shared site header/nav include here, identical to the homepage. Add "Spotting Fakes" -> /resources/spotting-fakes.html to the Resources menu. -->
-<div class="hdr-slot" id="site-header"></div>
+<!-- Shared PokePrizePool header used throughout the site. -->
+<div id="site-navigation"></div>
 
 <main id="main">
 <header class="hero"><div class="wrap">
@@ -264,5 +264,6 @@ var fl=document.getElementById("faqList");
 FAQ.forEach(function(f){var d=document.createElement("details");d.innerHTML="<summary>"+f[0]+"</summary><p>"+f[1]+"</p>";fl.appendChild(d)});
 })();
 </script>
+<script src="/js/ui/site-nav.js"></script>
 </body>
 </html>
