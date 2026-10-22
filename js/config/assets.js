@@ -15,7 +15,7 @@
 
   VIP.assets = {
     // The hero poster on the landing page.
-    heroPoster: { src: COLLAGE, alt: 'Pokémon, One Piece and Dragon Ball Z characters in a comic-panel collage' },
+    heroPoster: { src: 'assets/pwa-icon-512.svg', alt: 'PokePrizePool brand mark' },
 
     // Card art per universe. `src: null` renders the generic card back.
     universeArt: {
