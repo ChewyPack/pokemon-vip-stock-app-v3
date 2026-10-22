@@ -190,7 +190,7 @@
       if (!['spam','scam','harassment','inappropriate','misleading','other'].includes(reason)){alert('Choose spam, scam, harassment, inappropriate, misleading, or other.');return;}
       const details=prompt('Additional details (optional):','')||'';
       report.disabled=true;
-      try { await api('/api/collector/post-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:Number(report.dataset.postReport),reason,details})});alert('Thanks. Your report has been submitted for review.');}
+      try { await api('/api/collector/post-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:Number(report.dataset.postReport),reason,details})});alert('Thanks. Your report has been recorded.');}
       catch(e){alert(e.message);} finally {report.disabled=false;}
     }
     const removeComment=event.target.closest('[data-comment-delete]');
