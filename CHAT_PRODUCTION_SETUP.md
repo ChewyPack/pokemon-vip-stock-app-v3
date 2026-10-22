@@ -18,7 +18,7 @@ From the repository root, after reviewing this branch and merging its code when 
 npx wrangler deploy --config workers/chat-realtime/wrangler.production.toml
 ```
 
-This creates a separate Worker and Durable Object namespace. It does not alter the staging Worker.
+This creates a separate Worker and Durable Object namespace. It does not alter the staging Worker. Deploy this Worker separately whenever its source changes; a Cloudflare Pages deployment does not update it.
 
 ## 2. Set a production-only internal secret
 
@@ -54,8 +54,9 @@ Save the binding and trigger a production deployment so Pages Functions receive 
 2. Confirm the connection indicator changes to **Live · connected**.
 3. Open the same page in a second browser profile signed into another registered account.
 4. Send a test message and confirm it appears in both windows without refreshing.
-5. Delete the test message and confirm the deletion reaches both windows.
-6. Confirm the staging preview still works independently.
+5. React to a test message in one window and confirm the reaction count updates in the other window.
+6. Delete the test message and confirm the deletion reaches both windows.
+7. Confirm the staging preview still works independently.
 
 If a step fails, stop before changing D1 or Stripe settings. Check the production Pages binding and that the production Pages secret exactly matches the production Worker secret.
 
