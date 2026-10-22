@@ -46,13 +46,13 @@
   return el('div',{class:'site-nav__dropdown'},[b,menu]);
  }
  var inboxWrap=el('div',{class:'site-nav__inbox-wrap'});
- var inbox=el('button',{class:'site-nav__link site-nav__inbox-link',type:'button','aria-label':'Open Notifications or Offer Inbox','aria-expanded':'false','aria-controls':'site-nav-inbox-menu'});
+ var inbox=el('button',{class:'site-nav__link site-nav__inbox-link',type:'button','aria-label':'Open Notifications or Inbox','aria-expanded':'false','aria-controls':'site-nav-inbox-menu'});
  var inboxImage=el('img',{src:'/inbox-icon.png',alt:'',class:'site-nav__inbox-image'});
  var inboxBadge=el('span',{class:'site-nav__inbox-badge',hidden:'hidden','aria-live':'polite'});
  inbox.appendChild(inboxImage);inbox.appendChild(inboxBadge);
  var inboxMenu=el('div',{class:'site-nav__inbox-menu',id:'site-nav-inbox-menu',hidden:'hidden'},[
   el('a',{class:'site-nav__inbox-menu-link',href:'/notifications.html',text:'Notifications'}),
-  el('a',{class:'site-nav__inbox-menu-link',href:'/inbox.html',text:'Offer Inbox'})
+  el('a',{class:'site-nav__inbox-menu-link',href:'/inbox.html',text:'Inbox'})
  ]);
  inboxWrap.appendChild(inbox);inboxWrap.appendChild(inboxMenu);
  inbox.addEventListener('click',function(event){event.stopPropagation();var open=inboxMenu.hidden;inboxMenu.hidden=!open;inbox.setAttribute('aria-expanded',String(open));});
@@ -136,14 +136,16 @@
  function refreshInboxBadge(){
   Promise.all([
    fetch('/api/collector/trades',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
-   fetch('/api/notifications',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+   fetch('/api/notifications',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+   fetch('/api/collector/direct-messages',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
   ]).then(function(results){
-   var offers=results[0]&&results[0].ok?(results[0].offers||[]).filter(function(o){return o.direction==='incoming'&&!o.recipient_read_at;}).length:0;
-   var notifications=results[1]&&results[1].ok?Number(results[1].unread||0):0;
-   var count=offers+notifications;
+   var offers=results[0]&&results[0].ok?(results[0].offers||[]).filter(function(o){return o.direction==='incoming'&&!o.recipient_read_at&&o.status==='pending';}).length:0;
+   var notes=results[1]&&results[1].ok?(results[1].notifications||[]).filter(function(n){return !n.read_at&&n.notification_type!=='direct_message';}).length:0;
+   var messages=results[2]&&results[2].ok?(results[2].conversations||[]).reduce(function(sum,m){return sum+Number(m.unread_count||0);},0):0;
+   var count=offers+notes+messages;
    inboxBadge.hidden=count<1;inboxBadge.textContent=count>99?'99+':String(count);
-   inboxBadge.setAttribute('aria-label',count+' unread notification'+(count===1?'':'s')+' and offers');
-   inbox.setAttribute('aria-label','Open Notifications or Offer Inbox'+(count?' ('+count+' unread)':''));
+   inboxBadge.setAttribute('aria-label',count+' unread inbox items and notifications');
+   inbox.setAttribute('aria-label','Open Notifications or Inbox'+(count?' ('+count+' unread)':''));
   });
  }
  refreshInboxBadge();setInterval(refreshInboxBadge,60000);window.addEventListener('collector-offers-updated',refreshInboxBadge);
