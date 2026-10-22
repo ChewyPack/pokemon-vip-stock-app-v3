@@ -1,3 +1,4 @@
+import { ensureCollectorPostViews } from '../../_lib/collector-post-views.js';
 const COOKIE = 'collector_session';
 
 function json(body, status = 200) {
@@ -117,6 +118,7 @@ function postQueryWhere(viewerId, mode, username) {
 export async function onRequestGet({request, env}) {
   if (!env.DB) return json({ok:false,error:'database_not_configured'}, 500);
   try {
+    await ensureCollectorPostViews(env.DB);
     const url = new URL(request.url);
     const viewer = await currentAccount(request, env).catch(() => null);
     const username = (url.searchParams.get('username') || '').trim().slice(0, 24);
@@ -138,6 +140,7 @@ export async function onRequestGet({request, env}) {
       'cp.username,cp.avatar_url,a.display_name,' +
       '(SELECT COUNT(*) FROM collector_post_likes l WHERE l.post_id=p.id) AS like_count,' +
       '(SELECT COUNT(*) FROM collector_post_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL) AS comment_count,' +
+      '(SELECT COUNT(*) FROM collector_post_views v WHERE v.post_id=p.id) AS view_count,' +
       'CASE WHEN ? IS NOT NULL AND EXISTS (SELECT 1 FROM collector_post_likes ml WHERE ml.post_id=p.id AND ml.account_id=?) THEN 1 ELSE 0 END AS liked_by_me,' +
       'CASE WHEN ? IS NOT NULL AND ?=p.account_id THEN 1 ELSE 0 END AS is_own ' +
       'FROM collector_posts p JOIN collector_profiles cp ON cp.account_id=p.account_id JOIN accounts a ON a.id=p.account_id ' +
@@ -151,7 +154,7 @@ export async function onRequestGet({request, env}) {
         image_url:firstImage ? firstImage.url : '', media,
         created_at:p.created_at, updated_at:p.updated_at, username:p.username,
         display_name:p.display_name || p.username, avatar_url:p.avatar_url || '',
-        like_count:Number(p.like_count || 0), comment_count:Number(p.comment_count || 0),
+        like_count:Number(p.like_count || 0), comment_count:Number(p.comment_count || 0), view_count:Number(p.view_count || 0),
         liked_by_me:Number(p.liked_by_me || 0) === 1, is_own:Number(p.is_own || 0) === 1
       };
     });
