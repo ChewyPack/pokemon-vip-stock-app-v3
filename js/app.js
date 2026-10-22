@@ -5,6 +5,12 @@
  * Discord webhook notifications are sent by the report API; no Discord account linking is used here.
  */
 (function () {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+        .catch(function (error) { console.warn('PokePrizePool offline support could not be registered:', error); });
+    });
+  }
   var VIP = (window.VIP = window.VIP || {});
   var h = VIP.h;
 
