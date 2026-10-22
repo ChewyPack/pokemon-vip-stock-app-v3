@@ -16,7 +16,15 @@ function cleanImageUrl(value, accountId, requestUrl) {
     const parsed = new URL(value, requestUrl);
     if (parsed.origin !== new URL(requestUrl).origin || parsed.pathname !== '/api/vendor/image') return null;
     const key = parsed.searchParams.get('key') || '';
-    const pattern = new RegExp('^collectors/' + Number(accountId) + '/post/[a-f0-9-]+\\.(?:jpg|png|webp|avif)
+    const prefix = 'collectors/' + Number(accountId) + '/post/';
+    if (!key.startsWith(prefix)) return null;
+    const name = key.slice(prefix.length).split('.');
+    if (name.length !== 2 || name[0].length !== 36 || !['jpg','png','webp','avif'].includes(name[1].toLowerCase())) return null;
+    const uuid = name[0];
+    for (const ch of uuid) if (!('0123456789abcdef-'.includes(ch.toLowerCase()))) return null;
+    return '/api/vendor/image?key=' + encodeURIComponent(key);
+  } catch (_) { return null; }
+}
 function postQueryWhere(viewerId, mode, username) {
   const params = [];
   let where = 'p.deleted_at IS NULL AND cp.is_public = 1';
