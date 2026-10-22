@@ -175,15 +175,16 @@
     status.textContent = 'Loading posts…';
     list.innerHTML = '';
     try {
+      const requestedPost = new URLSearchParams(location.search).get('post');
       let url;
-      if (state.mode === 'profile') url = '/api/collector/posts?username=' + encodeURIComponent(state.username);
+      if (requestedPost && state.mode !== 'profile') url = '/api/collector/posts?post_id=' + encodeURIComponent(requestedPost);
+      else if (state.mode === 'profile') url = '/api/collector/posts?username=' + encodeURIComponent(state.username);
       else url = '/api/collector/posts?feed=' + encodeURIComponent(state.feed || 'for-you');
       const d = await api(url);
       const posts = d.posts || [];
       list.innerHTML = posts.length ? posts.map(postCard).join('') : '<div class="social-empty-state"><strong>No posts yet.</strong><span>' + (state.mode === 'profile' ? 'When this collector shares an update, it will appear here.' : 'Be the first to share something with the community.') + '</span></div>';
       status.textContent = posts.length ? posts.length + (posts.length === 1 ? ' post' : ' posts') : '';
       observePostViews(root, posts);
-      const requestedPost = new URLSearchParams(location.search).get('post');
       if (requestedPost) {
         const focusCard = $(list, '[data-post-card="' + Number(requestedPost) + '"]');
         if (focusCard) focusCard.scrollIntoView({behavior:'smooth',block:'center'});
