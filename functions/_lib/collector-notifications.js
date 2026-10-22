@@ -34,7 +34,7 @@ export async function notifyCollector(env, accountId, notification) {
           title: String(notification.title || 'Collector update').slice(0, 120),
           body: String(notification.body || '').slice(0, 180),
           url: String(notification.url || '/notifications.html'),
-          tag: String(notification.type || 'collector-activity') + '-' + String((notification.data && (notification.data.message_id || notification.data.comment_id || notification.data.post_id)) || Date.now()) + '-' + recipientId
+          tag: String(notification.type || 'collector-activity') + '-' + String((notification.data && (notification.data.message_id || notification.data.offer_id || notification.data.comment_id || notification.data.post_id)) || Date.now()) + '-' + recipientId
         }, env);
         if (response.status === 404 || response.status === 410) {
           await env.DB.prepare('DELETE FROM push_subscriptions WHERE id = ?').bind(subscription.id).run();
@@ -44,7 +44,7 @@ export async function notifyCollector(env, accountId, notification) {
       }
     }));
   } catch (error) {
-    // Notification failures should never undo a successful like, comment, or message.
+    // Notification failures should never undo a successful collector action, message, or offer.
     console.warn('Collector activity notification failed:', error);
   }
 }
