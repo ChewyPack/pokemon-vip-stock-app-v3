@@ -22,6 +22,18 @@ async function currentAccount(request, env) {
   const account = await env.DB.prepare('SELECT id, session_expires_at FROM accounts WHERE session_token_hash = ? LIMIT 1').bind(await sha256(token)).first();
   return account && account.session_expires_at && Number(account.session_expires_at) > Date.now() ? account : null;
 }
+async function ensureCollectorProfile(env, accountId) {
+  let profile = await env.DB.prepare('SELECT username FROM collector_profiles WHERE account_id=? LIMIT 1').bind(accountId).first();
+  if (profile) return profile;
+  const account = await env.DB.prepare('SELECT display_name FROM accounts WHERE id=? LIMIT 1').bind(accountId).first();
+  let base = String(account && account.display_name || 'collector').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 18) || 'collector';
+  if (base.length < 3) base = 'collector' + String(accountId);
+  let username = base;
+  const exists = await env.DB.prepare('SELECT id FROM collector_profiles WHERE username=? COLLATE NOCASE LIMIT 1').bind(username).first();
+  if (exists) username = (base.slice(0, 18) + String(accountId)).slice(0, 24);
+  await env.DB.prepare("INSERT OR IGNORE INTO collector_profiles (account_id,username,bio,avatar_url,cover_url,is_public) VALUES (?,?, '', '', '', 1)").bind(accountId, username).run();
+  return await env.DB.prepare('SELECT username FROM collector_profiles WHERE account_id=? LIMIT 1').bind(accountId).first();
+}
 const TYPES = new Set(['status','pull','collection','trade','question','event','restock']);
 
 function cleanImageUrl(value, accountId, requestUrl) {
@@ -113,7 +125,7 @@ export async function onRequestPost({request, env}) {
   if (!body && !imageUrl) return json({ok:false,error:'post_content_required'}, 400);
   if (body.length > 2000) return json({ok:false,error:'post_too_long'}, 400);
   try {
-    const profile = await env.DB.prepare('SELECT username FROM collector_profiles WHERE account_id=? LIMIT 1').bind(account.id).first();
+    const profile = await ensureCollectorProfile(env, account.id);
     if (!profile) return json({ok:false,error:'collector_profile_missing'}, 400);
     const result = await env.DB.prepare('INSERT INTO collector_posts(account_id,body,post_type,image_url) VALUES(?,?,?,?)').bind(account.id, body, type, imageUrl).run();
     return json({ok:true,id:Number(result.meta && result.meta.last_row_id || 0)}, 201);
