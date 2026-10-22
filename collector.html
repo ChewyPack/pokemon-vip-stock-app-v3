@@ -196,7 +196,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <p id="owner-status" class="cp-status" role="status" aria-live="polite"></p>
 </aside>
 <section class="cp-panel" id="profile-content-panel">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h2 id="list-heading">Collection showcase</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="make-offer-button" class="cp-btn" type="button" hidden>Make an Offer</button><button id="copy-profile" class="cp-btn secondary" type="button">Copy profile link</button></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h2 id="list-heading">Collection showcase</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="make-offer-button" class="cp-btn" type="button" hidden>Make an Offer</button><button id="send-message-button" class="cp-btn secondary" type="button" hidden>Send Message</button><button id="copy-profile" class="cp-btn secondary" type="button">Copy profile link</button></div></div>
 <div class="cp-tabs" role="tablist" aria-label="Profile sections">
 <button class="cp-btn" type="button" role="tab" data-list="posts" aria-selected="true" aria-pressed="true">Posts</button>
 <button class="cp-btn secondary" type="button" role="tab" data-list="collection" aria-selected="false" aria-pressed="false">Collection</button>
@@ -551,11 +551,11 @@ async function searchCollectors(query){
    if(viewUsername){
     const r=await fetch('/api/collector/profile?username='+encodeURIComponent(viewUsername),{cache:'no-store'}),d=await r.json();
     if(!r.ok||!d.ok)throw new Error('This collector profile could not be found or is private.');
-    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');document.querySelector('.cp-layout').classList.add('cp-public-layout');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;$('make-offer-button').hidden=false;showProfile(profile,profile.display_name);await loadFollowState(profile.username);
+    own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');document.querySelector('.cp-layout').classList.add('cp-public-layout');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;$('make-offer-button').hidden=false;$('send-message-button').hidden=false;showProfile(profile,profile.display_name);await loadFollowState(profile.username);
    }else{
     const r=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),d=await r.json();
     if(r.status===401){location.href='/account.html';return;}if(!r.ok||!d.ok)throw new Error('Could not load your collector profile. Apply the staging database migration if it has not been run.');
-    own=true;profile=d.profile;items=d.items||[];document.querySelector('.cp-layout').classList.remove('cp-public-layout');$('make-offer-button').hidden=true;$('collector-signin').hidden=true;$('collector-logout').hidden=false;showProfile(profile,d.account?.display_name);await loadFollowState(profile.username)
+    own=true;profile=d.profile;items=d.items||[];document.querySelector('.cp-layout').classList.remove('cp-public-layout');$('make-offer-button').hidden=true;$('send-message-button').hidden=true;$('collector-signin').hidden=true;$('collector-logout').hidden=false;showProfile(profile,d.account?.display_name);await loadFollowState(profile.username)
     if(!profile){$('handle').textContent='Profile not published yet';}
    }
    window.collectorSocialProfile={own:own,username:profile?.username||viewUsername};window.dispatchEvent(new CustomEvent('collector-profile-loaded',{detail:window.collectorSocialProfile}));stats();if(location.hash==='#shop')activeList='shop';render();if(own)await loadWishlistMatchDashboard();if(activeList==='shop')loadShopTab();
@@ -701,6 +701,7 @@ async function searchCollectors(query){
  
  $('copy-profile').addEventListener('click',async()=>{if(!profile?.username){setStatus('owner-status','Save a username first to create your public profile link.');return;}const url=location.origin+'/collector.html?user='+encodeURIComponent(profile.username);try{await navigator.clipboard.writeText(url);setStatus('owner-status','Profile link copied! '+url);}catch{setStatus('owner-status','Your profile link: '+url);}});
  $('make-offer-button').addEventListener('click',openMakeOffer);
+ $('send-message-button').addEventListener('click',()=>{if(profile?.username)location.href='/messages.html?user='+encodeURIComponent(profile.username);});
  $('offer-type-cash').addEventListener('click',()=>setOfferMode('cash'));$('offer-type-trade').addEventListener('click',()=>setOfferMode('trade'));
  $('make-offer-close').addEventListener('click',()=>$('make-offer-modal').hidden=true);$('make-offer-cancel').addEventListener('click',()=>$('make-offer-modal').hidden=true);
  $('make-offer-modal').addEventListener('click',event=>{if(event.target===$('make-offer-modal'))$('make-offer-modal').hidden=true;});
@@ -710,6 +711,6 @@ async function searchCollectors(query){
  load();
 })();
 </script>
-<script src="/js/ui/collector-social.js?v=20261022-multi-media-posts"></script>
+<script src="/js/ui/collector-social.js?v=20261022-engagement-messaging-views"></script>
 <script src="/js/ui/site-nav.js"></script>
 </body></html>
