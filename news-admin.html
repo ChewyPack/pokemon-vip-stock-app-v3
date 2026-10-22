@@ -21,6 +21,12 @@
     .story-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.14)}
     .story-row:last-child{border-bottom:0}.story-row h3{margin:0 0 6px}.story-meta{font-size:.88rem;color:#bac9e8}
     .status{display:inline-block;border:1px solid #8da7d4;border-radius:99px;padding:2px 9px;font-size:.78rem;margin-left:6px}
+    .story-image-preview{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
+    .story-image-preview:empty{display:none}
+    .story-image-preview figure{margin:0;width:150px;max-width:calc(33.333% - 8px);border:1px solid rgba(255,255,255,.18);border-radius:9px;overflow:hidden;background:#08142d}
+    .story-image-preview img{display:block;width:100%;height:100px;object-fit:cover;background:#020817}
+    .story-image-preview figcaption{padding:6px 8px;font-size:.78rem;color:#bac9e8;overflow-wrap:anywhere}
+    .story-image-field .actions{margin-top:8px}
     #message{padding:12px 0;white-space:pre-wrap}.error{color:#ffb4bd}.success{color:#b6f3d0}
     .hidden{display:none!important}
     @media(max-width:680px){.form-grid{grid-template-columns:1fr}.editor-card{padding:16px}.story-row{display:block}.story-row .actions{margin-top:12px}}
@@ -41,7 +47,7 @@
             <div><label for="title">Headline *</label><input id="title" maxlength="180" required placeholder="Story headline"></div>
             <div><label for="category">Poke Report section *</label><select id="category"><option>News</option><option>Updates</option><option>Market Intelligence</option><option>Events</option></select></div>
             <div><label for="slug">Story URL slug (optional)</label><input id="slug" maxlength="90" placeholder="auto-generated-from-headline"></div>
-            <div><label for="image-file">Featured image upload (optional)</label><input id="image-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><input id="image-url" type="hidden"><p class="subtle" id="image-upload-status">Choose an image file; it will upload when you save the story.</p></div>
+            <div class="story-image-field"><label for="image-files">Article images (optional, up to 3)</label><input id="image-files" type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif"><p class="subtle" id="image-upload-status">Choose up to three images. They will upload when you save. Selecting new images while editing replaces the current gallery.</p><div id="story-image-preview" class="story-image-preview" aria-live="polite"></div><div class="actions"><button type="button" class="secondary" id="clear-story-images">Remove all images</button></div></div>
           </div>
           <label for="excerpt">Short summary</label>
           <textarea id="excerpt" maxlength="500" style="min-height:90px" placeholder="A short preview shown on the News page."></textarea>
@@ -70,11 +76,58 @@
       var form=document.getElementById('story-form');
       var list=document.getElementById('story-list');
       var stories=[];
+      var imageInput=document.getElementById('image-files');
+      var imagePreview=document.getElementById('story-image-preview');
+      var imageStatus=document.getElementById('image-upload-status');
+      var clearImagesButton=document.getElementById('clear-story-images');
+      var currentImageUrls=[];
+      var previewObjectUrls=[];
       function say(text,kind){message.textContent=text;message.className=kind||'';}
+      function renderImagePreview(){
+        previewObjectUrls.forEach(function(url){URL.revokeObjectURL(url);});
+        previewObjectUrls=[];
+        imagePreview.replaceChildren();
+        var files=Array.from(imageInput.files||[]);
+        if(files.length){
+          files.forEach(function(file,index){
+            var figure=document.createElement('figure'),img=document.createElement('img'),caption=document.createElement('figcaption');
+            var objectUrl=URL.createObjectURL(file);previewObjectUrls.push(objectUrl);
+            img.src=objectUrl;img.alt='Selected article image '+(index+1);
+            caption.textContent='New image '+(index+1);
+            figure.appendChild(img);figure.appendChild(caption);imagePreview.appendChild(figure);
+          });
+          imageStatus.textContent=files.length+' new image'+(files.length===1?'':'s')+' selected. Saving will replace the current gallery.';
+          return;
+        }
+        currentImageUrls.forEach(function(url,index){
+          var figure=document.createElement('figure'),img=document.createElement('img'),caption=document.createElement('figcaption');
+          img.src=url;img.alt='Saved article image '+(index+1);img.loading='lazy';
+          img.onerror=function(){figure.remove();};
+          caption.textContent='Saved image '+(index+1);
+          figure.appendChild(img);figure.appendChild(caption);imagePreview.appendChild(figure);
+        });
+        imageStatus.textContent=currentImageUrls.length
+          ? currentImageUrls.length+' saved image'+(currentImageUrls.length===1?'':'s')+'. Select new images to replace the gallery.'
+          : 'No images selected. You can upload up to three images with this article.';
+      }
+      imageInput.addEventListener('change',function(){
+        var files=Array.from(imageInput.files||[]);
+        if(files.length>3){
+          imageInput.value='';
+          say('Choose no more than 3 images per article.','error');
+        }else{
+          say(files.length?'Selected '+files.length+' article image'+(files.length===1?'':'s')+'.':'Image selection cleared.','');
+        }
+        renderImagePreview();
+      });
+      clearImagesButton.addEventListener('click',function(){
+        currentImageUrls=[];imageInput.value='';renderImagePreview();
+        say('All article images cleared. Save the story to remove its current gallery.','success');
+      });
       function escText(value){return String(value||'');}
       function api(url,options){return fetch(url,Object.assign({credentials:'include',cache:'no-store'},options||{})).then(function(r){return r.json().catch(function(){return {};}).then(function(data){if(!r.ok||!data.ok){var e=new Error(data.error||'Request failed');e.status=r.status;throw e;}return data;});});}
       function dateLabel(value){if(!value)return 'Not published';var d=new Date(value);return isNaN(d.getTime())?value:d.toLocaleString();}
-      function resetForm(){form.reset();document.getElementById('story-id').value='';document.getElementById('image-url').value='';document.getElementById('image-upload-status').textContent='Choose an image file; it will upload when you save the story.';document.getElementById('form-heading').textContent='Write a story';}
+      function resetForm(){form.reset();document.getElementById('story-id').value='';currentImageUrls=[];renderImagePreview();document.getElementById('form-heading').textContent='Write a story';}
       function loadStories(){
         return api('/api/news?admin=1').then(function(data){
           stories=data.stories||[];
@@ -87,7 +140,7 @@
             var meta=document.createElement('div');meta.className='story-meta';meta.textContent=story.category+' · Updated '+dateLabel(story.updated_at)+' · '+(story.status==='published'?'Published':'Draft');info.appendChild(meta);
             var actions=document.createElement('div');actions.className='actions';
             function addButton(label,fn,cls){var b=document.createElement('button');b.type='button';b.textContent=label;if(cls)b.className=cls;b.addEventListener('click',fn);actions.appendChild(b);}
-            addButton('Edit',function(){document.getElementById('story-id').value=story.id;document.getElementById('title').value=story.title||'';document.getElementById('category').value=story.category||'News';document.getElementById('slug').value=story.slug||'';document.getElementById('image-url').value=story.image_url||'';document.getElementById('image-file').value='';document.getElementById('image-upload-status').textContent=story.image_url?'A featured image is already uploaded. Choose a new file to replace it.':'No featured image uploaded.';document.getElementById('excerpt').value=story.excerpt||'';document.getElementById('content').value=story.content||'';document.getElementById('form-heading').textContent='Edit story';window.scrollTo({top:0,behavior:'smooth'});});
+            addButton('Edit',function(){document.getElementById('story-id').value=story.id;document.getElementById('title').value=story.title||'';document.getElementById('category').value=story.category||'News';document.getElementById('slug').value=story.slug||'';currentImageUrls=Array.isArray(story.image_urls)?story.image_urls.slice(0,3):(story.image_url?[story.image_url]:[]);imageInput.value='';renderImagePreview();document.getElementById('excerpt').value=story.excerpt||'';document.getElementById('content').value=story.content||'';document.getElementById('form-heading').textContent='Edit story';window.scrollTo({top:0,behavior:'smooth'});});
             if(story.status==='published')addButton('Unpublish',function(){if(!confirm('Move this story back to drafts? It will disappear from the public News page.'))return;saveStory(Object.assign({},story,{status:'draft'}));},'secondary');
             else addButton('Publish',function(){if(!confirm('Publish this story so everyone can see it?'))return;saveStory(Object.assign({},story,{status:'published'}));});
             addButton('Delete',function(){if(!confirm('Permanently delete this story?'))return;api('/api/news?id='+encodeURIComponent(story.id),{method:'DELETE'}).then(function(){say('Story deleted.','success');return loadStories();}).catch(function(e){say('Could not delete story: '+e.message,'error');});},'danger');
@@ -99,7 +152,54 @@
         return api('/api/news',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(){say(data.status==='published'?'Story published.':'Draft saved.','success');resetForm();return loadStories();}).catch(function(e){say('Could not save story: '+e.message,'error');throw e;});
       }
       api('/api/news?admin=1').then(function(data){editor.classList.remove('hidden');say('You have publishing access.','success');stories=data.stories||[];return loadStories();}).catch(function(e){if(e.status===401){say('Please sign in to your PokePrizePool account. Redirecting to login…','error');setTimeout(function(){location.href='/account.html?next='+encodeURIComponent('/news-admin.html');},900);}else if(e.status===403){say('This account does not have publishing permission. The page is private; ask the site administrator to grant your account admin access.','error');}else{say('Could not verify publishing access. Try refreshing. ('+e.message+')','error');}});
-      form.addEventListener('submit',async function(event){event.preventDefault();var submitter=event.submitter;var status=submitter&&submitter.dataset.status==='published'?'published':'draft';submitter.disabled=true;try{var file=document.getElementById('image-file').files[0];if(file){document.getElementById('image-upload-status').textContent='Uploading featured image…';var upload=await fetch('/api/admin-image-upload?kind=story',{method:'POST',credentials:'include',headers:{'Content-Type':file.type},body:file});var uploadData=await upload.json().catch(function(){return {};});if(!upload.ok||!uploadData.ok)throw new Error(uploadData.error==='image_storage_not_configured'?'Photo storage is not configured in Cloudflare.':(uploadData.error||'Featured image upload failed.'));document.getElementById('image-url').value=uploadData.url;document.getElementById('image-upload-status').textContent='Image uploaded successfully.';}var data={id:Number(document.getElementById('story-id').value)||undefined,title:document.getElementById('title').value,category:document.getElementById('category').value,slug:document.getElementById('slug').value,image_url:document.getElementById('image-url').value,excerpt:document.getElementById('excerpt').value,content:document.getElementById('content').value,status:status};await saveStory(data);}catch(e){say('Could not save story: '+e.message,'error');}finally{submitter.disabled=false;}});
+      form.addEventListener('submit',async function(event){
+        event.preventDefault();
+        var submitter=event.submitter;
+        var status=submitter&&submitter.dataset.status==='published'?'published':'draft';
+        var files=Array.from(imageInput.files||[]);
+        submitter.disabled=true;
+        try{
+          if(files.length>3)throw new Error('Choose no more than 3 images per article.');
+          var imageUrls=currentImageUrls.slice();
+          if(files.length){
+            imageUrls=[];
+            for(var i=0;i<files.length;i++){
+              var file=files[i];
+              imageStatus.textContent='Uploading article image '+(i+1)+' of '+files.length+'…';
+              var upload=await fetch('/api/admin-image-upload?kind=story',{
+                method:'POST',credentials:'include',headers:{'Content-Type':file.type},body:file
+              });
+              var uploadData=await upload.json().catch(function(){return {};});
+              if(!upload.ok||!uploadData.ok){
+                throw new Error(uploadData.error==='image_storage_not_configured'
+                  ?'Photo storage is not configured in Cloudflare.'
+                  :(uploadData.error||'Article image upload failed.'));
+              }
+              imageUrls.push(uploadData.url);
+            }
+            currentImageUrls=imageUrls.slice();
+            imageInput.value='';
+            renderImagePreview();
+            imageStatus.textContent='Uploaded '+imageUrls.length+' article image'+(imageUrls.length===1?'':'s')+'.';
+          }
+          var data={
+            id:Number(document.getElementById('story-id').value)||undefined,
+            title:document.getElementById('title').value,
+            category:document.getElementById('category').value,
+            slug:document.getElementById('slug').value,
+            image_urls:imageUrls,
+            image_url:imageUrls[0]||'',
+            excerpt:document.getElementById('excerpt').value,
+            content:document.getElementById('content').value,
+            status:status
+          };
+          await saveStory(data);
+        }catch(e){
+          say('Could not save story: '+e.message,'error');
+        }finally{
+          submitter.disabled=false;
+        }
+      });
       document.getElementById('new-story').addEventListener('click',resetForm);
     })();
   </script>
