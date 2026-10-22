@@ -3,7 +3,8 @@
 const SHELL_CACHE = 'pokeprizepool-shell-v1';
 const CORE_NAVIGATION = new Set([
   '/', '/index.html', '/account.html', '/collector.html',
-  '/chat.html', '/events.html', '/marketplace.html', '/vendor.html'
+  '/chat.html', '/events.html', '/marketplace.html', '/vendor.html',
+  '/news.html', '/market-intelligence.html', '/giveaways.html', '/store.html'
 ]);
 const CORE_ASSETS = [
   '/offline.html',
