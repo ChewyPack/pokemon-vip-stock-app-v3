@@ -56,6 +56,17 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
 .chat-message-username{color:#7b8cad;font-size:.76rem;font-weight:800}
 .chat-message-time{color:#8795b0;font-size:.72rem}
 .chat-message-text{font-size:.92rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;color:#283e68}
+.chat-reaction-area{display:flex;align-items:flex-start;gap:7px;flex-wrap:wrap;margin-top:8px}
+.chat-reaction-row,.chat-reaction-picker{display:flex;gap:5px;flex-wrap:wrap}
+.chat-reaction-chip,.chat-add-reaction,.chat-reaction-option{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:27px;border:1px solid #d4deef;border-radius:999px;background:#fff;color:#25446f;padding:3px 8px;font:700 .78rem system-ui,sans-serif;cursor:pointer}
+.chat-reaction-chip[aria-pressed="true"]{border-color:#356cc0;background:#eaf2ff;color:#14376f}
+.chat-reaction-chip span{font-size:.76rem}
+.chat-add-reaction{font-size:.82rem;color:#64779b;background:#f8faff}
+.chat-reaction-picker{padding:5px;border:1px solid #d4deef;border-radius:11px;background:#fff;box-shadow:0 6px 18px #07194d15}
+.chat-reaction-option{border:0;background:#f3f6fb;padding:4px 6px;font-size:1rem;min-width:30px;min-height:30px}
+.chat-reaction-chip:hover,.chat-add-reaction:hover,.chat-reaction-option:hover{border-color:#6d92cc;background:#edf4ff}
+.chat-reaction-picker[hidden]{display:none!important}
+
 .chat-message-deleted{color:#8795b0;font-style:italic}
 .chat-message-actions{float:right;opacity:0;transition:opacity .15s}
 .chat-message:hover .chat-message-actions,.chat-message:focus-within .chat-message-actions{opacity:1}
@@ -169,6 +180,30 @@ function renderChannels(){
 }
 function initials(name){return String(name||'C').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'C';}
 function timeLabel(value){const d=new Date((value||'').replace(' ','T')+'Z');if(Number.isNaN(d.getTime()))return '';return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}
+function renderReactionControls(article,m){
+ const body=article.querySelector('.chat-message-body');if(!body)return;
+ let area=body.querySelector('.chat-reaction-area');
+ if(m.deleted){if(area)area.remove();return;}
+ if(!area){area=document.createElement('div');area.className='chat-reaction-area';body.appendChild(area);}
+ area.replaceChildren();
+ const row=document.createElement('div');row.className='chat-reaction-row';
+ (m.reactions||[]).forEach(reaction=>{
+  const button=document.createElement('button');button.type='button';button.className='chat-reaction-chip';button.setAttribute('aria-pressed',String(!!reaction.reacted_by_me));
+  button.setAttribute('aria-label',reaction.emoji+' reaction, '+Number(reaction.count||0)+' '+(reaction.reacted_by_me?'you reacted':'reactions'));
+  const emoji=document.createElement('span');emoji.textContent=reaction.emoji;
+  const count=document.createElement('span');count.textContent=String(Number(reaction.count||0));
+  button.append(emoji,count);button.addEventListener('click',()=>toggleReaction(m.id,reaction.emoji));row.appendChild(button);
+ });
+ area.appendChild(row);
+ const add=document.createElement('button');add.type='button';add.className='chat-add-reaction';add.textContent='+ React';add.setAttribute('aria-label','Add a reaction');area.appendChild(add);
+ const picker=document.createElement('div');picker.className='chat-reaction-picker';picker.hidden=true;
+ ['👍','❤️','😂','😮','🔥','👀','🎉','🤝'].forEach(emoji=>{
+  const button=document.createElement('button');button.type='button';button.className='chat-reaction-option';button.textContent=emoji;button.setAttribute('aria-label','React with '+emoji);
+  button.addEventListener('click',async()=>{picker.hidden=true;await toggleReaction(m.id,emoji);});picker.appendChild(button);
+ });
+ add.addEventListener('click',()=>{picker.hidden=!picker.hidden;});
+ area.appendChild(picker);
+}
 function renderMessage(m){
  if(!m||!m.id||Number(m.channel_id)!==Number(state.channelId))return;
  const root=$('chat-history');const old=root.querySelector('[data-message-id="'+Number(m.id)+'"]');if(old)old.remove();
@@ -183,7 +218,7 @@ function renderMessage(m){
  if(m.mine||Number(m.account_id)===Number(state.account?.id)||state.account?.is_admin){const actions=document.createElement('span');actions.className='chat-message-actions';const del=document.createElement('button');del.type='button';del.className='chat-delete';del.textContent='Delete';del.setAttribute('aria-label','Delete message');del.addEventListener('click',()=>deleteMessage(m.id));actions.appendChild(del);meta.appendChild(actions);}
  const text=document.createElement('div');text.className='chat-message-text'+(m.deleted?' chat-message-deleted':'');
  if(m.deleted){text.textContent='Message deleted';}else{const parts=String(m.body||'').split(/(@[a-zA-Z0-9_.-]{2,30})/g);parts.forEach(part=>{if(/^@[a-zA-Z0-9_.-]{2,30}$/.test(part)){const mention=document.createElement('span');mention.className='chat-mention';mention.textContent=part;text.appendChild(mention);}else{text.appendChild(document.createTextNode(part));}});}
- body.append(meta,text);article.append(avatar,body);root.appendChild(article);
+ body.append(meta,text);article.append(avatar,body);renderReactionControls(article,m);root.appendChild(article);
 }
 function renderMessages(messages){const root=$('chat-history');root.replaceChildren();if(!messages.length){const empty=document.createElement('div');empty.className='chat-history-status';empty.textContent='No messages yet. Be the first to say hello!';root.appendChild(empty);return;}messages.forEach(renderMessage);root.scrollTop=root.scrollHeight;}
 async function selectChannel(id){
@@ -199,6 +234,16 @@ function receive(event){
  if(event.type==='message'&&event.message){const m=event.message;const arr=state.messages.get(Number(m.channel_id))||[];if(!arr.some(x=>Number(x.id)===Number(m.id))){arr.push(m);state.messages.set(Number(m.channel_id),arr.slice(-100));}
   if(Number(m.channel_id)===Number(state.channelId)){renderMessage(m);const root=$('chat-history');root.scrollTop=root.scrollHeight;}
   else if(Number(m.account_id)!==Number(state.account?.id)){state.unread[m.channel_id]=Number(state.unread[m.channel_id]||0)+1;renderChannels();}
+ }
+ if(event.type==='reaction'){
+  const id=Number(event.id),channelId=Number(event.channel_id),arr=state.messages.get(channelId)||[],message=arr.find(item=>Number(item.id)===id);
+  if(message){
+   const previous=new Map((message.reactions||[]).map(reaction=>[reaction.emoji,!!reaction.reacted_by_me]));
+   const actorIsMe=Number(event.actor_account_id)===Number(state.account?.id);
+   message.reactions=(event.reactions||[]).map(reaction=>({emoji:reaction.emoji,count:Number(reaction.count||0),reacted_by_me:actorIsMe&&reaction.emoji===event.emoji?!!event.reacted:!!previous.get(reaction.emoji)}));
+   if(channelId===Number(state.channelId)){const article=$('chat-history').querySelector('[data-message-id="'+id+'"]');if(article)renderReactionControls(article,message);}
+  }
+  return;
  }
  if(event.type==='delete'){const id=Number(event.id);const arr=state.messages.get(Number(event.channel_id))||[];const m=arr.find(x=>Number(x.id)===id);if(m){m.deleted=true;m.body='';}if(Number(event.channel_id)===Number(state.channelId))renderMessages(arr);}
 }
@@ -218,6 +263,14 @@ async function sendMessage(event){
  finally{state.loading=false;$('chat-send').disabled=false;input.focus();}
 }
 async function deleteMessage(id){if(!confirm('Delete this message for everyone?'))return;try{const d=await api('/api/chat/messages',{method:'DELETE',body:JSON.stringify({id:Number(id)})});const m=[...state.messages.values()].flat().find(x=>Number(x.id)===Number(id));if(m){m.deleted=true;m.body='';}if(d.realtime===false)alertBox('Message deleted, but live delivery is temporarily unavailable.');renderMessages(state.messages.get(Number(state.channelId))||[]);}catch(e){alertBox(e.message);}}
+async function toggleReaction(id,emoji){
+ try{
+  const data=await api('/api/chat/messages',{method:'POST',body:JSON.stringify({action:'reaction',id:Number(id),emoji})});
+  const message=[...state.messages.values()].flat().find(item=>Number(item.id)===Number(id));
+  if(message){message.reactions=data.reactions||[];const article=$('chat-history').querySelector('[data-message-id="'+Number(id)+'"]');if(article)renderReactionControls(article,message);}
+  if(data.realtime===false)alertBox('Your reaction was saved, but live updates are temporarily unavailable.');
+ }catch(error){alertBox(error.message||'Could not update your reaction.');}
+}
 let mentionTimer=null;let mentionResults=[];let mentionIndex=0;
 function hideMentionSuggestions(){const box=$('chat-mention-suggestions');box.hidden=true;box.replaceChildren();mentionResults=[];mentionIndex=0;}
 async function updateMentionSuggestions(){
