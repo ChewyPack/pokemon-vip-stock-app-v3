@@ -4,6 +4,18 @@
   const $ = (root, selector) => root.querySelector(selector);
   const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const labels = {status:'Status',pull:'Card pull',collection:'Collection update',trade:'Trade',question:'Question',event:'Event',restock:'Restock sighting'};
+  const IMAGE_TYPES = ['image/jpeg','image/png','image/webp','image/avif'];
+  const VIDEO_TYPES = ['video/mp4','video/webm'];
+  const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+  const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+  function ensureMediaStyles() {
+    if (document.getElementById('social-media-layout-style')) return;
+    const style = document.createElement('style');
+    style.id = 'social-media-layout-style';
+    style.textContent = '.social-composer-row,.cp-social-composer-row{grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto!important}.social-composer-media-inputs,.cp-social-media-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}.social-media-preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.social-media-preview:empty{display:none}.social-media-preview__item{min-width:0;display:grid;gap:4px;padding:6px;border:1px solid #dbe4f4;border-radius:9px;background:#f5f7fc;color:#31517f;font-size:.75rem;font-weight:800;overflow:hidden}.social-media-preview__item img,.social-media-preview__item video{display:block;width:100%;height:88px;object-fit:contain;background:#eaf1ff;border-radius:5px}.social-media-preview__note{grid-column:1/-1;margin:0;color:#a32222;font-size:.82rem;font-weight:800}.social-post-media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.social-post-media-grid.is-single{grid-template-columns:minmax(0,1fr)}.social-post-media-item{min-width:0;overflow:hidden;border-radius:11px;background:#f3f6fc}.social-post-media-item .social-post-image,.social-post-video{display:block;width:100%;height:100%;max-height:560px;object-fit:contain;background:#f3f6fc;border-radius:11px;margin:0}.social-post-video{aspect-ratio:16/9;min-height:150px}@media(max-width:640px){.social-composer-row,.cp-social-composer-row{grid-template-columns:1fr!important}.social-composer-media-inputs,.cp-social-media-inputs{grid-template-columns:1fr}.social-media-preview{grid-template-columns:repeat(2,minmax(0,1fr))}.social-post-media-grid{gap:6px}.social-post-video{min-height:100px}}';
+    document.head.appendChild(style);
+  }
+  ensureMediaStyles();
   const dateText = value => { const d = new Date(value); return Number.isNaN(d.getTime()) ? '' : d.toLocaleString([], {month:'short',day:'numeric',year:d.getFullYear()===new Date().getFullYear()?undefined:'numeric',hour:'numeric',minute:'2-digit'}); };
   async function api(url, options) {
     const response = await fetch(url, Object.assign({credentials:'include',cache:'no-store'}, options || {}));
@@ -12,9 +24,14 @@
       const messages = {
         login_required:'Please sign in to do that.',
         collector_social_migration_required:'The Community Feed database tables are unavailable. Please contact support.',
-        post_content_required:'Write something or add a photo before posting.',
+        post_content_required:'Write something or add at least one photo or video before posting.',
         post_too_long:'Posts can be up to 2,000 characters.',
-        invalid_image_url:'Please choose a photo using the upload control.',
+        invalid_image_url:'Please choose media using the upload controls.',
+        invalid_media_url:'A selected photo or video is invalid. Please choose it again.',
+        too_many_photos:'A post can include up to 3 photos.',
+        too_many_videos:'A post can include only 1 video.',
+        post_media_limit_exceeded:'A post can include up to 3 photos and 1 video.',
+        duplicate_media:'The same media cannot be attached twice.',
         already_reported:'You already reported this post.',
         follow_migration_required:'The collector follow database setup is incomplete. Please contact support.'
       };
@@ -26,12 +43,19 @@
     const avatar = post.avatar_url
       ? '<img class="social-avatar" src="' + safe(post.avatar_url) + '" alt="" loading="lazy">'
       : '<span class="social-avatar social-avatar-placeholder" aria-hidden="true">P</span>';
-    const image = post.image_url ? '<img class="social-post-image" src="' + safe(post.image_url) + '" alt="Photo shared by ' + safe(post.display_name || post.username) + '" loading="lazy">' : '';
+    const media = Array.isArray(post.media) ? post.media : (post.image_url ? [{type:'image',url:post.image_url}] : []);
+    const mediaMarkup = media.length ? '<div class="social-post-media-grid' + (media.length===1?' is-single':'') + '">' + media.map(item => {
+      if (item.type === 'video') {
+        const mime = /\.webm(?:$|[?#])/i.test(item.url) ? 'video/webm' : 'video/mp4';
+        return '<div class="social-post-media-item"><video class="social-post-video" controls preload="metadata" playsinline aria-label="Video shared by ' + safe(post.display_name || post.username) + '"><source src="' + safe(item.url) + '" type="' + mime + '">Your browser does not support video playback.</video></div>';
+      }
+      return '<div class="social-post-media-item"><img class="social-post-image" src="' + safe(item.url) + '" alt="Photo shared by ' + safe(post.display_name || post.username) + '" loading="lazy"></div>';
+    }).join('') + '</div>' : '';
     return '<article class="social-post" data-post-card="' + Number(post.id) + '">' +
       '<header class="social-post-header">' + avatar +
       '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">' + safe(post.display_name || post.username) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">@' + safe(post.username) + '</a><span> · ' + safe(dateText(post.created_at)) + '</span></div></div>' +
       '<span class="social-post-type">' + safe(labels[post.post_type] || 'Status') + '</span></header>' +
-      (post.body ? '<p class="social-post-body">' + safe(post.body).replace(/\n/g, '<br>') + '</p>' : '') + image +
+      (post.body ? '<p class="social-post-body">' + safe(post.body).replace(/\n/g, '<br>') + '</p>' : '') + mediaMarkup +
       '<div class="social-post-stats"><span data-like-count>' + Number(post.like_count || 0) + ' likes</span><span data-comment-count>' + Number(post.comment_count || 0) + ' comments</span></div>' +
       '<div class="social-post-actions"><button type="button" data-post-like="' + Number(post.id) + '" data-liked="' + String(!!post.liked_by_me) + '" aria-pressed="' + String(!!post.liked_by_me) + '" class="' + (post.liked_by_me ? 'is-liked' : '') + '">♥ ' + (post.liked_by_me ? 'Liked' : 'Like') + '</button><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button>' +
       (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report</button>' : '<button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete</button>') + '</div>' +
@@ -85,33 +109,113 @@
     if (!form || form.dataset.bound === 'true') return;
     form.dataset.bound = 'true';
     const status = $(form, '[data-composer-status]');
+    const imagesInput = $(form, '[name="images"]');
+    const videoInput = $(form, '[name="video"]');
+    const preview = $(form, '[data-media-preview]');
+    let previewUrls = [];
+    function clearPreview() {
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+      previewUrls = [];
+      if (preview) preview.replaceChildren();
+    }
+    function addPreviewItem(file, index, type) {
+      if (!preview) return;
+      const item = document.createElement('div');
+      item.className = 'social-media-preview__item';
+      const url = URL.createObjectURL(file);
+      previewUrls.push(url);
+      let media;
+      if (type === 'video') {
+        media = document.createElement('video');
+        media.src = url;
+        media.controls = true;
+        media.muted = true;
+        media.preload = 'metadata';
+        media.playsInline = true;
+      } else {
+        media = document.createElement('img');
+        media.src = url;
+        media.alt = 'Selected photo ' + index;
+      }
+      const caption = document.createElement('span');
+      caption.textContent = type === 'video' ? 'Video preview' : 'Photo ' + index;
+      item.append(media, caption);
+      preview.appendChild(item);
+    }
+    function refreshPreview() {
+      clearPreview();
+      const images = Array.from(imagesInput && imagesInput.files || []);
+      const video = videoInput && videoInput.files && videoInput.files[0];
+      images.slice(0, 3).forEach((file, index) => addPreviewItem(file, index + 1, 'image'));
+      if (video) addPreviewItem(video, 1, 'video');
+      if (images.length > 3 && preview) {
+        const note = document.createElement('p');
+        note.className = 'social-media-preview__note';
+        note.textContent = 'Choose no more than 3 photos. Please reselect your photos.';
+        preview.appendChild(note);
+      }
+    }
+    if (imagesInput) imagesInput.addEventListener('change', refreshPreview);
+    if (videoInput) videoInput.addEventListener('change', refreshPreview);
+
+    async function uploadMedia(file, positionLabel) {
+      status.textContent = 'Uploading ' + positionLabel + '…';
+      const response = await fetch('/api/collector/upload?kind=post', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':file.type}, body:file
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) {
+        const messages = {
+          image_storage_not_configured:'Photo/video storage is not configured for this site yet. Please contact support.',
+          login_required:'Please sign in again.',
+          image_too_large:'Each photo must be 5 MB or smaller.',
+          video_too_large:'The video must be 25 MB or smaller.',
+          unsupported_media_type:'Use JPG, PNG, WebP, or AVIF photos and MP4 or WebM videos.'
+        };
+        throw new Error(messages[result.error] || 'Upload failed for ' + positionLabel + '.');
+      }
+      return result.url;
+    }
+
     form.addEventListener('submit', async event => {
       event.preventDefault();
       const body = $(form, '[name="body"]').value.trim();
       const type = $(form, '[name="post_type"]').value;
-      const file = $(form, '[name="image"]').files && $(form, '[name="image"]').files[0];
+      const imageFiles = Array.from(imagesInput && imagesInput.files || []);
+      const videoFile = videoInput && videoInput.files && videoInput.files[0] || null;
       const button = $(form, '[type="submit"]');
-      if (!body && !file) { status.textContent = 'Write something or add a photo before posting.'; return; }
+      if (imageFiles.length > 3) { status.textContent = 'A post can include up to 3 photos.'; return; }
+      if (imageFiles.some(file => !IMAGE_TYPES.includes(file.type))) { status.textContent = 'Use JPG, PNG, WebP, or AVIF photos.'; return; }
+      if (imageFiles.some(file => file.size > MAX_IMAGE_BYTES)) { status.textContent = 'Each photo must be 5 MB or smaller.'; return; }
+      if (videoFile && !VIDEO_TYPES.includes(videoFile.type)) { status.textContent = 'Use an MP4 or WebM video.'; return; }
+      if (videoFile && videoFile.size > MAX_VIDEO_BYTES) { status.textContent = 'The video must be 25 MB or smaller.'; return; }
+      if (!body && !imageFiles.length && !videoFile) { status.textContent = 'Write something or add at least one photo or video before posting.'; return; }
       if (body.length > 2000) { status.textContent = 'Posts can be up to 2,000 characters.'; return; }
-      if (file && file.size > 5 * 1024 * 1024) { status.textContent = 'Choose an image smaller than 5 MB.'; return; }
-      if (file && !['image/jpeg','image/png','image/webp','image/avif'].includes(file.type)) { status.textContent = 'Use a JPEG, PNG, WebP, or AVIF image.'; return; }
       button.disabled = true;
-      let imageUrl = '';
+      const uploadedMedia = [];
       try {
-        if (file) {
-          status.textContent = 'Uploading photo…';
-          const uploadResponse = await fetch('/api/collector/upload?kind=post', {method:'POST',credentials:'include',headers:{'Content-Type':file.type},body:file});
-          const upload = await uploadResponse.json().catch(() => ({}));
-          if (!uploadResponse.ok || !upload.ok) throw new Error(upload.error === 'image_storage_not_configured' ? 'Photo storage is not configured for this site yet. Please contact support.' : upload.error === 'login_required' ? 'Please sign in again.' : 'Photo upload failed.');
-          imageUrl = upload.url;
+        for (let index=0; index<imageFiles.length; index++) {
+          const url = await uploadMedia(imageFiles[index], 'photo ' + (index + 1) + ' of ' + imageFiles.length);
+          uploadedMedia.push({type:'image',url});
+        }
+        if (videoFile) {
+          const url = await uploadMedia(videoFile, 'video');
+          uploadedMedia.push({type:'video',url});
         }
         status.textContent = 'Publishing post…';
-        await api('/api/collector/posts', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body,post_type:type,image_url:imageUrl})});
+        await api('/api/collector/posts', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({body,post_type:type,media:uploadedMedia})
+        });
         form.reset();
+        refreshPreview();
         status.textContent = 'Post published.';
         await loadPosts(root, state);
-      } catch (e) { status.textContent = e.message || 'Could not publish post.'; }
-      finally { button.disabled = false; }
+      } catch (e) {
+        status.textContent = e.message || 'Could not publish post.';
+      } finally { button.disabled = false; }
     });
   }
   async function initProfile(state) {

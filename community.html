@@ -74,10 +74,10 @@ body{background:transparent;color:var(--social-navy);font-family:Nunito,system-u
 <h2>Share with collectors</h2>
 <label>What’s happening in your collection?<textarea name="body" maxlength="2000" rows="3" placeholder="Share a pull, a thought, a question, or a new find…"></textarea></label>
 <div class="social-composer-row">
-<label>Post type<select name="post_type"><option value="status">Status</option><option value="pull">Card pull</option><option value="collection">Collection update</option><option value="trade">Trade interest</option><option value="question">Question</option><option value="event">Event</option><option value="restock">Restock sighting</option></select></label>
-<label>Add a photo<input name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif"></label>
+<label class="social-composer-label">Post type<select name="post_type"><option value="status">Status</option><option value="pull">Card pull</option><option value="collection">Collection update</option><option value="trade">Trade interest</option><option value="question">Question</option><option value="event">Event</option><option value="restock">Restock sighting</option></select></label>
+<div class="social-composer-media-inputs"><label>Photos (up to 3, 5 MB each)<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple></label><label>Video (1 MP4/WebM, up to 25 MB)<input name="video" type="file" accept="video/mp4,video/webm"></label></div>
 <button class="social-primary" type="submit">Post</button>
-</div><p class="social-inline-status" data-composer-status role="status" aria-live="polite"></p>
+</div><div class="social-media-preview" data-media-preview aria-live="polite"></div><p class="social-inline-status" data-composer-status role="status" aria-live="polite"></p>
 </form>
 <nav class="community-filter" aria-label="Choose feed">
 <button class="is-active" type="button" data-feed-mode="for-you" aria-pressed="true">For You</button>
@@ -89,7 +89,7 @@ body{background:transparent;color:var(--social-navy);font-family:Nunito,system-u
 <p class="social-inline-status">Please keep posts respectful. Use Report on a post to flag spam, scams, harassment, or other concerns.</p>
 </section>
 </main>
-<script src="/js/ui/collector-social.js"></script>
+<script src="/js/ui/collector-social.js?v=20261022-multi-media-posts"></script>
 <script src="/js/ui/site-nav.js"></script>
 </body>
 </html>
