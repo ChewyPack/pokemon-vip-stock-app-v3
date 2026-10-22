@@ -45,6 +45,14 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
 .chat-room-title h2{margin:0;font-size:1.13rem;font-weight:900;overflow-wrap:anywhere}
 .chat-room-title p{margin:3px 0 0;color:var(--chat-muted);font-size:.82rem;line-height:1.35}
 .chat-room-count{font-size:.8rem;color:#60749d;font-weight:900;white-space:nowrap}
+.chat-notify-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 17px;border-bottom:1px solid #e3eaf7;background:#fbfcff;font-size:.78rem;color:#53668f}
+.chat-notify-controls label{display:inline-flex;align-items:center;gap:6px;font-weight:900}
+.chat-notify-controls select{max-width:155px;min-height:32px;border:1px solid #c9d7ef;border-radius:7px;background:#fff;color:#17386c;padding:5px 7px;font:800 .78rem Nunito,system-ui,sans-serif}
+.chat-notify-controls input{accent-color:#174b9b}
+.chat-notify-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:5px 9px;border:1px solid #b9c9e6;border-radius:7px;background:#fff;color:#17386c;font:900 .76rem Nunito,system-ui,sans-serif;cursor:pointer}
+.chat-notify-toggle:disabled{opacity:.65;cursor:default}
+.chat-notify-status{flex-basis:100%;font-size:.74rem;color:#687da2;line-height:1.35}
+.chat-notify-status:empty{display:none}
 .chat-history{flex:1;min-height:350px;max-height:calc(100vh - 360px);overflow-y:auto;padding:18px 20px 12px;scroll-behavior:smooth}
 .chat-history-status{text-align:center;color:#7484a5;font-size:.86rem;padding:20px 8px}
 .chat-message{display:flex;gap:11px;padding:10px 8px;border-radius:11px;margin:0 0 3px;min-width:0}
@@ -106,6 +114,10 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
  .chat-history{min-height:330px;max-height:58vh;padding:12px 9px}
  .chat-room-head{padding:13px}
  .chat-room-count{display:none}
+ .chat-notify-controls{gap:7px;padding:10px;align-items:flex-start}
+ .chat-notify-controls label{flex-wrap:wrap}
+ .chat-notify-controls select{max-width:135px}
+ .chat-notify-status{flex-basis:100%}
  .chat-composer-wrap{padding:10px}
  .chat-message{gap:8px;padding:9px 5px}
  .chat-avatar{flex-basis:34px;width:34px;height:34px;border-radius:10px}
@@ -143,6 +155,18 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
         <div class="chat-room-title"><div class="chat-room-hash" aria-hidden="true">#</div><div><h2 id="chat-room-name">general</h2><p id="chat-room-description">Loading channel…</p></div></div>
         <div class="chat-room-count" id="chat-online-count">Community chat</div>
       </header>
+      <div class="chat-notify-controls" aria-label="Chat notification settings">
+        <label for="chat-notification-mode">Messages
+          <select id="chat-notification-mode">
+            <option value="all">All messages</option>
+            <option value="mentions">Mentions only</option>
+            <option value="muted">Muted</option>
+          </select>
+        </label>
+        <label for="chat-sound-toggle"><input id="chat-sound-toggle" type="checkbox" checked> Sound</label>
+        <button class="chat-notify-toggle" id="chat-enable-push" type="button">Enable browser notifications</button>
+        <span id="chat-notification-status" class="chat-notify-status" role="status" aria-live="polite"></span>
+      </div>
       <div id="chat-alert" class="chat-alert" hidden></div>
       <div class="chat-history" id="chat-history" role="log" aria-live="polite" aria-relevant="additions text"><div class="chat-history-status">Loading messages…</div></div>
       <div class="chat-composer-wrap">
@@ -161,7 +185,7 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-const state={account:null,channels:[],channelId:null,messages:new Map(),unread:{},socket:null,retry:1000,retryTimer:null,online:null,loading:false};
+const state={account:null,channels:[],channelId:null,messages:new Map(),unread:{},socket:null,retry:1000,retryTimer:null,online:null,loading:false,chatPrefs:{notification_mode:'mentions',sound_enabled:true},chatUsername:'',browserPushEnabled:false,vapidPublicKey:''};
 const icons={general:'✦',restocks:'⚡',market:'↗',trades:'⇄',help:'?'}; 
 function api(url,options={}){return fetch(url,{credentials:'include',cache:'no-store',...options,headers:{'content-type':'application/json',...(options.headers||{})}}).then(async r=>{let d={};try{d=await r.json()}catch{}if(r.status===401){showGate();throw new Error('login_required')}if(!r.ok)throw new Error(d.message||friendly(d.error)||'Something went wrong.');return d;});}
 function friendly(code){return ({chat_realtime_not_configured:'Real-time chat is not configured yet.',rate_limited:'Please slow down before sending another message.',message_length:'Messages must be between 1 and 1,200 characters.',channel_not_found:'That channel is not available.',chat_messages_read_failed:'Could not load messages.',chat_message_send_failed:'Could not send that message.'})[code]||code||'Something went wrong.';}
@@ -170,6 +194,70 @@ function showApp(){$('chat-gate').hidden=true;$('chat-app').hidden=false;}
 function alertBox(message){const el=$('chat-alert');el.textContent=message;el.hidden=!message;}
 function setConnection(label,status){$('chat-connection').textContent=label;$('chat-connection').dataset.state=status;}
 function currentChannel(){return state.channels.find(c=>Number(c.id)===Number(state.channelId));}
+function unreadStorageKey(){return 'ppp-chat-unread-'+String(state.account?.id||'');}
+function saveUnread(){try{if(state.account?.id)localStorage.setItem(unreadStorageKey(),JSON.stringify(state.unread));}catch(_){}updateDocumentTitle();}
+function updateDocumentTitle(){var total=Object.values(state.unread||{}).reduce((sum,value)=>sum+Number(value||0),0);document.title=(total?'('+total+') ':'')+'Community Chat | PokePrizePool';}
+function setNotificationStatus(message){$('chat-notification-status').textContent=message||'';}
+function isMentionedInMessage(message){if(!state.chatUsername)return false;var tags=String(message?.body||'').match(/@[a-zA-Z0-9_.-]{2,30}/g)||[];return tags.some(function(tag){return tag.slice(1).toLowerCase()===state.chatUsername.toLowerCase();});}
+function shouldNotifyForMessage(message){if(!message||Number(message.account_id)===Number(state.account?.id)||state.chatPrefs.notification_mode==='muted')return false;if(state.chatPrefs.notification_mode==='all')return true;return isMentionedInMessage(message);}
+function playChatSound(){try{var AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)return;var audio=new AudioContextClass();var oscillator=audio.createOscillator();var gain=audio.createGain();oscillator.type='sine';oscillator.frequency.value=740;gain.gain.value=.035;oscillator.connect(gain);gain.connect(audio.destination);oscillator.start();oscillator.stop(audio.currentTime+.085);oscillator.onended=function(){audio.close().catch(function(){});};}catch(_){}}
+async function showLocalChatNotification(message){
+ if(!shouldNotifyForMessage(message)||state.browserPushEnabled||!('Notification'in window)||Notification.permission!=='granted')return;
+ try{
+  var channel=state.channels.find(item=>Number(item.id)===Number(message.channel_id));
+  var registration=await navigator.serviceWorker.register('/service-worker.js',{scope:'/'});
+  await navigator.serviceWorker.ready;
+  registration=await navigator.serviceWorker.getRegistration()||registration;
+  await registration.showNotification('New message in #'+(channel?.slug||'chat'),{
+   body:(message.display_name||'Collector')+': '+String(message.body||'').slice(0,180),
+   icon:'/assets/pwa-icon-192.svg',tag:'chat-local-'+message.id,renotify:false,
+   data:{url:'/chat.html?channel='+encodeURIComponent(channel?.slug||'general')}
+  });
+ }catch(error){console.warn('Local chat notification could not be shown:',error);}
+}
+async function loadChatPreferences(){
+ try{
+  var data=await api('/api/chat/preferences');
+  state.chatPrefs=data.preferences||state.chatPrefs;state.chatUsername=String(data.username||'');
+  state.browserPushEnabled=!!data.browser_push_enabled;state.vapidPublicKey=String(data.vapid_public_key||'');
+  $('chat-notification-mode').value=state.chatPrefs.notification_mode||'mentions';
+  $('chat-sound-toggle').checked=state.chatPrefs.sound_enabled!==false;
+  if(state.browserPushEnabled){$('chat-enable-push').textContent='Browser push enabled';$('chat-enable-push').disabled=true;}
+  else if(('Notification'in window)&&Notification.permission==='denied'){$('chat-enable-push').textContent='Browser alerts blocked';}
+  else{$('chat-enable-push').textContent='Enable browser notifications';}
+ }catch(error){setNotificationStatus('Chat settings could not be loaded; the default is mentions only.');}
+}
+async function saveChatPreferences(){
+ var mode=$('chat-notification-mode').value;
+ var soundEnabled=$('chat-sound-toggle').checked;
+ $('chat-notification-mode').disabled=true;$('chat-sound-toggle').disabled=true;
+ try{
+  var data=await api('/api/chat/preferences',{method:'POST',body:JSON.stringify({notification_mode:mode,sound_enabled:soundEnabled})});
+  state.chatPrefs=data.preferences||{notification_mode:mode,sound_enabled:soundEnabled};
+  state.browserPushEnabled=!!data.browser_push_enabled;state.vapidPublicKey=String(data.vapid_public_key||'');
+  setNotificationStatus(mode==='all'?'You’ll be notified about every new chat message.':mode==='muted'?'Chat alerts are muted; unread channel counts will still update.':'You’ll be notified when someone mentions your username.');
+ }catch(error){setNotificationStatus(error.message||'Could not save chat notification settings.');}
+ finally{$('chat-notification-mode').disabled=false;$('chat-sound-toggle').disabled=false;}
+}
+function base64UrlBytes(value){var normalized=String(value||'').replace(/-/g,'+').replace(/_/g,'/');while(normalized.length%4)normalized+='=';var binary=atob(normalized);var bytes=new Uint8Array(binary.length);for(var i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;}
+async function enableBrowserChatNotifications(){
+ var button=$('chat-enable-push');button.disabled=true;setNotificationStatus('Setting up browser notifications…');
+ try{
+  if(!('Notification'in window)||!('serviceWorker'in navigator)||!('PushManager'in window))throw new Error('This browser does not support push notifications. You can still use chat while the page is open.');
+  var permission=Notification.permission;
+  if(permission==='default')permission=await Notification.requestPermission();
+  if(permission!=='granted')throw new Error('Allow notifications for pokeprizepool.com in your browser settings, then try again.');
+  var settings=await api('/api/chat/preferences');state.vapidPublicKey=String(settings.vapid_public_key||'');
+  if(!state.vapidPublicKey)throw new Error('Push delivery is not configured on this environment yet. In-chat channel badges will still work.');
+  await navigator.serviceWorker.register('/service-worker.js',{scope:'/'});
+  var registration=await navigator.serviceWorker.ready;
+  var subscription=await registration.pushManager.getSubscription();
+  if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:base64UrlBytes(state.vapidPublicKey)});
+  await api('/api/notifications',{method:'POST',body:JSON.stringify({action:'subscribe',subscription:subscription.toJSON()})});
+  state.browserPushEnabled=true;button.textContent='Browser push enabled';setNotificationStatus('Browser notifications are enabled on this device. Mentions and messages follow your chat preference.');
+ }catch(error){setNotificationStatus(error.message||'Could not enable browser notifications.');}
+ finally{button.disabled=state.browserPushEnabled;}
+}
 function renderChannels(){
  const root=$('chat-channels');root.replaceChildren();
  state.channels.forEach(c=>{
@@ -225,7 +313,7 @@ function renderMessage(m){
 }
 function renderMessages(messages){const root=$('chat-history');root.replaceChildren();if(!messages.length){const empty=document.createElement('div');empty.className='chat-history-status';empty.textContent='No messages yet. Be the first to say hello!';root.appendChild(empty);return;}messages.forEach(renderMessage);root.scrollTop=root.scrollHeight;}
 async function selectChannel(id){
- state.channelId=id;state.unread[id]=0;renderChannels();const c=currentChannel();if(!c)return;
+ state.channelId=id;state.unread[id]=0;saveUnread();renderChannels();const c=currentChannel();if(!c)return;
  $('chat-room-name').textContent=c.name;$('chat-room-description').textContent=c.description||'Community conversation';$('chat-input').placeholder='Message #'+c.slug;$('chat-history').innerHTML='<div class="chat-history-status">Loading messages…</div>';alertBox('');
  try{const d=await api('/api/chat/messages?channel='+encodeURIComponent(id));state.messages.set(id,d.messages||[]);renderMessages(d.messages||[]);if(d.realtime_ready===false)alertBox('Messages can be read, but live delivery is not configured. Ask the site administrator to finish the real-time chat setup.');}
  catch(e){$('chat-history').innerHTML='';const msg=document.createElement('div');msg.className='chat-history-status';msg.textContent=e.message;$('chat-history').appendChild(msg);if(e.message.includes('not configured'))alertBox(e.message);}
@@ -234,10 +322,12 @@ function receive(event){
  if(event.type==='connected'){state.retry=1000;setConnection('Live · connected','connected');alertBox('');return;}
  if(event.type==='pong')return;
  if(event.type==='presence'){state.online=Number(event.online||0);$('chat-online-count').textContent=state.online+' online';return;}
- if(event.type==='message'&&event.message){const m=event.message;const arr=state.messages.get(Number(m.channel_id))||[];if(!arr.some(x=>Number(x.id)===Number(m.id))){arr.push(m);state.messages.set(Number(m.channel_id),arr.slice(-100));}
-  if(Number(m.channel_id)===Number(state.channelId)){renderMessage(m);const root=$('chat-history');root.scrollTop=root.scrollHeight;}
-  else if(Number(m.account_id)!==Number(state.account?.id)){state.unread[m.channel_id]=Number(state.unread[m.channel_id]||0)+1;renderChannels();}
- }
+ if(event.type==='message'&&event.message){const m=event.message;const arr=state.messages.get(Number(m.channel_id))||[];if(!arr.some(x=>Number(x.id)===Number(m.id))){arr.push(m);state.messages.set(Number(m.channel_id),arr.slice(-100));
+  const notify=shouldNotifyForMessage(m);const channelIsOpen=Number(m.channel_id)===Number(state.channelId);
+  if(notify){if(state.chatPrefs.sound_enabled&&(!channelIsOpen||document.visibilityState==='hidden'))playChatSound();if(document.visibilityState==='hidden')showLocalChatNotification(m);}
+  if(channelIsOpen){renderMessage(m);const root=$('chat-history');root.scrollTop=root.scrollHeight;}
+  else if(Number(m.account_id)!==Number(state.account?.id)){state.unread[m.channel_id]=Number(state.unread[m.channel_id]||0)+1;saveUnread();renderChannels();}
+ }}
  if(event.type==='reaction'){
   const id=Number(event.id),channelId=Number(event.channel_id),arr=state.messages.get(channelId)||[],message=arr.find(item=>Number(item.id)===id);
   if(message){
@@ -315,10 +405,23 @@ function chooseMention(username){
 }
 function updateCount(){$('chat-char-count').textContent=$('chat-input').value.length.toLocaleString()+' / 1,200';}
 async function start(){
- try{const d=await api('/api/chat/channels');state.account=d.account;state.channels=d.channels||[];if(!state.channels.length)throw new Error('No chat channels are available yet. The site administrator needs to finish chat setup.');showApp();state.channelId=Number(state.channels[0].id);renderChannels();await selectChannel(state.channelId);if(reactionRefreshTimer)window.clearInterval(reactionRefreshTimer);reactionRefreshTimer=window.setInterval(refreshCurrentChannelReactions,7000);connect();}
- catch(e){if(e.message==='login_required')return;showGate('Community Chat is almost ready',e.message);$('chat-gate-copy').textContent=e.message;}
+ try{
+  const d=await api('/api/chat/channels');state.account=d.account;state.channels=d.channels||[];
+  if(!state.channels.length)throw new Error('No chat channels are available yet. The site administrator needs to finish chat setup.');
+  try{state.unread=JSON.parse(localStorage.getItem(unreadStorageKey())||'{}')||{};}catch(_){state.unread={};}
+  showApp();await loadChatPreferences();
+  const requestedChannel=new URLSearchParams(location.search).get('channel');
+  const initial=state.channels.find(channel=>channel.slug===requestedChannel)||state.channels[0];
+  state.channelId=Number(initial.id);renderChannels();await selectChannel(state.channelId);
+  if(reactionRefreshTimer)window.clearInterval(reactionRefreshTimer);reactionRefreshTimer=window.setInterval(refreshCurrentChannelReactions,7000);connect();
+ }catch(e){if(e.message==='login_required')return;showGate('Community Chat is almost ready',e.message);$('chat-gate-copy').textContent=e.message;}
 }
-$('chat-form').addEventListener('submit',sendMessage);$('chat-input').addEventListener('input',()=>{updateCount();updateMentionSuggestions();});$('chat-input').addEventListener('keydown',e=>{if(! $('chat-mention-suggestions').hidden && mentionResults.length && (e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();mentionIndex=(mentionIndex+(e.key==='ArrowDown'?1:mentionResults.length-1))%mentionResults.length;const buttons=$('chat-mention-suggestions').querySelectorAll('button');buttons.forEach((button,index)=>button.setAttribute('aria-selected',String(index===mentionIndex)));return;}if(! $('chat-mention-suggestions').hidden && e.key==='Enter'&&!e.shiftKey){e.preventDefault();chooseMention(mentionResults[mentionIndex].username);return;}if(e.key==='Escape')hideMentionSuggestions();if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chat-form').requestSubmit();}});$('chat-input').addEventListener('blur',()=>setTimeout(hideMentionSuggestions,160));
+$('chat-form').addEventListener('submit',sendMessage);
+$('chat-notification-mode').addEventListener('change',saveChatPreferences);
+$('chat-sound-toggle').addEventListener('change',saveChatPreferences);
+$('chat-enable-push').addEventListener('click',enableBrowserChatNotifications);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){updateDocumentTitle();if(state.channelId){state.unread[state.channelId]=0;saveUnread();renderChannels();}}});
+$('chat-input').addEventListener('input',()=>{updateCount();updateMentionSuggestions();});$('chat-input').addEventListener('keydown',e=>{if(! $('chat-mention-suggestions').hidden && mentionResults.length && (e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();mentionIndex=(mentionIndex+(e.key==='ArrowDown'?1:mentionResults.length-1))%mentionResults.length;const buttons=$('chat-mention-suggestions').querySelectorAll('button');buttons.forEach((button,index)=>button.setAttribute('aria-selected',String(index===mentionIndex)));return;}if(! $('chat-mention-suggestions').hidden && e.key==='Enter'&&!e.shiftKey){e.preventDefault();chooseMention(mentionResults[mentionIndex].username);return;}if(e.key==='Escape')hideMentionSuggestions();if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chat-form').requestSubmit();}});$('chat-input').addEventListener('blur',()=>setTimeout(hideMentionSuggestions,160));
 window.addEventListener('beforeunload',()=>{if(state.retryTimer)clearTimeout(state.retryTimer);if(reactionRefreshTimer)window.clearInterval(reactionRefreshTimer);if(state.socket)state.socket.close();});
 start();
 })();
