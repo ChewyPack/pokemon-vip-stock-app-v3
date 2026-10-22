@@ -5,14 +5,10 @@ function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).r
 async function sha256(value){return b64(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));}
 function clean(value,max=500){return String(value??'').trim().slice(0,max);}
 function validUrl(value){if(!value)return true;try{return new URL(value).protocol==='https:';}catch{return false;}}
-const SHOP_TIERS=new Set(['collector_plus','vendor','vendor_plus','organizer','organizer_plus','event_organizer','event_organizer_plus','vip','lifetime','lifetime_vip']);
-function normalizeTier(value){return String(value||'').trim().toLowerCase().replace(/\+/g,'_plus').replace(/[\s-]+/g,'_');}
 async function vendorAccount(request,env){
  const token=getCookie(request,COOKIE);if(!token)return {error:json({ok:false,error:'login_required'},401)};
- const account=await env.DB.prepare('SELECT id,session_expires_at,is_admin,membership_tier,membership_entitlement_tier,membership_status FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();
+ const account=await env.DB.prepare('SELECT id,session_expires_at,is_admin FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();
  if(!account||!account.session_expires_at||Number(account.session_expires_at)<=Date.now())return {error:json({ok:false,error:'login_required'},401)};
- const allowed=Number(account.is_admin)===1||(['active','trialing'].includes(String(account.membership_status||'').toLowerCase())&&[account.membership_entitlement_tier,account.membership_tier].some(tier=>SHOP_TIERS.has(normalizeTier(tier))));
- if(!allowed)return {error:json({ok:false,error:'shop_membership_required'},403)};
  return {account};
 }
 async function getData(account,env){
