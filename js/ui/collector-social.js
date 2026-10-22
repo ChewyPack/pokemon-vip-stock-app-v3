@@ -11,12 +11,12 @@
     if (!response.ok || !data.ok) {
       const messages = {
         login_required:'Please sign in to do that.',
-        collector_social_migration_required:'The Community Feed database setup has not been applied to the staging database yet.',
+        collector_social_migration_required:'The Community Feed database tables are unavailable. Please contact support.',
         post_content_required:'Write something or add a photo before posting.',
         post_too_long:'Posts can be up to 2,000 characters.',
         invalid_image_url:'Please choose a photo using the upload control.',
         already_reported:'You already reported this post.',
-        follow_migration_required:'The staging follow setup is not applied yet.'
+        follow_migration_required:'The collector follow database setup is incomplete. Please contact support.'
       };
       throw new Error(messages[data.error] || data.message || data.error || 'The request could not be completed.');
     }
@@ -76,7 +76,7 @@
       status.textContent = posts.length ? posts.length + (posts.length === 1 ? ' post' : ' posts') : '';
     } catch (e) {
       status.textContent = e.message;
-      if (String(e.message).includes('database setup')) list.innerHTML = '<div class="social-empty-state"><strong>Community Feed setup needed</strong><span>Apply migrations/staging_collector_social_feed.sql to pokemon-vip-members-staging before testing this feature.</span></div>';
+      if (String(e.message).includes('database setup')) list.innerHTML = '<div class="social-empty-state"><strong>Community Feed setup needed</strong><span>The Community Feed database tables are unavailable. Please contact support before using the feed.</span></div>';
     }
     state.loaded = true;
   }
@@ -102,7 +102,7 @@
           status.textContent = 'Uploading photo…';
           const uploadResponse = await fetch('/api/collector/upload?kind=post', {method:'POST',credentials:'include',headers:{'Content-Type':file.type},body:file});
           const upload = await uploadResponse.json().catch(() => ({}));
-          if (!uploadResponse.ok || !upload.ok) throw new Error(upload.error === 'image_storage_not_configured' ? 'Photo storage is not configured for this staging deployment.' : upload.error === 'login_required' ? 'Please sign in again.' : 'Photo upload failed.');
+          if (!uploadResponse.ok || !upload.ok) throw new Error(upload.error === 'image_storage_not_configured' ? 'Photo storage is not configured for this site yet. Please contact support.' : upload.error === 'login_required' ? 'Please sign in again.' : 'Photo upload failed.');
           imageUrl = upload.url;
         }
         status.textContent = 'Publishing post…';
