@@ -10,7 +10,7 @@ export async function ensureCollectorPostViews(db) {
         PRIMARY KEY (post_id, viewer_key_hash)
       )`).run();
       await db.prepare('CREATE INDEX IF NOT EXISTS idx_collector_post_views_post ON collector_post_views(post_id, viewed_at DESC)').run();
-      await db.prepare('CREATE INDEX IF NOT EXISTS idx_collector_post_views_creator ON collector_post_views(viewer_account_id, viewed_at DESC)').run();
+      await db.prepare('CREATE INDEX IF NOT EXISTS idx_collector_post_views_viewer ON collector_post_views(viewer_account_id, viewed_at DESC)').run();
     })().catch(error => { tableReady = null; throw error; });
   }
   await tableReady;
