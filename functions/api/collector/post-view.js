@@ -33,7 +33,7 @@ export async function onRequestPost({request,env}){
    counted=Number(inserted.meta?.changes||0)>0;
   }
   const count=await env.DB.prepare('SELECT COUNT(*) AS count FROM collector_post_views WHERE post_id=?').bind(postId).first();
-  return json({ok:true,counted,view_count:Number(count?.count||0)});
+  return json({ok:true,counted,view_count:viewer&&Number(viewer.id)===Number(post.account_id)?Number(count?.count||0):null});
  }catch(error){
   console.error('Post view tracking failed:',error);
   return json({ok:false,error:'post_view_tracking_failed'},500);
