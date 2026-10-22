@@ -5,12 +5,14 @@ function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).r
 async function sha256(value){return b64(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));}
 function clean(value,max=500){return String(value??'').trim().slice(0,max);}
 function validUrl(value){if(!value)return true;try{return new URL(value).protocol==='https:';}catch{return false;}}
+const SHOP_TIERS=new Set(['collector_plus','vendor','vendor_plus','organizer','organizer_plus','event_organizer','event_organizer_plus','vip','lifetime','lifetime_vip']);
+function normalizeTier(value){return String(value||'').trim().toLowerCase().replace(/\+/g,'_plus').replace(/[\s-]+/g,'_');}
 async function vendorAccount(request,env){
  const token=getCookie(request,COOKIE);if(!token)return {error:json({ok:false,error:'login_required'},401)};
  const account=await env.DB.prepare('SELECT id,session_expires_at,is_admin,membership_tier,membership_entitlement_tier,membership_status FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();
  if(!account||!account.session_expires_at||Number(account.session_expires_at)<=Date.now())return {error:json({ok:false,error:'login_required'},401)};
- const tier=account.membership_entitlement_tier||account.membership_tier||'free';
- if(Number(account.is_admin)!==1&&(account.membership_status!=='active'||(tier!=='vendor'&&account.membership_tier!=='vendor')))return {error:json({ok:false,error:'vendor_membership_required'},403)};
+ const allowed=Number(account.is_admin)===1||(['active','trialing'].includes(String(account.membership_status||'').toLowerCase())&&[account.membership_entitlement_tier,account.membership_tier].some(tier=>SHOP_TIERS.has(normalizeTier(tier))));
+ if(!allowed)return {error:json({ok:false,error:'shop_membership_required'},403)};
  return {account};
 }
 async function getData(account,env){
@@ -19,7 +21,7 @@ async function getData(account,env){
  const inventory=await env.DB.prepare('SELECT i.id,i.event_id,i.item_name,i.category,i.quantity_hint,i.notes,i.price_cents,i.condition_label,i.image_key,i.is_for_sale,i.listing_status,i.created_at,i.updated_at,e.event_name FROM vendor_inventory i LEFT JOIN vendor_events e ON e.id=i.event_id AND e.account_id=i.account_id WHERE i.account_id=? ORDER BY i.created_at DESC').bind(account.id).all();
  return json({ok:true,shop:shop||{shop_name:'',logo_url:'',cover_url:'',logo_key:'',cover_key:'',bio:'',website_url:'',social_links:''},events:events.results||[],inventory:inventory.results||[]});
 }
-export async function onRequestGet({request,env}){try{const auth=await vendorAccount(request,env);if(auth.error)return auth.error;return await getData(auth.account,env);}catch(error){console.error('Vendor tools load failed',error);return json({ok:false,error:'vendor_tools_unavailable'},500);}}
+export async function onRequestGet({request,env}){try{const auth=await vendorAccount(request,env);if(auth.error)return auth.error;return await getData(auth.account,env);}catch(error){console.error('Shop manager load failed',error);return json({ok:false,error:'vendor_tools_unavailable'},500);}}
 export async function onRequestPost({request,env}){
  try{
   const auth=await vendorAccount(request,env);if(auth.error)return auth.error;
@@ -48,6 +50,6 @@ export async function onRequestPost({request,env}){
    const r=await env.DB.prepare('DELETE FROM vendor_inventory WHERE id=? AND account_id=?').bind(id,a.id).run();if(!r.meta?.changes)return json({ok:false,error:'item_not_found'},404);
   }else return json({ok:false,error:'unknown_action'},400);
   return await getData(a,env);
- }catch(error){console.error('Vendor tools save failed',error);return json({ok:false,error:'vendor_tools_unavailable'},500);}
+ }catch(error){console.error('Shop manager save failed',error);return json({ok:false,error:'vendor_tools_unavailable'},500);}
 }
 export async function onRequest(){return json({ok:false,error:'method_not_allowed'},405);}
