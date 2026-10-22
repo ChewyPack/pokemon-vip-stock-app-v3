@@ -73,10 +73,11 @@
 
       var data = await response.json();
       var membership = data && data.membership ? data.membership : {};
+      var isAdmin = Boolean(data && data.account && data.account.is_admin);
       var tier = String(membership.entitlement_tier || membership.tier || '').toLowerCase();
       var paidTier = ['collector_plus', 'vendor', 'organizer'].indexOf(tier) !== -1;
-      var active = data && data.ok && data.authenticated &&
-        membership.status === 'active' && paidTier;
+      var active = isAdmin || (data && data.ok && data.authenticated &&
+        membership.status === 'active' && paidTier);
 
       if (!active) {
         renderReportAccessRequired(
