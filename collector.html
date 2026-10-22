@@ -91,9 +91,6 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-wishlist-dashboard{margin:16px 0}.cp-wishlist-dashboard .cp-match-header{margin-bottom:12px}.cp-wishlist-dashboard .cp-match-header h2{margin:0}.cp-wishlist-dashboard .cp-match-header .cp-status{margin:0}.cp-match-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}.cp-match-card{display:grid;grid-template-columns:82px minmax(0,1fr);gap:12px;align-items:center;padding:12px}.cp-match-image{width:82px;height:104px;display:grid;place-items:center;background:#eef3fc;border-radius:8px;overflow:hidden;color:var(--muted);font-size:.8rem;text-align:center}.cp-match-image img{width:100%;height:100%;object-fit:contain}.cp-match-details{min-width:0}.cp-match-details h3{margin:0 0 5px}.cp-match-details p{margin:3px 0}.cp-match-contact{display:inline-flex;margin-top:8px;align-items:center;justify-content:center;padding:7px 11px;border-radius:8px;background:var(--blue);color:#fff!important;text-decoration:none;font-weight:700;font-size:.86rem}.cp-match-contact:hover{background:#174b9b}@media(max-width:520px){.cp-match-grid{grid-template-columns:1fr}.cp-match-card{grid-template-columns:72px minmax(0,1fr)}.cp-match-image{width:72px;height:94px}}
 .cp-layout.cp-public-layout{grid-template-columns:minmax(0,1fr)}.cp-layout.cp-public-layout>section{grid-column:1/-1;min-width:0}.cp-layout.cp-public-layout .cp-items{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:820px){.cp-layout.cp-public-layout .cp-items{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.cp-layout.cp-public-layout .cp-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
-  <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
 <div id="site-navigation"></div>
@@ -486,7 +483,7 @@ async function searchCollectors(query){
     own=true;profile=d.profile;items=d.items||[];document.querySelector('.cp-layout').classList.remove('cp-public-layout');$('make-offer-button').hidden=true;$('collector-signin').hidden=true;$('collector-logout').hidden=false;showProfile(profile,d.account?.display_name);await loadFollowState(profile.username)
     if(!profile){$('handle').textContent='Profile not published yet';}
    }
-   stats();if(location.hash==='#shop')activeList='shop';render();if(own)await loadWishlistMatchDashboard();if(activeList==='shop')loadShopTab();
+   stats();render();if(own)await loadWishlistMatchDashboard();
   }catch(e){setStatus('view-status',e.message||'Could not load the profile.');$('items').innerHTML='<div class="cp-empty">'+safe(e.message||'Could not load the profile.')+'</div>';}
  }
  function openBioEditor(){if(!own)return;$('bio-input').value=profile?.bio||'';$('bio-editor').hidden=false;$('bio-input').focus();}
@@ -524,139 +521,7 @@ async function searchCollectors(query){
    }catch(error){setStatus('owner-status',error.message||'Could not save item.');}finally{button.disabled=false;}
   });
   async function removeItem(id){if(!confirm('Remove this item from your list?'))return;try{const r=await fetch('/api/collector/items?id='+encodeURIComponent(id),{method:'DELETE',credentials:'include'}),d=await r.json();if(!r.ok||!d.ok)throw new Error('Could not remove item.');items=items.filter(x=>String(x.id)!==String(id));stats();render();setStatus('owner-status','Item removed.');}catch(e){setStatus('owner-status',e.message||'Could not remove item.');}}
- let shopTabRequest=0,shopState={shop:{},events:[],inventory:[]};
-  function profileShopApi(payload){
-   return fetch('/api/vendor',{method:payload?'POST':'GET',credentials:'include',cache:'no-store',headers:payload?{'Content-Type':'application/json'}:undefined,body:payload?JSON.stringify(payload):undefined})
-    .then(async response=>{const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok){const labels={login_required:'Please sign in again to manage your shop.',shop_membership_required:'An active Collector+ membership or higher is required to manage a shop.',shop_name_required:'Enter a shop name.',https_urls_only:'Website and social links must use HTTPS.',item_name_required:'Enter an item name.'};throw new Error(labels[data.error]||data.message||data.error||'The shop request failed.');}return data;});
-  }
-  function setShopMessage(message){setStatus('shop-tab-status',message);}
-  function fillShopForm(form,data){Object.keys(data||{}).forEach(key=>{if(form.elements[key])form.elements[key].value=data[key]??'';});}
-  function resetShopListingForm(){
-   const form=$('profile-listing-form');form.reset();form.elements.id.value='';form.elements.image_key.value='';form.elements.is_for_sale.checked=true;
-   $('profile-listing-save').textContent='Add listing';$('profile-listing-cancel').hidden=true;
-  }
-  function renderOwnerShop(data){
-   shopState=data;$('shop-upgrade-panel').hidden=true;$('shop-public-view').hidden=true;$('shop-owner-editor').hidden=false;
-   fillShopForm($('profile-shop-form'),data.shop||{});
-   const inventory=data.inventory||[];
-   $('profile-shop-listings').innerHTML=inventory.length?inventory.map(item=>'<article class="cp-shop-listing">'+(item.image_key?'<img loading="lazy" alt="'+safe(item.item_name)+'" src="/api/vendor/image?key='+encodeURIComponent(item.image_key)+'">':'')+'<h4>'+safe(item.item_name)+'</h4><p>'+safe(item.category||'Other')+(item.condition_label?' · '+safe(item.condition_label):'')+'</p><p>'+(item.price_cents===null||item.price_cents===undefined?'Contact for price':'
- $('search').addEventListener('input',render);$('type-filter').addEventListener('change',render);
- 
- $('copy-profile').addEventListener('click',async()=>{if(!profile?.username){setStatus('owner-status','Save a username first to create your public profile link.');return;}const url=location.origin+'/collector.html?user='+encodeURIComponent(profile.username);try{await navigator.clipboard.writeText(url);setStatus('owner-status','Profile link copied! '+url);}catch{setStatus('owner-status','Your profile link: '+url);}});
- $('make-offer-button').addEventListener('click',openMakeOffer);
- $('offer-type-cash').addEventListener('click',()=>setOfferMode('cash'));$('offer-type-trade').addEventListener('click',()=>setOfferMode('trade'));
- $('make-offer-close').addEventListener('click',()=>$('make-offer-modal').hidden=true);$('make-offer-cancel').addEventListener('click',()=>$('make-offer-modal').hidden=true);
- $('make-offer-modal').addEventListener('click',event=>{if(event.target===$('make-offer-modal'))$('make-offer-modal').hidden=true;});
- $('make-offer-form').addEventListener('submit',submitOffer);
- 
- 
- load();
-})();
-</script>
-<script src="/js/ui/site-nav.js"></script>
-</body></html>
-+(Number(item.price_cents)/100).toFixed(2))+(item.quantity_hint?' · '+safe(item.quantity_hint):'')+'</p><p>'+safe(item.notes||'')+'</p><p>'+(Number(item.is_for_sale)===1?'Published to marketplace':'Hidden from marketplace')+'</p><div class="cp-shop-listing-actions"><button class="cp-btn secondary" type="button" data-edit-shop-listing="'+Number(item.id)+'">Edit</button><button class="cp-btn danger" type="button" data-remove-shop-listing="'+Number(item.id)+'">Delete</button></div></article>').join(''):'<div class="cp-empty">No listings yet. Add your first item above.</div>';
-   $('profile-shop-listings').querySelectorAll('[data-edit-shop-listing]').forEach(button=>button.addEventListener('click',()=>startEditShopListing(button.dataset.editShopListing)));
-   $('profile-shop-listings').querySelectorAll('[data-remove-shop-listing]').forEach(button=>button.addEventListener('click',()=>removeShopListing(button.dataset.removeShopListing)));
-   setShopMessage(data.shop?.shop_name?'Your shop is ready to manage.':'Complete the shop profile form below to publish your shop.');
-  }
-  function renderPublicShop(data){
-   $('shop-owner-editor').hidden=true;$('shop-upgrade-panel').hidden=true;$('shop-public-view').hidden=false;
-   const shop=data.shop;
-   if(!shop||!shop.shop_name){
-    $('shop-public-profile').innerHTML='<div class="cp-empty">This collector has not opened a public shop yet, or their shop is not currently eligible to appear.</div>';
-    $('shop-public-items').innerHTML='';setShopMessage('No public shop is available for this collector yet.');return;
-   }
-   const logo=shop.logo_key?'/api/vendor/image?key='+encodeURIComponent(shop.logo_key):(shop.logo_url&&/^https:\/\//i.test(shop.logo_url)?shop.logo_url:'');
-   const links=[];
-   if(shop.website_url&&/^https:\/\//i.test(shop.website_url))links.push('<a href="'+safe(shop.website_url)+'" target="_blank" rel="noopener noreferrer">Website</a>');
-   if(shop.social_links&&/^https:\/\//i.test(shop.social_links))links.push('<a href="'+safe(shop.social_links)+'" target="_blank" rel="noopener noreferrer">Social profile</a>');
-   $('shop-public-profile').innerHTML='<div class="cp-shop-public-profile">'+(logo?'<img src="'+safe(logo)+'" alt="Shop logo">':'')+'<div><h3>'+safe(shop.shop_name)+'</h3><p class="cp-shop-muted">'+safe(shop.bio||'')+'</p>'+(links.length?'<p>'+links.join(' · ')+'</p>':'')+'</div></div>';
-   const list=data.items||[];
-   $('shop-public-items').innerHTML=list.length?list.map(item=>'<article class="cp-shop-listing">'+(item.image_url?'<img loading="lazy" alt="'+safe(item.item_name)+'" src="'+safe(item.image_url)+'">':'')+'<h4>'+safe(item.item_name)+'</h4><p>'+safe(item.category||'Other')+(item.condition_label?' · '+safe(item.condition_label):'')+'</p><p>'+(item.price_cents===null||item.price_cents===undefined?'Contact for price':'
- $('search').addEventListener('input',render);$('type-filter').addEventListener('change',render);
- 
- $('copy-profile').addEventListener('click',async()=>{if(!profile?.username){setStatus('owner-status','Save a username first to create your public profile link.');return;}const url=location.origin+'/collector.html?user='+encodeURIComponent(profile.username);try{await navigator.clipboard.writeText(url);setStatus('owner-status','Profile link copied! '+url);}catch{setStatus('owner-status','Your profile link: '+url);}});
- $('make-offer-button').addEventListener('click',openMakeOffer);
- $('offer-type-cash').addEventListener('click',()=>setOfferMode('cash'));$('offer-type-trade').addEventListener('click',()=>setOfferMode('trade'));
- $('make-offer-close').addEventListener('click',()=>$('make-offer-modal').hidden=true);$('make-offer-cancel').addEventListener('click',()=>$('make-offer-modal').hidden=true);
- $('make-offer-modal').addEventListener('click',event=>{if(event.target===$('make-offer-modal'))$('make-offer-modal').hidden=true;});
- $('make-offer-form').addEventListener('submit',submitOffer);
- 
- 
- load();
-})();
-</script>
-<script src="/js/ui/site-nav.js"></script>
-</body></html>
-+(Number(item.price_cents)/100).toFixed(2))+(item.quantity_hint?' · '+safe(item.quantity_hint):'')+'</p>'+(item.notes?'<p>'+safe(item.notes)+'</p>':'')+'</article>').join(''):'<div class="cp-empty">This shop has no items currently listed for sale.</div>';
-   setShopMessage(list.length?list.length+' marketplace listing'+(list.length===1?'':'s')+'.':'Shop profile is available; no active listings yet.');
-  }
-  async function loadShopTab(){
-   const requestId=++shopTabRequest;$('shop-upgrade-panel').hidden=true;$('shop-owner-editor').hidden=true;$('shop-public-view').hidden=true;setShopMessage('Loading shop…');
-   try{
-    if(own){
-     const response=await fetch('/api/vendor',{credentials:'include',cache:'no-store'}),data=await response.json().catch(()=>({}));
-     if(requestId!==shopTabRequest)return;
-     if(response.status===403&&data.error==='shop_membership_required'){$('shop-upgrade-panel').hidden=false;setShopMessage('');return;}
-     if(!response.ok||!data.ok)throw new Error(data.error==='login_required'?'Please sign in again to manage your shop.':data.message||data.error||'Your shop could not be loaded.');
-     renderOwnerShop(data);
-    }else{
-     const username=profile?.username||viewUsername;if(!username)throw new Error('This collector profile does not have a username yet.');
-     const response=await fetch('/api/vendor/shop?user='+encodeURIComponent(username),{credentials:'include',cache:'no-store'}),data=await response.json().catch(()=>({}));
-     if(requestId!==shopTabRequest)return;
-     if(!response.ok||!data.ok)throw new Error(data.message||data.error||'This shop could not be loaded.');
-     renderPublicShop(data);
-    }
-   }catch(error){if(requestId===shopTabRequest)setShopMessage(error.message||'The shop could not be loaded.');}
-  }
-  async function uploadShopPhoto(file,keyInput,statusId){
-   if(!file)return;if(file.size>5*1024*1024){setStatus(statusId,'Choose an image no larger than 5 MB.');return;}
-   setStatus(statusId,'Uploading photo…');
-   try{const response=await fetch('/api/vendor/upload',{method:'POST',credentials:'include',headers:{'Content-Type':file.type},body:file}),data=await response.json().catch(()=>({}));
-    if(!response.ok||!data.ok)throw new Error(data.error==='image_storage_not_configured'?'Photo storage is not configured for this deployment.':data.error==='shop_membership_required'?'An active Collector+ membership or higher is required.':'Photo upload failed.');
-    keyInput.value=data.key;setStatus(statusId,'Photo uploaded. Save to apply it.');
-   }catch(error){setStatus(statusId,error.message);}
-  }
-  $('profile-shop-form').elements.logo_file.addEventListener('change',event=>uploadShopPhoto(event.target.files?.[0],$('profile-shop-form').elements.logo_key,'profile-shop-status'));
-  $('profile-shop-form').elements.cover_file.addEventListener('change',event=>uploadShopPhoto(event.target.files?.[0],$('profile-shop-form').elements.cover_key,'profile-shop-status'));
-  $('profile-shop-form').addEventListener('submit',async event=>{
-   event.preventDefault();const button=$('profile-shop-save');button.disabled=true;setStatus('profile-shop-status','Saving shop profile…');
-   const form=$('profile-shop-form'),data={action:'save_profile'};
-   ['shop_name','logo_url','cover_url','logo_key','cover_key','bio','website_url','social_links'].forEach(key=>data[key]=form.elements[key].value);
-   try{const result=await profileShopApi(data);renderOwnerShop(result);setStatus('profile-shop-status','Shop profile saved.');}
-   catch(error){setStatus('profile-shop-status',error.message);}finally{button.disabled=false;}
-  });
-  function startEditShopListing(id){
-   const item=(shopState.inventory||[]).find(x=>Number(x.id)===Number(id));if(!item)return;
-   const form=$('profile-listing-form');fillShopForm(form,item);form.elements.price.value=item.price_cents===null||item.price_cents===undefined?'':(Number(item.price_cents)/100).toFixed(2);
-   form.elements.is_for_sale.checked=Number(item.is_for_sale)===1;form.elements.image_key.value=item.image_key||'';
-   $('profile-listing-save').textContent='Save listing';$('profile-listing-cancel').hidden=false;setStatus('profile-listing-status','Editing '+item.item_name+'. Update the fields and save.');
-   form.scrollIntoView({behavior:'smooth',block:'start'});
-  }
-  $('profile-listing-form').elements.item_file.addEventListener('change',async event=>{
-   const file=event.target.files?.[0];if(!file)return;await uploadShopPhoto(file,$('profile-listing-form').elements.image_key,'profile-listing-status');
-  });
-  $('profile-listing-form').addEventListener('submit',async event=>{
-   event.preventDefault();const form=$('profile-listing-form'),button=$('profile-listing-save');button.disabled=true;setStatus('profile-listing-status','Saving listing…');
-   const data={action:'save_item',id:form.elements.id.value,item_name:form.elements.item_name.value,category:form.elements.category.value,price:form.elements.price.value,condition_label:form.elements.condition_label.value,quantity_hint:form.elements.quantity_hint.value,image_key:form.elements.image_key.value,notes:form.elements.notes.value,is_for_sale:form.elements.is_for_sale.checked};
-   try{const result=await profileShopApi(data);resetShopListingForm();renderOwnerShop(result);setStatus('profile-listing-status','Listing saved.');}
-   catch(error){setStatus('profile-listing-status',error.message);}finally{button.disabled=false;}
-  });
-  $('profile-listing-cancel').addEventListener('click',()=>{resetShopListingForm();setStatus('profile-listing-status','Edit cancelled.');});
-  async function removeShopListing(id){
-   if(!confirm('Delete this shop listing?'))return;
-   try{const result=await profileShopApi({action:'delete_item',id:Number(id)});renderOwnerShop(result);setStatus('profile-listing-status','Listing deleted.');}
-   catch(error){setStatus('profile-listing-status',error.message);}
-  }
-  document.querySelectorAll('[data-list]').forEach(button=>button.addEventListener('click',()=>{
-   activeList=button.dataset.list;
-   if(activeList==='shop')history.replaceState(null,'',location.pathname+location.search+'#shop');
-   else history.replaceState(null,'',location.pathname+location.search);
-   render();if(activeList==='shop')loadShopTab();
-  }));
-  window.addEventListener('hashchange',()=>{if(location.hash==='#shop'&&activeList!=='shop'){activeList='shop';render();loadShopTab();}});
-
+ document.querySelectorAll('[data-list]').forEach(b=>b.addEventListener('click',()=>{activeList=b.dataset.list;document.querySelectorAll('[data-list]').forEach(x=>{x.setAttribute('aria-pressed',String(x===b));x.classList.toggle('secondary',x!==b);});render();}));
  $('search').addEventListener('input',render);$('type-filter').addEventListener('change',render);
  
  $('copy-profile').addEventListener('click',async()=>{if(!profile?.username){setStatus('owner-status','Save a username first to create your public profile link.');return;}const url=location.origin+'/collector.html?user='+encodeURIComponent(profile.username);try{await navigator.clipboard.writeText(url);setStatus('owner-status','Profile link copied! '+url);}catch{setStatus('owner-status','Your profile link: '+url);}});
