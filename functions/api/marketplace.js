@@ -79,7 +79,7 @@ export async function onRequestGet({request,env}){
     const listings=(result.results||[]).map(item=>({
       ...item,
       image_url:item.image_key?'/api/vendor/image?key='+encodeURIComponent(item.image_key):'',
-      shop_url:'/shop.html?user='+encodeURIComponent(item.username),
+      shop_url:'/collector.html?user='+encodeURIComponent(item.username)+'#shop',
       profile_url:'/collector.html?user='+encodeURIComponent(item.username)
     }));
     return json({ok:true,listings,count:listings.length,filters:{q:search,category}});
