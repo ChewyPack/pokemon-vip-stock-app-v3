@@ -62,7 +62,7 @@ function render(){
  if(!items.length){$('notify-list').innerHTML='<div class="notify-empty">Your inbox is clear. New stock and line reports will appear here when they match your preferences.</div>';return;}
  $('notify-list').innerHTML=items.map(n=>{
   let extra='';try{const data=JSON.parse(n.data_json||'{}');extra=[data.state,data.retailer,data.location].filter(Boolean).join(' · ');}catch(_){}
-  return '<article class="notify-card '+(!n.read_at?'unread':'')+'"><div class="notify-row"><h3>'+safe(n.title)+'</h3>'+(!n.read_at?'<button class="notify-btn" data-read="'+Number(n.id)+'" type="button">Mark read</button>':'')+'</div><p>'+safe(n.body)+'</p>'+(extra?'<p><small>'+safe(extra)+'</small></p>':'')+'<p><small>'+safe(n.created_at||'')+'</small> · <a href="'+safe(n.url||'/market-intelligence.html')+'">Open update</a></p></article>';
+  return '<article class="notify-card '+(!n.read_at?'unread':'')+'"><div class="notify-row"><h3>'+safe(n.title)+'</h3>'+(!n.read_at?'<button class="notify-btn" data-read="'+Number(n.id)+'" type="button">Mark read</button>':'')+'</div><p>'+safe(n.body)+'</p>'+(extra?'<p><small>'+safe(extra)+'</small></p>':'')+'<p><small>'+safe(n.created_at||'')+'</small> · <a href="'+safe(n.url||'/market-intelligence.html')+'" data-open-notification="'+Number(n.id)+'">Open update</a></p></article>';
  }).join('');
 }
 async function reload(){
@@ -75,6 +75,17 @@ $('read-all').addEventListener('click',async()=>{
  catch(error){$('inbox-status').textContent=error.message;}finally{button.disabled=false;}
 });
 $('notify-list').addEventListener('click',async event=>{
+ const open=event.target.closest('[data-open-notification]');
+ if(open){
+  event.preventDefault();
+  const id=Number(open.dataset.openNotification);
+  try{
+   const item=(state.notifications||[]).find(n=>Number(n.id)===id);
+   if(item&&!item.read_at)state=await api('PATCH',{action:'read',id:id});
+   window.location.href=open.href;
+  }catch(error){$('inbox-status').textContent=error.message;}
+  return;
+ }
  const button=event.target.closest('[data-read]');if(!button)return;
  try{state=await api('PATCH',{action:'read',id:Number(button.dataset.read)});render();}
  catch(error){$('inbox-status').textContent=error.message;}
