@@ -167,7 +167,6 @@
           ]),
           navLink('Giveaways', '/giveaways.html'),
           navLink('Chat', '/chat.html'),
-          navLink('News Feed', '/newsfeed'),
           dropdown('Resources', [
             { title: 'Securing Product', href: '/resources/securing-product.html' },
             { title: 'Spotting Fakes', href: '/resources/spotting-fakes.html' },
