@@ -1,6 +1,6 @@
 'use strict';
 
-const SHELL_CACHE = 'pokeprizepool-shell-v1';
+const SHELL_CACHE = 'pokeprizepool-shell-v2';
 const CORE_NAVIGATION = new Set([
   '/', '/index.html', '/account.html', '/collector.html',
   '/chat.html', '/events.html', '/marketplace.html', '/vendor.html',
@@ -8,8 +8,8 @@ const CORE_NAVIGATION = new Set([
 ]);
 const CORE_ASSETS = [
   '/offline.html',
-  '/assets/pwa-icon-192.svg',
-  '/assets/pwa-icon-512.svg'
+  '/assets/pokeprizepool-pwa-192.jpg',
+  '/manifest.webmanifest'
 ];
 
 self.addEventListener('install', event => {
