@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Details | PokePrizePool</title>
+<meta name="description" content="Event details, photos, videos, schedules, and organizer information from PokePrizePool.">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+:root{--ev-bg:#07142e;--ev-panel:rgba(9,24,56,.94);--ev-line:rgba(255,255,255,.15);--ev-text:#f4f7ff;--ev-muted:#b8c7e5;--ev-yellow:#ffd54a;--ev-blue:#75b7ff}
+body.event-detail-page{margin:0;min-height:100vh;color:var(--ev-text);background:linear-gradient(rgba(3,10,29,.82),rgba(3,10,29,.94)),url("/assets/backgrounds/vip-collage.jpg") center/cover fixed}
+.page{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:32px 0 72px}
+a{color:var(--ev-yellow);text-underline-offset:3px}
+.back{display:inline-flex;margin:0 0 18px;font-weight:800}
+.panel{background:var(--ev-panel);border:1px solid var(--ev-line);border-radius:17px;padding:clamp(18px,3vw,30px);margin:18px 0;box-shadow:0 12px 30px rgba(0,0,0,.18)}
+.eyebrow{color:var(--ev-yellow);font-size:.8rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin:0 0 10px}
+h1{font-size:clamp(2rem,5.5vw,3.5rem);line-height:1.08;margin:0 0 14px;color:#fff}
+h2{font-size:clamp(1.35rem,3vw,1.9rem);margin:0 0 16px;color:#fff}
+h3{color:#fff}
+.muted{color:var(--ev-muted);line-height:1.7}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.pill{border:1px solid var(--ev-line);border-radius:999px;padding:6px 10px;background:#ffffff0d;font-size:.83rem;font-weight:800}
+.hero-image{display:block;width:100%;max-height:500px;object-fit:cover;border-radius:12px;margin:18px 0}
+.event-description,.event-details-copy{white-space:pre-line;overflow-wrap:anywhere;line-height:1.8}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px}
+.fact{padding:14px;border:1px solid var(--ev-line);border-radius:12px;background:#ffffff07;min-width:0}
+.fact strong{display:block;color:var(--ev-yellow);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+.fact div{white-space:pre-line;overflow-wrap:anywhere}
+.media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.media-card{min-width:0;border:1px solid var(--ev-line);border-radius:13px;overflow:hidden;background:#050e21}
+.media-card img,.media-card video{display:block;width:100%;max-height:520px;object-fit:contain;background:#020714}
+.media-card iframe{display:block;width:100%;aspect-ratio:16/9;border:0;background:#020714}
+.media-caption{padding:10px 13px;color:var(--ev-muted);white-space:pre-line;overflow-wrap:anywhere}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 15px;min-height:44px;border-radius:9px;border:1px solid var(--ev-line);background:transparent;color:#fff;font:inherit;font-weight:800;cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--ev-yellow);color:#17213a;border-color:var(--ev-yellow)}
+.btn:disabled{opacity:.55;cursor:wait}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+#edit-panel[hidden],#not-found[hidden]{display:none!important}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{min-width:0}
+label{display:block;font-weight:800;font-size:.86rem;color:#e8efff;margin:12px 0 6px}
+input,select,textarea{display:block;width:100%;box-sizing:border-box;min-height:45px;padding:10px 12px;border-radius:8px;border:1px solid #52688f;background:#08142d;color:#fff;font:inherit}
+textarea{min-height:100px;resize:vertical}
+#edit-details{min-height:160px}
+.media-tools{display:grid;grid-template-columns:140px minmax(0,1fr);gap:10px}
+.media-row{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--ev-line)}
+.media-row small{display:block;color:var(--ev-muted);overflow-wrap:anywhere}
+.status{white-space:pre-line;line-height:1.6;color:var(--ev-muted);margin:12px 0}
+.status.error{color:#ffb4bd}.status.success{color:#b6f3d0}
+.helper{font-size:.88rem;color:var(--ev-muted);line-height:1.6}
+@media(max-width:650px){.page{width:calc(100% - 24px);padding-top:20px}.facts,.media-grid,.form-grid{grid-template-columns:1fr}.media-row{grid-template-columns:70px minmax(0,1fr)}.media-row .remove-media{grid-column:1/-1}.media-tools{grid-template-columns:1fr}.panel{padding:16px}}
+</style>
+</head>
+<body class="event-detail-page">
+<div id="site-navigation"></div>
+<main class="page">
+<a class="back" href="/events.html">← Back to Events Calendar</a>
+<div id="not-found" class="panel" hidden>
+<h1>Event not available</h1>
+<p class="muted" id="error-message">This event could not be found.</p>
+<a class="btn primary" href="/events.html">Return to Events Calendar</a>
+</div>
+<div id="event-content" hidden>
+<section class="panel">
+<p id="event-eyebrow" class="eyebrow">PokePrizePool Event</p>
+<h1 id="event-title"></h1>
+<div id="event-pills" class="pills"></div>
+<img id="event-cover" class="hero-image" alt="" hidden>
+<p id="event-description" class="event-description"></p>
+<div class="facts" id="event-facts"></div>
+<div id="event-details-wrap" hidden style="margin-top:24px">
+<h2>More Details</h2>
+<div id="event-details" class="event-details-copy muted"></div>
+</div>
+<div class="actions" id="event-links"></div>
+</section>
+<section class="panel" id="media-section" hidden>
+<h2>Photos &amp; Videos</h2>
+<div id="event-media" class="media-grid"></div>
+</section>
+<section id="edit-panel" class="panel" hidden>
+<p class="eyebrow">Event management</p>
+<h2 id="edit-heading">Edit event details</h2>
+<p class="muted">Your changes update this event page and the public calendar. New member-submitted events still require approval before they are published. Changes to an already-published event save directly.</p>
+<form id="edit-form">
+<input type="hidden" name="id">
+<div class="form-grid">
+<div class="field"><label for="edit-title">Event title *</label><input id="edit-title" name="title" maxlength="180" required></div>
+<div class="field"><label for="edit-type">Event type *</label><select id="edit-type" name="event_type" required><option value="show">Card show / convention</option><option value="trade">Trade night / meetup</option><option value="tournament">Tournament / organized play</option><option value="store">Store event</option><option value="restock">Restock report</option><option value="release">TCG product release</option></select></div>
+<div class="field"><label for="edit-date">Date *</label><input id="edit-date" name="event_date" type="date" required></div>
+<div class="field"><label for="edit-status">Publication status (admin only)</label><select id="edit-status" name="status"><option value="published">Published</option><option value="draft">Draft</option></select><p class="helper" id="status-help">Only an admin can change publication status.</p></div>
+<div class="field"><label for="edit-start">Start time</label><input id="edit-start" name="start_time" type="time"></div>
+<div class="field"><label for="edit-end">End time</label><input id="edit-end" name="end_time" type="time"></div>
+<div class="field"><label for="edit-venue">Venue / store name</label><input id="edit-venue" name="venue" maxlength="160"></div>
+<div class="field"><label for="edit-price">Admission / price</label><input id="edit-price" name="price" maxlength="100" placeholder="Free, $5, etc."></div>
+<div class="field"><label for="edit-city">City / town</label><input id="edit-city" name="city" maxlength="160"></div>
+<div class="field"><label for="edit-state">State / area</label><select id="edit-state" name="state"><option value="">Choose state</option><option value="RI">Rhode Island</option><option value="MA">Massachusetts</option><option value="CT">Connecticut</option><option value="NH">New Hampshire</option><option value="VT">Vermont</option><option value="ME">Maine</option><option value="ONLINE">Online / nationwide</option><option value="OTHER">Other</option></select></div>
+<div class="field"><label for="edit-state-name">Location display name (optional)</label><input id="edit-state-name" name="state_name" maxlength="100"></div>
+<div class="field"><label for="edit-zip">ZIP / postal code</label><input id="edit-zip" name="zip" maxlength="12"></div>
+<div class="field"><label for="edit-address">Street address</label><input id="edit-address" name="address" maxlength="300"></div>
+<div class="field"><label for="edit-url">Official event details URL</label><input id="edit-url" name="url" type="url" maxlength="1200" placeholder="https://…"></div>
+<div class="field"><label for="edit-badge">Short label (optional)</label><input id="edit-badge" name="badge" maxlength="80" placeholder="Registration open, Community submission"></div>
+</div>
+<label for="edit-description">Short description</label>
+<textarea id="edit-description" name="description" maxlength="4000"></textarea>
+<label for="edit-details">Full event details</label>
+<textarea id="edit-details" name="details" maxlength="12000" placeholder="Schedule, registration instructions, featured vendors, what attendees should know, updates, etc."></textarea>
+<label for="edit-cover-url">Cover image URL (optional)</label>
+<input id="edit-cover-url" name="image_url" maxlength="1200" placeholder="Upload an image below, then choose Make cover">
+<p class="helper">Upload photos up to 5 MB and videos up to 25 MB. You can also add HTTPS image URLs, direct video links, YouTube, or Vimeo links below.</p>
+<h2 style="margin-top:28px">Photos &amp; Videos</h2>
+<div id="media-editor-list"></div>
+<div class="field"><label for="media-upload">Upload photos or videos</label><input id="media-upload" type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" multiple><p id="upload-status" class="status" aria-live="polite"></p></div>
+<div class="field"><label>Add a media link</label>
+<div class="media-tools">
+<select id="media-url-type" aria-label="Media type"><option value="image">Photo URL</option><option value="video">Video URL</option></select>
+<input id="media-url" type="url" placeholder="https://...">
+</div>
+<label for="media-caption">Caption (optional)</label><input id="media-caption" maxlength="240" placeholder="What does this photo or video show?">
+<div class="actions"><button class="btn" id="add-media-link" type="button">Add media link</button></div>
+</div>
+<div id="edit-status-message" class="status" role="status" aria-live="polite"></div>
+<div class="actions"><button id="save-event" class="btn primary" type="submit">Save event changes</button><button id="cancel-edit" class="btn" type="button">Cancel</button></div>
+</form>
+</section>
+</div>
+</main>
+<script src="/js/ui/site-nav.js?v=20261022-inbox-dropdown-counts"></script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var TYPE_LABELS={show:'Card Show / Convention',trade:'Trade Night / Meetup',tournament:'Tournament / Organized Play',store:'Store Event',restock:'Restock Report',release:'TCG Product Release'};
+var record=null,canEdit=false,isAdmin=false,mediaItems=[];
+function make(tag,cls){var node=document.createElement(tag);if(cls)node.className=cls;return node;}
+function text(parent,tag,cls,value){var node=make(tag,cls);node.textContent=value==null?'':String(value);parent.appendChild(node);return node;}
+function say(el,message,kind){el.textContent=message||'';el.className='status'+(kind?' '+kind:'');}
+function formatDate(value){if(!value)return 'Date to be confirmed';var p=value.split('-');if(p.length!==3)return value;return new Date(Number(p[0]),Number(p[1])-1,Number(p[2])).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
+function formatTime(value){var m=String(value||'').trim().match(/^(\d{1,2}):(\d{2})$/);if(!m)return value||'';var h=Number(m[1]),min=Number(m[2]);if(h>23||min>59)return value;return (h%12||12)+':'+m[2]+' '+(h>=12?'PM':'AM');}
+function timeRange(){var start=formatTime(record.start_time),end=formatTime(record.end_time);if(start&&end)return start+'–'+end;if(start)return start;if(end)return end;return '';}
+function approvedUrl(raw){try{var u=new URL(raw,location.origin);if(u.protocol!=='https:'&&u.origin!==location.origin)return '';return u.href;}catch{return '';}}
+function renderFacts(){
+ var facts=$('event-facts');facts.replaceChildren();
+ [['Date & time',formatDate(record.event_date)+(timeRange()?' · '+timeRange():'')],['Location',[record.city,record.state_name||record.state].filter(Boolean).join(', ')||'Location to be confirmed'],['Venue',record.venue||'Venue to be confirmed'],['Address',[record.address,record.zip].filter(Boolean).join(' ')],['Admission',record.price||'Not specified']].filter(function(x){return !!x[1];}).forEach(function(x){var box=make('div','fact');text(box,'strong','',x[0]);text(box,'div','',x[1]);facts.appendChild(box);});
+}
+function youtubeUrl(raw){
+ try{var u=new URL(raw);var host=u.hostname.toLowerCase().replace(/^www\./,'');var id='';if(host==='youtu.be')id=u.pathname.split('/').filter(Boolean)[0]||'';else if(host==='youtube.com'||host==='m.youtube.com'||host==='youtube-nocookie.com'){if(u.pathname==='/watch')id=u.searchParams.get('v')||'';else if(/^\/(embed|shorts)\//.test(u.pathname))id=u.pathname.split('/')[2]||'';}return /^[a-zA-Z0-9_-]{6,20}$/.test(id)?'https://www.youtube-nocookie.com/embed/'+id:'';}catch{return '';}}
+function vimeoUrl(raw){try{var u=new URL(raw);var host=u.hostname.toLowerCase().replace(/^www\./,'');if(host!=='vimeo.com'&&host!=='player.vimeo.com')return '';var m=u.pathname.match(/\/(?:video\/)?(\d{5,15})/);return m?'https://player.vimeo.com/video/'+m[1]:'';}catch{return '';}}
+function renderMediaTile(item,idx){
+ var card=make('article','media-card'),url=approvedUrl(item.url||'');
+ if(!url)return null;
+ if(item.type==='image'){var img=make('img');img.src=url;img.alt=item.caption||record.title;img.loading='lazy';card.appendChild(img);}
+ else{
+  var embed=youtubeUrl(url)||vimeoUrl(url);
+  if(embed){var frame=make('iframe');frame.src=embed;frame.title=item.caption||record.title+' video '+(idx+1);frame.loading='lazy';frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';frame.allowFullscreen=true;card.appendChild(frame);}
+  else if(/\.(mp4|webm)(?:[?#].*)?$/i.test(url)){var video=make('video');video.src=url;video.controls=true;video.preload='metadata';card.appendChild(video);}
+  else{var link=make('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open video ↗';link.style.display='block';link.style.padding='22px';card.appendChild(link);}
+ }
+ if(item.caption){text(card,'div','media-caption',item.caption);}
+ return card;
+}
+function renderPublic(){
+ $('event-content').hidden=false;
+ $('event-title').textContent=record.title||'Event details';
+ $('event-eyebrow').textContent=TYPE_LABELS[record.event_type]||'PokePrizePool Event';
+ var pills=$('event-pills');pills.replaceChildren();
+ [record.badge,record.status==='draft'?'Draft (admin preview)':'Published'].filter(Boolean).forEach(function(v){text(pills,'span','pill',v);});
+ var cover=$('event-cover');if(record.image_url){cover.src=approvedUrl(record.image_url)||record.image_url;cover.alt=record.title+' cover image';cover.hidden=false;}else{cover.hidden=true;cover.removeAttribute('src');}
+ $('event-description').textContent=record.description||'';
+ $('event-details-wrap').hidden=!(record.details||'').trim();
+ $('event-details').textContent=record.details||'';
+ renderFacts();
+ var links=$('event-links');links.replaceChildren();
+ var organizer=approvedUrl(record.url||'');
+ if(organizer){var a=make('a','btn primary');a.href=organizer;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Official event details ↗';links.appendChild(a);}
+ var list=$('event-media');list.replaceChildren();
+ var allMedia=(Array.isArray(record.media)?record.media:[]).slice();
+ if(record.image_url&&!allMedia.some(function(x){return x&&x.url===record.image_url;})){allMedia.unshift({type:'image',url:record.image_url,caption:'Cover image'});}
+ var added=0;allMedia.forEach(function(item,i){var tile=renderMediaTile(item,i);if(tile){list.appendChild(tile);added++;}});
+ $('media-section').hidden=added===0;
+ $('edit-panel').hidden=!canEdit;
+ if(canEdit)populateEditor();
+}
+function populateEditor(){
+ var f=$('edit-form');
+ var vals={id:record.id,title:record.title,event_type:record.event_type,event_date:record.event_date,status:record.status,start_time:record.start_time,end_time:record.end_time,venue:record.venue,price:record.price,city:record.city,state:record.state,state_name:record.state_name,zip:record.zip,address:record.address,url:record.url,badge:record.badge,description:record.description,details:record.details,image_url:record.image_url};
+ Object.keys(vals).forEach(function(key){if(f.elements[key])f.elements[key].value=vals[key]||'';});
+ f.elements.status.disabled=!isAdmin;
+ $('status-help').textContent=isAdmin?'Admins can publish or return an event to draft.':'Only an admin can change publication status.';
+ mediaItems=(Array.isArray(record.media)?record.media:[]).map(function(m){return {type:m.type,url:m.url,caption:m.caption||''};});
+ renderMediaEditor();
+}
+function renderMediaEditor(){
+ var list=$('media-editor-list');list.replaceChildren();
+ if(!mediaItems.length){text(list,'p','helper','No additional media yet. Add an upload or a link below.');return;}
+ mediaItems.forEach(function(item,index){
+  var row=make('div','media-row');text(row,'strong','',item.type==='video'?'Video':'Photo');
+  var info=make('div');text(info,'div','',item.caption||'(No caption)');var small=text(info,'small','',item.url);small.title=item.url;row.appendChild(info);
+  var actions=make('div','actions');
+  var caption=make('button','btn');caption.type='button';caption.textContent='Caption';caption.addEventListener('click',function(){var next=prompt('Media caption:',item.caption||'');if(next===null)return;mediaItems[index].caption=next.trim().slice(0,240);renderMediaEditor();});actions.appendChild(caption);
+  var remove=make('button','btn remove-media');remove.type='button';remove.textContent='Remove';remove.addEventListener('click',function(){mediaItems.splice(index,1);renderMediaEditor();});actions.appendChild(remove);
+  if(item.type==='image'){var cover=make('button','btn');cover.type='button';cover.textContent='Make cover';cover.addEventListener('click',function(){$('edit-cover-url').value=item.url;say($('upload-status'),'Cover image selected. Save the event to apply it.','success');});actions.appendChild(cover);}
+  row.appendChild(actions);list.appendChild(row);
+ });
+}
+async function api(url,options){var response=await fetch(url,Object.assign({credentials:'same-origin',cache:'no-store'},options||{}));var data=await response.json().catch(function(){return {};});if(!response.ok||!data.ok)throw new Error(data.message||data.error||'Request failed');return data;}
+async function load(){
+ var params=new URLSearchParams(location.search),id=params.get('id');
+ if(!id||!/^\d+$/.test(id)){showError('This event link is missing a valid event ID.');return;}
+ try{var result=await api('/api/events?id='+encodeURIComponent(id));record=result.event;canEdit=!!result.can_edit;isAdmin=!!result.is_admin;renderPublic();}
+ catch(e){showError(e.message==='event_not_found'?'This event is no longer published or could not be found.':'We could not load this event. Please refresh and try again.');}
+}
+function showError(message){$('event-content').hidden=true;$('not-found').hidden=false;$('error-message').textContent=message;}
+$('media-upload').addEventListener('change',async function(){
+ var files=Array.from(this.files||[]);if(!files.length)return;
+ var input=this;input.disabled=true;$('save-event').disabled=true;
+ try{
+  for(var i=0;i<files.length;i++){
+   say($('upload-status'),'Uploading '+(i+1)+' of '+files.length+': '+files[i].name);
+   var formData=new FormData();formData.append('event_id',String(record.id));formData.append('file',files[i]);
+   var response=await fetch('/api/event-media',{method:'POST',credentials:'same-origin',body:formData});
+   var result=await response.json().catch(function(){return {};});
+   if(!response.ok||!result.ok)throw new Error(result.error||'Upload failed for '+files[i].name);
+   mediaItems.push(result.media);
+   renderMediaEditor();
+  }
+  say($('upload-status'),'Upload complete. Save the event to publish your media changes.','success');
+ }catch(e){say($('upload-status'),'Upload error: '+e.message,'error');}
+ finally{input.disabled=false;$('save-event').disabled=false;input.value='';}
+});
+$('add-media-link').addEventListener('click',function(){
+ var url=$('media-url').value.trim(),type=$('media-url-type').value,caption=$('media-caption').value.trim();
+ try{var u=new URL(url);if(u.protocol!=='https:')throw new Error();}catch{say($('edit-status-message'),'Enter a valid HTTPS media URL.','error');return;}
+ if(mediaItems.length>=30){say($('edit-status-message'),'You can add up to 30 media items.','error');return;}
+ mediaItems.push({type:type,url:url,caption:caption.slice(0,240)});$('media-url').value='';$('media-caption').value='';renderMediaEditor();say($('edit-status-message'),'Media link added. Save the event to apply changes.','success');
+});
+$('edit-form').addEventListener('submit',async function(e){
+ e.preventDefault();var save=$('save-event');save.disabled=true;save.textContent='Saving…';say($('edit-status-message'),'Saving your event…');
+ var data={};['id','title','event_type','event_date','status','start_time','end_time','venue','price','city','state','state_name','zip','address','url','badge','description','details','image_url'].forEach(function(k){data[k]=$('edit-form').elements[k].value.trim();});
+ data.media_json=JSON.stringify(mediaItems);
+ try{await api('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});say($('edit-status-message'),'Event saved successfully.','success');await load();}
+ catch(err){say($('edit-status-message'),'Could not save event: '+err.message,'error');}
+ finally{save.disabled=false;save.textContent='Save event changes';}
+});
+$('cancel-edit').addEventListener('click',function(){if(record)populateEditor();say($('edit-status-message'),'Unsaved changes discarded.');});
+load();
+})();
+</script>
+<script src="/js/ui/pokereport-sidebar.js"></script>
+</body>
+</html>
