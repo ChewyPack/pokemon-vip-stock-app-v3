@@ -146,9 +146,9 @@ export async function onRequestPost({request,env}){
   const suppliedSlug=Object.prototype.hasOwnProperty.call(d,'slug')&&clean(d.slug,100)!=='';
   const requestedSlug=normalizeEventSlug(data.slug||data.title);
   if(!requestedSlug)return json({ok:false,error:'event_slug_required',message:'Enter a readable custom event URL.'},400);
-  if(isReservedEventSlug(requestedSlug))return json({ok:false,error:'event_slug_reserved',message:'That custom URL is reserved. Please choose another.'},400);
+  const autoTitleSlug=!id&&(!suppliedSlug||requestedSlug===eventSlugFromTitle(data.title));
   let slugCheck=await uniqueEventSlug(env,requestedSlug,data.title,id);
-  if(slugCheck.error==='event_slug_in_use'&&!id&&(!suppliedSlug||requestedSlug===eventSlugFromTitle(data.title))){
+  if(autoTitleSlug&&['event_slug_in_use','event_slug_reserved'].includes(slugCheck.error)){
    data.slug='';
   }else if(slugCheck.error){
    return json({ok:false,error:slugCheck.error,message:slugCheck.error==='event_slug_in_use'?'That custom event URL is already in use. Choose a different one.':'Choose a valid custom event URL.'},409);
