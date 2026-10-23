@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06174A">
+<title>Advertise with PokePrizePool</title>
+<meta name="description" content="Reach Pokémon TCG collectors, sellers, and local hobby communities through PokePrizePool advertising placements.">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+.advertise-page{width:min(1050px,calc(100% - 28px));margin:28px auto 70px;color:#0b2a6b}
+.advertise-hero{padding:clamp(24px,5vw,44px);border:3px solid #0b2a6b;border-radius:18px;background:linear-gradient(135deg,#fff,#edf4ff);box-shadow:7px 7px 0 #000}
+.advertise-kicker{font-size:.78rem;font-weight:1000;letter-spacing:.13em;text-transform:uppercase;color:#31558e}
+.advertise-hero h1{font:400 clamp(2.4rem,7vw,4.4rem)/1 Bangers,cursive;margin:8px 0 12px}
+.advertise-hero p{max-width:760px;line-height:1.7;color:#445c87}
+.advertise-layout{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:18px;margin-top:22px;align-items:start}
+.advertise-panel{background:#fff;border:2px solid #d1def2;border-radius:15px;padding:clamp(17px,3vw,25px);box-shadow:0 4px 16px #07194d0b}
+.advertise-panel h2{margin:0 0 12px;font-size:1.35rem}
+.advertise-panel p,.advertise-panel li{line-height:1.65;color:#52648b}
+.advertise-form{display:grid;gap:12px}
+.advertise-form .field{display:grid;gap:5px;font-weight:850;font-size:.87rem;color:#0b2a6b}
+.advertise-form input,.advertise-form select,.advertise-form textarea{width:100%;box-sizing:border-box;min-height:43px;padding:10px 11px;border:2px solid #b9c9e6;border-radius:8px;background:#fff;color:#0b2a6b;font:inherit}
+.advertise-form textarea{min-height:115px;resize:vertical}
+.advertise-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.advertise-note{font-size:.82rem;color:#52648b;line-height:1.55}
+.advertise-status{min-height:1.5em;line-height:1.5;overflow-wrap:anywhere}
+.advertise-status.error{color:#a32222}.advertise-status.success{color:#14673f}
+.advertise-slots{display:grid;gap:12px;margin-top:17px}
+.advertise-slot{padding:12px;border:1px solid #d6e0f1;border-radius:11px;background:#f7f9fd}
+.advertise-slot strong{display:block;color:#0b2a6b}.advertise-slot span{display:block;font-size:.85rem;line-height:1.5;color:#52648b;margin-top:4px}
+.advertise-button{min-height:45px;padding:11px 15px;border:2px solid #0b2a6b;border-radius:9px;background:#0b2a6b;color:#fff;font:inherit;font-weight:900;cursor:pointer}
+.advertise-button:disabled{opacity:.6;cursor:wait}
+@media(max-width:760px){.advertise-layout{grid-template-columns:1fr}.advertise-two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="advertise-page">
+<section class="advertise-hero">
+<p class="advertise-kicker">Partner with the collector community</p>
+<h1>Advertise with PokePrizePool</h1>
+<p>Put your shop, card show, product release, service, or hobby brand in front of Pokémon TCG collectors. Tell us what you’re promoting and where you want to appear. We’ll review the placement, creative, dates, and pricing with you before anything goes live.</p>
+</section>
+<div class="advertise-layout">
+<section class="advertise-panel">
+<h2>Available ad placements</h2>
+<p>Current placements include the main landing page, community chat, events calendar, and giveaways page.</p>
+<div class="advertise-slots">
+<div class="advertise-slot"><strong>Top banner</strong><span>Wide horizontal placement, up to 970 × 100 px on desktop; adapts for smaller screens. Best for shop promotions, launches, and event announcements.</span></div>
+<div class="advertise-slot"><strong>Desktop side rail</strong><span>Narrow side placements on wide desktop screens, approximately 100 × 520 px. Keep artwork bold and easy to read at a small size.</span></div>
+</div>
+<p><strong>Creative guidelines</strong></p>
+<ul><li>Use artwork you own or are authorized to advertise.</li><li>Link visitors to a secure HTTPS destination.</li><li>Keep copy clear, accurate, and relevant to collectors.</li><li>Availability and final pricing depend on placement, duration, creative, and schedule.</li></ul>
+<p class="advertise-note">Submitting an inquiry does not reserve a placement or charge you. Our team will review your request and confirm price and timing before taking payment. Advertising cannot imply official Pokémon or PokePrizePool endorsement unless separately authorized.</p>
+</section>
+<section class="advertise-panel">
+<h2>Request an advertising quote</h2>
+<form id="advertise-form" class="advertise-form">
+<label class="field">Company / shop / brand name<input name="company_name" required minlength="2" maxlength="120" autocomplete="organization"></label>
+<label class="field">Your name<input name="contact_name" required minlength="2" maxlength="100" autocomplete="name"></label>
+<label class="field">Email address<input name="email" required type="email" maxlength="254" autocomplete="email"></label>
+<label class="field">Website (optional)<input name="website_url" type="url" placeholder="https://…" maxlength="1200"></label>
+<label class="field">Preferred placement<select name="desired_slot" required>
+<option value="">Choose a placement</option>
+<option value="home-top">Homepage — top banner</option><option value="home-left">Homepage — left desktop rail</option><option value="home-right">Homepage — right desktop rail</option>
+<option value="chat-top">Community chat — top banner</option><option value="chat-left">Community chat — left desktop rail</option><option value="chat-right">Community chat — right desktop rail</option>
+<option value="events-top">Events calendar — top banner</option><option value="events-left">Events calendar — left desktop rail</option><option value="events-right">Events calendar — right desktop rail</option>
+<option value="giveaways-top">Giveaways — top banner</option><option value="giveaways-left">Giveaways — left desktop rail</option><option value="giveaways-right">Giveaways — right desktop rail</option>
+</select></label>
+<label class="field">Approximate budget
+<select name="budget_range"><option value="Need a quote">Not sure — please quote</option><option value="Under $100">Under $100</option><option value="$100–$249">$100–$249</option><option value="$250–$499">$250–$499</option><option value="$500+">$500+</option></select></label>
+<div class="advertise-two">
+<label class="field">Preferred start date<input name="start_date" type="date"></label><label class="field">Preferred end date<input name="end_date" type="date"></label>
+</div>
+<label class="field">Destination link (optional)<input name="destination_url" type="url" maxlength="1200" placeholder="https://your-shop-or-event.com"></label>
+<label class="field">Artwork image URL (optional)<input name="creative_url" type="url" maxlength="1200" placeholder="HTTPS link to a preview of your artwork"></label>
+<label class="field">What are you promoting?<textarea name="campaign_message" maxlength="3000" placeholder="Tell us about your business, offer, audience, artwork, and any scheduling preferences."></textarea></label>
+<div aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden"><label>Leave this field blank<input name="fax" tabindex="-1" autocomplete="off"></label></div>
+<button class="advertise-button" id="advertise-submit" type="submit">Send advertising inquiry</button>
+<p class="advertise-status" id="advertise-status" role="status" aria-live="polite"></p>
+</form>
+</section>
+</div>
+</main>
+<script src="/js/ui/site-nav.js?v=20261022-inbox-dropdown-counts"></script>
+<script>
+(function(){
+'use strict';
+const form=document.getElementById('advertise-form'),status=document.getElementById('advertise-status'),button=document.getElementById('advertise-submit');
+form.addEventListener('submit',async function(event){
+ event.preventDefault();if(!form.reportValidity())return;
+ const body=Object.fromEntries(new FormData(form).entries());body.action='submit_inquiry';
+ button.disabled=true;button.textContent='Sending inquiry…';status.className='advertise-status';status.textContent='Submitting your request…';
+ try{
+  const response=await fetch('/api/advertising',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.message||'We could not submit your inquiry. Please review the details and try again.');
+  status.classList.add('success');status.textContent=data.message||'Your advertising inquiry has been received. We will review it and follow up.';
+  form.reset();
+ }catch(error){status.classList.add('error');status.textContent=error.message||'There was a problem submitting your inquiry.';}
+ finally{button.disabled=false;button.textContent='Send advertising inquiry';}
+});
+})();
+</script>
+</body>
+</html>
