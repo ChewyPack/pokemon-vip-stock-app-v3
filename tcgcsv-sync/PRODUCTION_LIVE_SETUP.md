@@ -6,20 +6,20 @@ This runbook deploys the TCGCSV importer directly against the **production D1 da
 
 The Workers Free plan allows 100,000 D1 rows written per UTC day across the account. This compact importer writes one product row with a single preferred market price, avoids duplicate staging-table copies and price-history snapshots, and pauses at 50,000 measured importer row writes for the day to reserve headroom for the live site. It resumes automatically after midnight UTC. The initial import may take multiple days. This is a safety budget, not a guarantee against unusually high write activity from the website or another Worker; pause the old staging sync first. Workers Paid is optional if you later decide you need the import completed faster.
 
-## 1. Apply the required production schema patch
+## 1. Pause the old staging importer
+
+In Cloudflare Dashboard, open **Workers & Pages → pokeprizepool-tcgcsv-sync-staging → Settings → Triggers** and disable/remove its every-minute Cron Trigger while the live import runs. Its old full importer can otherwise consume the same account-wide Free D1 write allowance. Do not delete the staging database or its saved progress.
+
+## 2. Apply the required production schema patch
 
 From the repository root, with Wrangler authenticated:
 
-```powershell
+```cmd
 npx wrangler login
 npx wrangler d1 execute pokemon-vip-members --remote --file=production-migrations/008_compact_tcgcsv_catalog.sql
 ```
 
 This adds compact current-price fields to products and daily resume-budget fields to the progress cursor. It does not import products or delete catalog data. Run it only against the production database name shown in the command.
-
-## 2. Pause the old staging importer
-
-In Cloudflare Dashboard, open **Workers & Pages → pokeprizepool-tcgcsv-sync-staging → Settings → Triggers** and disable/remove its every-minute Cron Trigger while the live import runs. Its old full importer can otherwise consume the same account-wide Free D1 write allowance. Do not delete the staging database or its saved progress.
 
 ## 3. Create the production Worker configuration
 
