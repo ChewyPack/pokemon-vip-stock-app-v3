@@ -111,8 +111,10 @@
    {title:'Spotting Fakes',href:'/resources/spotting-fakes.html'},
    {title:'Pricing Cards',href:'/resources/pricing-cards.html'}
   ]),
-  link('Log In / Sign Up','/account.html','site-nav__link account-nav-link'),
-  inboxWrap
+  el('div',{class:'site-nav__account-actions'},[
+   link('Log In / Sign Up','/account.html','site-nav__link account-nav-link'),
+   inboxWrap
+  ])
  ]);
  var installPromptEvent=null;
  var installButton=el('button',{class:'site-nav__link pwa-install-button',type:'button',text:'Install App'});
