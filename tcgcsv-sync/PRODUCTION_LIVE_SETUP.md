@@ -25,13 +25,12 @@ In Cloudflare Dashboard, open **Workers & Pages → pokeprizepool-tcgcsv-sync-st
 
 In the repository root:
 
-```powershell
+```cmd
 npx wrangler d1 list
 copy tcgcsv-sync\wrangler.production.example.toml tcgcsv-sync\wrangler.production.toml
-notepad tcgcsv-sync\wrangler.production.toml
 ```
 
-In Notepad, replace `REPLACE_WITH_PRODUCTION_D1_ID_FROM_WRANGLER_D1_LIST` with the ID beside the exact database name `pokemon-vip-members`. Keep `database_name = "pokemon-vip-members"`. Do not use the ID for `pokemon-vip-members-staging`. Save the file.
+The template is prefilled with the production D1 ID you verified: `4427e96c-d1f1-4f42-b863-94e303a4b7d9`. It names `pokemon-vip-members` explicitly. Do not replace it with the staging database ID. The real deployment config is ignored by Git so its settings are not accidentally committed.
 
 ## 4. Deploy the production Worker and set its secret
 
