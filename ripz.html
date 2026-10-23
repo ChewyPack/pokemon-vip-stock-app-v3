@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#06174a">
+  <title>Ripz Live | PokePrizePool</title>
+  <meta name="description" content="Go live, rip Pokémon TCG packs, and share the pulls with the PokePrizePool collector community.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body{margin:0;background:#061126;color:#edf4ff;font-family:var(--font-body, Nunito,system-ui,sans-serif)}
+    .ripz-page{width:min(1440px,calc(100% - 32px));margin:0 auto;padding:26px 0 68px}
+    .ripz-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:20px;padding:clamp(24px,4vw,46px);overflow:hidden;border:1px solid #263e63;border-radius:22px;background:radial-gradient(ellipse at 90% 5%,#17448a99,transparent 48%),linear-gradient(135deg,#101f3c,#080f20 68%);box-shadow:0 18px 46px #0004}
+    .ripz-kicker{display:inline-flex;align-items:center;gap:9px;color:#ffe07a;font-size:.76rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+    .ripz-live-dot{width:8px;height:8px;border-radius:100%;background:#fb425b;box-shadow:0 0 0 5px #fb425b25}
+    .ripz-hero h1{margin:9px 0 5px;font:400 clamp(3rem,8vw,5.3rem)/.94 var(--font-display,Bangers,Impact,sans-serif);letter-spacing:.02em;color:#fff}
+    .ripz-hero h1 span{color:#ffd21f}
+    .ripz-hero p{margin:13px 0 0;max-width:62ch;color:#c5d4ed;line-height:1.65}
+    .ripz-hero-art{display:grid;place-items:center;width:clamp(98px,15vw,174px);aspect-ratio:1;border-radius:36%;border:1px solid #526c94;background:linear-gradient(145deg,#1d4d88,#101b33);font-size:clamp(3.5rem,8vw,6.3rem);box-shadow:inset 0 0 32px #6baaff1c,0 10px 36px #0005;transform:rotate(4deg)}
+    .ripz-hero-foot{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+    .ripz-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border:1px solid #385174;border-radius:999px;background:#0a1830;color:#dce9ff;font-size:.8rem;font-weight:900}
+    .ripz-pill--gold{border-color:#796a2c;background:#322b13;color:#ffe18b}
+    .ripz-layout{display:grid;grid-template-columns:minmax(270px,340px) minmax(0,1fr);gap:20px;margin-top:20px;align-items:start}
+    .ripz-panel{min-width:0;border:1px solid #263e63;border-radius:17px;background:#0c1830;box-shadow:0 14px 36px #0002}
+    .ripz-panel-head{padding:17px 19px;border-bottom:1px solid #253753}
+    .ripz-panel-head h2{margin:0;color:#f7faff;font:400 1.55rem/1.1 var(--font-display,Bangers,Impact,sans-serif);letter-spacing:.02em}
+    .ripz-panel-head p{margin:7px 0 0;color:#a9bad7;font-size:.9rem;line-height:1.5}
+    .ripz-panel-body{padding:18px}
+    .ripz-host-content{display:grid;gap:13px}
+    .ripz-host-card{padding:15px;border:1px solid #2a4368;border-radius:12px;background:#101f3b}
+    .ripz-host-card h3{margin:0 0 7px;color:#fff;font-size:1rem}
+    .ripz-host-card p{margin:0;color:#b8c7df;font-size:.9rem;line-height:1.55}
+    .ripz-form{display:grid;gap:12px}
+    .ripz-form label{display:grid;gap:6px;color:#e3edff;font-size:.88rem;font-weight:900}
+    .ripz-form input{width:100%;min-width:0;box-sizing:border-box;min-height:45px;padding:11px 12px;border:1px solid #425778;border-radius:9px;background:#071329;color:#fff;font:inherit}
+    .ripz-form input:focus{outline:2px solid #ffd21f;outline-offset:1px}
+    .ripz-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:45px;padding:11px 15px;border:1px solid #e5bf22;border-radius:9px;background:#ffd21f;color:#1a210e;text-align:center;text-decoration:none;font:900 .93rem/1.2 var(--font-body,Nunito,system-ui,sans-serif);cursor:pointer;transition:transform .15s,filter .15s}
+    .ripz-button:hover{filter:brightness(1.04);transform:translateY(-1px)}
+    .ripz-button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .ripz-button--secondary{border-color:#3d557c;background:#172847;color:#edf4ff}
+    .ripz-button--danger{border-color:#a74456;background:#421a2b;color:#ffe5e9}
+    .ripz-host-status{min-height:1.4em;color:#b9c9e3;font-size:.85rem;line-height:1.5}
+    .ripz-host-video{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#030812;border:1px solid #314769;border-radius:10px}
+    .ripz-camera-actions{display:flex;flex-wrap:wrap;gap:8px}
+    .ripz-note{margin:0;color:#91a6c8;font-size:.78rem;line-height:1.55}
+    .ripz-main-stack{display:grid;gap:18px;min-width:0}
+    .ripz-live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px}
+    .ripz-live-card{display:grid;gap:9px;align-content:start;min-width:0;padding:14px;border:1px solid #2b4264;border-radius:13px;background:#101f3b}
+    .ripz-live-card__top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .ripz-live-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 7px;border-radius:6px;background:#5e1829;color:#ffb6c2;font-size:.7rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
+    .ripz-live-card h3{margin:0;color:#fff;font-size:1.03rem;line-height:1.35;overflow-wrap:anywhere}
+    .ripz-live-card p{margin:0;color:#acbeda;font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
+    .ripz-live-card .ripz-button{width:100%;box-sizing:border-box;margin-top:2px}
+    .ripz-empty{padding:22px;border:1px dashed #3a5071;border-radius:12px;color:#aebed8;line-height:1.65;text-align:center}
+    .ripz-stage-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(230px,1fr);min-width:0}
+    .ripz-stage-main{min-width:0;padding:16px;border-right:1px solid #253753}
+    .ripz-stage-title{margin:0 0 7px;color:#fff;font-size:1.1rem;line-height:1.35;overflow-wrap:anywhere}
+    .ripz-stage-subtitle{margin:0 0 13px;color:#9fb2d0;font-size:.85rem;line-height:1.5}
+    .ripz-stage-video{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;border:1px solid #263f64;border-radius:11px;background:#030710}
+    .ripz-stage-placeholder{display:grid;place-items:center;gap:9px;aspect-ratio:16/9;padding:18px;box-sizing:border-box;border:1px dashed #33496a;border-radius:11px;background:radial-gradient(ellipse at center,#11264a,#060e1c);color:#aebed8;text-align:center;line-height:1.5}
+    .ripz-stage-placeholder strong{color:#fff;font-size:1.1rem}
+    .ripz-chat{display:grid;grid-template-rows:auto minmax(180px,1fr) auto;min-width:0;min-height:350px}
+    .ripz-chat-head{padding:15px 16px;border-bottom:1px solid #253753}
+    .ripz-chat-head h3{margin:0;font-size:1rem;color:#fff}
+    .ripz-chat-head p{margin:5px 0 0;color:#93a8c8;font-size:.77rem;line-height:1.4}
+    .ripz-chat-messages{display:flex;flex-direction:column;gap:10px;max-height:390px;overflow:auto;padding:14px}
+    .ripz-chat-message{font-size:.84rem;line-height:1.45;overflow-wrap:anywhere}
+    .ripz-chat-message strong{display:block;margin-bottom:2px;color:#ffd96c;font-size:.78rem}
+    .ripz-chat-message span{color:#e4edfc;white-space:pre-wrap}
+    .ripz-chat-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:12px;border-top:1px solid #253753}
+    .ripz-chat-form input{min-width:0;width:100%;box-sizing:border-box;min-height:40px;padding:9px 10px;border:1px solid #3b5274;border-radius:8px;background:#071329;color:#fff;font:inherit;font-size:.85rem}
+    .ripz-chat-form button{min-height:40px;padding:8px 11px;border-radius:8px}
+    .ripz-status{margin:0 0 15px;color:#b4c6e2;font-size:.9rem;line-height:1.5}
+    .ripz-status--error{color:#ffabb7}
+    .ripz-gate{max-width:720px;margin:26px auto;padding:clamp(24px,5vw,40px);border:1px solid #304a70;border-radius:18px;background:#0c1830;text-align:center}
+    .ripz-gate h2{margin:0 0 10px;color:#fff;font:400 2.1rem/1.05 var(--font-display,Bangers,Impact,sans-serif)}
+    .ripz-gate p{color:#b9c9e3;line-height:1.7}
+    .ripz-gate-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .ripz-bottom-note{margin:20px 2px 0;color:#8fa4c6;font-size:.78rem;line-height:1.55}
+    [hidden]{display:none!important}
+    @media(max-width:980px){.ripz-layout{grid-template-columns:1fr}.ripz-layout>aside{order:0}.ripz-main-stack{order:1}.ripz-host-content{grid-template-columns:repeat(2,minmax(0,1fr))}.ripz-host-content>.ripz-host-span{grid-column:1/-1}}
+    @media(max-width:700px){.ripz-page{width:min(100% - 20px,1440px);padding-top:14px}.ripz-hero{grid-template-columns:1fr;padding:24px}.ripz-hero-art{display:none}.ripz-stage-grid{grid-template-columns:1fr}.ripz-stage-main{border-right:0;border-bottom:1px solid #253753}.ripz-chat{min-height:300px}.ripz-host-content{grid-template-columns:1fr}.ripz-host-content>.ripz-host-span{grid-column:auto}.ripz-live-grid{grid-template-columns:1fr}.ripz-panel-body{padding:14px}}
+    @media(prefers-reduced-motion:reduce){.ripz-button{transition:none}}
+  </style>
+</head>
+<body>
+  <div id="site-navigation"></div>
+  <main class="ripz-page">
+    <section class="ripz-hero">
+      <div>
+        <div class="ripz-kicker"><span class="ripz-live-dot"></span> PokePrizePool live sessions</div>
+        <h1>RIP<span>Z</span></h1>
+        <p>Rip packs with the community. Go live from your camera, share the hits, and hang out with fellow collectors in real time.</p>
+        <div class="ripz-hero-foot">
+          <span class="ripz-pill ripz-pill--gold">Collector+ hosts</span>
+          <span class="ripz-pill">Browser-based live video</span>
+          <span class="ripz-pill">Live chat</span>
+        </div>
+      </div>
+      <div class="ripz-hero-art" aria-hidden="true">🎴</div>
+    </section>
+
+    <section id="ripz-signed-out" class="ripz-gate" hidden>
+      <h2>Sign in to enter Ripz</h2>
+      <p>Watch live pack openings, join the chat, or host your own rip session with an active Collector+ membership.</p>
+      <div class="ripz-gate-actions"><a class="ripz-button" href="/account.html">Sign in / Create account</a><a class="ripz-button ripz-button--secondary" href="/">Back to PokePrizePool</a></div>
+    </section>
+
+    <div id="ripz-content" class="ripz-layout" hidden>
+      <aside class="ripz-panel">
+        <div class="ripz-panel-head">
+          <h2>Host a Rip</h2>
+          <p>Collector+ members can start a camera stream straight from this page.</p>
+        </div>
+        <div class="ripz-panel-body" id="ripz-host-panel">
+          <p class="ripz-status">Checking your account…</p>
+        </div>
+      </aside>
+
+      <div class="ripz-main-stack">
+        <section class="ripz-panel">
+          <div class="ripz-panel-head">
+            <h2>Live right now</h2>
+            <p>Choose a live rip to watch and join the stream chat.</p>
+          </div>
+          <div class="ripz-panel-body">
+            <p id="ripz-live-status" class="ripz-status" role="status" aria-live="polite">Loading live sessions…</p>
+            <div id="ripz-live-grid" class="ripz-live-grid"></div>
+          </div>
+        </section>
+
+        <section class="ripz-panel">
+          <div class="ripz-panel-head">
+            <h2>Stream room</h2>
+            <p>Watch the packs get opened and talk pulls with the room.</p>
+          </div>
+          <div class="ripz-stage-grid">
+            <div class="ripz-stage-main">
+              <h3 id="ripz-stage-title" class="ripz-stage-title">Pick a live rip to watch</h3>
+              <p id="ripz-stage-subtitle" class="ripz-stage-subtitle">When a member goes live, their stream will appear here.</p>
+              <div id="ripz-stage-placeholder" class="ripz-stage-placeholder"><span style="font-size:2.3rem" aria-hidden="true">🎥</span><strong>No stream selected</strong><span>Choose a live session above to tune in.</span></div>
+              <video id="ripz-watch-video" class="ripz-stage-video" autoplay playsinline controls hidden></video>
+              <p id="ripz-playback-status" class="ripz-status" role="status" aria-live="polite"></p>
+            </div>
+            <aside class="ripz-chat">
+              <div class="ripz-chat-head"><h3>Ripz chat</h3><p id="ripz-chat-caption">Select a stream to join the conversation.</p></div>
+              <div id="ripz-chat-messages" class="ripz-chat-messages"><p class="ripz-note">Live chat will show here.</p></div>
+              <form id="ripz-chat-form" class="ripz-chat-form">
+                <input id="ripz-chat-input" maxlength="400" placeholder="Say something about the pulls…" aria-label="Chat message" autocomplete="off" disabled>
+                <button class="ripz-button" type="submit" disabled>Send</button>
+              </form>
+            </aside>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Live video delivery is usage-billed by the video provider, so end your stream when you finish ripping.</p>
+  </main>
+  <script src="/js/ui/site-nav.js?v=20261023-ripz-nav"></script>
+  <script src="/js/ui/ripz.js?v=20261023-ripz-launch"></script>
+</body>
+</html>
