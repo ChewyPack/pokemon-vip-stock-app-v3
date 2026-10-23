@@ -663,8 +663,8 @@
         var moduleScript = document.createElement('script');
         moduleScript.type = 'module';
         moduleScript.textContent = [
-          "import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';",
-          "import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js';",
+          "import * as THREE from 'https://esm.sh/three@0.169.0';",
+          "import { GLTFLoader } from 'https://esm.sh/three@0.169.0/examples/jsm/loaders/GLTFLoader.js';",
           "const host = document.getElementById('ppp-pokeball-viewer');",
           "if (host) {",
           "  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;",
@@ -695,7 +695,7 @@
           "    const loading = host.querySelector('.cubone-hero__loading'); if (loading) loading.remove();",
           "  }, undefined, (error) => {",
           "    console.error('PokePrizePool 3D model failed to load:', error);",
-          "    host.innerHTML = '<p class="cubone-hero__error">3D model is temporarily unavailable.</p>';",
+          "    host.textContent = '3D model is temporarily unavailable.';"",
           "  });",
           "  const resize = () => { const w = Math.max(1, host.clientWidth); const h = Math.max(1, host.clientHeight); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h); };",
           "  const observer = new ResizeObserver(resize); observer.observe(host);",
