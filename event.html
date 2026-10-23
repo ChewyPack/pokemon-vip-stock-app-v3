@@ -35,7 +35,12 @@ h3{color:#fff}
 .btn.primary{background:var(--ev-yellow);color:#17213a;border-color:var(--ev-yellow)}
 .btn:disabled{opacity:.55;cursor:wait}
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
-#edit-panel[hidden],#not-found[hidden]{display:none!important}
+#edit-panel[hidden],#not-found[hidden],#event-share-panel[hidden]{display:none!important}
+.event-share-url{margin-top:15px}
+.event-share-url input{font-size:.9rem}
+.event-share-caption{margin:0 0 8px}
+.event-share-actions .btn{white-space:nowrap}
+.event-share-actions .btn.primary{background:var(--ev-yellow)!important;color:#17213a!important;border-color:var(--ev-yellow)!important}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .field{min-width:0}
 label{display:block;font-weight:800;font-size:.86rem;color:#e8efff;margin:12px 0 6px}
@@ -104,6 +109,14 @@ textarea{min-height:100px;resize:vertical}
 </div>
 <div class="actions" id="event-links"></div>
 </section>
+<section class="panel" id="event-share-panel">
+<p class="eyebrow">Share with your community</p>
+<h2>Share this event</h2>
+<p class="muted event-share-caption">Send this event directly to Facebook, X, WhatsApp, or anyone with the link.</p>
+<div class="actions event-share-actions" id="event-share-actions"></div>
+<div class="field event-share-url"><label for="event-share-url">Direct event link</label><input id="event-share-url" type="text" readonly aria-label="Direct event URL"></div>
+<p class="status" id="event-share-status" role="status" aria-live="polite"></p>
+</section>
 <section class="panel" id="event-boost-panel" hidden>
 <p class="eyebrow">Promote this event</p>
 <h2>Boost this event</h2>
@@ -128,6 +141,7 @@ textarea{min-height:100px;resize:vertical}
 <input type="hidden" name="id">
 <div class="form-grid">
 <div class="field"><label for="edit-title">Event title *</label><input id="edit-title" name="title" maxlength="180" required></div>
+<div class="field"><label for="edit-slug">Custom event URL</label><input id="edit-slug" name="slug" maxlength="80" pattern="[A-Za-z0-9]{2,80}" title="Use letters and numbers only; spaces and punctuation are removed." required><p class="helper">Public link: https://pokeprizepool.com/ followed by this custom URL. Use a unique name with letters and numbers.</p></div>
 <div class="field"><label for="edit-type">Event type *</label><select id="edit-type" name="event_type" required><option value="show">Card show / convention</option><option value="trade">Trade night / meetup</option><option value="tournament">Tournament / organized play</option><option value="store">Store event</option><option value="restock">Restock report</option><option value="release">TCG product release</option></select></div>
 <div class="field"><label for="edit-date">Date *</label><input id="edit-date" name="event_date" type="date" required></div>
 <div class="field"><label for="edit-status">Publication status (admin only)</label><select id="edit-status" name="status"><option value="published">Published</option><option value="draft">Draft</option></select><p class="helper" id="status-help">Only an admin can change publication status.</p></div>
@@ -212,6 +226,7 @@ function renderPublic(){
  var links=$('event-links');links.replaceChildren();
  var organizer=approvedUrl(record.url||'');
  if(organizer){var a=make('a','btn primary');a.href=organizer;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Official event details ↗';links.appendChild(a);}
+ renderEventShareActions();
  var list=$('event-media');list.replaceChildren();
  var allMedia=(Array.isArray(record.media)?record.media:[]).slice();
  if(record.image_url&&!allMedia.some(function(x){return x&&x.url===record.image_url;})){allMedia.unshift({type:'image',url:record.image_url,caption:'Cover image'});}
@@ -233,7 +248,7 @@ $('edit-state').addEventListener('change',function(){
 });
 function populateEditor(){
  var f=$('edit-form');
- var vals={id:record.id,title:record.title,event_type:record.event_type,event_date:record.event_date,status:record.status,start_time:record.start_time,end_time:record.end_time,venue:record.venue,price:record.price,city:record.city,state:record.state,state_name:record.state_name,zip:record.zip,address:record.address,url:record.url,badge:record.badge,description:record.description,details:record.details,image_url:record.image_url};
+ var vals={id:record.id,title:record.title,slug:record.slug,event_type:record.event_type,event_date:record.event_date,status:record.status,start_time:record.start_time,end_time:record.end_time,venue:record.venue,price:record.price,city:record.city,state:record.state,state_name:record.state_name,zip:record.zip,address:record.address,url:record.url,badge:record.badge,description:record.description,details:record.details,image_url:record.image_url};
  Object.keys(vals).forEach(function(key){if(f.elements[key])f.elements[key].value=vals[key]||'';});
  f.elements.status.disabled=!isAdmin;
  $('status-help').textContent=isAdmin?'Admins can publish or return an event to draft.':'Only an admin can change publication status.';
@@ -256,13 +271,51 @@ function renderMediaEditor(){
 async function api(url,options){var response=await fetch(url,Object.assign({credentials:'same-origin',cache:'no-store'},options||{}));var data=await response.json().catch(function(){return {};});if(!response.ok||!data.ok)throw new Error(data.message||data.error||'Request failed');return data;}
 async function load(){
  var params=new URLSearchParams(location.search),id=params.get('id');
- if(!id||!/^\d+$/.test(id)){showError('This event link is missing a valid event ID.');return;}
- try{var result=await api('/api/events?id='+encodeURIComponent(id));record=result.event;canEdit=!!result.can_edit;isAdmin=!!result.is_admin;renderPublic();
+ var pathSegment=location.pathname.replace(/^\/+|\/+$/g,'');
+ var slug=!id&&pathSegment&&!/\.html$/i.test(pathSegment)?pathSegment:'';
+ if(id&&!/^\d+$/.test(id)){showError('This event link is missing a valid event ID.');return;}
+ if(!id&&!slug){showError('This event link is missing a valid ID or custom URL.');return;}
+ try{var endpoint=id?'/api/events?id='+encodeURIComponent(id):'/api/events?slug='+encodeURIComponent(slug);
+  var result=await api(endpoint);record=result.event;canEdit=!!result.can_edit;isAdmin=!!result.is_admin;renderPublic();
   var boostState=params.get('boost');
   if(boostState==='success')say($('event-boost-status'),'Checkout returned successfully. Your boost will activate after Stripe confirms the payment.','success');
   else if(boostState==='cancelled')say($('event-boost-status'),'Checkout was cancelled. No event boost payment was completed.');
  }
  catch(e){showError(e.message==='event_not_found'?'This event is no longer published or could not be found.':'We could not load this event. Please refresh and try again.');}
+}
+function eventShareUrl(){
+ var slug=String(record&&record.slug||'').trim();
+ return slug?new URL('/'+slug,location.origin).href:new URL('/event.html?id='+encodeURIComponent(record.id),location.origin).href;
+}
+function renderEventShareActions(){
+ var container=$('event-share-actions');if(!container||!record)return;
+ container.replaceChildren();
+ var shareUrl=eventShareUrl(),shareTitle=String(record.title||'Pokémon TCG Event'),shareText=String(record.description||'Join us for '+shareTitle+'.');
+ $('event-share-url').value=shareUrl;
+ function link(label,href){
+  var a=make('a','btn');a.href=href;a.target='_blank';a.rel='noopener noreferrer';a.textContent=label;container.appendChild(a);
+ }
+ var native=make('button','btn primary');native.type='button';native.textContent='Share event';
+ native.addEventListener('click',async function(){
+  if(navigator.share){
+   try{await navigator.share({title:shareTitle,text:shareText,url:shareUrl});say($('event-share-status'),'Share sheet opened.','success');}
+   catch(error){if(error&&error.name!=='AbortError')say($('event-share-status'),'Could not open sharing: '+error.message,'error');}
+  }else{
+   try{await navigator.clipboard.writeText(shareUrl);say($('event-share-status'),'Event link copied. Paste it into your app of choice.','success');}
+   catch(error){window.prompt('Copy this event link:',shareUrl);}
+  }
+ });
+ container.appendChild(native);
+ link('Facebook ↗','https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(shareUrl));
+ link('X ↗','https://twitter.com/intent/tweet?text='+encodeURIComponent(shareTitle)+'&url='+encodeURIComponent(shareUrl));
+ link('WhatsApp ↗','https://wa.me/?text='+encodeURIComponent(shareTitle+' '+shareUrl));
+ link('Email ↗','mailto:?subject='+encodeURIComponent(shareTitle)+'&body='+encodeURIComponent(shareText+'\n\n'+shareUrl));
+ var copy=make('button','btn');copy.type='button';copy.textContent='Copy link';
+ copy.addEventListener('click',async function(){
+  try{await navigator.clipboard.writeText(shareUrl);say($('event-share-status'),'Event link copied to your clipboard.','success');}
+  catch(error){window.prompt('Copy this event link:',shareUrl);}
+ });
+ container.appendChild(copy);
 }
 function showError(message){$('event-content').hidden=true;$('not-found').hidden=false;$('error-message').textContent=message;}
 $('boost-event-button').addEventListener('click',async function(){
@@ -299,9 +352,11 @@ $('add-media-link').addEventListener('click',function(){
 });
 $('edit-form').addEventListener('submit',async function(e){
  e.preventDefault();var save=$('save-event');save.disabled=true;save.textContent='Saving…';say($('edit-status-message'),'Saving your event…');
- var data={};['id','title','event_type','event_date','status','start_time','end_time','venue','price','city','state','state_name','zip','address','url','badge','description','details','image_url'].forEach(function(k){data[k]=$('edit-form').elements[k].value.trim();});
+ var data={};['id','title','slug','event_type','event_date','status','start_time','end_time','venue','price','city','state','state_name','zip','address','url','badge','description','details','image_url'].forEach(function(k){data[k]=$('edit-form').elements[k].value.trim();});
  data.media_json=JSON.stringify(mediaItems);
- try{await api('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});say($('edit-status-message'),'Event saved successfully.','success');await load();}
+ try{var saved=await api('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if(saved.event&&saved.event.slug&&!new URLSearchParams(location.search).has('id')&&!/\.html$/i.test(location.pathname)){history.replaceState({},'', '/'+saved.event.slug);}
+  say($('edit-status-message'),'Event saved successfully.','success');await load();}
  catch(err){say($('edit-status-message'),'Could not save event: '+err.message,'error');}
  finally{save.disabled=false;save.textContent='Save event changes';}
 });
@@ -309,7 +364,7 @@ $('cancel-edit').addEventListener('click',function(){if(record)populateEditor();
 $('preview-event').addEventListener('click',function(){
  if(!canEdit||previewActive)return;
  var form=$('edit-form'),previewRecord=Object.assign({},record);
- ['id','title','event_type','event_date','status','start_time','end_time','venue','price','city','state','state_name','zip','address','url','badge','description','details','image_url'].forEach(function(key){
+ ['id','title','slug','event_type','event_date','status','start_time','end_time','venue','price','city','state','state_name','zip','address','url','badge','description','details','image_url'].forEach(function(key){
   var field=form.elements[key];
   if(field)previewRecord[key]=String(field.value||'').trim();
  });
