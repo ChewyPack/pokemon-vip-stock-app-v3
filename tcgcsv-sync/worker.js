@@ -326,7 +326,8 @@ export default {
         'SELECT source_timestamp, last_success_at, status, last_error FROM tcgcsv_sync_state WHERE id=1'
       ).first().catch(() => null);
       const progress = await env.DB.prepare(
-        'SELECT source_timestamp, next_group_index, group_ids_json FROM tcgcsv_sync_progress WHERE id=1'
+        'SELECT source_timestamp, next_group_index, group_ids_json, current_group_offset, sync_day, rows_written_today ' +
+        'FROM tcgcsv_sync_progress WHERE id=1'
       ).first().catch(() => null);
       let progressInfo = null;
       if (progress) {
@@ -335,7 +336,11 @@ export default {
         progressInfo = {
           source_timestamp: progress.source_timestamp,
           groups_processed: Number(progress.next_group_index || 0),
-          groups_total: total
+          groups_total: total,
+          products_processed_in_current_group: Number(progress.current_group_offset || 0),
+          sync_day_utc: progress.sync_day || null,
+          importer_rows_written_today: Number(progress.rows_written_today || 0),
+          importer_daily_write_budget: 50000
         };
       }
       return json({ ok: true, service: 'PokePrizePool TCGCSV sync', state: state || null, progress: progressInfo });
