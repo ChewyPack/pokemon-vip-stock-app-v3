@@ -80,16 +80,16 @@ body{background:transparent;color:var(--social-navy);font-family:Nunito,system-u
 </div><div class="social-media-preview" data-media-preview aria-live="polite"></div><p class="social-inline-status" data-composer-status role="status" aria-live="polite"></p>
 </form>
 <nav class="community-filter" aria-label="Choose feed">
-<button class="is-active" type="button" data-feed-mode="for-you" aria-pressed="true">For You</button>
+<button type="button" data-feed-mode="for-you" aria-pressed="false">For You</button>
 <button type="button" data-feed-mode="following" aria-pressed="false">Following</button>
-<button type="button" data-feed-mode="latest" aria-pressed="false">Latest</button>
+<button class="is-active" type="button" data-feed-mode="latest" aria-pressed="true">Latest</button>
 </nav>
 <p class="social-inline-status" data-social-feed-status role="status" aria-live="polite">Loading community posts…</p>
 <div data-social-post-list></div>
 <p class="social-inline-status">Please keep posts respectful. Use Report on a post to flag spam, scams, harassment, or other concerns.</p>
 </section>
 </main>
-<script src="/js/ui/collector-social.js?v=20261022-engagement-messaging-views"></script>
+<script src="/js/ui/collector-social.js?v=20261022-feed-time-latest"></script>
 <script src="/js/ui/site-nav.js?v=20261022-inbox-dropdown-counts"></script>
 </body>
 </html>

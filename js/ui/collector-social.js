@@ -16,7 +16,16 @@
     document.head.appendChild(style);
   }
   ensureMediaStyles();
-  const dateText = value => { const d = new Date(value); return Number.isNaN(d.getTime()) ? '' : d.toLocaleString([], {month:'short',day:'numeric',year:d.getFullYear()===new Date().getFullYear()?undefined:'numeric',hour:'numeric',minute:'2-digit'}); };
+  const dateText = value => {
+    // SQLite CURRENT_TIMESTAMP values are UTC but arrive without a timezone suffix.
+    // Treat those timestamp strings as UTC before converting them to the viewer's local time.
+    const raw = typeof value === 'string' ? value.trim() : value;
+    const timestamp = typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(raw)
+      ? raw.replace(' ', 'T') + 'Z'
+      : raw;
+    const d = new Date(timestamp);
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleString([], {month:'short',day:'numeric',year:d.getFullYear()===new Date().getFullYear()?undefined:'numeric',hour:'numeric',minute:'2-digit'});
+  };
   async function api(url, options) {
     const response = await fetch(url, Object.assign({credentials:'include',cache:'no-store'}, options || {}));
     const data = await response.json().catch(() => ({}));
@@ -328,7 +337,7 @@
     const root = document.getElementById('community-feed');
     if (!root || root.dataset.socialInitialized === 'true') return;
     root.dataset.socialInitialized = 'true';
-    const state = {mode:'feed',feed:'for-you'};
+    const state = {mode:'feed',feed:'latest'};
     try {
       const me = await fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(r=>r.json()).catch(()=>({}));
       const form = $(root, '[data-social-composer]');
