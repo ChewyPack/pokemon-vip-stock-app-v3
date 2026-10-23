@@ -66,6 +66,7 @@ button:disabled{opacity:.6;cursor:wait}
 <div id="start-goal-field" hidden>
 <label>Subscriber goal to initiate the giveaway *
 <select name="start_goal">
+<option value="">Choose a subscriber milestone</option>
 <option value="50">50 active VIP subscribers</option>
 <option value="100">100 active VIP subscribers</option>
 <option value="500">500 active VIP subscribers</option>
@@ -151,7 +152,7 @@ function edit(g){
  field('title').value=g.title||'';
  field('prize_value').value=g.prize_value==null?'':g.prize_value;
  field('start_mode').value=g.start_mode==='goal'?'goal':'date';
- field('start_goal').value=[50,100,500].includes(Number(g.start_goal))?String(g.start_goal):'50';
+ field('start_goal').value=[50,100,500].includes(Number(g.start_goal))?String(g.start_goal):'';
  field('start_at').value=g.start_mode==='goal'?'':localDateTime(g.start_at);
  field('end_at').value=localDateTime(g.end_at);
  updateStartFields();
