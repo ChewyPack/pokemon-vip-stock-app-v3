@@ -2081,3 +2081,20 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 @media (prefers-reduced-motion: reduce) {
   .cubone-hero__viewer { scroll-behavior: auto; }
 }
+
+
+/* Production follow-up: make the retained model attribution easy to see in the footer. */
+.footer .asset-credit {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  margin-top: 10px;
+  color: #cfe0ff;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+.footer .asset-credit a {
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
