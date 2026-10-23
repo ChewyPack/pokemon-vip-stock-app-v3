@@ -1,3 +1,5 @@
+import { activateGoalGiveaways } from '../_lib/giveaway-goal.js';
+
 const COOKIE = 'collector_session';
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -22,7 +24,8 @@ async function sha256(value) {
 async function ensureTables(env) {
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaways (
     id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
-    prize_value REAL, image_url TEXT NOT NULL DEFAULT '', start_at TEXT, end_at TEXT,
+    prize_value REAL, image_url TEXT NOT NULL DEFAULT '', start_at TEXT,
+    start_mode TEXT NOT NULL DEFAULT 'date', start_goal INTEGER, goal_started_at TEXT, end_at TEXT,
     eligibility TEXT NOT NULL DEFAULT '', rules TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),
     featured INTEGER NOT NULL DEFAULT 0 CHECK(featured IN (0,1)),
@@ -38,6 +41,18 @@ async function ensureTables(env) {
   }
   if (!names.has('winner_selected_at')) {
     try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_selected_at TEXT').run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
+  if (!names.has('start_mode')) {
+    try { await env.DB.prepare("ALTER TABLE poke_prize_giveaways ADD COLUMN start_mode TEXT NOT NULL DEFAULT 'date'").run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
+  if (!names.has('start_goal')) {
+    try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN start_goal INTEGER').run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
+  if (!names.has('goal_started_at')) {
+    try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN goal_started_at TEXT').run(); }
     catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
   }
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
@@ -95,6 +110,7 @@ export async function onRequestGet({ request, env }) {
   if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
   try {
     await ensureTables(env);
+    await activateGoalGiveaways(env);
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: true, authenticated: false, entered_ids: [] });
     const rows = await env.DB.prepare(
@@ -125,16 +141,21 @@ export async function onRequestPost({ request, env }) {
 
   try {
     await ensureTables(env);
+    await activateGoalGiveaways(env);
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: false, error: 'login_required' }, 401);
     const giveaway = await env.DB.prepare(
-      'SELECT id, title, status, start_at, end_at, vip_only, winner_entry_id FROM poke_prize_giveaways WHERE id = ? LIMIT 1'
+      'SELECT id, title, status, start_at, start_mode, start_goal, goal_started_at, end_at, vip_only, winner_entry_id FROM poke_prize_giveaways WHERE id = ? LIMIT 1'
     ).bind(giveawayId).first();
     if (!giveaway || giveaway.status !== 'published') return json({ ok: false, error: 'giveaway_not_found' }, 404);
     if (giveaway.winner_entry_id) return json({ ok: false, error: 'giveaway_closed' }, 409);
-    const starts = timestamp(giveaway.start_at);
+    const goalTriggered = giveaway.start_mode === 'goal';
+    const starts = timestamp(goalTriggered ? giveaway.goal_started_at : giveaway.start_at);
     const ends = timestamp(giveaway.end_at);
-    if (!Number.isFinite(starts) || !Number.isFinite(ends)) return json({ ok: false, error: 'giveaway_dates_unavailable' }, 409);
+    if (!Number.isFinite(ends)) return json({ ok: false, error: 'giveaway_dates_unavailable' }, 409);
+    if (!Number.isFinite(starts)) {
+      return json({ ok: false, error: goalTriggered ? 'giveaway_not_open' : 'giveaway_dates_unavailable' }, 409);
+    }
     if (Date.now() < starts) return json({ ok: false, error: 'giveaway_not_open' }, 409);
     if (Date.now() >= ends) return json({ ok: false, error: 'giveaway_ended' }, 409);
     if (Number(giveaway.vip_only) === 1 && !isVip(account)) return json({ ok: false, error: 'vip_membership_required' }, 403);
