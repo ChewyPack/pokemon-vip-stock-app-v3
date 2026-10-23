@@ -702,7 +702,7 @@
           "  const clock = new THREE.Clock();",
           "  renderer.setAnimationLoop(() => { if (ball && !reduceMotion) ball.rotation.y += Math.min(clock.getDelta(), 0.05) * 0.42; else clock.getDelta(); renderer.render(scene, camera); });",
           "}"
-        ].join('\\n');
+        ].join('\n');
         document.body.appendChild(moduleScript);
       }
 
