@@ -128,12 +128,16 @@ export async function onRequestPost({request,env}){
   const normalized=normalizeMedia(data.media_json);
   if(normalized.error)return json({ok:false,error:normalized.error},400);
   data.media_json=normalized.value;
+  let savedId=id;
   if(id){
    await env.DB.prepare('UPDATE poke_report_events SET title=?,description=?,event_type=?,event_date=?,start_time=?,end_time=?,venue=?,address=?,city=?,state=?,state_name=?,zip=?,url=?,price=?,image_url=?,badge=?,status=?,details=?,media_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(data.title,data.description,data.event_type,data.event_date,data.start_time,data.end_time,data.venue,data.address,data.city,data.state,data.state_name,data.zip,data.url,data.price,data.image_url,data.badge,data.status,data.details,data.media_json,id).run();
   }else{
-   await env.DB.prepare('INSERT INTO poke_report_events (title,description,event_type,event_date,start_time,end_time,venue,address,city,state,state_name,zip,url,price,image_url,badge,status,details,media_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(data.title,data.description,data.event_type,data.event_date,data.start_time,data.end_time,data.venue,data.address,data.city,data.state,data.state_name,data.zip,data.url,data.price,data.image_url,data.badge,data.status,data.details,data.media_json).run();
+   const inserted=await env.DB.prepare('INSERT INTO poke_report_events (title,description,event_type,event_date,start_time,end_time,venue,address,city,state,state_name,zip,url,price,image_url,badge,status,details,media_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(data.title,data.description,data.event_type,data.event_date,data.start_time,data.end_time,data.venue,data.address,data.city,data.state,data.state_name,data.zip,data.url,data.price,data.image_url,data.badge,data.status,data.details,data.media_json).run();
+   savedId=Number(inserted.meta?.last_row_id||0);
   }
-  const saved=await env.DB.prepare('SELECT * FROM poke_report_events WHERE id=?').bind(id||Number((await env.DB.prepare('SELECT last_insert_rowid() AS id').first()).id)).first();
+  if(!savedId)return json({ok:false,error:'event_save_failed'},500);
+  const saved=await env.DB.prepare('SELECT * FROM poke_report_events WHERE id=?').bind(savedId).first();
+  if(!saved)return json({ok:false,error:'event_save_failed'},500);
   const response={...saved,media:normalized.value?JSON.parse(normalized.value):[]};
   delete response.owner_account_id;delete response.source_submission_id;delete response.media_json;
   return json({ok:true,event:response});
