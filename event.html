@@ -146,6 +146,7 @@ function renderFacts(){
 function youtubeUrl(raw){
  try{var u=new URL(raw);var host=u.hostname.toLowerCase().replace(/^www\./,'');var id='';if(host==='youtu.be')id=u.pathname.split('/').filter(Boolean)[0]||'';else if(host==='youtube.com'||host==='m.youtube.com'||host==='youtube-nocookie.com'){if(u.pathname==='/watch')id=u.searchParams.get('v')||'';else if(/^\/(embed|shorts)\//.test(u.pathname))id=u.pathname.split('/')[2]||'';}return /^[a-zA-Z0-9_-]{6,20}$/.test(id)?'https://www.youtube-nocookie.com/embed/'+id:'';}catch{return '';}}
 function vimeoUrl(raw){try{var u=new URL(raw);var host=u.hostname.toLowerCase().replace(/^www\./,'');if(host!=='vimeo.com'&&host!=='player.vimeo.com')return '';var m=u.pathname.match(/\/(?:video\/)?(\d{5,15})/);return m?'https://player.vimeo.com/video/'+m[1]:'';}catch{return '';}}
+function isDirectVideo(raw){try{var u=new URL(raw);if(/\.(mp4|webm)$/i.test(u.pathname))return true;var key=u.searchParams.get('key')||'';return /^events\/[a-f0-9-]+\.(mp4|webm)$/i.test(key);}catch{return false;}}
 function renderMediaTile(item,idx){
  var card=make('article','media-card'),url=approvedUrl(item.url||'');
  if(!url)return null;
@@ -153,7 +154,7 @@ function renderMediaTile(item,idx){
  else{
   var embed=youtubeUrl(url)||vimeoUrl(url);
   if(embed){var frame=make('iframe');frame.src=embed;frame.title=item.caption||record.title+' video '+(idx+1);frame.loading='lazy';frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';frame.allowFullscreen=true;card.appendChild(frame);}
-  else if(/\.(mp4|webm)(?:[?#].*)?$/i.test(url)){var video=make('video');video.src=url;video.controls=true;video.preload='metadata';card.appendChild(video);}
+  else if(isDirectVideo(url)){var video=make('video');video.src=url;video.controls=true;video.preload='metadata';card.appendChild(video);}
   else{var link=make('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open video ↗';link.style.display='block';link.style.padding='22px';card.appendChild(link);}
  }
  if(item.caption){text(card,'div','media-caption',item.caption);}
