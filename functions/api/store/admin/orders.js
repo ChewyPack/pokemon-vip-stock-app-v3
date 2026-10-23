@@ -18,7 +18,7 @@ export const onRequestGet = wrap(async (ctx) => {
   if (q) { where.push('(order_number LIKE ? OR email LIKE ?)'); args.push(`%${q}%`, `%${q}%`); }
   const st = u.searchParams.get('status');
   if (st) { where.push('(payment_status = ? OR fulfillment_status = ?)'); args.push(st, st); }
-  const { results } = await db.prepare(`SELECT id, order_number, email, total_cents, payment_status, fulfillment_status, created_at FROM store_orders ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY id DESC LIMIT 200`).bind(...args).all();
+  const { results } = await db.prepare(`SELECT id, order_number, email, total_cents, payment_status, fulfillment_status, tracking_carrier, tracking_number, created_at FROM store_orders ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY id DESC LIMIT 200`).bind(...args).all();
   return json({ orders: results });
 });
 

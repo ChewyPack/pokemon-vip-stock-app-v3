@@ -24,7 +24,9 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   for (const it of raw) {
     const id = Number(it?.productId), qty = Number(it?.quantity);
     if (!Number.isInteger(id) || id < 1 || !Number.isInteger(qty) || qty < 1 || qty > 20) throw new HttpError(400, 'Invalid cart item');
-    want.set(id, (want.get(id) || 0) + qty);
+    const combinedQty = (want.get(id) || 0) + qty;
+    if (combinedQty > 20) throw new HttpError(400, 'Invalid cart item quantity');
+    want.set(id, combinedQty);
   }
 
   const ids = [...want.keys()];

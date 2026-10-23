@@ -41,8 +41,39 @@
  $('sa-cancel').addEventListener('click',resetForm);
  $('sa-product-list').addEventListener('click',async event=>{const edit=event.target.closest('[data-edit]'),toggle=event.target.closest('[data-toggle]');if(edit){editProduct(edit.dataset.edit);return;}if(!toggle)return;toggle.disabled=true;try{await api('/api/store/admin/products?id='+Number(toggle.dataset.toggle),{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({active:toggle.dataset.active!=='true'})});await loadProducts();}catch(error){$('sa-top-status').textContent=error.message;}finally{toggle.disabled=false;}});
  $('sa-refresh-products').addEventListener('click',loadProducts);
- async function loadOrders(){$('sa-order-list').innerHTML='<p class="sa-status">Loading orders…</p>';try{const data=await api('/api/store/admin/orders'),orders=data.orders||[];$('sa-order-list').innerHTML=orders.length?orders.map(o=>'<article class="sa-order"><div class="sa-order-head"><h3>'+safe(o.order_number)+' · '+money(o.total_cents)+'</h3><span class="sa-badge '+(o.payment_status==='paid'?'':'off')+'">'+safe(o.payment_status)+'</span></div><p>'+safe(o.email||'No email recorded')+' · '+safe(new Date(o.created_at).toLocaleString())+'</p><div class="sa-order-controls"><select data-fulfill="'+Number(o.id)+'" aria-label="Fulfillment status"><option value="unfulfilled" '+(o.fulfillment_status==='unfulfilled'?'selected':'')+'>Unfulfilled</option><option value="processing" '+(o.fulfillment_status==='processing'?'selected':'')+'>Processing</option><option value="shipped" '+(o.fulfillment_status==='shipped'?'selected':'')+'>Shipped</option><option value="delivered" '+(o.fulfillment_status==='delivered'?'selected':'')+'>Delivered</option><option value="cancelled" '+(o.fulfillment_status==='cancelled'?'selected':'')+'>Cancelled</option></select><input data-carrier="'+Number(o.id)+'" placeholder="Carrier" aria-label="Carrier"><input data-tracking="'+Number(o.id)+'" placeholder="Tracking number" aria-label="Tracking number"><button class="sa-btn" type="button" data-save-order="'+Number(o.id)+'">Save fulfillment</button></div></article>').join(''):'<div class="sa-product-list-empty">No orders have been placed yet.</div>';}catch(error){$('sa-order-list').innerHTML='<div class="sa-product-list-empty">'+safe(error.message)+'</div>';}}
- $('sa-order-list').addEventListener('click',async event=>{const button=event.target.closest('[data-save-order]');if(!button)return;const id=Number(button.dataset.saveOrder);button.disabled=true;try{const sel=$('sa-order-list').querySelector('[data-fulfill="'+id+'"]'),carrier=$('sa-order-list').querySelector('[data-carrier="'+id+'"]'),tracking=$('sa-order-list').querySelector('[data-tracking="'+id+'"]');await api('/api/store/admin/orders?id='+id,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({fulfillmentStatus:sel.value,trackingCarrier:carrier.value,trackingNumber:tracking.value})});$('sa-top-status').textContent='Fulfillment updated.';await loadOrders();}catch(error){$('sa-top-status').textContent=error.message||'Could not update fulfillment.';}finally{button.disabled=false;}});
- $('sa-refresh-orders').addEventListener('click',loadOrders);Promise.all([loadProducts(),loadOrders()]).then(()=>{if(authorized)$('sa-top-status').textContent='Store management connected.';});
+ async function loadOrders(){
+  $('sa-order-list').innerHTML='<p class="sa-status">Loading orders…</p>';
+  try{
+   const data=await api('/api/store/admin/orders'),orders=data.orders||[];
+   $('sa-order-list').innerHTML=orders.length?orders.map(o=>'<article class="sa-order"><div class="sa-order-head"><h3>'+safe(o.order_number)+' · '+money(o.total_cents)+'</h3><span class="sa-badge '+(o.payment_status==='paid'?'':'off')+'">'+safe(o.payment_status)+'</span></div><p>'+safe(o.email||'No email recorded')+' · '+safe(new Date(o.created_at).toLocaleString())+'</p><button class="sa-btn secondary" type="button" data-order-details="'+Number(o.id)+'">View items and shipping address</button><div data-order-detail-panel="'+Number(o.id)+'" hidden></div><div class="sa-order-controls"><select data-fulfill="'+Number(o.id)+'" aria-label="Fulfillment status"><option value="unfulfilled" '+(o.fulfillment_status==='unfulfilled'?'selected':'')+'>Unfulfilled</option><option value="processing" '+(o.fulfillment_status==='processing'?'selected':'')+'>Processing</option><option value="shipped" '+(o.fulfillment_status==='shipped'?'selected':'')+'>Shipped</option><option value="delivered" '+(o.fulfillment_status==='delivered'?'selected':'')+'>Delivered</option><option value="cancelled" '+(o.fulfillment_status==='cancelled'?'selected':'')+'>Cancelled</option></select><input data-carrier="'+Number(o.id)+'" value="'+safe(o.tracking_carrier||'')+'" placeholder="Carrier" aria-label="Carrier"><input data-tracking="'+Number(o.id)+'" value="'+safe(o.tracking_number||'')+'" placeholder="Tracking number" aria-label="Tracking number"><button class="sa-btn" type="button" data-save-order="'+Number(o.id)+'">Save fulfillment</button></div></article>').join(''):'<div class="sa-product-list-empty">No orders have been placed yet.</div>';
+  }catch(error){$('sa-order-list').innerHTML='<div class="sa-product-list-empty">'+safe(error.message)+'</div>';}
+}
+$('sa-order-list').addEventListener('click',async event=>{
+ const details=event.target.closest('[data-order-details]');
+ if(details){
+  const id=Number(details.dataset.orderDetails),panel=$('sa-order-list').querySelector('[data-order-detail-panel="'+id+'"]');
+  if(!panel.hidden){panel.hidden=true;details.textContent='View items and shipping address';return;}
+  details.disabled=true;panel.hidden=false;panel.innerHTML='<p class="sa-status">Loading order details…</p>';
+  try{
+   const data=await api('/api/store/admin/orders?id='+id),order=data.order||{};let address={};
+   try{address=JSON.parse(order.shipping_address||'{}')}catch(_){}
+   const parts=[order.shipping_name,address.line1,address.line2,[address.city,address.state,address.postal_code].filter(Boolean).join(', '),address.country].filter(Boolean);
+   const addressHtml=parts.map(safe).join('<br>');
+   const items=data.items||[];
+   panel.innerHTML='<div class="sa-status" style="padding:10px 0"><strong>Ship to</strong><br>'+(addressHtml||'Shipping address will appear after payment is confirmed.')+'<br><br><strong>Items</strong><br>'+(items.length?items.map(item=>safe(item.name)+' × '+Number(item.quantity)+' — '+money(item.line_total_cents)).join('<br>'):'No line items found')+'</div>';
+   details.textContent='Hide items and shipping address';
+  }catch(error){panel.innerHTML='<p class="sa-status">'+safe(error.message||'Could not load order details.')+'</p>';}
+  finally{details.disabled=false;}
+  return;
+ }
+ const button=event.target.closest('[data-save-order]');if(!button)return;const id=Number(button.dataset.saveOrder);button.disabled=true;
+ try{
+  const select=$('sa-order-list').querySelector('[data-fulfill="'+id+'"]'),carrier=$('sa-order-list').querySelector('[data-carrier="'+id+'"]'),tracking=$('sa-order-list').querySelector('[data-tracking="'+id+'"]');
+  await api('/api/store/admin/orders?id='+id,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({fulfillmentStatus:select.value,trackingCarrier:carrier.value,trackingNumber:tracking.value})});
+  $('sa-top-status').textContent='Fulfillment updated.';await loadOrders();
+ }catch(error){$('sa-top-status').textContent=error.message||'Could not update fulfillment.';}
+ finally{button.disabled=false;}
+});
+$('sa-refresh-orders').addEventListener('click',loadOrders);Promise.all([loadProducts(),loadOrders()]).then(()=>{if(authorized)$('sa-top-status').textContent='Store management connected.';});
 })();
 </script></body></html>
