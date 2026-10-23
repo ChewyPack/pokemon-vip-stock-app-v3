@@ -15,6 +15,18 @@ function validHttps(value, max = 1200) {
   if (!raw) return "";
   try { const url = new URL(raw); return url.protocol === "https:" ? url.href : ""; } catch { return ""; }
 }
+function validAdvertisingImage(value, request) {
+  const raw = clean(value, 1200);
+  if (!raw) return "";
+  try {
+    const origin = new URL(request.url).origin;
+    const url = new URL(raw, origin);
+    const key = url.searchParams.get("key") || "";
+    if (url.origin !== origin || url.pathname !== "/api/vendor/image" ||
+        !/^advertising\/[a-f0-9-]+\.(jpg|png|webp|avif)$/i.test(key)) return "";
+    return "/api/vendor/image?key=" + encodeURIComponent(key);
+  } catch { return ""; }
+}
 async function ensureTables(env) {
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS advertising_inquiries (
@@ -114,7 +126,7 @@ export async function onRequestPost({ request, env }) {
       const startDate = clean(data.start_date, 10);
       const endDate = clean(data.end_date, 10);
       const destination = data.destination_url ? validHttps(data.destination_url, 1200) : "";
-      const creative = data.creative_url ? validHttps(data.creative_url, 1200) : "";
+      const creative = data.creative_url ? validAdvertisingImage(data.creative_url, request) : "";
       const message = clean(data.campaign_message, 3000);
       if (company.length < 2 || contact.length < 2) return json({ ok: false, error: "name_required", message: "Enter your company and contact name." }, 400);
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok: false, error: "invalid_email", message: "Enter a valid email address." }, 400);
@@ -146,7 +158,7 @@ export async function onRequestPost({ request, env }) {
       const advertiser = clean(data.advertiser_name, 120);
       const headline = clean(data.headline, 100);
       const body = clean(data.body, 300);
-      const image = data.image_url ? validHttps(data.image_url, 1200) : "";
+      const image = data.image_url ? validAdvertisingImage(data.image_url, request) : "";
       const destination = validHttps(data.destination_url, 1200);
       const slot = clean(data.slot, 40);
       const starts = clean(data.starts_at, 16).replace("T", " ");
