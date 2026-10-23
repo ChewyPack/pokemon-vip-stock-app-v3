@@ -323,7 +323,8 @@ async function handleLineReport(data, env, form) {
     lineCount: data.lineCount,
     lineSeenAt: new Date(data.lineSeenAt).toISOString(),
     stockedBy: data.stockedBy,
-    stockedByLabel: stockedByLabels[data.stockedBy] || 'Not sure'
+    stockedByLabel: stockedByLabels[data.stockedBy] || 'Not sure',
+    submittedByUsername: data.submittedByUsername || ''
   };
 
   try {
