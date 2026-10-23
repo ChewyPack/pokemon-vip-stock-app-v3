@@ -28,6 +28,34 @@ async function notifyChatMentions(env, sender, body, channelId) {
         WHERE LOWER(p.username) IN (${names.map(() => "?").join(",")})
       `).bind(...names).all();
 
+  for (const recipient of results) {
+    if (Number(recipient.id) === Number(sender.id)) continue;
+    const chatPref = await env.DB.prepare("SELECT notification_mode FROM chat_notification_preferences WHERE account_id = ?").bind(recipient.id).first().catch(() => null);
+    if (chatPref?.notification_mode === "muted") continue;
+    const title = "You were mentioned in chat";
+    const excerpt = body.length > 150 ? body.slice(0, 147) + "..." : body;
+    const notificationBody = (sender.display_name || "A collector") + " mentioned you: " + excerpt;
+    try {
+      const prefs = await env.DB.prepare("SELECT in_app_enabled, browser_push_enabled FROM notification_preferences WHERE account_id = ?").bind(recipient.id).first().catch(() => null);
+      if (Number(prefs?.in_app_enabled ?? 1) === 1) {
+        await env.DB.prepare("INSERT INTO notifications (account_id, notification_type, title, body, url, data_json) VALUES (?, 'mention', ?, ?, ?, ?)")
+          .bind(recipient.id, title, notificationBody, chatUrl, JSON.stringify({ kind: "chat_mention", channel_id: channelId, channel: channel?.slug || "" })).run();
+      }
+      if (Number(prefs?.browser_push_enabled || 0) === 1 && env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
+        const { results: subscriptions = [] } = await env.DB.prepare("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE account_id = ?").bind(recipient.id).all();
+        await Promise.all(subscriptions.map(async sub => {
+          try {
+            const response = await sendWebPush(sub, { title, body: notificationBody, url: chatUrl, tag: "chat-mention-" + recipient.id }, env);
+            if (response.status === 404 || response.status === 410) {
+              await env.DB.prepare("DELETE FROM push_subscriptions WHERE id = ?").bind(sub.id).run();
+            }
+          } catch (error) { console.error("Chat mention push failed:", error); }
+        }));
+      }
+    } catch (error) { console.error("Chat mention notification failed:", recipient.id, error); }
+  }
+}
+
 async function notifyChatChannelMembers(env, sender, body, channelId, messageId) {
   // @everyone already sends mention notifications, so avoid duplicate all-message alerts.
   if (/(?:^|\s)@everyone(?=$|\s|[.,!?])/i.test(body)) return;
