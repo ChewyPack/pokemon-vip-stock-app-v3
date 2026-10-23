@@ -42,7 +42,10 @@
         post_media_limit_exceeded:'A post can include up to 3 photos and 1 video.',
         duplicate_media:'The same media cannot be attached twice.',
         already_reported:'You already reported this post.',
-        follow_migration_required:'The collector follow database setup is incomplete. Please contact support.'
+        follow_migration_required:'The collector follow database setup is incomplete. Please contact support.',
+        comment_replies_migration_required:'Direct replies need the production comment-replies migration. Please contact support.',
+        invalid_parent_comment_id:'Choose a valid comment to reply to.',
+        parent_comment_not_found:'That comment is no longer available to reply to.'
       };
       throw new Error(messages[data.error] || data.message || data.error || 'The request could not be completed.');
     }
@@ -70,7 +73,7 @@
       '<div class="social-post-actions"><button type="button" data-post-like="' + Number(post.id) + '" data-liked="' + String(!!post.liked_by_me) + '" aria-pressed="' + String(!!post.liked_by_me) + '" class="' + (post.liked_by_me ? 'is-liked' : '') + '">♥ ' + (post.liked_by_me ? 'Liked' : 'Like') + '</button><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button>' +
       (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report</button>' : '<button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete</button>') + '</div>' +
       '<section class="social-comments" data-comments-thread="' + Number(post.id) + '" hidden><div class="social-comment-list" data-comment-list></div>' +
-      '<form class="social-comment-form" data-comment-form="' + Number(post.id) + '"><label class="sr-only" for="social-comment-' + Number(post.id) + '">Write a comment</label><textarea id="social-comment-' + Number(post.id) + '" name="body" maxlength="1000" required rows="2" placeholder="Add a comment…"></textarea><button type="submit">Reply</button></form><p class="social-inline-status" data-comment-status role="status" aria-live="polite"></p></section></article>';
+      '<form class="social-comment-form" data-comment-form="' + Number(post.id) + '"><div class="social-reply-context" data-reply-context hidden>Replying to <strong data-reply-name></strong><button type="button" data-comment-reply-cancel>Cancel</button></div><input type="hidden" name="parent_comment_id" value=""><label class="sr-only" for="social-comment-' + Number(post.id) + '">Write a comment or reply</label><textarea id="social-comment-' + Number(post.id) + '" name="body" maxlength="1000" required rows="2" placeholder="Add a comment…"></textarea><button type="submit">Comment</button></form><p class="social-inline-status" data-comment-status role="status" aria-live="polite"></p></section></article>';
   }
   async function loadLikers(root, postId) {
     const section = $(root, '[data-likers-thread="' + postId + '"]');
@@ -155,15 +158,54 @@
       });
     }
   }
-  function renderComments(root, postId, comments) {
+  function renderComments(root, postId, comments, supportsReplies) {
     const thread = $(root, '[data-comments-thread="' + postId + '"]');
     if (!thread) return;
     const list = $(thread, '[data-comment-list]');
-    list.innerHTML = comments.length ? comments.map(c =>
-      '<article class="social-comment">' + (c.avatar_url ? '<img class="social-comment-avatar" src="' + safe(c.avatar_url) + '" alt="" loading="lazy">' : '<span class="social-comment-avatar">P</span>') +
-      '<div class="social-comment-content"><div><a href="/collector.html?user=' + encodeURIComponent(c.username) + '">' + safe(c.display_name || c.username) + '</a><span> · ' + safe(dateText(c.created_at)) + '</span></div><p>' + safe(c.body).replace(/\n/g, '<br>') + '</p></div>' +
-      (c.is_own ? '<button type="button" class="social-comment-remove" data-comment-delete="' + Number(c.id) + '" aria-label="Delete your comment">×</button>' : '') + '</article>'
-    ).join('') : '<p class="social-empty-comments">No comments yet. Start the conversation.</p>';
+    const byParent = new Map();
+    const ids = new Set(comments.map(c => Number(c.id)));
+    comments.forEach(c => {
+      const candidate = Number(c.parent_comment_id || 0);
+      const parentId = candidate && ids.has(candidate) && candidate !== Number(c.id) ? candidate : 0;
+      if (!byParent.has(parentId)) byParent.set(parentId, []);
+      byParent.get(parentId).push(c);
+    });
+    function renderOne(c, depth) {
+      const id = Number(c.id);
+      const author = c.username || c.display_name || 'collector';
+      const article = '<article class="social-comment' + (depth ? ' social-comment--reply' : '') + '" data-comment-id="' + id + '">' +
+        (c.avatar_url ? '<img class="social-comment-avatar" src="' + safe(c.avatar_url) + '" alt="" loading="lazy">' : '<span class="social-comment-avatar">P</span>') +
+        '<div class="social-comment-content"><div><a href="/collector.html?user=' + encodeURIComponent(c.username || '') + '">' + safe(c.display_name || c.username) + '</a><span> · ' + safe(dateText(c.created_at)) + '</span></div><p>' + safe(c.body).replace(/\n/g, '<br>') + '</p><div class="social-comment-controls">' +
+        (supportsReplies ? '<button type="button" class="social-comment-reply-btn" data-comment-reply="' + id + '" data-comment-reply-author="' + safe(author) + '">Reply</button>' : '') +
+        (c.is_own ? '<button type="button" class="social-comment-remove" data-comment-delete="' + id + '" aria-label="Delete your comment">Delete</button>' : '') +
+        '</div></div></article>';
+      const children = byParent.get(id) || [];
+      const replies = children.length ? '<div class="social-comment-replies">' + children.map(child => renderOne(child, Math.min(depth + 1, 4))).join('') + '</div>' : '';
+      return '<div class="social-comment-node">' + article + replies + '</div>';
+    }
+    const topLevel = byParent.get(0) || [];
+    list.innerHTML = comments.length
+      ? topLevel.map(comment => renderOne(comment, 0)).join('')
+      : '<p class="social-empty-comments">No comments yet. Start the conversation.</p>';
+    const form = $(thread, '[data-comment-form]');
+    if (form) form.dataset.supportsReplies = String(!!supportsReplies);
+    if (!supportsReplies) {
+      const note = $(thread, '[data-comment-status]');
+      if (note) note.textContent = 'Direct replies are being enabled. You can still add regular comments.';
+    }
+  }
+  function setReplyTarget(form, id, author) {
+    if (!form) return;
+    const input = form.elements.parent_comment_id;
+    const context = $(form, '[data-reply-context]');
+    const name = $(form, '[data-reply-name]');
+    const textarea = form.elements.body;
+    const button = form.querySelector('[type="submit"]');
+    input.value = id ? String(id) : '';
+    context.hidden = !id;
+    name.textContent = id ? '@' + String(author || 'collector').replace(/^@/, '') : '';
+    textarea.placeholder = id ? 'Reply to @' + String(author || 'collector').replace(/^@/, '') + '…' : 'Add a comment…';
+    button.textContent = id ? 'Send reply' : 'Comment';
   }
   async function loadComments(root, postId) {
     const thread = $(root, '[data-comments-thread="' + postId + '"]');
@@ -172,8 +214,8 @@
     status.textContent = 'Loading comments…';
     try {
       const d = await api('/api/collector/post-comments?post_id=' + encodeURIComponent(postId));
-      renderComments(root, postId, d.comments || []);
-      status.textContent = '';
+      renderComments(root, postId, d.comments || [], !!d.supports_replies);
+      if (!$(thread, '[data-comment-status]').textContent.startsWith('Direct replies are being enabled')) status.textContent = '';
       thread.dataset.loaded = 'true';
     } catch (e) { status.textContent = e.message; }
   }
@@ -411,14 +453,31 @@
       try { await api('/api/collector/post-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:Number(report.dataset.postReport),reason,details})});alert('Thanks. Your report has been recorded.');}
       catch(e){alert(e.message);} finally {report.disabled=false;}
     }
+    const replyButton=event.target.closest('[data-comment-reply]');
+    if(replyButton){
+      const thread=replyButton.closest('[data-comments-thread]');
+      const form=thread&&$(thread,'[data-comment-form]');
+      if(form){
+        if(form.dataset.supportsReplies!=='true'){const status=$(thread,'[data-comment-status]');status.textContent='Direct replies are not available until the production comment-replies migration is applied.';return;}
+        setReplyTarget(form,replyButton.dataset.commentReply,replyButton.dataset.commentReplyAuthor);
+        form.elements.body.focus();
+      }
+      return;
+    }
+    const cancelReply=event.target.closest('[data-comment-reply-cancel]');
+    if(cancelReply){setReplyTarget(cancelReply.closest('[data-comment-form]'),null,'');return;}
     const removeComment=event.target.closest('[data-comment-delete]');
     if(removeComment){if(!confirm('Delete your comment?'))return;try{await api('/api/collector/post-comments?id='+encodeURIComponent(removeComment.dataset.commentDelete),{method:'DELETE'});const card=removeComment.closest('[data-post-card]');const id=card.dataset.postCard;await loadComments(root,id);const count=card.querySelector('[data-comment-count]');const n=Number((count.textContent.match(/\d+/)||['0'])[0]);const nextCount=Math.max(0,n-1);count.textContent=nextCount+(nextCount===1?' comment':' comments');}catch(e){alert(e.message);}}
   }
   async function handleCommentSubmit(event,root,state){
     const form=event.target.closest('[data-comment-form]');if(!form)return;
-    event.preventDefault();const id=form.dataset.commentForm,body=form.elements.body.value.trim(),status=form.parentElement.querySelector('[data-comment-status]'),button=form.querySelector('[type="submit"]');if(!body)return;
-    button.disabled=true;status.textContent='Sending…';
-    try{await api('/api/collector/post-comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:Number(id),body})});form.reset();await loadComments(root,id);const card=form.closest('[data-post-card]'),count=card.querySelector('[data-comment-count]'),n=Number((count.textContent.match(/\d+/)||['0'])[0]);const nextCount=n+1;count.textContent=nextCount+(nextCount===1?' comment':' comments');status.textContent='Comment added.';}
+    event.preventDefault();const id=form.dataset.commentForm,body=form.elements.body.value.trim(),parentId=Number(form.elements.parent_comment_id.value||0)||null,status=form.closest('[data-comments-thread]').querySelector('[data-comment-status]'),button=form.querySelector('[type="submit"]');if(!body)return;
+    button.disabled=true;status.textContent=parentId?'Sending reply…':'Sending comment…';
+    try{
+      await api('/api/collector/post-comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:Number(id),body,parent_comment_id:parentId})});
+      form.reset();setReplyTarget(form,null,'');await loadComments(root,id);
+      const card=form.closest('[data-post-card]'),count=card.querySelector('[data-comment-count]'),n=Number((count.textContent.match(/\d+/)||['0'])[0]);const nextCount=n+1;count.textContent=nextCount+(nextCount===1?' comment':' comments');status.textContent=parentId?'Reply added.':'Comment added.';
+    }
     catch(e){status.textContent=e.message;if(e.message==='Please sign in to do that.')location.href='/account.html';}
     finally{button.disabled=false;}
   }
