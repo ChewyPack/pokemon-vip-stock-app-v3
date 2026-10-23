@@ -11,4 +11,4 @@ crons = ["*/1 * * * *", "0 21 * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "pokemon-vip-members"
-database_id = "REPLACE_WITH_PRODUCTION_D1_ID_FROM_WRANGLER_D1_LIST"
+database_id = "4427e96c-d1f1-4f42-b863-94e303a4b7d9"
