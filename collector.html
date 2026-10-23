@@ -559,18 +559,35 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  async function loadFollowState(username){try{const r=await fetch('/api/collector/follow?username='+encodeURIComponent(username),{credentials:'include',cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok)return;followState=d; $('followers-count').textContent=Number(d.followers||0).toLocaleString();$('following-count').textContent=Number(d.following||0).toLocaleString();$('follow-button').hidden=own||!d.canFollow||!!d.isFollowing;$('follow-button').textContent='Follow';$('profile-menu-wrap').hidden=own||!d.canFollow||!d.isFollowing;$('profile-menu').hidden=true;$('profile-menu-trigger').setAttribute('aria-expanded','false');}catch{}}
  async function openFollowList(kind){if(!profile?.username)return;const modal=$('follow-modal'),title=$('follow-modal-title'),status=$('follow-modal-status'),list=$('follow-modal-list');title.textContent=kind==='followers'?'Followers':'Following';status.textContent='Loading collectors…';list.innerHTML='';modal.hidden=false;$('follow-modal-close').focus();try{const r=await fetch('/api/collector/follow?username='+encodeURIComponent(profile.username)+'&list='+kind,{credentials:'include',cache:'no-store'}),d=await r.json();if(!r.ok||!d.ok){const errors={follow_migration_required:'The staging follow database is not set up yet.',profile_not_found:'This collector profile could not be found.'};throw new Error(errors[d.error]||'Could not load this list.');}if(!d.results.length){status.textContent='';list.innerHTML='<div class="cp-follow-empty">'+(kind==='followers'?'No followers yet.':'Not following any collectors yet.')+'</div>';return;}status.textContent=d.results.length+' collector'+(d.results.length===1?'':'s');list.innerHTML=d.results.map(p=>'<article class="cp-person"><div class="cp-person-avatar">'+(p.avatar_url?'<img class="cp-person-avatar" src="'+safe(p.avatar_url)+'" alt="" loading="lazy">':'Card')+'</div><div class="cp-person-main"><a href="/collector.html?user='+encodeURIComponent(p.username)+'">'+safe(p.display_name||p.username)+'</a><p>@'+safe(p.username)+' · '+Number(p.followers||0).toLocaleString()+' followers</p></div>'+(p.canFollow?'<button class="cp-person-follow '+(p.isFollowing?'following':'')+'" type="button" data-modal-follow="'+safe(p.username)+'" data-following="'+String(!!p.isFollowing)+'">'+(p.isFollowing?'Following':'Follow')+'</button>':'')+'</article>').join('');}catch(error){status.textContent=error.message||'Could not load this list.';}}
  $('followers-trigger').addEventListener('click',()=>openFollowList('followers'));$('following-trigger').addEventListener('click',()=>openFollowList('following'));$('follow-modal-close').addEventListener('click',()=>{$('follow-modal').hidden=true;});$('follow-modal').addEventListener('click',event=>{if(event.target===$('follow-modal'))$('follow-modal').hidden=true;});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('follow-modal').hidden)$('follow-modal').hidden=true;});$('follow-modal-list').addEventListener('click',async event=>{const button=event.target.closest('[data-modal-follow]');if(!button)return;const username=button.dataset.modalFollow,wasFollowing=button.dataset.following==='true';button.disabled=true;try{const r=await fetch('/api/collector/follow?username='+encodeURIComponent(username),{method:wasFollowing?'DELETE':'POST',credentials:'include'}),d=await r.json();if(!r.ok||!d.ok){if(r.status===401){location.href='/account.html';return;}throw new Error('Could not update follow.');}button.dataset.following=String(!!d.isFollowing);button.textContent=d.isFollowing?'Following':'Follow';button.classList.toggle('following',!!d.isFollowing);if(profile?.username)await loadFollowState(profile.username);}catch(error){$('follow-modal-status').textContent=error.message||'Could not update follow.';}finally{button.disabled=false;}});
+let collectorSearchRequest=0,collectorSearchTimer=null;
 async function searchCollectors(query){
+  const requestId=++collectorSearchRequest;
   const status=$('collector-search-status'),results=$('collector-search-results');
   results.innerHTML='';status.textContent='Searching collectors…';
   try{
    const r=await fetch('/api/collector/search?q='+encodeURIComponent(query.trim()),{credentials:'include',cache:'no-store'}),d=await r.json();
+   if(requestId!==collectorSearchRequest)return;
    if(!r.ok||!d.ok){const errors={query_too_short:'Enter at least 2 characters to search.',collector_search_migration_required:'The staging collector-follow database setup is missing. Apply migrations/staging_collector_follows.sql to the pokemon-vip-members-staging database.',database_not_configured:'The staging database is not connected to this API.',collector_search_failed:'The search API failed. Check the staging Pages Function logs for the exact database error.'};throw new Error(errors[d.error]||('Could not search collectors ('+(d.error||'unknown error')+'). Please try again.'));}
    if(!d.results.length){status.textContent='No public collector profiles found.';return;}
    status.textContent='';
    results.innerHTML=d.results.map(p=>'<article class="cp-person"><div class="cp-person-avatar">'+(p.avatar_url?'<img class="cp-person-avatar" src="'+safe(p.avatar_url)+'" alt="" loading="lazy">':'Card')+'</div><div class="cp-person-main"><a href="/collector.html?user='+encodeURIComponent(p.username)+'">'+safe(p.display_name||p.username)+'</a><p>@'+safe(p.username)+' · '+Number(p.followers||0).toLocaleString()+' followers'+(p.bio?' · '+safe(p.bio):'')+'</p></div>'+(p.canFollow?'<button class="cp-person-follow '+(p.isFollowing?'following':'')+'" type="button" data-person-follow="'+safe(p.username)+'" data-following="'+String(!!p.isFollowing)+'">'+(p.isFollowing?'Following':'Follow')+'</button>':'')+'</article>').join('');
-  }catch(error){status.textContent=error.message||'Could not search collectors.';}
- }
- $('collector-search-form').addEventListener('submit',event=>{event.preventDefault();const query=$('collector-search-query').value.trim();if(query.length<2){$('collector-search-status').textContent='Enter at least 2 characters to search.';return;}searchCollectors(query);});
+  }catch(error){if(requestId===collectorSearchRequest)status.textContent=error.message||'Could not search collectors.';}
+}
+$('collector-search-query').addEventListener('input',()=>{
+ if(collectorSearchTimer)clearTimeout(collectorSearchTimer);
+ const query=$('collector-search-query').value.trim();
+ // Discard earlier responses as soon as the query changes.
+ collectorSearchRequest++;
+ if(query.length<2){$('collector-search-results').innerHTML='';$('collector-search-status').textContent=query?'Type at least 2 characters to search.':'';return;}
+ collectorSearchTimer=setTimeout(()=>searchCollectors(query),250);
+});
+$('collector-search-form').addEventListener('submit',event=>{
+ event.preventDefault();
+ if(collectorSearchTimer)clearTimeout(collectorSearchTimer);
+ const query=$('collector-search-query').value.trim();
+ if(query.length<2){collectorSearchRequest++;$('collector-search-results').innerHTML='';$('collector-search-status').textContent='Enter at least 2 characters to search.';return;}
+ searchCollectors(query);
+});
  $('collector-search-results').addEventListener('click',async event=>{
   const button=event.target.closest('[data-person-follow]');if(!button)return;
   const username=button.dataset.personFollow,wasFollowing=button.dataset.following==='true';button.disabled=true;
