@@ -294,3 +294,13 @@
     padding: 9px 10px;
   }
 }
+
+
+/* Keep the profile/login control paired with the Inbox icon, even when nav links wrap. */
+.site-nav__account-actions{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:0 0 auto;white-space:nowrap}
+.site-nav__account-actions>.account-nav-link,
+.site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link{flex:0 0 auto;padding:12px 16px;border:1px solid #ffd21f;border-radius:10px;background:#ffd21f;color:#06174a;font-weight:900}
+.site-nav__account-actions>.account-nav-link:hover,
+.site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link:hover{background:#fff;border-color:#fff;color:#06174a;transform:translateY(-1px)}
+.site-nav__account-actions .site-nav__inbox-wrap{flex:0 0 auto}
+@media(max-width:560px){.site-nav__account-actions{grid-column:1/-1;justify-self:center;align-self:center}.site-nav__account-actions>.account-nav-link,.site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link{padding:10px 12px;font-size:.82rem}}
