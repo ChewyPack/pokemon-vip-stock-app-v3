@@ -720,6 +720,26 @@
         });
       }
 
+      function formatTime12(value) {
+        var match = String(value || '').trim().match(/^(\\d{1,2}):(\\d{2})$/);
+
+        if (!match) {
+          return value || '';
+        }
+
+        var hour = Number(match[1]);
+        var minute = Number(match[2]);
+
+        if (hour > 23 || minute > 59) {
+          return value;
+        }
+
+        var suffix = hour >= 12 ? 'PM' : 'AM';
+        var displayHour = hour % 12 || 12;
+
+        return displayHour + ':' + match[2] + ' ' + suffix;
+      }
+
       function renderCard(event) {
         var card = make('article', {
           class: 'event-card'
@@ -760,7 +780,7 @@
         });
 
         [
-          ['Date', formatDate(event.date) + (event.start_time ? ' · ' + event.start_time : '') + (event.end_time ? '–' + event.end_time : '')],
+          ['Date', formatDate(event.date) + (event.start_time ? ' · ' + formatTime12(event.start_time) : '') + (event.end_time ? (event.start_time ? '–' : ' · ') + formatTime12(event.end_time) : '')],
           ['Location', [event.city, event.stateName].filter(Boolean).join(', ') || 'Location to be confirmed'],
           ['Venue', event.venue || 'Venue to be confirmed'],
           ['Address', event.address || ''],
