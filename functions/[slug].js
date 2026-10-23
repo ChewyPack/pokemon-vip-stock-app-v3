@@ -7,6 +7,7 @@ function escapeHtml(value) {
 }
 
 function absoluteImageUrl(raw, origin) {
+  if (!String(raw || "").trim()) return new URL("/pokeprizepool-pwa-512.png", origin).href;
   try {
     const url = new URL(String(raw || ""), origin);
     return ["http:", "https:"].includes(url.protocol) ? url.href : new URL("/pokeprizepool-pwa-512.png", origin).href;
