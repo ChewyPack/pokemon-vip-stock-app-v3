@@ -173,7 +173,7 @@ export function buildAlert(
     footer: {
       text:
         'Reported by ' +
-        sanitize(report.reporter || 'VIP member', 60) +
+        sanitize(report.submittedByUsername ? '@' + report.submittedByUsername : (report.reporter || 'VIP member'), 60) +
         '. Inventory changes fast — verify before traveling.'
     }
   };
