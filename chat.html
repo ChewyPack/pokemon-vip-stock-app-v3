@@ -125,6 +125,7 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
 }
 @media(max-width:430px){.chat-send{padding:0 12px}.chat-room-hash{flex-basis:36px;width:36px;height:36px}.chat-room-title h2{font-size:1rem}.chat-composer-hint{font-size:.7rem}}
 [hidden]{display:none!important}
+.chat-name-color-controls{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;padding:10px 0 2px}.chat-name-color-controls label{display:grid;gap:5px;font-weight:800;font-size:.86rem}.chat-name-color-controls select{min-height:38px;min-width:200px;border:1px solid #5c7197;border-radius:8px;padding:7px 10px;background:#08142d;color:#fff;font:inherit}.chat-name-color-upsell{font-size:.84rem;color:#b8c7e5;margin:7px 0 4px}.chat-name-color-upsell a{color:#ffd54a;font-weight:900}
 </style>
 <link rel="stylesheet" href="/css/ad-placements.css">
   <link rel="manifest" href="/manifest.webmanifest">
@@ -167,6 +168,14 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
         <button class="chat-notify-toggle" id="chat-enable-push" type="button">Enable browser notifications</button>
         <span id="chat-notification-status" class="chat-notify-status" role="status" aria-live="polite"></span>
       </div>
+      <div class="chat-name-color-controls" id="chat-name-color-controls" hidden>
+        <label for="chat-name-color">Collector+ username color
+          <select id="chat-name-color" aria-label="Choose your chat username color"></select>
+        </label>
+        <button class="chat-notify-toggle" id="chat-name-color-save" type="button">Save username color</button>
+        <span id="chat-name-color-status" class="chat-notify-status" role="status" aria-live="polite"></span>
+      </div>
+      <p class="chat-name-color-upsell" id="chat-name-color-upsell" hidden>Make your name stand out in chat with a <a href="/account.html">Collector+ membership</a>.</p>
       <div id="chat-alert" class="chat-alert" hidden></div>
       <div class="chat-history" id="chat-history" role="log" aria-live="polite" aria-relevant="additions text"><div class="chat-history-status">Loading messages…</div></div>
       <div class="chat-composer-wrap">
@@ -185,7 +194,7 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-const state={account:null,channels:[],channelId:null,messages:new Map(),unread:{},socket:null,retry:1000,retryTimer:null,online:null,loading:false,chatPrefs:{notification_mode:'mentions',sound_enabled:true},chatUsername:'',browserPushEnabled:false,vapidPublicKey:''};
+const state={account:null,channels:[],channelId:null,messages:new Map(),unread:{},socket:null,retry:1000,retryTimer:null,online:null,loading:false,chatPrefs:{notification_mode:'mentions',sound_enabled:true},chatUsername:'',chatNameColor:'#ffd54a',canCustomizeNameColor:false,browserPushEnabled:false,vapidPublicKey:''};
 const icons={general:'✦',restocks:'⚡',market:'↗',trades:'⇄',help:'?'}; 
 function api(url,options={}){return fetch(url,{credentials:'include',cache:'no-store',...options,headers:{'content-type':'application/json',...(options.headers||{})}}).then(async r=>{let d={};try{d=await r.json()}catch{}if(r.status===401){showGate();throw new Error('login_required')}if(!r.ok)throw new Error(d.message||friendly(d.error)||'Something went wrong.');return d;});}
 function friendly(code){return ({chat_realtime_not_configured:'Real-time chat is not configured yet.',rate_limited:'Please slow down before sending another message.',message_length:'Messages must be between 1 and 1,200 characters.',channel_not_found:'That channel is not available.',chat_messages_read_failed:'Could not load messages.',chat_message_send_failed:'Could not send that message.'})[code]||code||'Something went wrong.';}
@@ -219,7 +228,13 @@ async function loadChatPreferences(){
  try{
   var data=await api('/api/chat/preferences');
   state.chatPrefs=data.preferences||state.chatPrefs;state.chatUsername=String(data.username||'');
+  state.chatNameColor=String(data.chat_name_color||'#ffd54a');state.canCustomizeNameColor=!!data.can_customize_name_color;
   state.browserPushEnabled=!!data.browser_push_enabled;state.vapidPublicKey=String(data.vapid_public_key||'');
+  const colorSelect=$('chat-name-color');colorSelect.replaceChildren();
+  (Array.isArray(data.chat_name_colors)?data.chat_name_colors:[]).forEach(option=>{const item=document.createElement('option');item.value=option.value;item.textContent=option.label;item.style.color=option.value;colorSelect.appendChild(item);});
+  colorSelect.value=state.chatNameColor;
+  $('chat-name-color-controls').hidden=!state.canCustomizeNameColor;
+  $('chat-name-color-upsell').hidden=state.canCustomizeNameColor;
   $('chat-notification-mode').value=state.chatPrefs.notification_mode||'mentions';
   $('chat-sound-toggle').checked=state.chatPrefs.sound_enabled!==false;
   if(state.browserPushEnabled){$('chat-enable-push').textContent='Browser push enabled';$('chat-enable-push').disabled=true;}
@@ -238,6 +253,22 @@ async function saveChatPreferences(){
   setNotificationStatus(mode==='all'?'You’ll be notified about every new chat message.':mode==='muted'?'Chat alerts are muted; unread channel counts will still update.':'You’ll be notified when someone mentions your username.');
  }catch(error){setNotificationStatus(error.message||'Could not save chat notification settings.');}
  finally{$('chat-notification-mode').disabled=false;$('chat-sound-toggle').disabled=false;}
+}
+async function saveChatNameColor(){
+ const button=$('chat-name-color-save'),color=$('chat-name-color').value;
+ button.disabled=true;$('chat-name-color-status').textContent='Saving username color…';
+ try{
+  const data=await api('/api/chat/preferences',{method:'POST',body:JSON.stringify({notification_mode:state.chatPrefs.notification_mode||'mentions',sound_enabled:state.chatPrefs.sound_enabled!==false,chat_name_color:color})});
+  state.chatNameColor=String(data.chat_name_color||color);
+  state.canCustomizeNameColor=!!data.can_customize_name_color;
+  state.chatPrefs=data.preferences||state.chatPrefs;
+  for(const messages of state.messages.values()){
+   messages.forEach(message=>{if(Number(message.account_id)===Number(state.account?.id))message.chat_name_color=state.chatNameColor;});
+  }
+  renderMessages(state.messages.get(Number(state.channelId))||[]);
+  $('chat-name-color-status').textContent='Username color saved.';
+ }catch(error){$('chat-name-color-status').textContent=error.message||'Could not save username color.';}
+ finally{button.disabled=false;}
 }
 function base64UrlBytes(value){var normalized=String(value||'').replace(/-/g,'+').replace(/_/g,'/');while(normalized.length%4)normalized+='=';var binary=atob(normalized);var bytes=new Uint8Array(binary.length);for(var i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;}
 async function enableBrowserChatNotifications(){
@@ -303,7 +334,7 @@ function renderMessage(m){
  const avatar=document.createElement('div');avatar.className='chat-avatar';avatar.textContent=initials(m.display_name);if(m.avatar_url){const photo=document.createElement('img');photo.alt='';photo.loading='lazy';photo.referrerPolicy='no-referrer';photo.src=m.avatar_url;photo.style.width='100%';photo.style.height='100%';photo.style.objectFit='cover';photo.style.borderRadius='inherit';photo.addEventListener('error',()=>{photo.remove();avatar.textContent=initials(m.display_name);},{once:true});avatar.textContent='';avatar.appendChild(photo);}
  const body=document.createElement('div');body.className='chat-message-body';
  const meta=document.createElement('div');meta.className='chat-message-meta';
- const name=document.createElement('span');name.className='chat-message-name';name.textContent=m.display_name||'Collector';meta.appendChild(name);
+ const name=document.createElement('span');name.className='chat-message-name';name.textContent=m.display_name||'Collector';if(/^#[0-9a-f]{6}$/i.test(String(m.chat_name_color||'')))name.style.color=m.chat_name_color;meta.appendChild(name);
  if(m.username){const user=document.createElement('span');user.className='chat-message-username';user.textContent='@'+m.username;meta.appendChild(user);}
  const time=document.createElement('time');time.className='chat-message-time';time.textContent=timeLabel(m.created_at);time.dateTime=m.created_at||'';meta.appendChild(time);
  if(m.mine||Number(m.account_id)===Number(state.account?.id)||state.account?.is_admin){const actions=document.createElement('span');actions.className='chat-message-actions';const del=document.createElement('button');del.type='button';del.className='chat-delete';del.textContent='Delete';del.setAttribute('aria-label','Delete message');del.addEventListener('click',()=>deleteMessage(m.id));actions.appendChild(del);meta.appendChild(actions);}
@@ -420,6 +451,7 @@ $('chat-form').addEventListener('submit',sendMessage);
 $('chat-notification-mode').addEventListener('change',saveChatPreferences);
 $('chat-sound-toggle').addEventListener('change',saveChatPreferences);
 $('chat-enable-push').addEventListener('click',enableBrowserChatNotifications);
+$('chat-name-color-save').addEventListener('click',saveChatNameColor);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){updateDocumentTitle();if(state.channelId){state.unread[state.channelId]=0;saveUnread();renderChannels();}}});
 $('chat-input').addEventListener('input',()=>{updateCount();updateMentionSuggestions();});$('chat-input').addEventListener('keydown',e=>{if(! $('chat-mention-suggestions').hidden && mentionResults.length && (e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();mentionIndex=(mentionIndex+(e.key==='ArrowDown'?1:mentionResults.length-1))%mentionResults.length;const buttons=$('chat-mention-suggestions').querySelectorAll('button');buttons.forEach((button,index)=>button.setAttribute('aria-selected',String(index===mentionIndex)));return;}if(! $('chat-mention-suggestions').hidden && e.key==='Enter'&&!e.shiftKey){e.preventDefault();chooseMention(mentionResults[mentionIndex].username);return;}if(e.key==='Escape')hideMentionSuggestions();if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chat-form').requestSubmit();}});$('chat-input').addEventListener('blur',()=>setTimeout(hideMentionSuggestions,160));
 window.addEventListener('beforeunload',()=>{if(state.retryTimer)clearTimeout(state.retryTimer);if(reactionRefreshTimer)window.clearInterval(reactionRefreshTimer);if(state.socket)state.socket.close();});
