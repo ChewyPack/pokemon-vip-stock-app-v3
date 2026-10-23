@@ -14,7 +14,7 @@ async function ensureChatNotificationPreferences(env) {
 }
 
 async function notifyChatMentions(env, sender, body, channelId) {
-  const mentionsEveryone = /(?:^|\s)@everyone(?=$|\s|[.,!?])/i.test(body);
+  const mentionsEveryone = /(?:^|\s)@everyone(?=$|\s|[.,!?;:])/i.test(body);
   const names = [...new Set(Array.from(body.matchAll(/(?:^|\s)@([a-zA-Z0-9_.-]{2,30})/g), match => match[1].toLowerCase()).filter(name => name !== "everyone"))];
   if (!names.length && !mentionsEveryone) return;
   await ensureChatNotificationPreferences(env);
@@ -58,7 +58,7 @@ async function notifyChatMentions(env, sender, body, channelId) {
 
 async function notifyChatChannelMembers(env, sender, body, channelId, messageId) {
   // @everyone already sends mention notifications, so avoid duplicate all-message alerts.
-  if (/(?:^|\s)@everyone(?=$|\s|[.,!?])/i.test(body)) return;
+  if (/(?:^|\s)@everyone(?=$|\s|[.,!?;:])/i.test(body)) return;
   await ensureChatNotificationPreferences(env);
   const channel = await env.DB.prepare("SELECT slug, name FROM chat_channels WHERE id = ? LIMIT 1").bind(channelId).first();
   const channelSlug = String(channel?.slug || channelId);
