@@ -119,7 +119,7 @@ textarea{min-height:100px;resize:vertical}
 <div class="field"><label for="edit-price">Admission / price</label><input id="edit-price" name="price" maxlength="100" placeholder="Free, $5, etc."></div>
 <div class="field"><label for="edit-city">City / town</label><input id="edit-city" name="city" maxlength="160"></div>
 <div class="field"><label for="edit-state">State / area</label><select id="edit-state" name="state"><option value="">Choose state</option><option value="RI">Rhode Island</option><option value="MA">Massachusetts</option><option value="CT">Connecticut</option><option value="NH">New Hampshire</option><option value="VT">Vermont</option><option value="ME">Maine</option><option value="ONLINE">Online / nationwide</option><option value="OTHER">Other</option></select></div>
-<div class="field"><label for="edit-state-name">Location display name (optional)</label><input id="edit-state-name" name="state_name" maxlength="100"></div>
+<input id="edit-state-name" name="state_name" type="hidden" value="">
 <div class="field"><label for="edit-zip">ZIP / postal code</label><input id="edit-zip" name="zip" maxlength="12"></div>
 <div class="field"><label for="edit-address">Street address</label><input id="edit-address" name="address" maxlength="300"></div>
 <div class="field"><label for="edit-url">Official event details URL</label><input id="edit-url" name="url" type="url" maxlength="1200" placeholder="https://…"></div>
@@ -206,6 +206,10 @@ function renderPublic(){
  $('edit-panel').hidden=!canEdit;
  if(canEdit)populateEditor();
 }
+$('edit-state').addEventListener('change',function(){
+ var labels={RI:'Rhode Island',MA:'Massachusetts',CT:'Connecticut',NH:'New Hampshire',VT:'Vermont',ME:'Maine',ONLINE:'Online / nationwide',OTHER:'Other'};
+ $('edit-state-name').value=labels[this.value]||'';
+});
 function populateEditor(){
  var f=$('edit-form');
  var vals={id:record.id,title:record.title,event_type:record.event_type,event_date:record.event_date,status:record.status,start_time:record.start_time,end_time:record.end_time,venue:record.venue,price:record.price,city:record.city,state:record.state,state_name:record.state_name,zip:record.zip,address:record.address,url:record.url,badge:record.badge,description:record.description,details:record.details,image_url:record.image_url};
