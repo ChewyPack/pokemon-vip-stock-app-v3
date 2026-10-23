@@ -1,0 +1,444 @@
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var state = {
+    authenticated: false,
+    canGoLive: false,
+    streamingConfigured: false,
+    liveStreams: [],
+    myStream: null,
+    selectedStream: null,
+    media: null,
+    broadcaster: null,
+    playback: null,
+    playbackStreamId: "",
+    isPublishing: false,
+    chatTimer: null,
+    listTimer: null
+  };
+
+  function esc(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+    });
+  }
+  function setStatus(id, message, isError) {
+    var node = $(id);
+    if (!node) return;
+    node.textContent = message || "";
+    node.classList.toggle("ripz-status--error", !!isError);
+  }
+  async function api(method, body, query) {
+    var url = "/api/ripz" + (query ? "?" + new URLSearchParams(query).toString() : "");
+    var options = { method: method, credentials: "include", cache: "no-store", headers: {} };
+    if (body !== undefined) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(body);
+    }
+    var response = await fetch(url, options);
+    var data = {};
+    try { data = await response.json(); } catch (_) {}
+    if (!response.ok || !data.ok) {
+      var message = data.message || ({
+        login_required: "Please sign in to PokePrizePool to use Ripz.",
+        collector_plus_required: "Hosting a live rip requires an active Collector+ membership.",
+        streaming_not_configured: "Live video is not connected yet. Please contact PokePrizePool support.",
+        stream_provider_error: "The live video service could not start a stream. Please try again later.",
+        stream_provider_unavailable: "The live video provider did not return the required browser streaming links.",
+        stream_not_live: "That stream is no longer live."
+      })[data.error] || "The Ripz request could not be completed.";
+      var error = new Error(message);
+      error.code = data.error || "request_failed";
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+    return data;
+  }
+
+  function renderHostPanel() {
+    var host = $("ripz-host-panel");
+    if (!state.authenticated) {
+      host.innerHTML = '<div class="ripz-host-card"><h3>Sign in to host</h3><p>Sign in to check your member access and launch a live rip.</p><a class="ripz-button" href="/account.html">Sign in</a></div>';
+      return;
+    }
+    if (!state.canGoLive) {
+      host.innerHTML = '<div class="ripz-host-content">' +
+        '<div class="ripz-host-card"><h3>Collector+ exclusive</h3><p>Active Collector+ members can host live pack-opening sessions. You can watch and chat with other signed-in collectors here.</p></div>' +
+        '<div class="ripz-host-card"><h3>Ready to host?</h3><p>Check your membership and unlock the ability to start your own rip.</p><p style="margin-top:12px"><a class="ripz-button" href="/account.html">View membership</a></p></div></div>';
+      return;
+    }
+    if (!state.streamingConfigured) {
+      host.innerHTML = '<div class="ripz-host-card"><h3>Streaming setup needed</h3><p>Your Collector+ membership is eligible, but live video has not been connected by the site administrator yet. You will be able to go live once the stream service is configured.</p></div>';
+      return;
+    }
+    if (state.myStream && state.myStream.status !== "ended") {
+      var statusText = state.isPublishing ? "Your camera is connected and you are live." :
+        (state.myStream.status === "live" ? "This stream session is open. Reconnect your camera if you are returning to this page." : "Your stream room is ready. Connect your camera when you are ready to go live.");
+      host.innerHTML = '<div class="ripz-host-content">' +
+        '<div class="ripz-host-card ripz-host-span"><div class="ripz-live-badge">Your session</div><h3 style="margin-top:10px">' + esc(state.myStream.title) + '</h3><p>' + esc(state.myStream.product_name) + '</p><p id="ripz-host-status" class="ripz-host-status" style="margin-top:10px">' + esc(statusText) + '</p></div>' +
+        '<div class="ripz-host-span"><video id="ripz-host-preview" class="ripz-host-video" autoplay muted playsinline></video></div>' +
+        '<div class="ripz-camera-actions ripz-host-span">' +
+          '<button id="ripz-host-connect" class="ripz-button" type="button" ' + (state.isPublishing ? "disabled" : "") + '>Connect camera &amp; go live</button>' +
+          '<button id="ripz-host-stop" class="ripz-button ripz-button--danger" type="button">End stream</button>' +
+        '</div><p class="ripz-note ripz-host-span">Keep this page open while you rip. Use the End stream button as soon as you finish.</p>' +
+        '</div>';
+      var preview = $("ripz-host-preview");
+      if (preview && state.media) preview.srcObject = state.media;
+      var connect = $("ripz-host-connect");
+      if (connect) connect.addEventListener("click", function () { connectExistingStream(); });
+      var stop = $("ripz-host-stop");
+      if (stop) stop.addEventListener("click", function () { stopHostStream(false); });
+      return;
+    }
+    host.innerHTML = '<form class="ripz-form" id="ripz-start-form">' +
+      '<label for="ripz-title">Stream title<input id="ripz-title" name="title" maxlength="100" required minlength="3" placeholder="e.g. Chasing the SIR tonight"></label>' +
+      '<label for="ripz-product">What are you ripping?<input id="ripz-product" name="product_name" maxlength="120" required minlength="2" placeholder="e.g. Mega Evolution booster packs"></label>' +
+      '<button id="ripz-start-button" class="ripz-button" type="submit">🎥 Start a live rip</button>' +
+      '<p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite">Your browser will ask for camera and microphone access before the stream begins.</p>' +
+      '<p class="ripz-note">A camera and microphone are required. Your preview is muted locally to prevent echo. Streams are not recorded by Ripz.</p>' +
+      '</form>';
+    $("ripz-start-form").addEventListener("submit", function (event) {
+      event.preventDefault();
+      startNewStream($("ripz-title").value, $("ripz-product").value);
+    });
+  }
+
+  function renderLiveList() {
+    var grid = $("ripz-live-grid");
+    if (!state.liveStreams.length) {
+      grid.innerHTML = '<div class="ripz-empty" style="grid-column:1/-1"><strong>No one is live right now.</strong><br>When a Collector+ member starts ripping, their stream will show up here.</div>';
+      setStatus("ripz-live-status", "No live rips at the moment.");
+      return;
+    }
+    setStatus("ripz-live-status", state.liveStreams.length + " live session" + (state.liveStreams.length === 1 ? "" : "s") + " available.");
+    grid.innerHTML = state.liveStreams.map(function (stream) {
+      return '<article class="ripz-live-card">' +
+        '<div class="ripz-live-card__top"><span class="ripz-live-badge"><span class="ripz-live-dot"></span> Live</span><span class="ripz-note">Ripz</span></div>' +
+        '<h3>' + esc(stream.title) + '</h3>' +
+        '<p>Hosted by <strong>@' + esc(stream.host) + '</strong></p>' +
+        '<p>' + esc(stream.product_name || "Pack opening") + '</p>' +
+        '<button class="ripz-button ripz-button--secondary" type="button" data-ripz-watch="' + esc(stream.id) + '">Watch this rip</button>' +
+        '</article>';
+    }).join("");
+    grid.querySelectorAll("[data-ripz-watch]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var stream = state.liveStreams.find(function (item) { return item.id === button.getAttribute("data-ripz-watch"); });
+        if (stream) watchStream(stream);
+      });
+    });
+  }
+
+  function refreshData() {
+    return api("GET").then(function (data) {
+      state.authenticated = true;
+      state.canGoLive = !!data.can_go_live;
+      state.streamingConfigured = !!data.streaming_configured;
+      state.liveStreams = data.live_streams || [];
+      state.myStream = data.my_stream || null;
+      $("ripz-signed-out").hidden = true;
+      $("ripz-content").hidden = false;
+      renderHostPanel();
+      renderLiveList();
+      if (state.selectedStream && !state.liveStreams.some(function (item) { return item.id === state.selectedStream.id; })) {
+        closePlayback();
+        state.selectedStream = null;
+        $("ripz-watch-video").hidden = true;
+        $("ripz-stage-placeholder").hidden = false;
+        $("ripz-stage-title").textContent = "That rip has ended";
+        $("ripz-stage-subtitle").textContent = "Choose another live session above.";
+        $("ripz-chat-caption").textContent = "Select a stream to join the conversation.";
+        $("ripz-chat-form").querySelector("input").disabled = true;
+        $("ripz-chat-form").querySelector("button").disabled = true;
+        $("ripz-chat-messages").innerHTML = '<p class="ripz-note">The host ended this stream.</p>';
+      }
+      return data;
+    }).catch(function (error) {
+      if (error.code === "login_required" || error.status === 401) {
+        state.authenticated = false;
+        $("ripz-signed-out").hidden = false;
+        $("ripz-content").hidden = true;
+        return null;
+      }
+      setStatus("ripz-live-status", error.message, true);
+      $("ripz-live-grid").innerHTML = '<div class="ripz-empty" style="grid-column:1/-1">Ripz could not load right now. Refresh this page to try again.</div>';
+      $("ripz-content").hidden = false;
+      return null;
+    });
+  }
+
+  async function getCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Camera access is unavailable in this browser. Open PokePrizePool over HTTPS in a recent browser.");
+    }
+    return navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 }, facingMode: { ideal: "environment" } },
+      audio: true
+    });
+  }
+
+  async function negotiate(pc, endpoint, direction) {
+    if (direction === "publish") {
+      if (!state.media) throw new Error("Your camera has not started yet.");
+      state.media.getTracks().forEach(function (track) {
+        pc.addTransceiver(track, { direction: "sendonly", streams: [state.media] });
+      });
+    } else {
+      pc.addTransceiver("video", { direction: "recvonly" });
+      pc.addTransceiver("audio", { direction: "recvonly" });
+    }
+    var offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    var response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/sdp" },
+      body: offer.sdp
+    });
+    if (!response.ok) throw new Error((direction === "publish" ? "Starting the broadcast" : "Connecting to this stream") + " failed (video service " + response.status + ").");
+    var answer = await response.text();
+    await pc.setRemoteDescription({ type: "answer", sdp: answer });
+    var locationHeader = response.headers.get("Location");
+    return locationHeader ? new URL(locationHeader, endpoint).toString() : "";
+  }
+
+  async function beginPublish(stream) {
+    if (state.broadcaster) return;
+    var pc = new RTCPeerConnection();
+    try {
+      var sessionUrl = await negotiate(pc, stream.whip_url, "publish");
+      state.broadcaster = { pc: pc, sessionUrl: sessionUrl };
+      state.isPublishing = true;
+      var statusNode = $("ripz-host-status");
+      if (statusNode) statusNode.textContent = "Connecting to Ripz…";
+      await api("POST", { action: "publish", stream_id: stream.id });
+      state.myStream.status = "live";
+      var hostConnect = $("ripz-host-connect");
+      if (hostConnect) hostConnect.disabled = true;
+      if (statusNode) statusNode.textContent = "You are live. Keep this page open while you rip.";
+      refreshData();
+    } catch (error) {
+      pc.close();
+      state.broadcaster = null;
+      state.isPublishing = false;
+      throw error;
+    }
+  }
+
+  async function startNewStream(title, product) {
+    var button = $("ripz-start-button");
+    var statusNode = $("ripz-host-status");
+    if (button) button.disabled = true;
+    if (statusNode) statusNode.textContent = "Requesting camera and microphone access…";
+    var streamCreatedHere = false;
+    try {
+      var titleValue = String(title || "").trim();
+      var productValue = String(product || "").trim();
+      if (titleValue.length < 3 || productValue.length < 2) throw new Error("Enter a stream title and what you are ripping.");
+      state.media = await getCamera();
+      if (statusNode) statusNode.textContent = "Preparing your live room…";
+      var result = await api("POST", { action: "start", title: titleValue, product_name: productValue });
+      streamCreatedHere = !result.reused;
+      state.myStream = result.stream;
+      renderHostPanel();
+      var preview = $("ripz-host-preview");
+      if (preview) preview.srcObject = state.media;
+      setStatus("ripz-host-status", "Connecting your camera to the live room…");
+      await beginPublish(state.myStream);
+    } catch (error) {
+      if (state.media && !state.broadcaster) {
+        state.media.getTracks().forEach(function (track) { track.stop(); });
+        state.media = null;
+      }
+      if (streamCreatedHere && state.myStream) {
+        try { await api("POST", { action: "end", stream_id: state.myStream.id }); } catch (_) {}
+        state.myStream = null;
+        renderHostPanel();
+      } else if (statusNode) {
+        statusNode.textContent = error.message || "Could not start your live rip.";
+      }
+      if (error.code === "streaming_not_configured") state.streamingConfigured = false;
+      if (error.message) console.warn("Ripz start failed:", error.message);
+    } finally {
+      var startButton = $("ripz-start-button");
+      if (startButton) startButton.disabled = false;
+    }
+  }
+
+  async function connectExistingStream() {
+    if (!state.myStream || state.isPublishing) return;
+    var button = $("ripz-host-connect");
+    var statusNode = $("ripz-host-status");
+    if (button) button.disabled = true;
+    if (statusNode) statusNode.textContent = "Requesting camera and microphone access…";
+    try {
+      state.media = await getCamera();
+      var preview = $("ripz-host-preview");
+      if (preview) preview.srcObject = state.media;
+      if (statusNode) statusNode.textContent = "Connecting to the live room…";
+      await beginPublish(state.myStream);
+    } catch (error) {
+      if (state.media && !state.broadcaster) {
+        state.media.getTracks().forEach(function (track) { track.stop(); });
+        state.media = null;
+      }
+      if (statusNode) statusNode.textContent = error.message || "Could not connect the camera.";
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function stopHostStream(silent) {
+    var stream = state.myStream;
+    if (!stream) return;
+    if (!silent) {
+      var stopButton = $("ripz-host-stop");
+      if (stopButton) stopButton.disabled = true;
+      setStatus("ripz-host-status", "Ending your stream…");
+    }
+    if (state.broadcaster) {
+      var active = state.broadcaster;
+      state.broadcaster = null;
+      try {
+        if (active.sessionUrl) await fetch(active.sessionUrl, { method: "DELETE", keepalive: !!silent });
+      } catch (_) {}
+      try { active.pc.close(); } catch (_) {}
+    }
+    state.isPublishing = false;
+    if (state.media) {
+      state.media.getTracks().forEach(function (track) { track.stop(); });
+      state.media = null;
+    }
+    try {
+      if (silent && navigator.sendBeacon) {
+        navigator.sendBeacon("/api/ripz", new Blob([JSON.stringify({ action: "end", stream_id: stream.id })], { type: "application/json" }));
+      } else {
+        await api("POST", { action: "end", stream_id: stream.id });
+      }
+    } catch (error) {
+      if (!silent) setStatus("ripz-host-status", "The camera stopped, but the site could not confirm the end of the stream. Please refresh and check your session.", true);
+    }
+    state.myStream = null;
+    if (!silent) {
+      renderHostPanel();
+      await refreshData();
+    }
+  }
+
+  async function closePlayback() {
+    if (state.playback) {
+      var active = state.playback;
+      state.playback = null;
+      try {
+        if (active.sessionUrl) await fetch(active.sessionUrl, { method: "DELETE", keepalive: true });
+      } catch (_) {}
+      try { active.pc.close(); } catch (_) {}
+    }
+    state.playbackStreamId = "";
+  }
+
+  async function watchStream(stream) {
+    if (state.selectedStream && state.selectedStream.id === stream.id && state.playback) return;
+    await closePlayback();
+    state.selectedStream = stream;
+    $("ripz-stage-title").textContent = stream.title;
+    $("ripz-stage-subtitle").textContent = "Hosted by @" + stream.host + " · " + (stream.product_name || "Pack opening");
+    $("ripz-stage-placeholder").hidden = true;
+    $("ripz-watch-video").hidden = false;
+    $("ripz-watch-video").srcObject = null;
+    $("ripz-chat-caption").textContent = "Chatting in: " + stream.title;
+    $("ripz-chat-form").querySelector("input").disabled = false;
+    $("ripz-chat-form").querySelector("button").disabled = false;
+    $("ripz-chat-messages").innerHTML = '<p class="ripz-note">Loading chat…</p>';
+    setStatus("ripz-playback-status", "Connecting to the live rip…");
+    try {
+      var pc = new RTCPeerConnection();
+      var remoteStream = new MediaStream();
+      $("ripz-watch-video").srcObject = remoteStream;
+      pc.ontrack = function (event) {
+        if (!remoteStream.getTracks().some(function (track) { return track.id === event.track.id; })) remoteStream.addTrack(event.track);
+        $("ripz-watch-video").play().catch(function () {});
+      };
+      var sessionUrl = await negotiate(pc, stream.playback_url, "watch");
+      state.playback = { pc: pc, sessionUrl: sessionUrl };
+      state.playbackStreamId = stream.id;
+      setStatus("ripz-playback-status", "You’re watching @" + stream.host + " live.");
+      var caption = $("ripz-chat-caption");
+      if (caption) caption.textContent = "Chatting in: " + stream.title;
+      loadChat(stream.id);
+    } catch (error) {
+      setStatus("ripz-playback-status", error.message || "Could not connect to this stream.", true);
+      $("ripz-watch-video").hidden = true;
+      $("ripz-stage-placeholder").hidden = false;
+      $("ripz-stage-placeholder").innerHTML = '<strong>Stream unavailable</strong><span>The host may have ended their session. Try refreshing the live list.</span>';
+      await closePlayback();
+    }
+  }
+
+  async function loadChat(streamId) {
+    if (!streamId || !state.selectedStream || state.selectedStream.id !== streamId) return;
+    try {
+      var data = await api("GET", undefined, { stream_id: streamId });
+      if (!state.selectedStream || state.selectedStream.id !== streamId) return;
+      var messages = data.messages || [];
+      var list = $("ripz-chat-messages");
+      var nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 90;
+      if (!messages.length) {
+        list.innerHTML = '<p class="ripz-note">No messages yet. Say hello and talk pulls.</p>';
+      } else {
+        list.innerHTML = messages.map(function (message) {
+          var date = new Date(String(message.created_at || "").replace(" ", "T") + "Z");
+          var time = isNaN(date.getTime()) ? "" : date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+          return '<div class="ripz-chat-message"><strong>@' + esc(message.username) + (time ? ' · ' + esc(time) : '') + '</strong><span>' + esc(message.message) + '</span></div>';
+        }).join("");
+      }
+      if (nearBottom) list.scrollTop = list.scrollHeight;
+    } catch (error) {
+      if (error.code === "stream_not_found" || error.code === "stream_not_live") {
+        setStatus("ripz-playback-status", "This stream has ended.", true);
+      }
+    }
+  }
+
+  $("ripz-chat-form").addEventListener("submit", async function (event) {
+    event.preventDefault();
+    var input = $("ripz-chat-input");
+    var message = input.value.trim();
+    if (!state.selectedStream || !message) return;
+    var button = $("ripz-chat-form").querySelector("button");
+    button.disabled = true;
+    try {
+      await api("POST", { action: "chat", stream_id: state.selectedStream.id, message: message });
+      input.value = "";
+      await loadChat(state.selectedStream.id);
+    } catch (error) {
+      setStatus("ripz-playback-status", error.message || "Could not send your chat message.", true);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  $("ripz-chat-form").querySelector("input").addEventListener("keydown", function (event) {
+    if (event.key === "Escape") this.value = "";
+  });
+
+  window.addEventListener("pagehide", function () {
+    if (state.myStream && (state.broadcaster || state.myStream.status === "live" || state.myStream.status === "ready")) {
+      stopHostStream(true);
+    }
+    if (state.playback) {
+      var active = state.playback;
+      try {
+        if (active.sessionUrl) fetch(active.sessionUrl, { method: "DELETE", keepalive: true });
+      } catch (_) {}
+      try { active.pc.close(); } catch (_) {}
+    }
+    if (state.chatTimer) clearInterval(state.chatTimer);
+    if (state.listTimer) clearInterval(state.listTimer);
+  });
+
+  refreshData().then(function () {
+    state.listTimer = window.setInterval(refreshData, 12000);
+    state.chatTimer = window.setInterval(function () {
+      if (state.selectedStream) loadChat(state.selectedStream.id);
+    }, 3500);
+  });
+})();
