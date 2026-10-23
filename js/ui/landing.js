@@ -669,8 +669,8 @@
           "if (host) {",
           "  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;",
           "  const scene = new THREE.Scene();",
-          "  const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 1000);",
-          "  camera.position.set(0, 0, 5);",
+          "  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);",
+          "  camera.position.set(0, 0, 4.1);",
           "  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });",
           "  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));",
           "  renderer.setSize(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight));",
@@ -690,19 +690,8 @@
           "    const center = box.getCenter(new THREE.Vector3());",
           "    ball.position.sub(center);",
           "    const maxDim = Math.max(size.x, size.y, size.z) || 1;",
-          "    ball.scale.setScalar(1.8 / maxDim);",
-          "    ball.rotation.set(0.12, 0, 0);",
+          "    ball.scale.setScalar(2.15 / maxDim);",
           "    scene.add(ball);",
-          "    const fittedBox = new THREE.Box3().setFromObject(ball);",
-          "    const fittedSphere = fittedBox.getBoundingSphere(new THREE.Sphere());",
-          "    const radius = Math.max(fittedSphere.radius, 0.1);",
-          "    const fovRadians = THREE.MathUtils.degToRad(camera.fov);",
-          "    const distance = (radius / Math.sin(fovRadians / 2)) * 1.22;",
-          "    camera.position.set(0, 0, Math.max(distance, 2.5));",
-          "    camera.near = Math.max(0.01, distance / 100);",
-          "    camera.far = Math.max(100, distance * 10);",
-          "    camera.lookAt(0, 0, 0);",
-          "    camera.updateProjectionMatrix();",
           "    const loading = host.querySelector('.cubone-hero__loading'); if (loading) loading.remove();",
           "  }, undefined, (error) => {",
           "    console.error('PokePrizePool 3D model failed to load:', error);",
@@ -741,6 +730,20 @@
             },
               h('div', { class: 'cubone-hero__loading', 'aria-hidden': 'true' }, 'Loading 3D model…')
             ),
+            h('figcaption', { class: 'cubone-hero__credit' },
+              '3D model: ',
+              h('a', {
+                href: 'https://sketchfab.com/3d-models/poke-ball-pokemon-pokeball-c266163bd310411bac727783e4c79c4a',
+                target: '_blank',
+                rel: 'noopener noreferrer'
+              }, 'Poké Ball by Jesús Orgaz'),
+              ' · ',
+              h('a', {
+                href: 'https://creativecommons.org/licenses/by/4.0/',
+                target: '_blank',
+                rel: 'noopener noreferrer'
+              }, 'CC BY 4.0')
+            )
           ),
           h(
             'div',
@@ -860,13 +863,7 @@
         h(
           'div',
           { class: 'wrap' },
-          h('p', null, cfg.legal),
-          h('p', { class: 'asset-credit' },
-            '3D asset credit: ',
-            h('a', { href: 'https://sketchfab.com/3d-models/poke-ball-pokemon-pokeball-c266163bd310411bac727783e4c79c4a', target: '_blank', rel: 'noopener noreferrer' }, 'Poké Ball by Jesús Orgaz'),
-            ' · ',
-            h('a', { href: 'https://creativecommons.org/licenses/by/4.0/', target: '_blank', rel: 'noopener noreferrer' }, 'CC BY 4.0')
-          )
+          h('p', null, cfg.legal)
         )
       );
 
