@@ -40,9 +40,12 @@ export async function notifyReport(env, report) {
   const title = line
     ? 'Store line report: ' + String(report.retailer || 'Store')
     : 'Pokémon stock report: ' + String(report.retailer || 'Store');
+  const attribution = report.submittedByUsername
+    ? 'Submitted by @' + String(report.submittedByUsername).trim()
+    : report.reporter ? 'Submitted by ' + String(report.reporter).trim() : '';
   // Stock alerts include each price only when the reporter supplied a valid value.
   const body = line
-    ? String(report.lineCount || '?') + ' people in line' + (report.location ? ' at ' + report.location : '')
+    ? [String(report.lineCount || '?') + ' people in line' + (report.location ? ' at ' + report.location : ''), attribution].filter(Boolean).join(' | ')
     : [
         [
           [
@@ -74,6 +77,8 @@ export async function notifyReport(env, report) {
           state: report.state || '',
           retailer: report.retailer || '',
           location: report.location || '',
+          submittedByUsername: report.submittedByUsername || '',
+          reporter: report.reporter || '',
           shelfPrice: formatPrice(report.shelfPrice) || null,
           msrp: formatPrice(report.msrp) || null
         })).run();
