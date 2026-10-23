@@ -110,6 +110,12 @@ async function beginSync(db) {
     const groups = groupsPayload.results;
     if (!groups.length) throw new Error('TCGCSV returned zero Pokémon groups; refusing to clear existing data.');
 
+    // Clear any stale resume cursor before touching staging rows. This prevents
+    // a failed start from accidentally publishing an older run's cursor.
+    await db.prepare(`UPDATE tcgcsv_sync_progress
+      SET run_token=NULL, source_timestamp=NULL, group_ids_json='[]', next_group_index=0
+      WHERE id=1`).run();
+
     await db.batch([
       db.prepare('DELETE FROM tcgcsv_groups_staging'),
       db.prepare('DELETE FROM tcgcsv_products_staging'),
@@ -266,24 +272,41 @@ async function processOneGroup(db, token) {
 }
 
 export default {
-  async scheduled(_event, env, ctx) {
-    console.log('TCGCSV scheduled trigger fired');
+  async scheduled(event, env, ctx) {
+    const cron = String(event?.cron || '');
+    const isDailySourceCheck = cron === '0 21 * * *';
+    console.log('TCGCSV scheduled trigger fired', { cron, isDailySourceCheck });
+
     ctx.waitUntil((async () => {
       const state = await env.DB.prepare(
         'SELECT status FROM tcgcsv_sync_state WHERE id = 1'
       ).first();
       const progress = await env.DB.prepare(
-        'SELECT run_token, source_timestamp, group_ids_json FROM tcgcsv_sync_progress WHERE id = 1'
+        'SELECT run_token, source_timestamp, group_ids_json, next_group_index FROM tcgcsv_sync_progress WHERE id = 1'
       ).first().catch(() => null);
 
-      if (progress?.run_token && progress?.source_timestamp && progress?.group_ids_json) {
+      let groupCount = 0;
+      try {
+        const ids = JSON.parse(progress?.group_ids_json || '[]');
+        if (Array.isArray(ids)) groupCount = ids.length;
+      } catch {
+        groupCount = 0;
+      }
+      const nextIndex = Number(progress?.next_group_index || 0);
+      const hasSavedRun = Boolean(progress?.run_token && progress?.source_timestamp && groupCount > 0);
+      const needsResume = hasSavedRun && (
+        nextIndex < groupCount ||
+        (nextIndex >= groupCount && ['syncing', 'error'].includes(String(state?.status || '')))
+      );
+
+      if (needsResume) {
         if (state?.status !== 'syncing') {
           console.log('Resuming saved TCGCSV batch progress; previous status:', state?.status);
           await env.DB.prepare(
             "UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1"
           ).run();
         }
-        console.log('Processing saved TCGCSV group batch');
+        console.log('Processing saved TCGCSV group batch', nextIndex + 1, 'of', groupCount);
         await processOneGroup(env.DB, progress.run_token).catch(error => {
           console.error('TCGCSV group batch failed:', error);
           return setError(env.DB, error);
@@ -291,7 +314,14 @@ export default {
         return;
       }
 
-      console.log('No saved TCGCSV progress; starting a new sync');
+      // The minute trigger only advances a previously-started import. TCGCSV
+      // recommends checking its source marker once per day, not once per minute.
+      if (!isDailySourceCheck) {
+        console.log('No active TCGCSV import; skipping source check until the daily trigger.');
+        return;
+      }
+
+      console.log('Daily TCGCSV source check; starting sync only if the source changed.');
       await beginSync(env.DB).catch(error => {
         console.error('TCGCSV scheduled sync failed:', error);
         return setError(env.DB, error);
