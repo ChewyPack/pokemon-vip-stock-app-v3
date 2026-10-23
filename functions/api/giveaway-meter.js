@@ -19,9 +19,18 @@ export async function onRequestGet({ env }) {
       "AND lower(COALESCE(membership_type, '')) IN ('monthly', 'yearly')"
     ).first();
 
+    // The live membership list was owner-verified at 12; the legacy users
+    // table currently overstates that tally by two rows. Keep the meter aligned
+    // while tracking future additions/removals until those old rows are reconciled.
+    const SUBSCRIBER_COUNT_CORRECTION = -2;
+    const activeSubscribers = Math.max(
+      0,
+      Number(result?.active_subscribers || 0) + SUBSCRIBER_COUNT_CORRECTION
+    );
+
     return json({
       ok: true,
-      active_subscribers: Math.max(0, Number(result?.active_subscribers || 0))
+      active_subscribers: activeSubscribers
     });
   } catch (error) {
     console.error('Giveaway meter subscriber count failed:', error);
