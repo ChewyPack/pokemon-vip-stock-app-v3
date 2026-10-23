@@ -166,6 +166,7 @@
             { title: 'Manage My Shop', href: '/collector.html#shop', description: 'Create or edit your member shop profile and listings' }
           ]),
           navLink('Giveaways', '/giveaways.html'),
+          navLink('Ripz', '/ripz.html'),
           navLink('Chat', '/chat.html'),
           navLink('Advertise', '/advertise.html'),
           dropdown('Resources', [
