@@ -4,8 +4,8 @@ var path=(window.location.pathname||'/').replace(/\/$/,'')||'/';
 var page=path==='/'||path==='/index.html'?'home':path==='/chat.html'?'chat':path==='/events.html'?'events':path==='/giveaways.html'?'giveaways':'';
 if(!page)return;
 var css=`
-.ppp-ad-slot{position:relative;box-sizing:border-box;display:flex;align-items:stretch;justify-content:center;overflow:hidden;color:#eaf1ff;background:linear-gradient(120deg,#061336,#102b62);border:1px solid rgba(130,157,202,.62);font:600 12px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;z-index:30;min-width:0}
-.ppp-ad-slot *{box-sizing:border-box}
+.ppp-ad-slot{position:relative;box-sizing:border-box;display:flex;align-items:stretch;justify-content:center;overflow:hidden;color:#eaf1ff;background:linear-gradient(120deg,#061336,#102b62);border:1px solid rgba(130,157,202,.62);font:600 12px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;z-index:30;min-width:0;text-transform:none}
+.ppp-ad-slot::before{content:none!important}.ppp-ad-slot *{box-sizing:border-box;text-transform:none}
 .ppp-ad-slot a{color:inherit;text-decoration:none}
 .ppp-ad-inner{display:flex;align-items:center;justify-content:center;gap:16px;width:100%;min-width:0;padding:20px 18px 13px}
 .ppp-ad-copy{display:grid;gap:5px;min-width:0;max-width:690px;text-align:left}
