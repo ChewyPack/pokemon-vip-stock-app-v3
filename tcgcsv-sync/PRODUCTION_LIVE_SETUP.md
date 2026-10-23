@@ -4,7 +4,7 @@ This runbook deploys the TCGCSV importer directly against the **production D1 da
 
 ## Before running the full import
 
-Cloudflare Workers Free limits D1 to 100,000 rows written per day. A full catalog import can exceed that. Upgrade this Cloudflare account to **Workers Paid** first if you need the import to finish without waiting for daily resets. Cloudflare currently includes 50 million D1 row writes per month on Workers Paid; writes above that are $1 per million, and usage is billable. The plan has a $5/month minimum. Check current usage in Cloudflare Billing before starting.
+The Workers Free plan allows 100,000 D1 rows written per UTC day across the account. This compact importer writes one product row with a single preferred market price, avoids duplicate staging-table copies and price-history snapshots, and pauses at 50,000 measured importer row writes for the day to reserve headroom for the live site. It resumes automatically after midnight UTC. The initial import may take multiple days. This is a safety budget, not a guarantee against unusually high write activity from the website or another Worker; pause the old staging sync first. Workers Paid is optional if you later decide you need the import completed faster.
 
 ## 1. Apply the required production schema patch
 
@@ -12,12 +12,16 @@ From the repository root, with Wrangler authenticated:
 
 ```powershell
 npx wrangler login
-npx wrangler d1 execute pokemon-vip-members --remote --file=production-migrations/007_tcgcsv_price_history_market_price.sql
+npx wrangler d1 execute pokemon-vip-members --remote --file=production-migrations/008_compact_tcgcsv_catalog.sql
 ```
 
-This adds the market-price field to price history that the current production baseline schema is missing. Do not run this command against the staging database.
+This adds compact current-price fields to products and daily resume-budget fields to the progress cursor. It does not import products or delete catalog data. Run it only against the production database name shown in the command.
 
-## 2. Create the production Worker configuration
+## 2. Pause the old staging importer
+
+In Cloudflare Dashboard, open **Workers & Pages → pokeprizepool-tcgcsv-sync-staging → Settings → Triggers** and disable/remove its every-minute Cron Trigger while the live import runs. Its old full importer can otherwise consume the same account-wide Free D1 write allowance. Do not delete the staging database or its saved progress.
+
+## 3. Create the production Worker configuration
 
 In the repository root:
 
@@ -29,7 +33,7 @@ notepad tcgcsv-sync\wrangler.production.toml
 
 In Notepad, replace `REPLACE_WITH_PRODUCTION_D1_ID_FROM_WRANGLER_D1_LIST` with the ID beside the exact database name `pokemon-vip-members`. Keep `database_name = "pokemon-vip-members"`. Do not use the ID for `pokemon-vip-members-staging`. Save the file.
 
-## 3. Deploy the production Worker and set its secret
+## 4. Deploy the production Worker and set its secret
 
 ```powershell
 cd tcgcsv-sync
@@ -39,7 +43,7 @@ npx wrangler secret put SYNC_SECRET --config wrangler.production.toml
 
 When prompted, enter a new long random secret and save it somewhere secure. Do not commit it or send it in chat. Keep this production secret separate from the staging Worker's secret.
 
-## 4. Start the first live sync immediately
+## 5. Start the first live sync immediately
 
 The deploy output provides the production Worker URL. In PowerShell, use that exact URL and the secret you just saved:
 
@@ -57,4 +61,4 @@ The POST should return an accepted/started sync (or report that the source is al
 
 ## What becomes live
 
-The production catalog API already reads `tcgcsv_groups`, `tcgcsv_products`, `tcgcsv_prices`, and `tcgcsv_price_history` from the production `DB` binding. Once the Worker successfully publishes the first catalog, collector card/sealed catalog search, TCGplayer market-price estimates, and saved price history can return data. Market Intelligence's prewritten mover rankings are a separate page and do not become live automatically from this sync.
+The production catalog API reads the current product name, card number, set, product type and single preferred market price from `tcgcsv_products`. The Worker chooses the first available market price by preference: Normal, Holofoil, Reverse Holofoil, then other variants. Historical price snapshots are intentionally skipped to keep the initial import small. Once the Worker reports `status: "success"`, collector catalog searches and current market-price estimates can return data. Market Intelligence's prewritten mover rankings are a separate page and do not become live automatically from this sync.
