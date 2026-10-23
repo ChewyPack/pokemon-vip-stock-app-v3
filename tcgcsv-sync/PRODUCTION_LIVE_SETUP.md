@@ -44,16 +44,18 @@ When prompted, enter a new long random secret and save it somewhere secure. Do n
 
 ## 5. Start the first live sync immediately
 
-The deploy output provides the production Worker URL. In PowerShell, use that exact URL and the secret you just saved:
+The deploy output provides the production Worker URL. If the window is Command Prompt, type `powershell` and press Enter first. Then paste these commands, using the exact Worker URL from deploy output:
 
 ```powershell
-$workerUrl = Read-Host "Paste the production Worker URL from deploy output"
-$workerUrl = $workerUrl.TrimEnd("/")
-$syncSecret = Read-Host "Enter the saved production SYNC_SECRET"
+$workerUrl = (Read-Host "Paste the production Worker URL").TrimEnd("/")
+$secureSecret = Read-Host "Enter the saved production SYNC_SECRET" -AsSecureString
+$secretPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
+$syncSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($secretPtr)
 $headers = @{ Authorization = "Bearer $syncSecret" }
 Invoke-RestMethod -Method Post -Uri "$workerUrl/sync" -Headers $headers
 Invoke-RestMethod -Method Get -Uri "$workerUrl/health"
-Remove-Variable syncSecret, headers
+[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($secretPtr)
+Remove-Variable secureSecret, secretPtr, syncSecret, headers
 ```
 
 The POST should return an accepted/started sync (or report that the source is already up to date). The health endpoint reports progress. Cloudflare's per-minute trigger resumes a saved import in the background, even after your PC sleeps or shuts down. The daily source-marker check happens at 21:00 UTC and does not re-fetch the marker every minute.
