@@ -14,14 +14,29 @@ This is a Cloudflare Worker, so after deployment its Cron Triggers run in Cloudf
 
 Before deploying, apply `migrations/tcgcsv_catalog.sql` and the collector/account schema migrations required by your staging app to the **staging** D1 database. Confirm that the binding below still points at `pokemon-vip-members-staging`.
 
-From the `tcgcsv-sync` directory in a terminal with Wrangler installed and authenticated:
+From the repository root, open a terminal and run these commands. If Wrangler is not already authenticated, run `npx wrangler login` and complete the browser sign-in.
 
-```sh
-npx wrangler secret put SYNC_SECRET
+```powershell
+cd tcgcsv-sync
 npx wrangler deploy
+npx wrangler secret put SYNC_SECRET
 ```
 
-When prompted for `SYNC_SECRET`, enter a long random secret and save it somewhere secure. Do not commit it to GitHub or share it in chat.
+Deploy first so Wrangler creates the staging Worker and its Cron Triggers; then add the secret. When prompted for `SYNC_SECRET`, use a long random value and save it somewhere secure. Do not commit it to GitHub or share it in chat.
+
+To start the first import immediately (instead of waiting for the 21:00 UTC trigger), use PowerShell and the Worker URL printed by the deploy command:
+
+```powershell
+$workerUrl = Read-Host "Worker URL from the deploy output"
+$workerUrl = $workerUrl.TrimEnd("/")
+$syncSecret = Read-Host "Enter the saved SYNC_SECRET"
+$headers = @{ Authorization = "Bearer $syncSecret" }
+Invoke-RestMethod -Method Post -Uri "$workerUrl/sync" -Headers $headers
+Invoke-RestMethod -Method Get -Uri "$workerUrl/health"
+Remove-Variable syncSecret, headers
+```
+
+The manual call only starts the import. Cloudflare's minute trigger continues processing the saved groups after the terminal closes.
 
 The Worker checks `https://tcgcsv.com/last-updated.txt` at 21:00 UTC once per day, after TCGCSV's usual daily update window, and skips unchanged source builds. A separate every-minute trigger only advances a sync already in progress; it does not poll TCGCSV while idle. Imports can therefore resume unattended until every Pokémon group has been processed. Requests use the custom User-Agent `PokePrizePoolMarket/1.0.0` and a 100 ms delay.
 
