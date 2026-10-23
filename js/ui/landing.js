@@ -876,6 +876,7 @@
       }, 'Ad placement · home · top');
       root.appendChild(homeAdTop);
       root.appendChild(hero);
+      initPokeBallViewer();
       root.appendChild(buildHomeGiveawayMeter());
       root.appendChild(buildHomepagePreviews());
       root.appendChild(universes);
