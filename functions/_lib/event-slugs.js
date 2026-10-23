@@ -2,8 +2,8 @@ const RESERVED_EVENT_SLUGS = new Set([
   "event", "api", "assets", "css", "js", "resources", "newsfeed",
   "marketplace", "collector", "chat", "giveaways", "events", "news",
   "account", "alerts", "vendor", "store", "shop", "updates",
-  "notifications", "inbox", "messages", "wishlist", "submit-event",
-  "instant-buyout", "instant-cash-out", "market-intelligence"
+  "notifications", "inbox", "messages", "wishlist", "submitevent",
+  "instantbuyout", "instantcashout", "marketintelligence"
 ]);
 
 export function normalizeEventSlug(value) {
