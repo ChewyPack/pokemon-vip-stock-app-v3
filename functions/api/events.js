@@ -1,4 +1,5 @@
 import { ensureEventBoostSchema } from "../_lib/event-boost.js";
+import { ensureEventSlugSchema, normalizeEventSlug, eventSlugFromTitle, uniqueEventSlug, isReservedEventSlug } from "../_lib/event-slugs.js";
 const COOKIE='collector_session';
 function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});}
 function cookie(request,name){for(const part of (request.headers.get('Cookie')||'').split(';')){const p=part.trim();if(p.startsWith(name+'='))return p.slice(name.length+1);}return '';}
@@ -14,7 +15,7 @@ async function ensureTable(env){
  zip TEXT NOT NULL DEFAULT '',url TEXT NOT NULL DEFAULT '',price TEXT NOT NULL DEFAULT '',
  image_url TEXT NOT NULL DEFAULT '',badge TEXT NOT NULL DEFAULT '',
  status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),
- details TEXT NOT NULL DEFAULT '',media_json TEXT NOT NULL DEFAULT '[]',
+ details TEXT NOT NULL DEFAULT '',media_json TEXT NOT NULL DEFAULT '[]',slug TEXT NOT NULL DEFAULT '',
  owner_account_id INTEGER,source_submission_id INTEGER,
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
  )`).run();
@@ -23,6 +24,7 @@ async function ensureTable(env){
  for (const [name, sql] of [
   ['details', "ALTER TABLE poke_report_events ADD COLUMN details TEXT NOT NULL DEFAULT ''"],
   ['media_json', "ALTER TABLE poke_report_events ADD COLUMN media_json TEXT NOT NULL DEFAULT '[]'"],
+  ['slug', "ALTER TABLE poke_report_events ADD COLUMN slug TEXT NOT NULL DEFAULT ''"],
   ['owner_account_id', 'ALTER TABLE poke_report_events ADD COLUMN owner_account_id INTEGER'],
   ['source_submission_id', 'ALTER TABLE poke_report_events ADD COLUMN source_submission_id INTEGER']
  ]) {
@@ -40,7 +42,7 @@ async function ensureTable(env){
 }
 async function account(request,env){const token=cookie(request,COOKIE);if(!token)return null;const a=await env.DB.prepare('SELECT id,is_admin,session_expires_at FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();return a&&a.session_expires_at&&Number(a.session_expires_at)>Date.now()?a:null;}
 async function admin(request,env){const a=await account(request,env);if(!a)return {response:json({ok:false,error:'login_required'},401)};if(Number(a.is_admin)!==1)return {response:json({ok:false,error:'admin_required'},403)};return {a};}
-const FIELDS=['title','description','event_type','event_date','start_time','end_time','venue','address','city','state','state_name','zip','url','price','image_url','badge','status','details','media_json'];
+const FIELDS=['title','description','event_type','event_date','start_time','end_time','venue','address','city','state','state_name','zip','url','price','image_url','badge','status','details','media_json','slug'];
 function normalizeMedia(value) {
  let input = value;
  if (typeof input === 'string') {
@@ -78,10 +80,17 @@ export async function onRequestGet({request,env}){
  try{
   await ensureTable(env);
   await ensureEventBoostSchema(env);
+  await ensureEventSlugSchema(env);
   const url=new URL(request.url);
   const adminView=url.searchParams.get('admin')==='1';
   if(adminView){const access=await admin(request,env);if(access.response)return access.response;const rows=await env.DB.prepare('SELECT * FROM poke_report_events ORDER BY event_date DESC,id DESC LIMIT 500').all();return json({ok:true,events:rows.results||[]});}
-  const id=Number(url.searchParams.get('id')||0);
+  let id=Number(url.searchParams.get('id')||0);
+  if(!id && url.searchParams.has('slug')){
+   const requestedSlug=normalizeEventSlug(clean(url.searchParams.get('slug'),100));
+   if(!requestedSlug)return json({ok:false,error:'event_not_found'},404);
+   const match=await env.DB.prepare("SELECT id FROM poke_report_events WHERE slug=? LIMIT 1").bind(requestedSlug).first();
+   id=Number(match&&match.id||0);
+  }
   if(id>0){
    const viewer=await account(request,env);
    const event=await env.DB.prepare('SELECT * FROM poke_report_events WHERE id=? LIMIT 1').bind(id).first();
@@ -116,6 +125,7 @@ export async function onRequestPost({request,env}){
  const id=Number(d.id||0);
  try{
   await ensureTable(env);
+  await ensureEventSlugSchema(env);
   const viewer=await account(request,env);
   if(!viewer)return json({ok:false,error:'login_required'},401);
   const isAdmin=Number(viewer.is_admin||0)===1;
@@ -127,11 +137,23 @@ export async function onRequestPost({request,env}){
   }else if(!isAdmin){return json({ok:false,error:'admin_required_to_create_events'},403);}
   const data={};
   for(const f of FIELDS){
-   const limit=f==='description'?4000:f==='details'?12000:f==='media_json'?60000:f==='title'?180:(f==='url'||f==='image_url'?1200:f==='address'?300:f==='badge'?80:160);
+   const limit=f==='description'?4000:f==='details'?12000:f==='media_json'?60000:f==='title'?180:f==='slug'?100:(f==='url'||f==='image_url'?1200:f==='address'?300:f==='badge'?80:160);
    data[f]=Object.prototype.hasOwnProperty.call(d,f)?clean(d[f],limit):(old&&old[f]!=null?String(old[f]):'');
   }
   data.status=isAdmin?(data.status==='published'?'published':'draft'):'published';
-  if(!data.title||!/^\d{4}-\d{2}-\d{2}$/.test(data.event_date))return json({ok:false,error:'title_and_valid_date_required'},400);
+  if(!data.title||!/^(\d{4})-(\d{2})-(\d{2})$/.test(data.event_date))return json({ok:false,error:'title_and_valid_date_required'},400);
+  const suppliedSlug=Object.prototype.hasOwnProperty.call(d,'slug')&&clean(d.slug,100)!=='';
+  const requestedSlug=normalizeEventSlug(data.slug||data.title);
+  if(!requestedSlug)return json({ok:false,error:'event_slug_required',message:'Enter a readable custom event URL.'},400);
+  if(isReservedEventSlug(requestedSlug))return json({ok:false,error:'event_slug_reserved',message:'That custom URL is reserved. Please choose another.'},400);
+  let slugCheck=await uniqueEventSlug(env,requestedSlug,data.title,id);
+  if(slugCheck.error==='event_slug_in_use'&&!id&&(!suppliedSlug||requestedSlug===eventSlugFromTitle(data.title))){
+   data.slug='';
+  }else if(slugCheck.error){
+   return json({ok:false,error:slugCheck.error,message:slugCheck.error==='event_slug_in_use'?'That custom event URL is already in use. Choose a different one.':'Choose a valid custom event URL.'},409);
+  }else{
+   data.slug=slugCheck.slug;
+  }
   if(!['show','trade','tournament','store','restock','release'].includes(data.event_type))return json({ok:false,error:'invalid_event_type'},400);
   if(data.url){try{if(new URL(data.url).protocol!=='https:')return json({ok:false,error:'event_url_must_use_https'},400);}catch{return json({ok:false,error:'invalid_event_url'},400);}}
   if(data.image_url){try{const u=new URL(data.image_url,new URL(request.url).origin);if(u.protocol!=='https:'||u.pathname!='/api/vendor/image'||!u.searchParams.get('key'))return json({ok:false,error:'image_must_be_uploaded'},400);}catch{return json({ok:false,error:'image_must_be_uploaded'},400);}}
@@ -140,10 +162,23 @@ export async function onRequestPost({request,env}){
   data.media_json=normalized.value;
   let savedId=id;
   if(id){
-   await env.DB.prepare('UPDATE poke_report_events SET title=?,description=?,event_type=?,event_date=?,start_time=?,end_time=?,venue=?,address=?,city=?,state=?,state_name=?,zip=?,url=?,price=?,image_url=?,badge=?,status=?,details=?,media_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(data.title,data.description,data.event_type,data.event_date,data.start_time,data.end_time,data.venue,data.address,data.city,data.state,data.state_name,data.zip,data.url,data.price,data.image_url,data.badge,data.status,data.details,data.media_json,id).run();
+   await env.DB.prepare('UPDATE poke_report_events SET title=?,description=?,event_type=?,event_date=?,start_time=?,end_time=?,venue=?,address=?,city=?,state=?,state_name=?,zip=?,url=?,price=?,image_url=?,badge=?,status=?,details=?,media_json=?,slug=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(data.title,data.description,data.event_type,data.event_date,data.start_time,data.end_time,data.venue,data.address,data.city,data.state,data.state_name,data.zip,data.url,data.price,data.image_url,data.badge,data.status,data.details,data.media_json,data.slug,id).run();
   }else{
-   const inserted=await env.DB.prepare('INSERT INTO poke_report_events (title,description,event_type,event_date,start_time,end_time,venue,address,city,state,state_name,zip,url,price,image_url,badge,status,details,media_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(data.title,data.description,data.event_type,data.event_date,data.start_time,data.end_time,data.venue,data.address,data.city,data.state,data.state_name,data.zip,data.url,data.price,data.image_url,data.badge,data.status,data.details,data.media_json).run();
+   const inserted=await env.DB.prepare('INSERT INTO poke_report_events (title,description,event_type,event_date,start_time,end_time,venue,address,city,state,state_name,zip,url,price,image_url,badge,status,details,media_json,slug) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(data.title,data.description,data.event_type,data.event_date,data.start_time,data.end_time,data.venue,data.address,data.city,data.state,data.state_name,data.zip,data.url,data.price,data.image_url,data.badge,data.status,data.details,data.media_json,data.slug).run();
    savedId=Number(inserted.meta?.last_row_id||0);
+   if(savedId&&!data.slug){
+    let autoBase=eventSlugFromTitle(data.title)||'event';
+    let autoCandidate=normalizeEventSlug(autoBase+String(savedId));
+    if(isReservedEventSlug(autoCandidate))autoCandidate='event'+String(savedId);
+    let autoCheck=await uniqueEventSlug(env,autoCandidate,data.title,savedId);
+    let suffix=2;
+    while(autoCheck.error==='event_slug_in_use'){
+     autoCandidate=normalizeEventSlug(autoBase+String(savedId)+String(suffix++));
+     autoCheck=await uniqueEventSlug(env,autoCandidate,data.title,savedId);
+    }
+    if(autoCheck.error)return json({ok:false,error:autoCheck.error},409);
+    await env.DB.prepare("UPDATE poke_report_events SET slug=? WHERE id=?").bind(autoCheck.slug,savedId).run();
+   }
   }
   if(!savedId)return json({ok:false,error:'event_save_failed'},500);
   const saved=await env.DB.prepare('SELECT * FROM poke_report_events WHERE id=?').bind(savedId).first();
