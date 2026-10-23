@@ -594,6 +594,7 @@ $('#sort').onchange = e => { state.sort = e.target.value; renderGrid(); };
 setInterval(tickCountdowns, 1000);
 load();
 loadGiveawayMeter();
+setInterval(loadGiveawayMeter, 60000);
 </script>
 <script src="/js/ui/site-nav.js?v=20261022-inbox-dropdown-counts"></script>
 <aside class="ppp-ad-slot ppp-ad-slot--rail ppp-ad-slot--left" data-ad-slot="giveaways-left" aria-label="Advertisement placement: giveaways left">Ad placement · giveaways · left</aside>
