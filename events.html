@@ -762,7 +762,15 @@
 
         if (event.image_url) { var cover = make('img', { class: 'event-cover', alt: event.title, loading: 'lazy' }); cover.src = event.image_url; cover.style.width = '100%'; cover.style.maxHeight = '260px'; cover.style.objectFit = 'cover'; cover.style.borderRadius = '10px'; cover.style.marginTop = '14px'; card.appendChild(cover); }
 
-        addText(card, 'h3', '', event.title);
+        var titleHeading = make('h3');
+        var titleLink = make('a', {
+          href: '/event.html?id=' + encodeURIComponent(event.id)
+        });
+        titleLink.textContent = event.title;
+        titleLink.style.color = 'inherit';
+        titleLink.style.textDecoration = 'none';
+        titleHeading.appendChild(titleLink);
+        card.appendChild(titleHeading);
 
         if (event.description) {
           addText(
