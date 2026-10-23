@@ -245,8 +245,8 @@ fetch(CONFIG.endpoint,{method:"POST",headers:{"Content-Type":"application/json"}
 $("toForm").onclick=function(){$("tier").value=st.tier;$("svc").value=st.svc;$("mode").value=st.mode;if(st.mode==="hourly")$("fhours").value=Math.max(3,Math.floor(Number($("hours").value))||3);fmode();show(0);$("reserve").scrollIntoView()};
 
 var FAQ=[
-["How much does the service cost?","Standard: Member $25/hour or $220 for 10 hours; VIP $20/hour or $180. High-demand: Member $30/hour or $260; VIP $25/hour or $225. Product costs are separate."],
-["What's the difference between standard and high-demand pricing?","High-demand pricing may apply to major releases, such as premium collection boxes and UPCs, or challenging conditions such as snow and freezing temperatures. The applicable rate is confirmed before you pay."],
+["How much does the service cost?","Standard: Member $25/hour or $220 for 10 hours; VIP $20/hour or $180. Severe/bad weather (snow, heavy rain, or freezing temperatures) adds $5 per hour for both account types. Add $50 to the 10-hour package when the surcharge applies. Product costs are separate."],
+["When does the weather surcharge apply?","Severe/bad weather such as snow, heavy rain, or freezing temperatures adds $5 per hour for both Member and VIP accounts. The surcharge is confirmed before you pay."],
 ["Why is there a 3-hour minimum?","Every hourly booking has a 3-hour minimum to cover the time, planning, and commitment involved."],
 ["Is the product cost included in the service fee?","No. The service fee and your product budget are two separate amounts."],
 ["When do I need to send product funds?","The full budget for the requested products must be provided before the store opens. No product funds means no purchase attempt."],
