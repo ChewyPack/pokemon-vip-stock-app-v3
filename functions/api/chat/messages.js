@@ -200,7 +200,7 @@ export async function onRequestGet({ request, env }) {
       ).bind(channelId, before).all();
     } else {
       result = await env.DB.prepare(
-        "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, m.body, m.created_at, m.edited_at, m.deleted_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.channel_id = ? ORDER BY m.id DESC LIMIT 100"
+        "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, p.chat_name_color, m.body, m.created_at, m.edited_at, m.deleted_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.channel_id = ? ORDER BY m.id DESC LIMIT 100"
       ).bind(channelId).all();
     }
     const rows = (result.results || []).reverse();
