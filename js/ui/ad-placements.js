@@ -82,7 +82,19 @@ function campaignAd(slot,campaign){
   img.addEventListener('error',function(){wrap.remove();},{once:true});wrap.appendChild(img);ui.inner.insertBefore(wrap,ui.copy);
  }
 }
+function initializeSlot(el,slot,kind,label){
+ if(el._pppAd)return;
+ var prepared=make(slot,kind,label);
+ el.className=prepared.className;
+ el.replaceChildren(prepared._pppAd.inner);
+ el._pppAd=prepared._pppAd;
+ el.dataset.adSlot=slot;
+ el.setAttribute('aria-label','Advertisement placement: '+page+' '+label);
+}
 function loadCampaign(slot){
+ var slotElement=document.querySelector('[data-ad-slot="'+slot+'"]');
+ if(!slotElement||slotElement.dataset.pppCampaignRequested==='1')return;
+ slotElement.dataset.pppCampaignRequested='1';
  fetch('/api/advertising?slot='+encodeURIComponent(slot),{credentials:'same-origin',cache:'no-store'})
   .then(function(response){if(!response.ok)throw new Error('Ad service unavailable');return response.json();})
   .then(function(data){if(data&&data.ok&&data.campaign)campaignAd(slot,data.campaign);})
@@ -90,8 +102,9 @@ function loadCampaign(slot){
 }
 function addSlots(){
  var header=document.querySelector('header.site-nav-header');
- if(!document.querySelector('[data-ad-slot="'+page+'-top"]')){
-  var top=make(page+'-top','top','top');
+ var topSlot=page+'-top',top=document.querySelector('[data-ad-slot="'+topSlot+'"]');
+ if(!top){
+  top=make(topSlot,'top','top');
   if(header&&header.parentNode)header.parentNode.insertBefore(top,header.nextSibling);
   else{
    var navRoot=document.getElementById('site-navigation');
@@ -100,13 +113,13 @@ function addSlots(){
    else if(main&&main.parentNode)main.parentNode.insertBefore(top,main);
    else document.body.insertBefore(top,document.body.firstChild);
   }
-  loadCampaign(page+'-top');
- }
+ }else initializeSlot(top,topSlot,'top','top');
+ loadCampaign(topSlot);
  ['left','right'].forEach(function(side){
-  var slot=page+'-'+side;
-  if(!document.querySelector('[data-ad-slot="'+slot+'"]')){
-   document.body.appendChild(make(slot,'rail',side));loadCampaign(slot);
-  }
+  var slot=page+'-'+side,el=document.querySelector('[data-ad-slot="'+slot+'"]');
+  if(!el){el=make(slot,'rail',side);document.body.appendChild(el);}
+  else initializeSlot(el,slot,'rail',side);
+  loadCampaign(slot);
  });
 }
 addSlots();
