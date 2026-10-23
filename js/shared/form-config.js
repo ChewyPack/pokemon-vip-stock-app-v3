@@ -59,6 +59,9 @@
 
   var branchDirectory = {
     RI: {
+      'BoxLunch': [
+        { value: 'boxlunch-ri-warwick-mall', label: 'Warwick Mall — 400 Bald Hill Road, Space #112, Warwick, RI 02886' }
+      ],
       Walmart: [
         { value: 'walmart-coventry', label: 'Coventry — 650 Centre of New England Blvd' },
         { value: 'walmart-cranston', label: 'Cranston — 1776 Plainfield Pike' },
@@ -201,6 +204,9 @@
     },
 
     CT: {
+      'BoxLunch': [
+        { value: 'boxlunch-ct-connecticut-post-mall', label: 'Connecticut Post Mall — 1201 Boston Post Road, Milford, CT 06460' }
+      ],
       Walmart: [
         { value: 'walmart-ct-brooklyn', label: 'Brooklyn — 450 Providence Rd, CT 06234' },
         { value: 'walmart-ct-hartford', label: 'Hartford — 495 Flatbush Ave, CT 06106' }
@@ -263,6 +269,9 @@
     },
 
     ME: {
+      'BoxLunch': [
+        { value: 'boxlunch-me-maine-mall', label: 'Maine Mall — 364 Maine Mall Rd, South Portland, ME 04106' }
+      ],
       Walmart: [
         { value: 'walmart-me-bangor', label: 'Bangor — 900 Stillwater Ave, ME 04401' },
         { value: 'walmart-me-brewer', label: 'Brewer — 24 Walton Dr, ME 04412' },
@@ -298,6 +307,12 @@
     },
 
     MA: {
+      'BoxLunch': [
+        { value: 'boxlunch-ma-south-shore-plaza', label: 'South Shore Plaza — 250 Granite St, Space #1027B, Braintree, MA 02184' },
+        { value: 'boxlunch-ma-burlington-mall', label: 'Burlington Mall — 75 Middlesex Turnpike, Space #2061A, Burlington, MA 01803' },
+        { value: 'boxlunch-ma-northshore-mall', label: 'Northshore Mall — 210 Andover Street, Space #E169, Peabody, MA 01960' },
+        { value: 'boxlunch-ma-holyoke-mall', label: 'Holyoke Mall — 50 Holyoke St, Holyoke, MA 01040' }
+      ],
       Walmart: [
         { value: 'walmart-ma-abington', label: 'Abington — 777 Brockton Ave, MA 02351' },
         { value: 'walmart-ma-avon', label: 'Avon — 30 Memorial Dr, MA 02322' },
@@ -442,6 +457,9 @@
     },
 
     NH: {
+      'BoxLunch': [
+        { value: 'boxlunch-nh-mall-of-new-hampshire', label: 'Mall of New Hampshire — 1500 S Willow St, Manchester, NH 03103' }
+      ],
       Walmart: [
         { value: 'walmart-nh-hudson', label: 'Hudson — 254 Lowell Rd, NH 03051' },
         { value: 'walmart-nh-amherst', label: 'Amherst — 85 State Route 101A, NH 03031' },
