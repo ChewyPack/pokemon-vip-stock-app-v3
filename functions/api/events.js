@@ -1,3 +1,4 @@
+import { ensureEventBoostSchema } from "../_lib/event-boost.js";
 const COOKIE='collector_session';
 function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});}
 function cookie(request,name){for(const part of (request.headers.get('Cookie')||'').split(';')){const p=part.trim();if(p.startsWith(name+'='))return p.slice(name.length+1);}return '';}
@@ -76,6 +77,7 @@ export async function onRequestGet({request,env}){
  if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
  try{
   await ensureTable(env);
+  await ensureEventBoostSchema(env);
   const url=new URL(request.url);
   const adminView=url.searchParams.get('admin')==='1';
   if(adminView){const access=await admin(request,env);if(access.response)return access.response;const rows=await env.DB.prepare('SELECT * FROM poke_report_events ORDER BY event_date DESC,id DESC LIMIT 500').all();return json({ok:true,events:rows.results||[]});}
@@ -86,21 +88,25 @@ export async function onRequestGet({request,env}){
    if(!event||(event.status!=='published'&&Number(viewer&&viewer.is_admin||0)!==1))return json({ok:false,error:'event_not_found'},404);
    let media=[];
    try{const parsed=JSON.parse(event.media_json||'[]');if(Array.isArray(parsed))media=parsed;}catch{}
+   const boost=await env.DB.prepare("SELECT MAX(ends_at) AS boosted_until FROM poke_prize_event_boosts WHERE event_id=? AND starts_at<=CURRENT_TIMESTAMP AND ends_at>CURRENT_TIMESTAMP").bind(id).first();
+   const boosted=Boolean(boost&&boost.boosted_until);
    const canEdit=!!viewer&&(Number(viewer.is_admin||0)===1||(event.status==='published'&&Number(event.owner_account_id)===Number(viewer.id)));
    const isAdmin=!!viewer&&Number(viewer.is_admin||0)===1;
-   const publicEvent={...event,media};
+   const canBoost=!!viewer&&event.status==='published'&&event.event_date>=new Date().toISOString().slice(0,10)&&(isAdmin||Number(event.owner_account_id)===Number(viewer.id));
+   const publicEvent={...event,media,boosted,boosted_until:boost?.boosted_until||null};
    delete publicEvent.owner_account_id;delete publicEvent.source_submission_id;delete publicEvent.media_json;
-   return json({ok:true,event:publicEvent,can_edit:canEdit,is_admin:isAdmin});
+   return json({ok:true,event:publicEvent,can_edit:canEdit,can_boost:canBoost,is_admin:isAdmin});
   }
   const from=clean(url.searchParams.get('from'),10),to=clean(url.searchParams.get('to'),10),type=clean(url.searchParams.get('type'),30),state=clean(url.searchParams.get('state'),10),q=clean(url.searchParams.get('q'),120).toLowerCase();
-  let rows=await env.DB.prepare("SELECT * FROM poke_report_events WHERE status='published' ORDER BY event_date ASC,id ASC LIMIT 500").all();
+  let rows=await env.DB.prepare("SELECT e.*, b.boosted_until FROM poke_report_events e LEFT JOIN (SELECT event_id, MAX(ends_at) AS boosted_until FROM poke_prize_event_boosts WHERE starts_at<=CURRENT_TIMESTAMP AND ends_at>CURRENT_TIMESTAMP GROUP BY event_id) b ON b.event_id=e.id WHERE e.status='published' ORDER BY CASE WHEN b.boosted_until IS NOT NULL THEN 0 ELSE 1 END, e.event_date ASC, e.id ASC LIMIT 500").all();
   let list=rows.results||[];
   if(from)list=list.filter(e=>e.event_date>=from);
   if(to)list=list.filter(e=>e.event_date<=to);
   if(type)list=list.filter(e=>e.event_type===type);
   if(state)list=list.filter(e=>e.state===state);
   if(q)list=list.filter(e=>[e.title,e.description,e.venue,e.city,e.state_name,e.address].join(' ').toLowerCase().includes(q));
-  list=list.map(e=>{const item={...e};delete item.owner_account_id;delete item.source_submission_id;delete item.media_json;delete item.details;return item;});
+  if(url.searchParams.get('featured')==='1'){const today=new Date().toISOString().slice(0,10);list=list.filter(e=>Boolean(e.boosted_until)&&e.event_date>=today);}
+  list=list.map(e=>{const item={...e,boosted:Boolean(e.boosted_until)};delete item.owner_account_id;delete item.source_submission_id;delete item.media_json;delete item.details;return item;});
   return json({ok:true,events:list});
  }catch(error){console.error('Poke Report events read failed',error);return json({ok:false,error:'events_read_failed'},500);}
 }
