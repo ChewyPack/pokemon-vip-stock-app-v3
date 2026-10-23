@@ -1,0 +1,2 @@
+# Per-account production D1 ID and local Worker config must never be committed.
+tcgcsv-sync/wrangler.production.toml
