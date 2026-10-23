@@ -387,6 +387,22 @@ export async function onRequestPost({ request, env }) {
     }, access.status);
   }
 
+  // Resolve the submitter's username from the authenticated account, not client input.
+  let submittedByUsername = '';
+  if (!access.legacyVip && access.account && access.account.id) {
+    try {
+      const profile = await env.DB.prepare(
+        `SELECT p.username, a.display_name
+         FROM accounts a
+         LEFT JOIN collector_profiles p ON p.account_id = a.id
+         WHERE a.id = ? LIMIT 1`
+      ).bind(access.account.id).first();
+      submittedByUsername = String(profile && (profile.username || profile.display_name) || '').trim();
+    } catch (error) {
+      console.warn('Could not resolve report submitter username:', error);
+    }
+  }
+
   const declared = Number(
     request.headers.get('content-length') || 0
   );
@@ -442,6 +458,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (data.reportType === 'line') {
+    if (submittedByUsername) data.submittedByUsername = submittedByUsername;
     return handleLineReport(data, env, form);
   }
 
@@ -462,6 +479,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const report = result.clean;
+  if (submittedByUsername) report.submittedByUsername = submittedByUsername;
 
   /*
    * Resolve the chosen branch against the configured directory.
