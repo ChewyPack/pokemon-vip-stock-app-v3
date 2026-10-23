@@ -674,7 +674,7 @@
             h('iframe', {
               class: 'cubone-hero__viewer',
               title: 'Interactive Cubone 3D model',
-              src: 'https://sketchfab.com/models/6d2e23474e3c47d091cc9f2983d7e75a/embed?autostart=1&animation_autoplay=1&autospin=0.25&ui_hint=2',
+              src: 'https://sketchfab.com/models/6d2e23474e3c47d091cc9f2983d7e75a/embed?autostart=1&animation_autoplay=1&autospin=0.25&transparent=1&ui_hint=0&ui_controls=0&ui_infos=0&ui_inspector=0&ui_settings=0&ui_help=0&ui_vr=0&ui_fullscreen=0',
               allow: 'autoplay; fullscreen; xr-spatial-tracking',
               allowfullscreen: true,
               loading: 'eager',
