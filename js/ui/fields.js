@@ -153,8 +153,41 @@
       'aria-describedby': field.hint ? 'hint-' + field.id : null,
       onchange: function () {
         ctx.set(field.id, control.value);
+        updateBranchMapLink();
       }
     });
+
+    // The selected store branch gets a direct Google Maps link. Keep the
+    // address lookup separate from the form control so opening Maps is optional.
+    var branchMapLink = field.id === 'branch'
+      ? h('a', {
+          class: 'link-btn branch-map-link',
+          href: '#',
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          hidden: true
+        }, 'Open this store in Google Maps')
+      : null;
+
+    function updateBranchMapLink() {
+      if (!branchMapLink) return;
+      var selected = getOptions().filter(function (opt) {
+        var normalized = typeof opt === 'string' ? { value: opt, label: opt } : opt;
+        return normalized && String(normalized.value) === String(ctx.get(field.id) || '');
+      })[0];
+      if (!selected || selected.value === 'manual') {
+        branchMapLink.hidden = true;
+        branchMapLink.href = '#';
+        return;
+      }
+      var stateOption = VIP.formConfig && VIP.formConfig.getOption
+        ? VIP.formConfig.getOption('state', ctx.get('state'), ctx)
+        : null;
+      var query = String(selected.label || selected.value) +
+        (stateOption && stateOption.label ? ', ' + stateOption.label : '');
+      branchMapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query);
+      branchMapLink.hidden = false;
+    }
 
     function refreshOptions() {
       var previousValue = ctx.get(field.id) || '';
@@ -217,7 +250,8 @@
       [
         h('label', { class: 'field__label', for: id }, labelText(field)),
         hint(field),
-        control
+        control,
+        branchMapLink
       ],
       {
         focus: function () {
@@ -244,8 +278,12 @@
           } else {
             control.value = String(value);
           }
+          updateBranchMapLink();
         },
-        refreshOptions: refreshOptions
+        refreshOptions: function () {
+          refreshOptions();
+          updateBranchMapLink();
+        }
       }
     );
   }
