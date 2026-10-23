@@ -8,3 +8,9 @@ ALTER TABLE tcgcsv_products ADD COLUMN market_price_subtype TEXT;
 ALTER TABLE tcgcsv_sync_progress ADD COLUMN current_group_offset INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE tcgcsv_sync_progress ADD COLUMN sync_day TEXT;
 ALTER TABLE tcgcsv_sync_progress ADD COLUMN rows_written_today INTEGER NOT NULL DEFAULT 0;
+
+-- Prefix indexes keep common name/card-number searches from scanning the full catalog.
+CREATE INDEX IF NOT EXISTS idx_tcgcsv_products_name_nocase
+  ON tcgcsv_products(name COLLATE NOCASE);
+CREATE INDEX IF NOT EXISTS idx_tcgcsv_products_card_number_nocase
+  ON tcgcsv_products(card_number COLLATE NOCASE);
