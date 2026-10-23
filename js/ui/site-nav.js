@@ -105,6 +105,7 @@
    {title:'Manage My Shop',description:'Create or edit your member shop profile and listings',href:'/collector.html#shop'}
   ]),
   link('Giveaways','/giveaways.html'),
+  link('Ripz','/ripz.html'),
   link('Chat','/chat.html'),
   link('Advertise','/advertise.html'),
   dropdown('Resources',[
