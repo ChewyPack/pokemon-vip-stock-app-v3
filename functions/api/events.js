@@ -89,7 +89,8 @@ export async function onRequestGet({request,env}){
    const requestedSlug=normalizeEventSlug(clean(url.searchParams.get('slug'),100));
    if(!requestedSlug)return json({ok:false,error:'event_not_found'},404);
    const match=await env.DB.prepare("SELECT id FROM poke_report_events WHERE slug=? LIMIT 1").bind(requestedSlug).first();
-   id=Number(match&&match.id||0);
+   if(!match)return json({ok:false,error:'event_not_found'},404);
+   id=Number(match.id||0);
   }
   if(id>0){
    const viewer=await account(request,env);
