@@ -36,6 +36,7 @@ export async function onRequestGet({ request, env }) {
       ['syncing', 'error'].includes(String(state?.status || '').toLowerCase()) ? progress?.source_timestamp : null
     ].filter(Boolean)));
     const timestampPlaceholders = activeTimestamps.map(() => '?').join(',');
+    const importing = Boolean(progress?.source_timestamp && ['syncing', 'error'].includes(String(state?.status || '').toLowerCase()));
 
     if (mode === 'sets') {
       const sets = activeTimestamps.length
@@ -51,7 +52,9 @@ export async function onRequestGet({ request, env }) {
         sets: sets.results || [],
         source_timestamp: state?.source_timestamp || null,
         last_success_at: state?.last_success_at || null,
-        synced: Boolean(state?.last_success_at)
+        synced: Boolean(state?.last_success_at),
+        importing,
+        partial: importing && !Boolean(state?.last_success_at)
       });
     }
 
@@ -82,7 +85,9 @@ export async function onRequestGet({ request, env }) {
     const query = (url.searchParams.get('q') || '').trim().slice(0, 80);
     if (query.length < 2) return json({ ok: true, products: [], source_timestamp: state?.source_timestamp || null });
 
-    if (!state?.last_success_at) return json({ ok: false, error: 'tcgcsv_not_synced' }, 503);
+    if (!state?.last_success_at && !activeTimestamps.length) {
+      return json({ ok: false, error: 'tcgcsv_not_synced' }, 503);
+    }
 
     const requestedType = normalizeType(url.searchParams.get('type'));
     const groupIdRaw = url.searchParams.get('set_id') || '';
@@ -196,7 +201,9 @@ export async function onRequestGet({ request, env }) {
       products: Array.from(byId.values()),
       source_timestamp: state?.source_timestamp || null,
       last_success_at: state?.last_success_at || null,
-      synced: Boolean(state?.last_success_at)
+      synced: Boolean(state?.last_success_at),
+      importing,
+      partial: importing && !Boolean(state?.last_success_at)
     });
   } catch (error) {
     console.error('TCGCSV catalog search failed:', error);
