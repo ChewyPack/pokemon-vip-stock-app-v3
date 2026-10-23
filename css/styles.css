@@ -1404,6 +1404,8 @@ img {
   min-height: 320px;
   border: 0;
   background: transparent;
+  pointer-events: none;
+  cursor: default;
 }
 @media (max-width: 959px) {
   .cubone-hero { width: min(100%, 520px); margin-inline: auto; }
