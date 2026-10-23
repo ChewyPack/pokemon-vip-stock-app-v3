@@ -19,7 +19,7 @@ var css=`
 .ppp-ad-slot--inline{width:min(100%,920px);min-height:82px;margin:12px auto 16px;border-radius:10px}
 .ppp-ad-slot--inline .ppp-ad-inner{padding:12px 15px}
 .ppp-ad-slot--top .ppp-ad-inner{padding-top:23px}
-.ppp-ad-slot--rail{position:fixed;top:175px;display:none;width:180px;height:520px;border-radius:10px}
+.ppp-ad-slot--rail{position:fixed;top:175px;display:none;width:200px;height:440px;border-radius:10px}
 .ppp-ad-slot--left{left:12px}
 .ppp-ad-slot--right{right:12px}
 .ppp-ad-slot--rail .ppp-ad-inner{flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding:25px 8px 10px;text-align:center}
@@ -31,17 +31,17 @@ var css=`
 .ppp-ad-slot--rail .ppp-ad-art{max-height:150px}
 /* Uploaded artwork becomes the full clickable ad in the left and right rails. */
 .ppp-ad-slot--image-creative{padding:0!important;background:#061336!important;align-items:stretch!important;justify-content:stretch!important}
-.ppp-ad-slot--image-creative .ppp-ad-inner{display:block;width:100%;height:100%;padding:0!important}
+.ppp-ad-slot--image-creative .ppp-ad-inner{display:block;width:100%;height:auto;padding:0!important}
 .ppp-ad-slot--image-creative .ppp-ad-copy,.ppp-ad-slot--image-creative .ppp-ad-cta{display:none!important}
-.ppp-ad-slot--image-creative .ppp-ad-art-wrap{display:block;width:100%;height:100%;max-width:100%;margin:0}
-.ppp-ad-slot--image-creative .ppp-ad-art-link{display:flex;width:100%;height:100%;align-items:center;justify-content:center;overflow:hidden}
-.ppp-ad-slot--image-creative .ppp-ad-art{display:block;width:100%;height:100%;max-height:none;object-fit:cover;border-radius:0}
+.ppp-ad-slot--image-creative .ppp-ad-art-wrap{display:block;width:100%;height:auto;max-height:min(440px,calc(100vh - 195px));max-width:100%;margin:0}
+.ppp-ad-slot--image-creative .ppp-ad-art-link{display:flex;width:100%;height:auto;max-height:min(440px,calc(100vh - 195px));align-items:center;justify-content:center;overflow:hidden}
+.ppp-ad-slot--image-creative .ppp-ad-art{display:block;width:100%;height:auto;max-height:min(440px,calc(100vh - 195px));object-fit:contain;object-position:center;border-radius:0}
 @media(min-width:1280px){
  .ppp-ad-slot--rail{display:flex}
- body[data-view="home"] .wrap{max-width:min(1180px,calc(100% - 440px))}
- body .chat-wrap{width:min(1260px,calc(100% - 440px))}
- body .events-main{width:min(1180px,calc(100% - 440px))}
- body[data-page="giveaways"] .wrap{max-width:min(1180px,calc(100% - 440px))}
+ body[data-view="home"] .wrap{max-width:min(1180px,calc(100% - 480px))}
+ body .chat-wrap{width:min(1260px,calc(100% - 480px))}
+ body .events-main{width:min(1180px,calc(100% - 480px))}
+ body[data-page="giveaways"] .wrap{max-width:min(1180px,calc(100% - 480px))}
 }
 @media(max-width:1279px){.ppp-ad-slot--rail{display:none!important}}
 @media(max-width:600px){.ppp-ad-slot--inline{min-height:64px;margin:8px auto 12px}.ppp-ad-slot--inline .ppp-ad-inner{gap:8px;padding:9px 8px}.ppp-ad-slot--top{min-height:70px;margin:12px auto 18px}.ppp-ad-slot--top .ppp-ad-inner{gap:9px;padding:21px 9px 8px}.ppp-ad-slot--top .ppp-ad-art-wrap{width:70px;max-width:24%}.ppp-ad-slot--top .ppp-ad-art{max-height:46px}.ppp-ad-slot--top .ppp-ad-headline{font-size:14px}.ppp-ad-slot--top .ppp-ad-description{font-size:10px}.ppp-ad-slot--top .ppp-ad-cta{min-height:30px;padding:6px 7px;font-size:10px}.ppp-ad-slot--top .ppp-ad-label{font-size:8px}}
