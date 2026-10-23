@@ -14,46 +14,23 @@ async function ensureChatNotificationPreferences(env) {
 }
 
 async function notifyChatMentions(env, sender, body, channelId) {
-  const names = [...new Set(Array.from(body.matchAll(/(?:^|\s)@([a-zA-Z0-9_.-]{2,30})/g), match => match[1].toLowerCase()))];
-  if (!names.length) return;
+  const mentionsEveryone = /(?:^|\s)@everyone(?=$|\s|[.,!?])/i.test(body);
+  const names = [...new Set(Array.from(body.matchAll(/(?:^|\s)@([a-zA-Z0-9_.-]{2,30})/g), match => match[1].toLowerCase()).filter(name => name !== "everyone"))];
+  if (!names.length && !mentionsEveryone) return;
   await ensureChatNotificationPreferences(env);
   const channel = await env.DB.prepare("SELECT slug FROM chat_channels WHERE id = ? LIMIT 1").bind(channelId).first();
   const chatUrl = "/chat.html?channel=" + encodeURIComponent(channel?.slug || String(channelId));
-  const { results = [] } = await env.DB.prepare(`
-    SELECT a.id, a.display_name, p.username
-    FROM accounts a JOIN collector_profiles p ON p.account_id = a.id
-    WHERE LOWER(p.username) IN (${names.map(() => "?").join(",")})
-  `).bind(...names).all();
-  for (const recipient of results) {
-    if (Number(recipient.id) === Number(sender.id)) continue;
-    const chatPref = await env.DB.prepare("SELECT notification_mode FROM chat_notification_preferences WHERE account_id = ?").bind(recipient.id).first().catch(() => null);
-    if (chatPref?.notification_mode === "muted") continue;
-    const title = "You were mentioned in chat";
-    const excerpt = body.length > 150 ? body.slice(0, 147) + "..." : body;
-    const notificationBody = (sender.display_name || "A collector") + " mentioned you: " + excerpt;
-    try {
-      const prefs = await env.DB.prepare("SELECT in_app_enabled, browser_push_enabled FROM notification_preferences WHERE account_id = ?").bind(recipient.id).first().catch(() => null);
-      if (Number(prefs?.in_app_enabled ?? 1) === 1) {
-        await env.DB.prepare("INSERT INTO notifications (account_id, notification_type, title, body, url, data_json) VALUES (?, 'mention', ?, ?, ?, ?)")
-          .bind(recipient.id, title, notificationBody, chatUrl, JSON.stringify({ kind: "chat_mention", channel_id: channelId, channel: channel?.slug || "" })).run();
-      }
-      if (Number(prefs?.browser_push_enabled || 0) === 1 && env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
-        const { results: subscriptions = [] } = await env.DB.prepare("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE account_id = ?").bind(recipient.id).all();
-        await Promise.all(subscriptions.map(async sub => {
-          try {
-            const response = await sendWebPush(sub, { title, body: notificationBody, url: chatUrl, tag: "chat-mention-" + recipient.id }, env);
-            if (response.status === 404 || response.status === 410) {
-              await env.DB.prepare("DELETE FROM push_subscriptions WHERE id = ?").bind(sub.id).run();
-            }
-          } catch (error) { console.error("Chat mention push failed:", error); }
-        }));
-      }
-    } catch (error) { console.error("Chat mention notification failed:", recipient.id, error); }
-  }
-}
-
+  const { results = [] } = mentionsEveryone
+    ? await env.DB.prepare("SELECT a.id, a.display_name, p.username FROM accounts a LEFT JOIN collector_profiles p ON p.account_id = a.id").all()
+    : await env.DB.prepare(`
+        SELECT a.id, a.display_name, p.username
+        FROM accounts a JOIN collector_profiles p ON p.account_id = a.id
+        WHERE LOWER(p.username) IN (${names.map(() => "?").join(",")})
+      `).bind(...names).all();
 
 async function notifyChatChannelMembers(env, sender, body, channelId, messageId) {
+  // @everyone already sends mention notifications, so avoid duplicate all-message alerts.
+  if (/(?:^|\s)@everyone(?=$|\s|[.,!?])/i.test(body)) return;
   await ensureChatNotificationPreferences(env);
   const channel = await env.DB.prepare("SELECT slug, name FROM chat_channels WHERE id = ? LIMIT 1").bind(channelId).first();
   const channelSlug = String(channel?.slug || channelId);
