@@ -19,7 +19,7 @@ var css=`
 .ppp-ad-slot--inline{width:min(100%,920px);min-height:82px;margin:12px auto 16px;border-radius:10px}
 .ppp-ad-slot--inline .ppp-ad-inner{padding:12px 15px}
 .ppp-ad-slot--top .ppp-ad-inner{padding-top:23px}
-.ppp-ad-slot--rail{position:fixed;top:175px;display:none;width:100px;height:520px;border-radius:10px}
+.ppp-ad-slot--rail{position:fixed;top:175px;display:none;width:140px;height:520px;border-radius:10px}
 .ppp-ad-slot--left{left:6px}
 .ppp-ad-slot--right{right:6px}
 .ppp-ad-slot--rail .ppp-ad-inner{flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding:25px 8px 10px;text-align:center}
@@ -27,8 +27,15 @@ var css=`
 .ppp-ad-slot--rail .ppp-ad-headline{font-size:13px;line-height:1.25;overflow-wrap:anywhere}
 .ppp-ad-slot--rail .ppp-ad-description{font-size:11px}
 .ppp-ad-slot--rail .ppp-ad-cta{width:100%;white-space:normal;padding:7px 5px;font-size:10px}
-.ppp-ad-slot--rail .ppp-ad-art-wrap{width:72px;max-width:100%}
-.ppp-ad-slot--rail .ppp-ad-art{max-height:95px}
+.ppp-ad-slot--rail .ppp-ad-art-wrap{width:110px;max-width:100%}
+.ppp-ad-slot--rail .ppp-ad-art{max-height:150px}
+/* Uploaded artwork becomes the full clickable ad in the left and right rails. */
+.ppp-ad-slot--image-creative{padding:0!important;background:#061336!important;align-items:stretch!important;justify-content:stretch!important}
+.ppp-ad-slot--image-creative .ppp-ad-inner{display:block;width:100%;height:100%;padding:0!important}
+.ppp-ad-slot--image-creative .ppp-ad-copy,.ppp-ad-slot--image-creative .ppp-ad-cta{display:none!important}
+.ppp-ad-slot--image-creative .ppp-ad-art-wrap{display:block;width:100%;height:100%;max-width:100%;margin:0}
+.ppp-ad-slot--image-creative .ppp-ad-art-link{display:flex;width:100%;height:100%;align-items:center;justify-content:center;overflow:hidden}
+.ppp-ad-slot--image-creative .ppp-ad-art{display:block;width:100%;height:100%;max-height:none;object-fit:cover;border-radius:0}
 @media(min-width:1280px){
  .ppp-ad-slot--rail{display:flex}
  body[data-view="home"] .wrap{max-width:min(1180px,calc(100% - 230px))}
@@ -63,7 +70,7 @@ function make(slot,kind,label){
 }
 function houseAd(slot){
  var el=document.querySelector('[data-ad-slot="'+slot+'"]');if(!el||!el._pppAd)return;
- var ui=el._pppAd;ui.kicker.textContent='Advertising opportunity';
+ var ui=el._pppAd;el.classList.remove('ppp-ad-slot--image-creative');ui.kicker.textContent='Advertising opportunity';
  ui.headline.textContent='Reach Pokémon TCG collectors';
  ui.description.textContent='Promote your shop, show, product launch, or hobby business.';
  ui.cta.textContent='Advertise with us ↗';ui.cta.href='/advertise.html';
@@ -78,10 +85,24 @@ function campaignAd(slot,campaign){
  ui.description.textContent=campaign.body||'';
  ui.cta.textContent='Learn more ↗';ui.cta.href=destination;
  var existing=ui.inner.querySelector('.ppp-ad-art-wrap');if(existing)existing.remove();
+ el.classList.remove('ppp-ad-slot--image-creative');
  var imageUrl=validLink(campaign.image_url||'');
  if(imageUrl){
-  var wrap=element('div','ppp-ad-art-wrap');var img=element('img','ppp-ad-art');img.src=imageUrl;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';
-  img.addEventListener('error',function(){wrap.remove();},{once:true});wrap.appendChild(img);ui.inner.insertBefore(wrap,ui.copy);
+  var wrap=element('div','ppp-ad-art-wrap');
+  var isSideRail=/-left$|-right$/.test(slot);
+  var img=element('img','ppp-ad-art');
+  img.src=imageUrl;img.alt=String(campaign.headline||campaign.advertiser_name||'Sponsored advertisement');img.loading='lazy';img.referrerPolicy='no-referrer';
+  if(isSideRail){
+   el.classList.add('ppp-ad-slot--image-creative');
+   var imageLink=element('a','ppp-ad-art-link');imageLink.href=destination;
+   imageLink.setAttribute('aria-label','Open sponsored ad: '+String(campaign.headline||campaign.advertiser_name||'advertisement'));
+   imageLink.title=String(campaign.headline||campaign.advertiser_name||'Sponsored advertisement');
+   imageLink.appendChild(img);wrap.appendChild(imageLink);
+  }else{
+   wrap.appendChild(img);
+  }
+  img.addEventListener('error',function(){wrap.remove();el.classList.remove('ppp-ad-slot--image-creative');houseAd(slot);},{once:true});
+  ui.inner.insertBefore(wrap,ui.inner.firstChild);
  }
 }
 function initializeSlot(el,slot,kind,label){
