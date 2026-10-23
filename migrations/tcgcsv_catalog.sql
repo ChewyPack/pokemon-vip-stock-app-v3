@@ -36,7 +36,9 @@ CREATE TABLE IF NOT EXISTS tcgcsv_products (
   card_number TEXT,
   rarity TEXT,
   extended_data_json TEXT,
-  last_seen_sync TEXT NOT NULL
+  last_seen_sync TEXT NOT NULL,
+  market_price REAL,
+  market_price_subtype TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_tcgcsv_products_group
@@ -137,7 +139,10 @@ CREATE TABLE IF NOT EXISTS tcgcsv_sync_progress (
   run_token TEXT,
   source_timestamp TEXT,
   group_ids_json TEXT,
-  next_group_index INTEGER NOT NULL DEFAULT 0
+  next_group_index INTEGER NOT NULL DEFAULT 0,
+  current_group_offset INTEGER NOT NULL DEFAULT 0,
+  sync_day TEXT,
+  rows_written_today INTEGER NOT NULL DEFAULT 0
 );
 
 INSERT OR IGNORE INTO tcgcsv_sync_progress (id, next_group_index) VALUES (1, 0);
