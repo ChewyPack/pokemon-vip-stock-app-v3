@@ -10,7 +10,7 @@
 :root{--bg:#0a0d16;--bg2:#10141f;--line:rgba(255,255,255,.12);--text:#e9edf7;--mut:#a9b2c7;--blue:#3da5ff;--pur:#8b5cf6;--yel:#ffcb05;--bad:#ff6b6b;--ok:#4ade80}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:12px}
-body{margin:0;background:#000;color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden;position:relative}body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-color:#000;background-image:linear-gradient(rgba(0,0,0,.84),rgba(0,0,0,.84)),url("/pokeprizepool-pwa-192.png?v=4");background-repeat:repeat;background-size:auto,190px 190px;background-position:center center}
+body{margin:0;background-color:#000;background-image:linear-gradient(rgba(0,0,0,.76),rgba(0,0,0,.76)),url("/pokeprizepool-pwa-192.png?v=4");background-repeat:repeat;background-size:auto,240px 240px;background-position:center center;color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
 a{color:var(--blue)}
 :focus-visible{outline:3px solid var(--yel);outline-offset:2px}
@@ -22,7 +22,7 @@ h2{font-size:clamp(1.6rem,5vw,2.3rem)}
 h3{font-size:1.2rem}
 .lead,.mut{color:var(--mut)}
 .glass{background:#151b2a;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.22)}
-section:nth-of-type(even){background:#101522}
+section:nth-of-type(even){background:rgba(16,21,34,.82)}
 #form{background:#151b2a;border-color:rgba(255,255,255,.24)}
 #form [data-s]{background:#151b2a}
 #done{background:#151b2a;border-color:var(--ok)}
