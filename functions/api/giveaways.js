@@ -213,7 +213,6 @@ export async function onRequestPost({ request, env }) {
   if (startMode === 'date' && startAt && endAt && Date.parse(startAt) >= Date.parse(endAt)) {
     return json({ ok: false, error: 'end_must_follow_start' }, 400);
   }
-  if (status === 'published' && !endAt) return json({ ok: false, error: 'published_end_required' }, 400);
   if (status === 'published' && startMode === 'date' && !startAt) return json({ ok: false, error: 'published_start_required' }, 400);
   if (status === 'published' && startMode === 'goal' && !startGoal) return json({ ok: false, error: 'published_goal_required' }, 400);
   if (!uploadedImageIsValid(imageUrl, request.url)) return json({ ok: false, error: 'image_must_be_uploaded' }, 400);
