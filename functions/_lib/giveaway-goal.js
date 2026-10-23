@@ -13,6 +13,11 @@ export async function getActiveSubscriberCount(env) {
 
 export async function activateGoalGiveaways(env) {
   const activeSubscribers = await getActiveSubscriberCount(env);
+  const table = await env.DB.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'poke_prize_giveaways' LIMIT 1"
+  ).first();
+  if (!table) return activeSubscribers;
+
   const activatedAt = new Date().toISOString();
   await env.DB.prepare(
     "UPDATE poke_prize_giveaways " +
