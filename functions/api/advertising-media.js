@@ -43,6 +43,7 @@ async function applyUploadLimit(request, env) {
   return Number(row?.uploads || 0) <= 5;
 }
 export async function onRequestPost({ request, env }) {
+  if (!env.DB) return json({ ok: false, error: "database_not_configured" }, 503);
   if (!env.VENDOR_MEDIA) return json({ ok: false, error: "image_storage_not_configured", message: "Advertising image storage is not configured yet." }, 503);
   if (!originAllowed(request)) return json({ ok: false, error: "origin_not_allowed" }, 403);
   const contentLength = Number(request.headers.get("content-length") || 0);
@@ -58,7 +59,7 @@ export async function onRequestPost({ request, env }) {
     const buffer = await file.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     if (!validSignature(type, bytes)) return json({ ok: false, error: "invalid_image_file", message: "The file content does not match a supported image." }, 415);
-    if (env.DB && !await applyUploadLimit(request, env)) return json({ ok: false, error: "upload_limit_reached", message: "This connection has reached the limit of five advertising image uploads per hour." }, 429);
+    if (!await applyUploadLimit(request, env)) return json({ ok: false, error: "upload_limit_reached", message: "This connection has reached the limit of five advertising image uploads per hour." }, 429);
     const key = "advertising/" + crypto.randomUUID() + "." + ext;
     await env.VENDOR_MEDIA.put(key, buffer, { httpMetadata: { contentType: type, cacheControl: "public, max-age=31536000, immutable" } });
     return json({ ok: true, image_url: "/api/vendor/image?key=" + encodeURIComponent(key), message: "Image uploaded." }, 201);
