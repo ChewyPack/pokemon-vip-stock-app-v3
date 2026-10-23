@@ -670,13 +670,15 @@
           ),
           h(
             'figure',
-            { class: 'poster poster--logo' },
-            h('img', {
-              src: poster.src,
-              alt: poster.alt,
-              width: '512',
-              height: '512',
-              fetchpriority: 'high'
+            { class: 'poster poster--logo cubone-hero', 'aria-label': 'Interactive 3D Cubone model' },
+            h('iframe', {
+              class: 'cubone-hero__viewer',
+              title: 'Interactive Cubone 3D model',
+              src: 'https://sketchfab.com/models/6d2e23474e3c47d091cc9f2983d7e75a/embed?autostart=1&animation_autoplay=1&autospin=0.25&ui_hint=2',
+              allow: 'autoplay; fullscreen; xr-spatial-tracking',
+              allowfullscreen: true,
+              loading: 'eager',
+              referrerpolicy: 'strict-origin-when-cross-origin'
             })
           ),
           h(
