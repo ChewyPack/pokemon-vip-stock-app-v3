@@ -1392,8 +1392,9 @@ img {
   min-height: 320px;
   border: 1px solid rgba(141, 185, 255, 0.25);
   border-radius: 20px;
-  background: radial-gradient(circle at 50% 40%, #17366d 0%, #081b45 56%, #06112c 100%);
-  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.38), 0 0 35px rgba(30, 155, 255, 0.16);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 .cubone-hero::after { display: none; }
 .cubone-hero__viewer {
@@ -1402,7 +1403,7 @@ img {
   height: 100%;
   min-height: 320px;
   border: 0;
-  background: #06174a;
+  background: transparent;
 }
 @media (max-width: 959px) {
   .cubone-hero { width: min(100%, 520px); margin-inline: auto; }
