@@ -58,12 +58,16 @@ function normalizeMedia(value) {
    try {
     const u = new URL(url, 'https://pokeprizepool.com');
     const key = u.searchParams.get('key') || '';
-    valid = u.pathname === '/api/vendor/image' && /^events\/[a-f0-9-]+\.(jpg|png|webp|avif|mp4|webm)$/i.test(key);
+    const imageKey = /^events\/[a-f0-9-]+\.(jpg|png|webp|avif)$/i.test(key);
+    const videoKey = /^events\/[a-f0-9-]+\.(mp4|webm)$/i.test(key);
+    valid = u.pathname === '/api/vendor/image' && (item.type === 'image' ? imageKey : videoKey);
    } catch {}
-  } else {
+  } else if (item.type === 'video') {
    try { valid = new URL(url).protocol === 'https:'; } catch {}
   }
-  if (!valid) return {error:'media_url_must_be_https_or_uploaded_event_media'};
+  if (!valid) {
+   return {error:item.type === 'image' ? 'photos_must_be_uploaded' : 'video_url_must_be_https_or_uploaded_event_video'};
+  }
   result.push({type:item.type,url,caption:clean(item.caption,240)});
  }
  return {value:JSON.stringify(result)};
