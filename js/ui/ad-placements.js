@@ -31,11 +31,11 @@ var css=`
 .ppp-ad-slot--rail .ppp-ad-art{max-height:150px}
 /* Uploaded artwork becomes the full clickable ad in the left and right rails. */
 .ppp-ad-slot--image-creative{padding:0!important;background:#061336!important;align-items:stretch!important;justify-content:stretch!important}
-.ppp-ad-slot--image-creative .ppp-ad-inner{display:block;width:100%;height:auto;padding:0!important}
+.ppp-ad-slot--image-creative .ppp-ad-inner{display:block;width:100%;height:100%;padding:0!important}
 .ppp-ad-slot--image-creative .ppp-ad-copy,.ppp-ad-slot--image-creative .ppp-ad-cta{display:none!important}
-.ppp-ad-slot--image-creative .ppp-ad-art-wrap{display:block;width:100%;height:auto;max-height:min(440px,calc(100vh - 195px));max-width:100%;margin:0}
-.ppp-ad-slot--image-creative .ppp-ad-art-link{display:flex;width:100%;height:auto;max-height:min(440px,calc(100vh - 195px));align-items:center;justify-content:center;overflow:hidden}
-.ppp-ad-slot--image-creative .ppp-ad-art{display:block;width:100%;height:auto;max-height:min(440px,calc(100vh - 195px));object-fit:contain;object-position:center;border-radius:0}
+.ppp-ad-slot--image-creative .ppp-ad-art-wrap{display:block;width:100%;height:100%;max-height:none;max-width:100%;margin:0}
+.ppp-ad-slot--image-creative .ppp-ad-art-link{display:flex;width:100%;height:100%;max-height:none;align-items:stretch;justify-content:stretch;overflow:hidden}
+.ppp-ad-slot--image-creative .ppp-ad-art{display:block;width:100%;height:100%;max-height:none;object-fit:fill;object-position:center;border-radius:0}
 @media(min-width:1280px){
  .ppp-ad-slot--rail{display:flex}
  body[data-view="home"] .wrap{max-width:min(1180px,calc(100% - 480px))}
