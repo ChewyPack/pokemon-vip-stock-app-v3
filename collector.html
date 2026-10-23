@@ -401,7 +401,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    catalogSets=(data.sets||[]).map(set=>({id:String(set.id),name:set.name||''})).filter(set=>set.id&&set.name);
    select.innerHTML='<option value="">All sets</option>'+catalogSets.map(set=>'<option value="'+safe(set.id)+'">'+safe(set.name)+'</option>').join('');
    setStatus('catalog-status',data.synced?'TCGCSV Pokémon catalog loaded · prices last synced '+safe(data.source_timestamp||'recently')+'.':'TCGCSV catalog has not completed its first sync yet.');
-  }catch(error){setStatus('catalog-status','TCGCSV catalog is not ready yet. Please try again after the staging catalog sync has completed.');}
+  }catch(error){setStatus('catalog-status','TCGCSV catalog is not ready yet. Please try again after the catalog sync has completed.');}
  }
  function priceText(value){
   return value===null||value===undefined||value===''?'Price unavailable':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(value));
@@ -439,8 +439,8 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    const data=await response.json();
    if(requestId!==catalogRequest)return;
    if(!response.ok||!data.ok){
-    if(data.error==='tcgcsv_migration_required')throw new Error('The staging TCGCSV catalog migration has not been applied yet.');
-    throw new Error('TCGCSV catalog is not ready yet. Complete the staging sync and try again.');
+    if(data.error==='tcgcsv_migration_required')throw new Error('The TCGCSV catalog schema is not ready yet. Please contact support.');
+    throw new Error('TCGCSV catalog is not ready yet. The first catalog import may still be running.');
    }
    renderCatalogResults(data.products||[],requestId);
   }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'TCGCSV catalog search failed.');}
@@ -482,7 +482,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    const response=await fetch('/api/collector/catalog?'+params.toString(),{credentials:'same-origin',cache:'no-store'});
    const data=await response.json();
    if(requestId!==catalogRequest)return;
-   if(!response.ok||!data.ok)throw new Error('TCGCSV sealed catalog is not ready yet. Complete the staging sync and try again.');
+   if(!response.ok||!data.ok)throw new Error('TCGCSV sealed catalog is not ready yet. The first catalog import may still be running.');
    const products=data.products||[];
    window.__sealedResults=products.map(product=>({...product,sku:product.id,kind:'Sealed product'}));
    if(!products.length){setStatus('catalog-status','No sealed products matched. Try a shorter search or another set.');return;}
