@@ -1,3 +1,4 @@
+import { ensureCollectorRewardSchema } from "../../_lib/collector-rewards.js";
 import { chatJson, currentChatAccount, publishChatEvent, chatError } from "../../_lib/chat.js";
 import { sendWebPush } from "../../_lib/web-push.js";
 
@@ -184,6 +185,7 @@ export async function onRequestGet({ request, env }) {
   try {
     const account = await currentChatAccount(request, env);
     if (!account) return chatJson({ ok: false, error: "login_required" }, 401);
+    await ensureCollectorRewardSchema(env);
     await ensureReactionTable(env);
     const url = new URL(request.url);
     const channelId = Number(url.searchParams.get("channel"));
@@ -194,7 +196,7 @@ export async function onRequestGet({ request, env }) {
     let result;
     if (Number.isSafeInteger(before) && before > 0) {
       result = await env.DB.prepare(
-        "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, m.body, m.created_at, m.edited_at, m.deleted_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.channel_id = ? AND m.id < ? ORDER BY m.id DESC LIMIT 100"
+        "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, p.chat_name_color, m.body, m.created_at, m.edited_at, m.deleted_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.channel_id = ? AND m.id < ? ORDER BY m.id DESC LIMIT 100"
       ).bind(channelId, before).all();
     } else {
       result = await env.DB.prepare(
@@ -205,7 +207,7 @@ export async function onRequestGet({ request, env }) {
     const reactionMap = await getReactions(env, rows.map(m => m.id), account.id);
     const messages = rows.map(m => ({
       id: Number(m.id), channel_id: Number(m.channel_id), account_id: Number(m.account_id),
-      display_name: m.display_name || "Collector", username: m.username || "", avatar_url: m.avatar_url || "",
+      display_name: m.display_name || "Collector", username: m.username || "", avatar_url: m.avatar_url || "", chat_name_color: m.chat_name_color || "#ffd54a",
       body: m.deleted_at ? "" : m.body, created_at: m.created_at,
       edited_at: m.edited_at, deleted: Boolean(m.deleted_at), mine: Number(m.account_id) === account.id,
       reactions: reactionMap.get(Number(m.id)) || []
@@ -220,6 +222,7 @@ export async function onRequestPost({ request, env }) {
   try {
     const account = await currentChatAccount(request, env);
     if (!account) return chatJson({ ok: false, error: "login_required" }, 401);
+    await ensureCollectorRewardSchema(env);
     let data;
     try { data = await request.json(); } catch { return chatJson({ ok: false, error: "bad_request" }, 400); }
     if (data && data.action === "reaction") return await toggleReaction(env, account, data);
@@ -240,11 +243,11 @@ export async function onRequestPost({ request, env }) {
     ).bind(channelId, account.id, body).run();
     const id = Number(inserted.meta?.last_row_id);
     const saved = await env.DB.prepare(
-      "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, m.body, m.created_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.id = ?"
+      "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, p.chat_name_color, m.body, m.created_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.id = ?"
     ).bind(id).first();
     const message = {
       id: Number(saved.id), channel_id: Number(saved.channel_id), account_id: Number(saved.account_id),
-      display_name: saved.display_name || "Collector", username: saved.username || "", avatar_url: saved.avatar_url || "",
+      display_name: saved.display_name || "Collector", username: saved.username || "", avatar_url: saved.avatar_url || "", chat_name_color: saved.chat_name_color || "#ffd54a",
       body: saved.body, created_at: saved.created_at, edited_at: null, deleted: false,
       mine: true
     };
