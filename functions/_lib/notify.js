@@ -40,6 +40,7 @@ export async function notifyReport(env, report) {
   const title = line
     ? 'Store line report: ' + String(report.retailer || 'Store')
     : 'Pokémon stock report: ' + String(report.retailer || 'Store');
+  // Stock alerts include each price only when the reporter supplied a valid value.
   const body = line
     ? String(report.lineCount || '?') + ' people in line' + (report.location ? ' at ' + report.location : '')
     : [
