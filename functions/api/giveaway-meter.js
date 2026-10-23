@@ -1,4 +1,4 @@
-import { getActiveSubscriberCount } from '../_lib/giveaway-goal.js';
+import { activateGoalGiveaways } from '../_lib/giveaway-goal.js';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -15,7 +15,7 @@ export async function onRequestGet({ env }) {
   if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
 
   try {
-    const activeSubscribers = await getActiveSubscriberCount(env);
+    const activeSubscribers = await activateGoalGiveaways(env);
 
     return json({
       ok: true,
