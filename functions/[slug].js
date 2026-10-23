@@ -69,6 +69,7 @@ export async function onRequestGet(context) {
     headers.set("content-type", "text/html; charset=utf-8");
     headers.set("cache-control", "no-cache, must-revalidate");
     headers.delete("content-length");
+    headers.delete("content-encoding");
     headers.delete("etag");
     return new Response(request.method === "HEAD" ? null : html, {
       status: asset.status,
