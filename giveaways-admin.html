@@ -72,9 +72,9 @@ button:disabled{opacity:.6;cursor:wait}
 <option value="500">500 active VIP subscribers</option>
 </select>
 </label>
-<p class="muted small">The giveaway opens automatically once the active VIP subscriber count reaches this goal. You still need to set an end date.</p>
+<p class="muted small">The giveaway opens automatically once the active VIP subscriber count reaches this goal. An end date is optional.</p>
 </div>
-<label>End date and time *<input name="end_at" type="datetime-local"></label>
+<label>End date and time (optional)<input name="end_at" type="datetime-local"></label>
 <div><label>Prize image upload</label><input name="image_file" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><input name="image_url" type="hidden"><span id="image-status">Choose an image file to upload a prize photo. JPG, PNG, WebP, or AVIF up to 5 MB.</span></div>
 <div class="checks">
 <label><input name="featured" type="checkbox">Feature on the giveaways page</label>
@@ -333,7 +333,7 @@ form.addEventListener('submit',async function(event){
   };
   await save(data);
  }catch(e){
-  var errors={title_required:'Enter a giveaway title.',invalid_prize_value:'Enter a valid, non-negative prize value.',invalid_date_time:'Enter valid start and end dates.',end_must_follow_start:'The end date must be after the start date.',published_start_required:'Add a start date and time, or choose a subscriber goal.',published_goal_required:'Choose a subscriber goal before publishing.',published_end_required:'Add an end date before publishing.',image_must_be_uploaded:'Choose a prize image using the file uploader.'};
+  var errors={title_required:'Enter a giveaway title.',invalid_prize_value:'Enter a valid, non-negative prize value.',invalid_date_time:'Enter valid start and end dates.',end_must_follow_start:'The end date must be after the start date.',published_start_required:'Add a start date and time, or choose a subscriber goal.',published_goal_required:'Choose a subscriber goal before publishing.',image_must_be_uploaded:'Choose a prize image using the file uploader.'};
   say('Could not save giveaway: '+(errors[e.message]||e.message),'error');
  }finally{submitter.disabled=false;}
 });
