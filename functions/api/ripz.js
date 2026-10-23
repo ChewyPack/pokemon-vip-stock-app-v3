@@ -269,11 +269,11 @@ export async function onRequestPost({ request, env }) {
       if (!row) return json({ ok: true });
       if (Number(row.account_id) !== Number(account.id) && !account.is_admin) return json({ ok: false, error: "not_stream_owner" }, 403);
       if (row.status === "ended") return json({ ok: true, already_ended: true });
-      await env.DB.prepare("UPDATE ripz_streams SET status='ended', ended_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status<>'ended'").bind(streamId).run();
+      await env.DB.prepare("UPDATE ripz_streams SET status='ended', ended_at=CURRENT_TIMESTAMP, whip_url='', playback_url='', updated_at=CURRENT_TIMESTAMP WHERE id=? AND status<>'ended'").bind(streamId).run();
       let providerStopped = true;
       if (cloudflareConfigured(env)) {
         try {
-          await streamApi(env, "PUT", "/live_inputs/" + encodeURIComponent(row.cloudflare_input_uid), { enabled: false });
+          await streamApi(env, "DELETE", "/live_inputs/" + encodeURIComponent(row.cloudflare_input_uid));
         } catch (_) { providerStopped = false; }
       } else {
         providerStopped = false;
