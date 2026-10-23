@@ -41,7 +41,7 @@ html {
 
 
 /* News-page collage background for inner pages; home and account/settings keep their own backgrounds. */
-body:not(:has(.bg-speed)):not(:has(.account-wrap)) {
+body:not(:has(.bg-speed)):not(:has(.account-wrap)):not(.line-services-page) {
   background-color: #07142e;
   background-image: linear-gradient(rgba(3, 10, 29, 0.76), rgba(3, 10, 29, 0.88)), url("/assets/backgrounds/vip-collage.jpg");
   background-position: center center;
@@ -1818,7 +1818,7 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 @media (max-width: 760px) {
   /* A fixed background layer keeps the collage at viewport scale on long pages.
      It avoids mobile browsers stretching a scroll-attached background to document height. */
-  body:not(:has(.bg-speed)) {
+  body:not(:has(.bg-speed)):not(.line-services-page) {
     position: relative;
     isolation: isolate;
     background-color: transparent !important;
@@ -1826,7 +1826,7 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
     background-attachment: initial !important;
   }
 
-  body:not(:has(.bg-speed))::before {
+  body:not(:has(.bg-speed)):not(.line-services-page)::before {
     content: "";
     position: fixed;
     inset: 0;
