@@ -614,6 +614,22 @@
         release: 'TCG Product Release'
       };
 
+      function make(tag, attributes) {
+        var node = document.createElement(tag);
+
+        if (attributes) {
+          Object.keys(attributes).forEach(function (name) {
+            if (name === 'class') {
+              node.className = attributes[name];
+            } else {
+              node.setAttribute(name, String(attributes[name]));
+            }
+          });
+        }
+
+        return node;
+      }
+
       function addText(parent, tag, className, value) {
         var node = document.createElement(tag);
 
