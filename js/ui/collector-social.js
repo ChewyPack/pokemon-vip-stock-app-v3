@@ -191,7 +191,7 @@
     if (form) form.dataset.supportsReplies = String(!!supportsReplies);
     if (!supportsReplies) {
       const note = $(thread, '[data-comment-status]');
-      if (note) note.textContent = 'Direct replies are being enabled. You can still add regular comments.';
+      if (note) note.textContent = 'Direct replies will be available after the production database migration. You can still add regular comments.';
     }
   }
   function setReplyTarget(form, id, author) {
@@ -215,7 +215,7 @@
     try {
       const d = await api('/api/collector/post-comments?post_id=' + encodeURIComponent(postId));
       renderComments(root, postId, d.comments || [], !!d.supports_replies);
-      if (!$(thread, '[data-comment-status]').textContent.startsWith('Direct replies are being enabled')) status.textContent = '';
+      if (!d.supports_replies) status.textContent = 'Direct replies will be available after the production database migration. You can still add regular comments.'; else status.textContent = '';
       thread.dataset.loaded = 'true';
     } catch (e) { status.textContent = e.message; }
   }
