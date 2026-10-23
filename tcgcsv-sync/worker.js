@@ -61,15 +61,13 @@ function safeJson(value) {
 }
 
 async function ensureProgressTable(db) {
-  await db.prepare(`CREATE TABLE IF NOT EXISTS tcgcsv_sync_progress (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    run_token TEXT,
-    source_timestamp TEXT,
-    group_ids_json TEXT,
-    next_group_index INTEGER NOT NULL DEFAULT 0
-  )`).run();
-  await db.prepare(`INSERT OR IGNORE INTO tcgcsv_sync_progress
-    (id, next_group_index) VALUES (1, 0)`).run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS tcgcsv_sync_progress (" +
+    "id INTEGER PRIMARY KEY CHECK (id = 1), run_token TEXT, source_timestamp TEXT, " +
+    "group_ids_json TEXT, next_group_index INTEGER NOT NULL DEFAULT 0, " +
+    "current_group_offset INTEGER NOT NULL DEFAULT 0, sync_day TEXT, " +
+    "rows_written_today INTEGER NOT NULL DEFAULT 0)").run();
+  await db.prepare("INSERT OR IGNORE INTO tcgcsv_sync_progress " +
+    "(id, next_group_index, current_group_offset, rows_written_today) VALUES (1, 0, 0, 0)").run();
 }
 
 async function setError(db, error) {
@@ -82,66 +80,46 @@ async function beginSync(db) {
   await ensureProgressTable(db);
   const sourceTimestamp = await getText('https://tcgcsv.com/last-updated.txt');
   if (!sourceTimestamp) throw new Error('TCGCSV last-updated.txt was empty.');
-
-  const state = await db.prepare(
-    'SELECT source_timestamp, last_success_at FROM tcgcsv_sync_state WHERE id = 1'
-  ).first();
-
+  const state = await db.prepare('SELECT source_timestamp, last_success_at FROM tcgcsv_sync_state WHERE id = 1').first();
   if (state?.source_timestamp === sourceTimestamp && state?.last_success_at) {
     await db.prepare("UPDATE tcgcsv_sync_state SET status='up_to_date', last_error=NULL WHERE id=1").run();
     return { skipped: true, reason: 'source_unchanged', source_timestamp: sourceTimestamp };
   }
-
   await db.prepare("UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1").run();
-
   try {
-    // Clear any stale resume cursor as soon as a new source build is confirmed.
-    // If source discovery fails, the scheduler must not resume/publish an older run.
-    await db.prepare(`UPDATE tcgcsv_sync_progress
-      SET run_token=NULL, source_timestamp=NULL, group_ids_json='[]', next_group_index=0
-      WHERE id=1`).run();
-
     const categoriesPayload = await getJson(SOURCE + '/categories');
     if (categoriesPayload?.success === false) throw new Error('TCGCSV categories response reported failure.');
     const pokemon = (categoriesPayload?.results || []).find(item =>
-      Number(item.categoryId) === POKEMON_CATEGORY_ID ||
-      String(item.name || '').toLowerCase() === 'pokemon'
+      Number(item.categoryId) === POKEMON_CATEGORY_ID || String(item.name || '').toLowerCase() === 'pokemon'
     );
     if (!pokemon) throw new Error('Could not find the Pokémon category in TCGCSV.');
-
     const groupsPayload = await getJson(SOURCE + '/' + POKEMON_CATEGORY_ID + '/groups');
     if (groupsPayload?.success === false || !Array.isArray(groupsPayload?.results)) {
       throw new Error('TCGCSV groups response was invalid.');
     }
     const groups = groupsPayload.results;
-    if (!groups.length) throw new Error('TCGCSV returned zero Pokémon groups; refusing to clear existing data.');
+    if (!groups.length) throw new Error('TCGCSV returned zero Pokémon groups; refusing to start an empty sync.');
 
-    await db.batch([
-      db.prepare('DELETE FROM tcgcsv_groups_staging'),
-      db.prepare('DELETE FROM tcgcsv_products_staging'),
-      db.prepare('DELETE FROM tcgcsv_prices_staging')
-    ]);
-
-    const groupStatements = groups.map(group => db.prepare(`
-      INSERT INTO tcgcsv_groups_staging(group_id, category_id, name, abbreviation, published_on, modified_on, last_seen_sync)
-      VALUES(?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(group_id) DO UPDATE SET
-        category_id=excluded.category_id, name=excluded.name, abbreviation=excluded.abbreviation,
-        published_on=excluded.published_on, modified_on=excluded.modified_on,
-        last_seen_sync=excluded.last_seen_sync
-    `).bind(
+    await db.prepare("UPDATE tcgcsv_sync_progress SET run_token=NULL, source_timestamp=NULL, " +
+      "group_ids_json='[]', next_group_index=0, current_group_offset=0 WHERE id=1").run();
+    const groupStatements = groups.map(group => db.prepare(
+      "INSERT INTO tcgcsv_groups(group_id, category_id, name, abbreviation, published_on, modified_on, last_seen_sync) " +
+      "VALUES(?, ?, ?, ?, ?, ?, ?) ON CONFLICT(group_id) DO UPDATE SET " +
+      "category_id=excluded.category_id, name=excluded.name, abbreviation=excluded.abbreviation, " +
+      "published_on=excluded.published_on, modified_on=excluded.modified_on, last_seen_sync=excluded.last_seen_sync"
+    ).bind(
       Number(group.groupId), Number(group.categoryId || POKEMON_CATEGORY_ID),
       String(group.name || 'Unknown set'), group.abbreviation || null,
       group.publishedOn || null, group.modifiedOn || null, sourceTimestamp
     ));
     await batches(db, groupStatements, 50);
-
     const token = crypto.randomUUID();
-    await db.prepare(`UPDATE tcgcsv_sync_progress
-      SET run_token=?, source_timestamp=?, group_ids_json=?, next_group_index=0
-      WHERE id=1`).bind(token, sourceTimestamp, JSON.stringify(groups.map(group => Number(group.groupId)))).run();
-
-    return { skipped: false, started: true, source_timestamp: sourceTimestamp, groups_total: groups.length };
+    const syncDay = new Date().toISOString().slice(0, 10);
+    await db.prepare("UPDATE tcgcsv_sync_progress SET run_token=?, source_timestamp=?, " +
+      "group_ids_json=?, next_group_index=0, current_group_offset=0, sync_day=?, rows_written_today=0 WHERE id=1"
+    ).bind(token, sourceTimestamp, JSON.stringify(groups.map(group => Number(group.groupId))), syncDay).run();
+    return { skipped: false, started: true, source_timestamp: sourceTimestamp,
+      groups_total: groups.length, storage_mode: 'one_product_row_with_one_market_price' };
   } catch (error) {
     await setError(db, error);
     throw error;
@@ -149,122 +127,133 @@ async function beginSync(db) {
 }
 
 async function publishCatalog(db, token) {
-  const progress = await db.prepare(
-    'SELECT run_token, source_timestamp FROM tcgcsv_sync_progress WHERE id=1'
-  ).first();
+  const progress = await db.prepare('SELECT run_token, source_timestamp FROM tcgcsv_sync_progress WHERE id=1').first();
   if (!progress || progress.run_token !== token) return { ignored: true, reason: 'run_token_mismatch' };
-
   const commitAt = new Date().toISOString();
   const sourceTimestamp = progress.source_timestamp;
   await db.batch([
-    db.prepare(`INSERT INTO tcgcsv_groups(group_id, category_id, name, abbreviation, published_on, modified_on, last_seen_sync)
-      SELECT group_id, category_id, name, abbreviation, published_on, modified_on, last_seen_sync FROM tcgcsv_groups_staging WHERE 1
-      ON CONFLICT(group_id) DO UPDATE SET category_id=excluded.category_id, name=excluded.name,
-        abbreviation=excluded.abbreviation, published_on=excluded.published_on,
-        modified_on=excluded.modified_on, last_seen_sync=excluded.last_seen_sync`),
-    db.prepare(`INSERT INTO tcgcsv_products(product_id, category_id, group_id, name, clean_name, image_url, product_url, product_type, card_number, rarity, extended_data_json, last_seen_sync)
-      SELECT product_id, category_id, group_id, name, clean_name, image_url, product_url, product_type, card_number, rarity, extended_data_json, last_seen_sync FROM tcgcsv_products_staging WHERE 1
-      ON CONFLICT(product_id) DO UPDATE SET category_id=excluded.category_id, group_id=excluded.group_id,
-        name=excluded.name, clean_name=excluded.clean_name, image_url=excluded.image_url,
-        product_url=excluded.product_url, product_type=excluded.product_type, card_number=excluded.card_number,
-        rarity=excluded.rarity, extended_data_json=excluded.extended_data_json, last_seen_sync=excluded.last_seen_sync`),
-    db.prepare(`INSERT INTO tcgcsv_prices(product_id, subtype_name, low_price, mid_price, high_price, market_price, direct_low_price, last_seen_sync)
-      SELECT product_id, subtype_name, low_price, mid_price, high_price, market_price, direct_low_price, last_seen_sync FROM tcgcsv_prices_staging WHERE 1
-      ON CONFLICT(product_id, subtype_name) DO UPDATE SET low_price=excluded.low_price, mid_price=excluded.mid_price,
-        high_price=excluded.high_price, market_price=excluded.market_price, direct_low_price=excluded.direct_low_price,
-        last_seen_sync=excluded.last_seen_sync`),
-    db.prepare('DELETE FROM tcgcsv_prices WHERE NOT EXISTS (SELECT 1 FROM tcgcsv_prices_staging s WHERE s.product_id = tcgcsv_prices.product_id AND s.subtype_name = tcgcsv_prices.subtype_name)'),
-    db.prepare('DELETE FROM tcgcsv_groups WHERE category_id = ? AND NOT EXISTS (SELECT 1 FROM tcgcsv_groups_staging s WHERE s.group_id = tcgcsv_groups.group_id)').bind(POKEMON_CATEGORY_ID),
-    db.prepare(`INSERT OR IGNORE INTO tcgcsv_price_history(product_id, subtype_name, source_timestamp, low_price, mid_price, high_price, market_price, direct_low_price, recorded_at)
-      SELECT p.product_id, p.subtype_name, ?, p.low_price, p.mid_price, p.high_price, p.market_price, p.direct_low_price, ?
-      FROM tcgcsv_prices_staging p JOIN tcgcsv_products_staging product ON product.product_id=p.product_id`).bind(sourceTimestamp, commitAt),
-    db.prepare("UPDATE tcgcsv_sync_state SET source_timestamp=?, last_success_at=?, status='success', last_error=NULL WHERE id=1").bind(sourceTimestamp, commitAt),
-    db.prepare('DELETE FROM tcgcsv_groups_staging'),
-    db.prepare('DELETE FROM tcgcsv_products_staging'),
-    db.prepare('DELETE FROM tcgcsv_prices_staging')
+    db.prepare("UPDATE tcgcsv_sync_state SET source_timestamp=?, last_success_at=?, status='success', last_error=NULL WHERE id=1")
+      .bind(sourceTimestamp, commitAt),
+    db.prepare("UPDATE tcgcsv_sync_progress SET run_token=NULL, source_timestamp=NULL, group_ids_json='[]', " +
+      "next_group_index=0, current_group_offset=0 WHERE id=1 AND run_token=?").bind(token)
   ]);
-
   return { complete: true, source_timestamp: sourceTimestamp, completed_at: commitAt };
 }
 
 async function processOneGroup(db, token) {
-  const progress = await db.prepare(`SELECT run_token, source_timestamp, group_ids_json, next_group_index
-    FROM tcgcsv_sync_progress WHERE id=1`).first();
+  const progress = await db.prepare("SELECT run_token, source_timestamp, group_ids_json, next_group_index, " +
+    "current_group_offset, sync_day, rows_written_today FROM tcgcsv_sync_progress WHERE id=1").first();
   if (!progress || progress.run_token !== token) return { ignored: true, reason: 'run_token_mismatch' };
-
   const state = await db.prepare('SELECT status FROM tcgcsv_sync_state WHERE id=1').first();
   if (state?.status !== 'syncing') return { ignored: true, reason: 'sync_not_active' };
-
   const groupIds = JSON.parse(progress.group_ids_json || '[]');
   const index = Number(progress.next_group_index || 0);
   if (index >= groupIds.length) return publishCatalog(db, token);
 
+  const today = new Date().toISOString().slice(0, 10);
+  let rowsWrittenToday = progress.sync_day === today ? Number(progress.rows_written_today || 0) : 0;
+  let offset = Number(progress.current_group_offset || 0);
+  const DAILY_IMPORT_WRITE_BUDGET = 50000;
+  if (progress.sync_day !== today) {
+    await db.prepare("UPDATE tcgcsv_sync_progress SET sync_day=?, rows_written_today=0 WHERE id=1 AND run_token=?")
+      .bind(today, token).run();
+  }
+  if (rowsWrittenToday >= DAILY_IMPORT_WRITE_BUDGET) {
+    return { paused_for_daily_write_budget: true, rows_written_today: rowsWrittenToday, resumes_after_utc_midnight: true };
+  }
+
   try {
     const groupId = Number(groupIds[index]);
-    console.log('Processing TCGCSV group', index + 1, 'of', groupIds.length, 'groupId', groupId);
-    const group = await db.prepare('SELECT group_id, category_id FROM tcgcsv_groups_staging WHERE group_id=?')
-      .bind(groupId).first();
-    if (!group) throw new Error('Staging group not found: ' + groupId);
-
+    console.log('Processing compact TCGCSV group', index + 1, 'of', groupIds.length, 'groupId', groupId);
+    const group = await db.prepare('SELECT group_id, category_id FROM tcgcsv_groups WHERE group_id=?').bind(groupId).first();
+    if (!group) throw new Error('Production group row not found: ' + groupId);
     const categoryId = Number(group.category_id || POKEMON_CATEGORY_ID);
     const productsPayload = await getJson(SOURCE + '/' + categoryId + '/' + groupId + '/products');
-    if (productsPayload?.success === false || !Array.isArray(productsPayload?.results)) {
-      throw new Error('Invalid products response for group ' + groupId + '.');
-    }
+    if (productsPayload?.success === false || !Array.isArray(productsPayload?.results)) throw new Error('Invalid products response for group ' + groupId + '.');
     const pricePayload = await getJson(SOURCE + '/' + categoryId + '/' + groupId + '/prices');
-    if (pricePayload?.success === false || !Array.isArray(pricePayload?.results)) {
-      throw new Error('Invalid prices response for group ' + groupId + '.');
-    }
+    if (pricePayload?.success === false || !Array.isArray(pricePayload?.results)) throw new Error('Invalid prices response for group ' + groupId + '.');
 
-    const sourceTimestamp = progress.source_timestamp;
+    const pricesByProduct = new Map();
+    for (const price of pricePayload.results) {
+      const key = String(price.productId);
+      if (!pricesByProduct.has(key)) pricesByProduct.set(key, []);
+      pricesByProduct.get(key).push(price);
+    }
     const productStatements = productsPayload.results.map(product => {
       const ext = Array.isArray(product.extendedData) ? product.extendedData : [];
-      return db.prepare(`
-        INSERT INTO tcgcsv_products_staging(
-          product_id, category_id, group_id, name, clean_name, image_url, product_url,
-          product_type, card_number, rarity, extended_data_json, last_seen_sync
-        ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(product_id) DO UPDATE SET
-          category_id=excluded.category_id, group_id=excluded.group_id, name=excluded.name,
-          clean_name=excluded.clean_name, image_url=excluded.image_url, product_url=excluded.product_url,
-          product_type=excluded.product_type, card_number=excluded.card_number, rarity=excluded.rarity,
-          extended_data_json=excluded.extended_data_json, last_seen_sync=excluded.last_seen_sync
-      `).bind(
+      const variants = (pricesByProduct.get(String(product.productId)) || []).slice();
+      const hasPrice = value => value !== null && value !== undefined && value !== '' &&
+        Number.isFinite(Number(value)) && Number(value) >= 0;
+      const rank = value => {
+        const type = String(value || '').trim().toLowerCase();
+        if (type === 'normal') return 0;
+        if (type === 'holofoil') return 1;
+        if (type === 'reverse holofoil') return 2;
+        return 3;
+      };
+      variants.sort((a, b) => {
+        if (hasPrice(a.marketPrice) !== hasPrice(b.marketPrice)) return hasPrice(a.marketPrice) ? -1 : 1;
+        return rank(a.subTypeName) - rank(b.subTypeName);
+      });
+      const preferred = variants[0] || null;
+      const marketPrice = hasPrice(preferred?.marketPrice) ? Number(preferred.marketPrice) : null;
+      const marketSubtype = marketPrice === null ? null : String(preferred?.subTypeName || 'Normal');
+      return db.prepare("INSERT INTO tcgcsv_products(" +
+        "product_id, category_id, group_id, name, clean_name, image_url, product_url, product_type, " +
+        "card_number, rarity, extended_data_json, last_seen_sync, market_price, market_price_subtype" +
+        ") VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+        "ON CONFLICT(product_id) DO UPDATE SET category_id=excluded.category_id, group_id=excluded.group_id, " +
+        "name=excluded.name, clean_name=excluded.clean_name, image_url=excluded.image_url, product_url=excluded.product_url, " +
+        "product_type=excluded.product_type, card_number=excluded.card_number, rarity=excluded.rarity, " +
+        "extended_data_json=excluded.extended_data_json, last_seen_sync=excluded.last_seen_sync, " +
+        "market_price=excluded.market_price, market_price_subtype=excluded.market_price_subtype"
+      ).bind(
         Number(product.productId), Number(product.categoryId || categoryId), Number(product.groupId || groupId),
-        String(product.name || 'Unknown product'), product.cleanName || null,
-        product.imageUrl || null, product.url || null, productType(product),
-        extendedValue(ext, 'Number', 'Card Number') || null,
-        extendedValue(ext, 'Rarity') || null, safeJson(ext), sourceTimestamp
+        String(product.name || 'Unknown product'), product.cleanName || null, product.imageUrl || null,
+        product.url || null, productType(product), extendedValue(ext, 'Number', 'Card Number') || null,
+        extendedValue(ext, 'Rarity') || null, safeJson(ext), progress.source_timestamp, marketPrice, marketSubtype
       );
     });
-    await batches(db, productStatements, 40);
 
-    const priceStatements = pricePayload.results.map(price => db.prepare(`
-      INSERT INTO tcgcsv_prices_staging(
-        product_id, subtype_name, low_price, mid_price, high_price,
-        market_price, direct_low_price, last_seen_sync
-      ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(product_id, subtype_name) DO UPDATE SET
-        low_price=excluded.low_price, mid_price=excluded.mid_price, high_price=excluded.high_price,
-        market_price=excluded.market_price, direct_low_price=excluded.direct_low_price,
-        last_seen_sync=excluded.last_seen_sync
-    `).bind(
-      Number(price.productId), String(price.subTypeName || 'Normal'),
-      price.lowPrice ?? null, price.midPrice ?? null, price.highPrice ?? null,
-      price.marketPrice ?? null, price.directLowPrice ?? null, sourceTimestamp
-    ));
-    await batches(db, priceStatements, 75);
-
-    const nextIndex = index + 1;
-    await db.prepare('UPDATE tcgcsv_sync_progress SET next_group_index=? WHERE id=1 AND run_token=?')
-      .bind(nextIndex, token).run();
-
-    if (nextIndex >= groupIds.length) {
-      await publishCatalog(db, token);
-      return { complete: true, groups_processed: nextIndex, groups_total: groupIds.length };
+    while (offset < productStatements.length) {
+      if (rowsWrittenToday >= DAILY_IMPORT_WRITE_BUDGET) {
+        await db.prepare("UPDATE tcgcsv_sync_progress SET current_group_offset=?, rows_written_today=?, sync_day=? WHERE id=1 AND run_token=?")
+          .bind(offset, rowsWrittenToday, today, token).run();
+        return { paused_for_daily_write_budget: true, rows_written_today: rowsWrittenToday,
+          current_group: groupId, products_in_group: productStatements.length,
+          products_processed_in_group: offset, resumes_after_utc_midnight: true };
+      }
+      const batchStatements = productStatements.slice(offset, offset + 40);
+      const result = await db.batch(batchStatements);
+      let measuredWrites = 0, hasWriteMeta = false;
+      for (const item of (result || [])) {
+        if (Number.isFinite(Number(item?.meta?.rows_written))) {
+          measuredWrites += Number(item.meta.rows_written);
+          hasWriteMeta = true;
+        }
+      }
+      if (!hasWriteMeta) measuredWrites = batchStatements.length * 5;
+      offset += batchStatements.length;
+      rowsWrittenToday += measuredWrites + 2;
+      await db.prepare("UPDATE tcgcsv_sync_progress SET current_group_offset=?, rows_written_today=?, sync_day=? WHERE id=1 AND run_token=?")
+        .bind(offset, rowsWrittenToday, today, token).run();
+      if (rowsWrittenToday >= DAILY_IMPORT_WRITE_BUDGET && offset < productStatements.length) {
+        return { paused_for_daily_write_budget: true, rows_written_today: rowsWrittenToday,
+          current_group: groupId, products_in_group: productStatements.length,
+          products_processed_in_group: offset, resumes_after_utc_midnight: true };
+      }
     }
 
-    return { processed_group: groupId, groups_processed: nextIndex, groups_total: groupIds.length, continuing: true };
+    const nextIndex = index + 1;
+    await db.prepare('UPDATE tcgcsv_sync_progress SET next_group_index=?, current_group_offset=0 WHERE id=1 AND run_token=?')
+      .bind(nextIndex, token).run();
+    if (nextIndex >= groupIds.length) {
+      await publishCatalog(db, token);
+      return { complete: true, groups_processed: nextIndex, groups_total: groupIds.length,
+        products_imported: productsPayload.results.length, write_mode: 'single_market_price_per_product' };
+    }
+    return { processed_group: groupId, groups_processed: nextIndex, groups_total: groupIds.length,
+      products_imported: productsPayload.results.length, rows_written_today: rowsWrittenToday, continuing: true };
   } catch (error) {
     await setError(db, error);
     throw error;
