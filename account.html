@@ -760,7 +760,7 @@
     const supported=('serviceWorker'in navigator)&&('PushManager'in window)&&('Notification'in window);
     if(prompt){
      prompt.hidden=subscribed||dismissed||!supported||!alertState.vapid_public_key;
-     if(Notification.permission==='denied'){
+     if(('Notification'in window)&&Notification.permission==='denied'){
       copy.textContent='Your browser is currently blocking notifications for PokePrizePool. Allow notifications in your browser’s site settings, then return here to enable alerts.';
       enable.disabled=true;enable.textContent='Blocked by browser settings';
      }else{
