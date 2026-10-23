@@ -1,6 +1,6 @@
 # PokePrizePool TCGCSV sync (staging)
 
-This Worker downloads only the Pokémon category (TCGplayer category ID 3), stores products and market prices in the **staging D1 database**, and runs daily. User-facing pages search the saved catalog; they must not request TCGCSV directly.
+This staging-only Worker downloads Pokémon category 3 to D1. The current compact importer stores one preferred market price on each product row rather than duplicating every price variant or writing historical snapshots. Production deployment uses the separate `wrangler.production.example.toml` template and `PRODUCTION_LIVE_SETUP.md` runbook.
 
 ## Safety first
 
@@ -42,14 +42,14 @@ The Worker checks `https://tcgcsv.com/last-updated.txt` at 21:00 UTC once per da
 
 ## Resumable import
 
-Each Worker invocation processes one Pokémon group/set and then securely schedules the next invocation. This avoids exceeding Cloudflare's per-invocation subrequest limit. Progress is saved in `tcgcsv_sync_progress` and is visible at `/health`. The catalog is published only after all groups complete successfully.
+Each Worker invocation processes one Pokémon group/set and then schedules the next invocation. Progress and an in-group product cursor are saved in `tcgcsv_sync_progress`. The importer pauses after 50,000 measured D1 rows written in a UTC day and resumes after midnight, preserving headroom under the Free-plan daily cap. The active source marker is published only when all groups complete successfully.
 
 Start a sync with a POST to `/sync` using the Authorization bearer secret. Check progress at `/health`. Never expose the secret in browser code.
 
 ## Current scope and limitations
 
-- Imports Pokémon product catalog records, sets/groups, and per-variant TCGplayer market prices.
-- Stores immutable price snapshots per TCGCSV source build in `tcgcsv_price_history` for later trend charts.
+- Stores product names, card numbers, set/type metadata, and one preferred market price per product row.
+- Avoids writing duplicate product/price staging rows and historical price snapshots during the initial launch import.
 - Card/single vs sealed classification is inferred from TCGCSV extended fields (card number or rarity means single); review edge cases as part of testing.
 - TCGCSV does not supply a complete graded-slab catalog. Graded items should reference their underlying raw card and store grading company/grade separately in PokePrizePool.
 - No price archive is downloaded.
