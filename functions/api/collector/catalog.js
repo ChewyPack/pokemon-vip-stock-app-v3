@@ -28,10 +28,24 @@ export async function onRequestGet({ request, env }) {
       'SELECT source_timestamp, last_success_at, status FROM tcgcsv_sync_state WHERE id = 1'
     ).first();
 
+    const progress = await env.DB.prepare(
+      'SELECT source_timestamp FROM tcgcsv_sync_progress WHERE id = 1'
+    ).first().catch(() => null);
+    const activeTimestamps = Array.from(new Set([
+      state?.source_timestamp,
+      ['syncing', 'error'].includes(String(state?.status || '').toLowerCase()) ? progress?.source_timestamp : null
+    ].filter(Boolean)));
+    const timestampPlaceholders = activeTimestamps.map(() => '?').join(',');
+
     if (mode === 'sets') {
-      const sets = await env.DB.prepare(
-        'SELECT group_id AS id, name, abbreviation, published_on FROM tcgcsv_groups WHERE category_id = 3 ORDER BY name COLLATE NOCASE'
-      ).all();
+      const sets = activeTimestamps.length
+        ? await env.DB.prepare(
+            'SELECT group_id AS id, name, abbreviation, published_on FROM tcgcsv_groups ' +
+            'WHERE category_id = 3 AND last_seen_sync IN (' + timestampPlaceholders + ') ORDER BY name COLLATE NOCASE'
+          ).bind(...activeTimestamps).all()
+        : await env.DB.prepare(
+            'SELECT group_id AS id, name, abbreviation, published_on FROM tcgcsv_groups WHERE category_id = 3 ORDER BY name COLLATE NOCASE'
+          ).all();
       return json({
         ok: true,
         sets: sets.results || [],
@@ -50,7 +64,7 @@ export async function onRequestGet({ request, env }) {
       }
       const history = await env.DB.prepare(`
         SELECT product_id, subtype_name, source_timestamp, low_price, mid_price,
-               high_price, market_price, direct_low_price, recorded_at
+               high_price, NULL AS market_price, direct_low_price, recorded_at
         FROM tcgcsv_price_history
         WHERE product_id = ? AND (? = '' OR subtype_name = ?)
         ORDER BY source_timestamp DESC
@@ -95,13 +109,12 @@ export async function onRequestGet({ request, env }) {
         p.product_id, p.name, p.clean_name, p.image_url, p.product_url,
         p.product_type, p.card_number, p.rarity, p.group_id,
         g.name AS set_name, g.abbreviation AS set_abbreviation,
-        pr.subtype_name, pr.low_price, pr.mid_price, pr.high_price,
-        pr.market_price, pr.direct_low_price, pr.last_seen_sync AS price_sync
+        p.market_price, p.market_price_subtype, p.last_seen_sync AS price_sync
       FROM (
         SELECT p.*
         FROM tcgcsv_products p
         WHERE p.category_id = 3
-          AND p.last_seen_sync = ?
+          AND p.last_seen_sync IN (${timestampPlaceholders})
           AND (
             instr(lower(p.name), lower(?)) > 0
             OR instr(lower(COALESCE(p.clean_name, '')), lower(?)) > 0
@@ -118,10 +131,9 @@ export async function onRequestGet({ request, env }) {
         LIMIT ?
       ) p
       LEFT JOIN tcgcsv_groups g ON g.group_id = p.group_id
-      LEFT JOIN tcgcsv_prices pr ON pr.product_id = p.product_id
-      ORDER BY p.name COLLATE NOCASE, pr.subtype_name COLLATE NOCASE
+      ORDER BY p.name COLLATE NOCASE
     `).bind(
-      state.source_timestamp,
+      ...activeTimestamps,
       ...binds.slice(0, 3),
       likeQuery,
       ...(requestedType !== 'all' ? [requestedType] : []),
@@ -149,9 +161,9 @@ export async function onRequestGet({ request, env }) {
           image_url: row.image_url || '',
           product_url: row.product_url || '',
           prices: [],
-          market_price: null,
-          market_price_subtype: null,
-          price_updated_at: null
+          market_price: row.market_price === null || row.market_price === undefined ? null : Number(row.market_price),
+          market_price_subtype: row.market_price_subtype || null,
+          price_updated_at: row.price_sync || null
         };
         byId.set(row.product_id, product);
       }
