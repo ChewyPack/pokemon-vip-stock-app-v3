@@ -2,9 +2,9 @@
 .ppp-ad-slot{position:relative;box-sizing:border-box;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;color:#8898b8;background:rgba(12,23,48,.88);border:1px dashed rgba(130,157,202,.62);font:700 12px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.08em;text-transform:uppercase;z-index:20;min-width:0}
 .ppp-ad-slot::before{content:"ADVERTISEMENT";position:absolute;top:5px;left:8px;font-size:9px;letter-spacing:.12em;color:#7183a7}
 .ppp-ad-slot--top{width:min(970px,calc(100% - 32px));min-height:100px;margin:18px auto 24px;padding:24px 12px 12px;border-radius:10px}
-.ppp-ad-slot--rail{position:fixed;top:175px;display:none;width:100px;height:520px;padding:24px 8px 8px;border-radius:10px}
-.ppp-ad-slot--left{left:6px}
-.ppp-ad-slot--right{right:6px}
+.ppp-ad-slot--rail{position:fixed;top:175px;display:none;width:180px;height:520px;padding:24px 8px 8px;border-radius:10px}
+.ppp-ad-slot--left{left:12px}
+.ppp-ad-slot--right{right:12px}
 @media(min-width:1280px){
  .ppp-ad-slot--rail{display:flex}
  body[data-view="home"] .wrap{max-width:min(1180px,calc(100% - 230px))}
