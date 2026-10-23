@@ -107,14 +107,14 @@ creativeFile.addEventListener('change',async function(){
 form.addEventListener('submit',async function(event){
  event.preventDefault();if(creativeUploading)return;
  if(!form.reportValidity())return;
- const body=Object.fromEntries(new FormData(form).entries());body.action='submit_inquiry';
+ const formData=new FormData(form);formData.delete('creative_file');const body=Object.fromEntries(formData.entries());body.action='submit_inquiry';
  button.disabled=true;button.textContent='Sending inquiry…';status.className='advertise-status';status.textContent='Submitting your request…';
  try{
   const response=await fetch('/api/advertising',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
   const data=await response.json().catch(()=>({}));
   if(!response.ok||!data.ok)throw new Error(data.message||'We could not submit your inquiry. Please review the details and try again.');
   status.classList.add('success');status.textContent=data.message||'Your advertising inquiry has been received. We will review it and follow up.';
-  form.reset();
+  form.reset();creativeUrl.value='';creativePreview.removeAttribute('src');creativePreview.hidden=true;creativeStatus.textContent='';
  }catch(error){status.classList.add('error');status.textContent=error.message||'There was a problem submitting your inquiry.';}
  finally{button.disabled=false;button.textContent='Send advertising inquiry';}
 });
