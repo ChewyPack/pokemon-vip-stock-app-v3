@@ -112,9 +112,13 @@ export async function onRequestGet({ request, env }) {
       SELECT a.id, a.display_name, a.email, a.created_at, a.is_admin,
         a.membership_tier, a.membership_entitlement_tier, a.membership_status,
         a.membership_current_period_end, a.membership_cancel_at_period_end,
-        p.username
+        p.username,
+        COALESCE(np.browser_push_enabled, 0) AS browser_push_enabled,
+        (SELECT COUNT(*) FROM push_subscriptions ps WHERE ps.account_id = a.id) AS push_subscription_count,
+        (SELECT MAX(ps.updated_at) FROM push_subscriptions ps WHERE ps.account_id = a.id) AS push_subscription_updated_at
       FROM accounts a
       LEFT JOIN collector_profiles p ON p.account_id = a.id
+      LEFT JOIN notification_preferences np ON np.account_id = a.id
       ${queryFilter}
       ORDER BY a.created_at DESC, a.id DESC
       LIMIT ? OFFSET ?
@@ -131,6 +135,9 @@ export async function onRequestGet({ request, env }) {
       membership_status: row.membership_status || "inactive",
       current_period_end: row.membership_current_period_end || null,
       cancel_at_period_end: Number(row.membership_cancel_at_period_end || 0) === 1,
+      browser_push_enabled: Number(row.browser_push_enabled || 0) === 1,
+      push_subscription_count: Number(row.push_subscription_count || 0),
+      push_subscription_updated_at: row.push_subscription_updated_at || null,
       active: isActiveMember(row)
     }));
     const totalAccounts = Number(totalRow?.total || 0);
