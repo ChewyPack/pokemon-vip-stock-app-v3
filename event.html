@@ -85,6 +85,12 @@ textarea{min-height:100px;resize:vertical}
 <a class="btn primary" href="/events.html">Return to Events Calendar</a>
 </div>
 <div id="event-content" hidden>
+<div id="preview-controls" class="panel" hidden>
+<p class="eyebrow">Preview mode</p>
+<h2>Visitor-facing event preview</h2>
+<p class="muted">This preview includes your current edits, even if you have not saved them yet. It does not publish or save the event.</p>
+<div class="actions"><button id="exit-preview" class="btn primary" type="button">Back to editing</button></div>
+</div>
 <section class="panel">
 <p id="event-eyebrow" class="eyebrow">PokePrizePool Event</p>
 <h1 id="event-title"></h1>
@@ -140,7 +146,7 @@ textarea{min-height:100px;resize:vertical}
 <div class="actions"><button class="btn" id="add-media-link" type="button">Add video link</button></div>
 </div>
 <div id="edit-status-message" class="status" role="status" aria-live="polite"></div>
-<div class="actions"><button id="save-event" class="btn primary" type="submit">Save event changes</button><button id="cancel-edit" class="btn" type="button">Cancel</button></div>
+<div class="actions"><button id="preview-event" class="btn" type="button">Preview event page</button><button id="save-event" class="btn primary" type="submit">Save event changes</button><button id="cancel-edit" class="btn" type="button">Cancel</button></div>
 </form>
 </section>
 </div>
@@ -151,7 +157,7 @@ textarea{min-height:100px;resize:vertical}
 'use strict';
 var $=function(id){return document.getElementById(id);};
 var TYPE_LABELS={show:'Card Show / Convention',trade:'Trade Night / Meetup',tournament:'Tournament / Organized Play',store:'Store Event',restock:'Restock Report',release:'TCG Product Release'};
-var record=null,canEdit=false,isAdmin=false,mediaItems=[];
+var record=null,canEdit=false,isAdmin=false,mediaItems=[],previewActive=false,previewState=null;
 function make(tag,cls){var node=document.createElement(tag);if(cls)node.className=cls;return node;}
 function text(parent,tag,cls,value){var node=make(tag,cls);node.textContent=value==null?'':String(value);parent.appendChild(node);return node;}
 function say(el,message,kind){el.textContent=message||'';el.className='status'+(kind?' '+kind:'');}
@@ -185,7 +191,7 @@ function renderPublic(){
  $('event-title').textContent=record.title||'Event details';
  $('event-eyebrow').textContent=TYPE_LABELS[record.event_type]||'PokePrizePool Event';
  var pills=$('event-pills');pills.replaceChildren();
- [record.badge,record.status==='draft'?'Draft (admin preview)':'Published'].filter(Boolean).forEach(function(v){text(pills,'span','pill',v);});
+ [record.badge,previewActive?'Published':(record.status==='draft'?'Draft (admin preview)':'Published')].filter(Boolean).forEach(function(v){text(pills,'span','pill',v);});
  var cover=$('event-cover');if(record.image_url){cover.src=approvedUrl(record.image_url)||record.image_url;cover.alt=record.title+' cover image';cover.hidden=false;}else{cover.hidden=true;cover.removeAttribute('src');}
  $('event-description').textContent=record.description||'';
  $('event-details-wrap').hidden=!(record.details||'').trim();
@@ -268,6 +274,29 @@ $('edit-form').addEventListener('submit',async function(e){
  finally{save.disabled=false;save.textContent='Save event changes';}
 });
 $('cancel-edit').addEventListener('click',function(){if(record)populateEditor();say($('edit-status-message'),'Unsaved changes discarded.');});
+$('preview-event').addEventListener('click',function(){
+ if(!canEdit||previewActive)return;
+ var form=$('edit-form'),previewRecord=Object.assign({},record);
+ ['id','title','event_type','event_date','status','start_time','end_time','venue','price','city','state','state_name','zip','address','url','badge','description','details','image_url'].forEach(function(key){
+  var field=form.elements[key];
+  if(field)previewRecord[key]=String(field.value||'').trim();
+ });
+ previewRecord.media=mediaItems.map(function(item){return {type:item.type,url:item.url,caption:item.caption||''};});
+ previewState={record:record,canEdit:canEdit,isAdmin:isAdmin};
+ record=previewRecord;canEdit=false;previewActive=true;
+ $('preview-controls').hidden=false;
+ renderPublic();
+ window.scrollTo({top:0,behavior:'smooth'});
+});
+$('exit-preview').addEventListener('click',function(){
+ if(!previewState)return;
+ var pending=record,saved=previewState.record;
+ record=saved;canEdit=previewState.canEdit;isAdmin=previewState.isAdmin;previewActive=false;previewState=null;
+ $('preview-controls').hidden=true;
+ renderPublic();
+ if(canEdit){record=pending;populateEditor();record=saved;}
+ $('edit-panel').scrollIntoView({behavior:'smooth',block:'start'});
+});
 load();
 })();
 </script>
