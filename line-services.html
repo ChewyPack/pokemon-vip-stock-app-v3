@@ -108,10 +108,10 @@ footer{text-align:center;padding:50px 0 70px}
 
 <section><div class="wrap"><h2>Pricing at a glance</h2>
 <div class="grid" id="cards"></div>
-<p class="mut" style="margin-top:14px">VIP rates lower the cost of your time. They do not promise priority booking. High-demand pricing may apply to major releases, such as premium collection boxes and UPCs, or challenging conditions such as snow and freezing temperatures. The applicable rate is confirmed before you pay.</p></div></section>
+<p class="mut" style="margin-top:14px">VIP rates lower the cost of your time. They do not promise priority booking. Severe weather conditions, including heavy rain or snow and freezing temperatures, add $5/hour for both Member and VIP bookings. The applicable rate is confirmed before you pay.</p></div></section>
 
 <section><div class="wrap"><h2>Before you book, let's make sure it makes sense.</h2>
-<div class="glass"><p>This service isn't for everyone, and that's completely understandable. High-demand Pokémon releases can require 7–10 hours of waiting, sometimes outdoors in freezing temperatures. You're paying for the time, effort, planning, and commitment required to make the purchasing attempt.</p>
+<div class="glass"><p>This service isn't for everyone, and that's completely understandable. Pokémon releases can require 7–10 hours of waiting, sometimes outdoors in severe weather. You're paying for the time, effort, planning, and commitment required to make the purchasing attempt.</p>
 <p>Best suited for collectors who want to maximize their available store purchase limits, subject to the retailer's rules:</p>
 <ul><li>Multiple eligible products</li><li>Premium boxes and high-demand releases</li><li>Full 2-per-SKU allowances where the store permits them</li></ul>
 <p class="note">If you're looking for just one or two lower-priced items, the service fee may outweigh the value of the purchase. Use the calculator to decide whether it makes financial sense for you. Never spend beyond your budget.</p></div></div></section>
@@ -183,8 +183,8 @@ footer{text-align:center;padding:50px 0 70px}
 // CONFIG: set endpoint to a verified submission URL (POST JSON). Leave "" until one exists.
 var CONFIG={endpoint:"/api/line-service-requests",contactName:"PokePrizePool"};
 var $=function(i){return document.getElementById(i)};
-var RATES={std:{member:[25,220],vip:[20,180]},high:{member:[30,260],vip:[25,225]}};
-var SV={std:"Standard / Off-Day",high:"High-Demand / Extreme Weather"},TN={member:"Member",vip:"VIP"};
+var RATES={std:{member:[25,220],vip:[20,180]},high:{member:[30,270],vip:[25,230]}};
+var SV={std:"Standard / Off-Day",high:"Severe Weather Heavy Rain/Snow"},TN={member:"Member",vip:"VIP"};
 var st={tier:"member",svc:"std",mode:"hourly"};
 function money(n){return"$"+n}
 function est(tier,svc,mode,h){var r=RATES[svc][tier],hr=r[0],pk=r[1],o={hourly:hr,note:""};
@@ -203,8 +203,10 @@ g.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x
 $("hours").addEventListener("input",calc);
 
 var cards=$("cards");
-[["std","member"],["std","vip"],["high","member"],["high","vip"]].forEach(function(p){var r=RATES[p[0]][p[1]],d=document.createElement("div");d.className="glass price";
-d.innerHTML="<h3>"+(p[0]==="std"?"Standard":"High-Demand")+" "+TN[p[1]]+"</h3><div class='big'>"+money(r[0])+"<small>/hour</small></div><p class='mut'>or "+money(r[1])+" for 10 hours<br>Saves "+money(r[0]*10-r[1])+" vs. ten hourly hours</p>";cards.appendChild(d)});
+[["std","member"],["std","vip"]].forEach(function(p){var r=RATES[p[0]][p[1]],d=document.createElement("div");d.className="glass price";
+d.innerHTML="<h3>Standard "+TN[p[1]]+"</h3><div class='big'>"+money(r[0])+"<small>/hour</small></div><p class='mut'>or "+money(r[1])+" for 10 hours<br>Saves "+money(r[0]*10-r[1])+" vs. ten hourly hours</p>";cards.appendChild(d)});
+var weatherCard=document.createElement("div");weatherCard.className="glass price";
+weatherCard.innerHTML="<h3>Severe Weather Heavy Rain/Snow</h3><div class='big'>+$5<small>/hour</small></div>";cards.appendChild(weatherCard);
 
 // form
 var cur=0,steps=document.querySelectorAll("[data-s]");
