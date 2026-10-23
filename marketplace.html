@@ -19,7 +19,7 @@
 .market-filters input,.market-filters select{width:100%;min-height:46px;padding:10px 12px;border:2px solid #b9c9e6;border-radius:9px;background:#fff;color:#0b2a6b;font:inherit}
 .market-status{min-height:1.5em;color:#52648b;line-height:1.5;margin:12px 0}
 .market-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;align-items:stretch}
-.market-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;background:#fff;border:2px solid #d1def2;border-radius:13px;box-shadow:0 4px 13px #07194d0b}
+.market-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;background:#fff;border:2px solid #d1def2;border-radius:13px;box-shadow:0 4px 13px #07194d0b}.market-card.is-boosted{border-color:#e5b62d;box-shadow:0 0 0 2px #ffe89c,0 8px 20px #07194d16}.market-boosted-pill{display:inline-flex;align-self:flex-start;margin-bottom:8px;padding:5px 8px;border-radius:999px;background:#fff1b4;color:#684600;font-size:.72rem;font-weight:1000;letter-spacing:.04em}.market-boost-button{border:1px solid #b49a3a;border-radius:8px;padding:8px 10px;background:#fff8d9;color:#6b4d00;font:inherit;font-weight:900;cursor:pointer}.market-boost-button:hover{background:#ffefb0}.market-boost-dialog{width:min(460px,calc(100% - 32px));padding:22px;border:2px solid #0b2a6b;border-radius:16px;background:#fff;color:#0b2a6b;box-shadow:0 20px 70px #0006}.market-boost-dialog::backdrop{background:#06174ab8}.market-boost-dialog h2{margin:0 0 8px;font-size:1.45rem}.market-boost-dialog p{color:#52648b;line-height:1.55}.market-boost-dialog label{display:grid;gap:6px;margin:14px 0;font-weight:900}.market-boost-dialog select{min-height:45px;width:100%;padding:10px;border:2px solid #b9c9e6;border-radius:8px;background:#fff;color:#0b2a6b;font:inherit}.market-boost-status{min-height:1.5em;font-size:.86rem}.market-boost-status.error{color:#a32222}
 .market-card-image{display:grid;place-items:center;width:100%;height:230px;padding:12px;background:linear-gradient(150deg,#f5f8ff,#e8efff);color:#7b8bac;text-align:center;overflow:hidden}
 .market-card-image img{width:100%;height:100%;object-fit:contain}
 .market-card-body{display:flex;flex:1;flex-direction:column;padding:13px;min-width:0}
@@ -43,7 +43,7 @@
 <div id="site-navigation"></div>
 <main class="market-wrap">
 <section class="market-hero">
-<div class="market-top"><div><p class="market-kicker">Collector-to-collector listings</p><h1 class="market-title">PokePrizePool Marketplace</h1><p class="market-intro">Discover singles, sealed products, graded cards, collections, and accessories posted by PokePrizePool shops. Any signed-in member, including free members, can create a shop and publish listings here. Member shops are listing pages only: contact the seller to arrange a local, in-person exchange. PokePrizePool does not process marketplace payments or provide checkout.</p></div><div class="market-actions"><a class="btn btn--primary" href="/collector.html#shop">Manage my shop</a></div></div>
+<div class="market-top"><div><p class="market-kicker">Collector-to-collector listings</p><h1 class="market-title">PokePrizePool Marketplace</h1><p class="market-intro">Discover singles, sealed products, graded cards, collections, and accessories posted by PokePrizePool shops. Any signed-in member, including free members, can create a shop and publish listings here. Member shops are listing pages only: contact the seller to arrange a local, in-person exchange. PokePrizePool does not process purchases of listed items; shop owners can optionally pay to boost their own listings.</p></div><div class="market-actions"><a class="btn btn--primary" href="/collector.html#shop">Manage my shop</a></div></div>
 </section>
 <form id="market-filters" class="market-filters" role="search">
 <input id="market-search" type="search" maxlength="100" placeholder="Search items, shop names, or usernames…" aria-label="Search marketplace listings" autocomplete="off">
@@ -56,6 +56,16 @@
 <section id="market-listings" class="market-grid" aria-label="Marketplace listings"><div class="market-empty">Loading listings…</div></section>
 <p class="market-fine-print">Listings are maintained by the shops that post them. Prices and availability may change. Checkout is not processed on this page; use a seller’s shop and contact links to coordinate a purchase.</p>
 </main>
+<dialog id="market-boost-dialog" class="market-boost-dialog" aria-labelledby="market-boost-title">
+<form id="market-boost-form">
+<input id="market-boost-listing-id" type="hidden">
+<h2 id="market-boost-title">Boost your marketplace listing</h2>
+<p id="market-boost-item-name">Give your listing a featured placement above regular marketplace listings while the boost is active.</p>
+<label for="market-boost-duration">Choose boost duration<select id="market-boost-duration"><option value="3">3 days — $2.99</option><option value="7" selected>7 days — $4.99</option><option value="14">14 days — $8.99</option></select></label>
+<p class="market-boost-status" id="market-boost-status" role="status" aria-live="polite"></p>
+<div class="market-actions"><button class="btn btn--primary" id="market-boost-pay" type="submit">Continue to secure checkout</button><button class="btn" id="market-boost-close" type="button">Cancel</button></div>
+</form>
+</dialog>
 <script src="/js/ui/site-nav.js?v=20261022-inbox-dropdown-counts"></script>
 <script>
 (function(){
@@ -69,8 +79,12 @@ function render(items){
  if(!items.length){list.innerHTML='<div class="market-empty"><strong>No matching listings yet.</strong><br>Try a different search or category. Shop owners can add listings from <a href="/vendor.html">Manage my shop</a>.</div>';return;}
  list.innerHTML=items.map(item=>{
   const image=item.image_url?'<img loading="lazy" alt="'+escapeHtml(item.item_name)+'" src="'+escapeHtml(item.image_url)+'">':'<span>No photo</span>';
-  return '<article class="market-card"><div class="market-card-image">'+image+'</div><div class="market-card-body"><h2>'+escapeHtml(item.item_name)+'</h2><p class="market-meta">Listed by '+escapeHtml(item.shop_name||item.username)+'</p><p class="market-meta">'+escapeHtml(item.category||'Other')+(item.condition_label?' · '+escapeHtml(item.condition_label):'')+'</p><p class="market-price">'+escapeHtml(priceLabel(item.price_cents))+'</p>'+(item.quantity_hint?'<p class="market-meta">'+escapeHtml(item.quantity_hint)+'</p>':'')+(item.notes?'<p class="market-meta">'+escapeHtml(item.notes)+'</p>':'')+(item.event_name?'<p class="market-meta">Featured at: '+escapeHtml(item.event_name)+'</p>':'')+'<div class="market-card-footer"><a class="market-view-shop" href="'+escapeHtml(item.shop_url)+'">View shop</a><a href="'+escapeHtml(item.profile_url)+'">@'+escapeHtml(item.username)+'</a></div></div></article>';
+  const listingId=Number(item.listing_id);
+  const boostLabel=item.boosted?'<span class="market-boosted-pill" aria-label="Promoted listing">⚡ Boosted</span>':'';
+  const boostButton=item.is_owner&&Number.isSafeInteger(listingId)&&listingId>0?'<button class="market-boost-button" type="button" data-boost-listing="'+listingId+'">'+(item.boosted?'Extend boost':'Boost listing')+'</button>':'';
+  return '<article class="market-card'+(item.boosted?' is-boosted':'')+'"><div class="market-card-image">'+image+'</div><div class="market-card-body">'+boostLabel+'<h2>'+escapeHtml(item.item_name)+'</h2><p class="market-meta">Listed by '+escapeHtml(item.shop_name||item.username)+'</p><p class="market-meta">'+escapeHtml(item.category||'Other')+(item.condition_label?' · '+escapeHtml(item.condition_label):'')+'</p><p class="market-price">'+escapeHtml(priceLabel(item.price_cents))+'</p>'+(item.quantity_hint?'<p class="market-meta">'+escapeHtml(item.quantity_hint)+'</p>':'')+(item.notes?'<p class="market-meta">'+escapeHtml(item.notes)+'</p>':'')+(item.event_name?'<p class="market-meta">Featured at: '+escapeHtml(item.event_name)+'</p>':'')+'<div class="market-card-footer"><a class="market-view-shop" href="'+escapeHtml(item.shop_url)+'">View shop</a><a href="'+escapeHtml(item.profile_url)+'">@'+escapeHtml(item.username)+'</a>'+boostButton+'</div></div></article>';
  }).join('');
+ list.querySelectorAll('[data-boost-listing]').forEach(button=>button.addEventListener('click',()=>openBoostDialog(Number(button.dataset.boostListing))));
 }
 async function load(){
  const thisRequest=++requestNumber,params=new URLSearchParams();
@@ -91,6 +105,27 @@ async function load(){
   status.textContent=error.message||'Marketplace unavailable.';
  }finally{if(thisRequest===requestNumber)status.removeAttribute('aria-busy');}
 }
+function openBoostDialog(listingId){
+ const dialog=$('market-boost-dialog');$('market-boost-listing-id').value=String(listingId);$('market-boost-status').textContent='';
+ const item=list.querySelector('[data-boost-listing="'+listingId+'"]')?.closest('.market-card')?.querySelector('h2')?.textContent||'your listing';
+ $('market-boost-item-name').textContent='Boost “'+item+'” to move it above regular listings for the duration you select. Payment is processed securely by Stripe.';
+ if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');
+}
+$('market-boost-close').addEventListener('click',()=>{const d=$('market-boost-dialog');if(typeof d.close==='function')d.close();else d.removeAttribute('open');});
+$('market-boost-form').addEventListener('submit',async event=>{
+ event.preventDefault();const button=$('market-boost-pay');button.disabled=true;button.textContent='Opening secure checkout…';$('market-boost-status').classList.remove('error');
+ $('market-boost-status').textContent='Preparing your secure checkout…';
+ try{
+  const response=await fetch('/api/marketplace-boost-checkout',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({listing_id:Number($('market-boost-listing-id').value),duration_days:Number($('market-boost-duration').value)})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.message||data.error||'Secure checkout could not be started.');
+  location.assign(data.url);
+ }catch(error){$('market-boost-status').textContent=error.message||'Could not open checkout.';$('market-boost-status').classList.add('error');}
+ finally{button.disabled=false;button.textContent='Continue to secure checkout';}
+});
+const boostResult=new URLSearchParams(location.search).get('boost');
+if(boostResult==='success')status.textContent='Thank you. Stripe returned you from checkout; your listing will be marked boosted once the payment webhook confirms it. Refresh in a moment if you do not see the Boosted label yet.';
+else if(boostResult==='cancelled')status.textContent='Checkout was cancelled. Your listing was not boosted.';
 function scheduleLoad(){clearTimeout(timer);timer=setTimeout(load,250);}
 form.addEventListener('submit',function(event){event.preventDefault();clearTimeout(timer);load();});
 search.addEventListener('input',scheduleLoad);

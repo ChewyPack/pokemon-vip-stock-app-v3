@@ -1,3 +1,4 @@
+import { ensureMarketplaceBoostSchema, currentMarketplaceAccount } from "../_lib/marketplace-boost.js";
 const CATEGORIES = ['Singles','Sealed','Graded cards','Collections','Accessories','Clothing','Plushies','Other'];
 
 function json(body,status=200){
@@ -17,6 +18,8 @@ function normalizeCategory(value){
 
 export async function onRequestGet({request,env}){
   if(!env.DB)return json({ok:false,error:'database_not_configured'},503);
+  await ensureMarketplaceBoostSchema(env);
+  const viewer=await currentMarketplaceAccount(request,env).catch(()=>null);
   const url=new URL(request.url);
   const search=clean(url.searchParams.get('q'),100);
   const requestedCategory=clean(url.searchParams.get('category'),40);
@@ -38,6 +41,7 @@ export async function onRequestGet({request,env}){
         i.image_key,
         i.created_at,
         i.updated_at,
+        b.boosted_until,
         p.shop_name,
         p.logo_key AS shop_logo_key,
         p.cover_key AS shop_cover_key,
@@ -48,13 +52,14 @@ export async function onRequestGet({request,env}){
       JOIN vendor_profiles p ON p.account_id=i.account_id
       JOIN collector_profiles cp ON cp.account_id=i.account_id
       JOIN accounts a ON a.id=i.account_id
+      LEFT JOIN (SELECT listing_id, MAX(ends_at) AS boosted_until FROM marketplace_listing_boosts WHERE ends_at > CURRENT_TIMESTAMP GROUP BY listing_id) b ON b.listing_id=i.id
       WHERE i.is_for_sale=1
         AND i.listing_status='active'
         AND TRIM(COALESCE(p.shop_name,''))<>''
         AND cp.is_public=1
         AND (?='' OR LOWER(i.category)=LOWER(?))
         AND (?='' OR i.item_name LIKE ? OR i.notes LIKE ? OR p.shop_name LIKE ? OR cp.username LIKE ?)
-      ORDER BY COALESCE(i.updated_at,i.created_at) DESC, i.id DESC
+      ORDER BY CASE WHEN b.boosted_until IS NOT NULL THEN 1 ELSE 0 END DESC, COALESCE(i.updated_at,i.created_at) DESC, i.id DESC
       LIMIT ?
     `).bind(
       category,category,
@@ -63,6 +68,8 @@ export async function onRequestGet({request,env}){
     ).all();
     const listings=(result.results||[]).map(item=>({
       ...item,
+      boosted:Boolean(item.boosted_until),
+      is_owner:Boolean(viewer&&Number(item.account_id)===viewer.id),
       image_url:item.image_key?'/api/vendor/image?key='+encodeURIComponent(item.image_key):'',
       shop_url:'/collector.html?user='+encodeURIComponent(item.username)+'#shop',
       profile_url:'/collector.html?user='+encodeURIComponent(item.username)

@@ -1,3 +1,4 @@
+import { applyMarketplaceBoostCheckout } from "../_lib/marketplace-boost.js";
 /*
  * POST /api/stripe-account
  * Account-membership webhook. Test Mode is the default; live mode requires its own secret.
@@ -88,7 +89,10 @@ export async function onRequestPost({ request, env }) {
       const rawAccountId = session.metadata?.account_id;
       // The legacy VIP checkout has no account_id metadata. Ignore those events here.
       if (!rawAccountId) {
+        // The legacy VIP checkout has no website-account metadata; ignore it here.
         processed = true;
+      } else if (session.metadata?.purchase_type === 'marketplace_listing_boost') {
+        processed = await applyMarketplaceBoostCheckout(session, env);
       } else {
         const accountId = Number(rawAccountId);
         const subscriptionId = stripeId(session.subscription);
@@ -111,7 +115,7 @@ export async function onRequestPost({ request, env }) {
       const subscription = event.data.object;
       processed = !subscription?.metadata?.account_id || await saveSubscription(subscription, env, stripe, 'canceled');
     }
-    if (!processed) return json({ ok: false, error: 'membership_not_applied' }, 500);
+    if (!processed) return json({ ok: false, error: event.data?.object?.metadata?.purchase_type === 'marketplace_listing_boost' ? 'boost_not_applied' : 'membership_not_applied' }, 500);
     await env.DB.prepare('INSERT INTO stripe_account_events (event_id, event_type) VALUES (?, ?)').bind(event.id, event.type).run();
     return json({ received: true });
   } catch (error) {
