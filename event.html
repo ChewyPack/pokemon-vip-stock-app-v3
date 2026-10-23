@@ -276,7 +276,13 @@ async function load(){
  if(id&&!/^\d+$/.test(id)){showError('This event link is missing a valid event ID.');return;}
  if(!id&&!slug){showError('This event link is missing a valid ID or custom URL.');return;}
  try{var endpoint=id?'/api/events?id='+encodeURIComponent(id):'/api/events?slug='+encodeURIComponent(slug);
-  var result=await api(endpoint);record=result.event;canEdit=!!result.can_edit;isAdmin=!!result.is_admin;renderPublic();
+  var result=await api(endpoint);record=result.event;canEdit=!!result.can_edit;isAdmin=!!result.is_admin;
+  if(record.status==='published'&&record.slug&&!previewActive&&(/^\/event\.html$/i.test(location.pathname)||location.pathname==='/event')){
+   var canonicalParams=new URLSearchParams(location.search);canonicalParams.delete('id');
+   var canonicalQuery=canonicalParams.toString();
+   history.replaceState({},'', '/'+record.slug+(canonicalQuery?'?'+canonicalQuery:''));
+  }
+  renderPublic();
   var boostState=params.get('boost');
   if(boostState==='success')say($('event-boost-status'),'Checkout returned successfully. Your boost will activate after Stripe confirms the payment.','success');
   else if(boostState==='cancelled')say($('event-boost-status'),'Checkout was cancelled. No event boost payment was completed.');
