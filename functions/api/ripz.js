@@ -46,7 +46,10 @@ async function currentAccount(request, env) {
   account.membership_tier = tier || "free";
   return account;
 }
+let schemaPromise = null;
 async function ensureSchema(env) {
+  if (schemaPromise) return schemaPromise;
+  schemaPromise = (async function () {
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS ripz_streams (
       id TEXT PRIMARY KEY,
@@ -75,6 +78,13 @@ async function ensureSchema(env) {
     )
   `).run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_chat_stream_id ON ripz_chat_messages(stream_id, id)").run();
+  })();
+  try {
+    await schemaPromise;
+  } catch (error) {
+    schemaPromise = null;
+    throw error;
+  }
 }
 function streamShape(row, includePublishUrl = false) {
   if (!row) return null;
