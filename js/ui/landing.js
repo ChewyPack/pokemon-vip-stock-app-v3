@@ -27,59 +27,90 @@
     }, label);
   }
 
+  function closeMenus(nav, keepMenu) {
+    nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
+      var shouldKeep = keepMenu && (menu === keepMenu || menu.contains(keepMenu));
+      menu.hidden = !shouldKeep;
+    });
+    nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+      var controlled = nav.querySelector('#' + button.getAttribute('aria-controls'));
+      button.setAttribute('aria-expanded', String(!!controlled && !controlled.hidden));
+    });
+  }
+
+  function makeMenuItem(item, nav) {
+    if (item.children && item.children.length) {
+      var submenuId = 'nav-sub-' + item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      var toggle = h('button', {
+        class: 'site-nav__item site-nav__submenu-toggle',
+        type: 'button',
+        'aria-expanded': 'false',
+        'aria-controls': submenuId
+      },
+        h('span', { class: 'site-nav__item-title' }, item.title),
+        h('span', { class: 'site-nav__submenu-arrow', 'aria-hidden': 'true' }, '›')
+      );
+      var submenu = h('div', {
+        class: 'site-nav__menu site-nav__submenu',
+        id: submenuId,
+        hidden: true
+      }, item.children.map(function (child) { return makeMenuItem(child, nav); }));
+      var wrapper = h('div', { class: 'site-nav__nested-dropdown' }, toggle, submenu);
+
+      toggle.addEventListener('click', function (event) {
+        event.stopPropagation();
+        var currentNav = wrapper.closest('.site-nav');
+        var wasOpen = toggle.getAttribute('aria-expanded') === 'true';
+        currentNav.querySelectorAll('.site-nav__submenu-toggle').forEach(function (other) {
+          other.setAttribute('aria-expanded', 'false');
+        });
+        currentNav.querySelectorAll('.site-nav__submenu').forEach(function (other) {
+          other.hidden = true;
+        });
+        if (!wasOpen) {
+          toggle.setAttribute('aria-expanded', 'true');
+          submenu.hidden = false;
+        }
+      });
+      return wrapper;
+    }
+
+    return h('a', {
+      class: 'site-nav__item',
+      href: item.href
+    },
+      h('span', { class: 'site-nav__item-title' }, item.title),
+      item.description ? h('span', { class: 'site-nav__item-description' }, item.description) : null
+    );
+  }
+
   function dropdown(label, items) {
     var menuId = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
     var button = h('button', {
       class: 'site-nav__toggle',
       type: 'button',
       'aria-expanded': 'false',
       'aria-controls': menuId
     }, label + ' ▾');
-
-    var menu = h(
-      'div',
-      {
-        class: 'site-nav__menu',
-        id: menuId,
-        hidden: true
-      },
-      items.map(function (item) {
-        return h(
-          'a',
-          {
-            class: 'site-nav__item',
-            href: item.href
-          },
-          h('span', { class: 'site-nav__item-title' }, item.title),
-          item.description
-            ? h('span', { class: 'site-nav__item-description' }, item.description)
-            : null
-        );
-      })
-    );
-
-    var wrapper = h(
-      'div',
-      { class: 'site-nav__dropdown' },
-      button,
-      menu
-    );
+    var menu = h('div', {
+      class: 'site-nav__menu',
+      id: menuId,
+      hidden: true
+    }, items.map(function (item) { return makeMenuItem(item); }));
+    var wrapper = h('div', { class: 'site-nav__dropdown' }, button, menu);
 
     button.addEventListener('click', function () {
       var isOpen = button.getAttribute('aria-expanded') === 'true';
-
-      var allButtons = document.querySelectorAll('.site-nav__toggle');
-      var allMenus = document.querySelectorAll('.site-nav__menu');
-
-      allButtons.forEach(function (otherButton) {
+      var nav = wrapper.closest('.site-nav');
+      nav.querySelectorAll('.site-nav__toggle').forEach(function (otherButton) {
         otherButton.setAttribute('aria-expanded', 'false');
       });
-
-      allMenus.forEach(function (otherMenu) {
+      nav.querySelectorAll('.site-nav__menu').forEach(function (otherMenu) {
         otherMenu.hidden = true;
       });
-
+      nav.querySelectorAll('.site-nav__submenu-toggle').forEach(function (otherButton) {
+        otherButton.setAttribute('aria-expanded', 'false');
+      });
       if (!isOpen) {
         button.setAttribute('aria-expanded', 'true');
         menu.hidden = false;
@@ -96,84 +127,89 @@
       h(
         'div',
         { class: 'wrap site-nav-header__inner' },
-        navLink('Pokémon VIP', '#home'),
         h(
           'nav',
           {
             class: 'site-nav',
             'aria-label': 'Main navigation'
           },
-          navLink('Home', '#home'),
+          navLink('Home', '/'),
           dropdown('Poke Report', [
+            { title: 'News', description: 'Pokémon news and hobby coverage', href: '/news.html' },
+            { title: 'Updates', description: 'Platform updates and announcements', href: '/updates.html' },
+            { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
+            { title: 'Events', description: 'Shows, trade nights, and releases', href: '/events.html' },
+            { title: 'Instant Cashout', description: 'Explore collection cash-out options', href: '/instant-buyout.html' }
+          ]),
+          dropdown('Alerts', [
+            { title: 'Live Stock', description: 'View live stock alerts', href: '/alerts.html' },
+            { title: 'Target', description: 'Target stock alerts', href: '/alerts.html?retailer=target' },
+            { title: 'Walmart', description: 'Walmart stock alerts', href: '/alerts.html?retailer=walmart' },
+            { title: 'BestBuy', description: 'Best Buy stock alerts', href: '/alerts.html?retailer=bestbuy' }
+          ]),
+          navLink('Line Services', '/line-services.html'),
+          dropdown('Shop', [
             {
-              title: 'Report a Sighting',
-              description: 'Submit an in-store stock report',
-              href: '#report'
+              title: 'Cards',
+              children: [
+                { title: 'Sealed', href: '/shop.html?category=sealed' },
+                { title: 'Slabs', href: '/shop.html?category=slabs' },
+                { title: 'Singles', href: '/shop.html?category=singles' }
+              ]
             },
             {
-              title: 'News & Exclusives',
-              description: 'Pokémon news and hobby updates',
-              href: '/news.html'
-            },
-            {
-              title: 'Market Intelligence',
-              description: 'Market trends and product insights',
-              href: '/market-intelligence.html'
-            },
-            {
-              title: 'Events Calendar',
-              description: 'Shows, trade nights, and releases',
-              href: '/events.html'
-            },
-            {
-              title: 'Vendor Directory',
-              description: 'Discover vendors and their specialties',
-              href: '/vendors.html'
+              title: 'Merch',
+              children: [
+                { title: 'Clothing', href: '/shop.html?category=clothing' },
+                { title: 'Plushies', href: '/shop.html?category=plushies' },
+                { title: 'Other', href: '/shop.html?category=other' }
+              ]
             }
           ]),
-          dropdown('Shop', [
-            { title: 'Sealed Products', href: '/shop-sealed.html' },
-            { title: 'Raw Singles', href: '/shop-singles.html' },
-            { title: 'Graded Cards', href: '/shop-slabs.html' },
-            { title: 'Merchandise', href: '/shop-merch.html' }
+          navLink('Giveaways', '/giveaways.html'),
+          navLink('Chat', '/chat.html'),
+          dropdown('Resources', [
+            { title: 'Securing Product', href: '/resources/securing-product.html' },
+            { title: 'Spotting Fakes', href: '/resources/spotting-fakes.html' },
+            { title: 'Pricing Cards', href: '/resources/pricing-cards.html' }
           ]),
-          dropdown('Giveaways', [
-            { title: 'My Entries', href: '/giveaway-entries.html' },
-            { title: 'Giveaway Rules', href: '/giveaway-rules.html' },
-            { title: 'Live Draws & Videos', href: '/giveaway-live.html' }
-          ]),
-          dropdown('Community', [
-            { title: 'Discord Community', href: '/community-discord.html' },
-            { title: 'Collector Resources', href: '/community-resources.html' },
-            { title: 'VIP Badge Collection', href: '/vip-badges.html' },
-            { title: 'Member Support', href: '/community-support.html' }
-          ])
-        ),
-        navLink('Report a Sighting', '#report')
+          h('a', {
+            class: 'site-nav__link account-nav-link',
+            href: '/account.html',
+            id: 'account-nav-link'
+          }, 'Sign up / Log in')
+        )
       )
     );
 
+    fetch('/api/account/me', { credentials: 'include', cache: 'no-store' })
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) {
+        var accountLink = nav.querySelector('#account-nav-link');
+        if (!accountLink || !data || !data.ok || !data.authenticated) return;
+        accountLink.href = '/collector.html';
+        accountLink.textContent = 'Profile';
+        accountLink.setAttribute('aria-label', 'Open your collector profile');
+      })
+      .catch(function (error) {
+        console.warn('Could not refresh account navigation:', error);
+      });
+
     document.addEventListener('click', function (event) {
       if (!nav.contains(event.target)) {
-        nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+        nav.querySelectorAll('.site-nav__toggle, .site-nav__submenu-toggle').forEach(function (button) {
           button.setAttribute('aria-expanded', 'false');
         });
-
-        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-          menu.hidden = true;
-        });
+        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) { menu.hidden = true; });
       }
     });
 
     nav.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
-        nav.querySelectorAll('.site-nav__toggle').forEach(function (button) {
+        nav.querySelectorAll('.site-nav__toggle, .site-nav__submenu-toggle').forEach(function (button) {
           button.setAttribute('aria-expanded', 'false');
         });
-
-        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-          menu.hidden = true;
-        });
+        nav.querySelectorAll('.site-nav__menu').forEach(function (menu) { menu.hidden = true; });
       }
     });
 

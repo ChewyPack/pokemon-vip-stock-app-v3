@@ -11,10 +11,12 @@
  * Cloudflare D1 binding:
  *   DB -> pokemon-vip-members
  *
- * Environment variables:
- *   DISCORD_WEBHOOK_URL       required
- *   DISCORD_ALERT_ROLE_ID     optional
- *   DISCORD_LOG_WEBHOOK_URL   optional
+ * Access:
+ *   Requires a signed-in account with an active, verified paid membership.
+ *
+ * Notifications:
+ *   Saved reports fan out to the in-site inbox and opted-in browser push subscriptions.
+ *   VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY enable browser push delivery.
  *
  * IMPORTANT:
  * The existing reports table does not contain a product_type column.
@@ -23,40 +25,17 @@
 
 import formConfig from '../../js/shared/form-config.js';
 import validate from '../../js/shared/validate.js';
-import { buildAlert } from '../discord.js';
+import { notifyReport } from '../_lib/notify.js';
 
-const MAX_BODY_BYTES = 14 * 1024 * 1024;
-const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
-const MAX_TOTAL_PHOTO_BYTES = 9 * 1024 * 1024;
-const MIN_FILL_MS = 3000;
-const MAX_PHOTOS = 5;
 
-const WEBHOOK_PREFIX =
-  /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//;
-
-const SESSION_COOKIE = 'vip_session';
-
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'content-type': 'application/json',
-      'cache-control': 'no-store'
-    }
-  });
-}
+const ACCOUNT_COOKIE = 'collector_session';
+const PAID_TIERS = new Set(['collector_plus', 'vendor', 'organizer']);
 
 function getCookie(request, name) {
-  const header = request.headers.get('Cookie') || '';
-
-  for (const part of header.split(';')) {
-    const trimmed = part.trim();
-
-    if (trimmed.startsWith(name + '=')) {
-      return trimmed.substring(name.length + 1);
-    }
+  for (const part of (request.headers.get('Cookie') || '').split(';')) {
+    const value = part.trim();
+    if (value.startsWith(name + '=')) return value.slice(name.length + 1);
   }
-
   return '';
 }
 
@@ -67,79 +46,71 @@ function base64Url(bytes) {
     .replace(/=+$/, '');
 }
 
-async function sha256(value) {
-  return crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(value)
-  );
+async function sha256Base64Url(value) {
+  return base64Url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
 }
 
-async function getActiveMember(request, env) {
-  const token = getCookie(request, SESSION_COOKIE);
+async function requireActivePaidAccount(request, env) {
+  // Existing VIP subscribers use vip_session and the production users table.
+  // Honor their current active session without requiring a duplicate account.
+  const vipToken = getCookie(request, 'vip_session');
+  if (vipToken) {
+    const vipMember = await env.DB.prepare(
+      `SELECT id, session_expires_at, membership_status, membership_type
+       FROM users WHERE session_token_hash = ? AND membership_status = 'active' LIMIT 1`
+    ).bind(await sha256Base64Url(vipToken)).first();
 
-  if (!token) {
-    return null;
+    if (vipMember && vipMember.session_expires_at && Number(vipMember.session_expires_at) > Date.now()) {
+      return { ok: true, account: vipMember, legacyVip: true };
+    }
   }
 
-  const hashBuffer = await sha256(token);
-  const tokenHash = base64Url(hashBuffer);
+  const token = getCookie(request, ACCOUNT_COOKIE);
+  if (!token) return { ok: false, status: 401, error: 'login_required' };
 
-  const result = await env.DB.prepare(
-    `SELECT id, name, email, membership_status,
-            membership_type, session_expires_at
-     FROM users
-     WHERE session_token_hash = ?
-       AND membership_status = 'active'
-     LIMIT 1`
-  )
-    .bind(tokenHash)
-    .first();
+  const account = await env.DB.prepare(
+    `SELECT id, session_expires_at, membership_status, membership_tier,
+            membership_entitlement_tier, membership_current_period_end,
+            stripe_subscription_id
+     FROM accounts WHERE session_token_hash = ? LIMIT 1`
+  ).bind(await sha256Base64Url(token)).first();
 
-  if (!result) {
-    return null;
+  if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) {
+    return { ok: false, status: 401, error: 'login_required' };
   }
 
-  if (
-    !result.session_expires_at ||
-    Number(result.session_expires_at) < Date.now()
-  ) {
-    return null;
+  const tier = String(account.membership_entitlement_tier || account.membership_tier || '').trim().toLowerCase();
+  if (account.membership_status !== 'active' || !PAID_TIERS.has(tier) || !account.stripe_subscription_id) {
+    return { ok: false, status: 403, error: 'paid_membership_required' };
   }
 
-  return result;
+  if (account.membership_current_period_end) {
+    const rawEnd = account.membership_current_period_end;
+    const numericEnd = Number(rawEnd);
+    const endMs = Number.isFinite(numericEnd) && numericEnd > 0
+      ? (numericEnd < 100000000000 ? numericEnd * 1000 : numericEnd)
+      : Date.parse(rawEnd);
+    if (!Number.isFinite(endMs) || endMs <= Date.now()) {
+      return { ok: false, status: 403, error: 'paid_membership_required' };
+    }
+  }
+
+  return { ok: true, account };
 }
 
-async function postToDiscord(webhookUrl, payload, photos) {
-  const url =
-    webhookUrl +
-    (webhookUrl.includes('?') ? '&' : '?') +
-    'wait=true';
+const MAX_BODY_BYTES = 14 * 1024 * 1024;
+const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
+const MAX_TOTAL_PHOTO_BYTES = 9 * 1024 * 1024;
+const MIN_FILL_MS = 3000;
+const MAX_PHOTOS = 5;
 
-  if (!photos.length) {
-    return fetch(url, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-  }
-
-  const body = new FormData();
-
-  body.append('payload_json', JSON.stringify(payload));
-
-  photos.forEach(function (photo, index) {
-    body.append(
-      'files[' + index + ']',
-      photo.file,
-      photo.name
-    );
-  });
-
-  return fetch(url, {
-    method: 'POST',
-    body
+function json(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json',
+      'cache-control': 'no-store'
+    }
   });
 }
 
@@ -162,6 +133,25 @@ function numericQuantity(value) {
   if (value === '10+') return 10;
 
   return null;
+}
+
+
+async function persistReportPhotos(env, photos) {
+  if (!photos.length) return [];
+  if (!env.VENDOR_MEDIA) throw new Error('report_photo_storage_not_configured');
+  const urls = [];
+  for (const photo of photos) {
+    const extension = photo.name.split('.').pop().toLowerCase();
+    const key = 'reports/' + crypto.randomUUID() + '.' + extension;
+    await env.VENDOR_MEDIA.put(key, photo.file, {
+      httpMetadata: {
+        contentType: photo.file.type,
+        cacheControl: 'public, max-age=31536000, immutable'
+      }
+    });
+    urls.push('/api/vendor/image?key=' + encodeURIComponent(key));
+  }
+  return urls;
 }
 
 function makeStoreDetails(report) {
@@ -208,36 +198,184 @@ function makeStoreDetails(report) {
   };
 }
 
-export async function onRequestPost({ request, env }) {
-  /*
-   * MEMBERSHIP CHECK
-   * Only active members with a valid session can submit reports.
-   */
+async function handleLineReport(data, env, form) {
+  // Line-report columns are only available after the dedicated schema migration.
+  // Fail clearly before uploading photos or attempting an INSERT against legacy production D1.
   try {
-    const member = await getActiveMember(request, env);
-
-    if (!member) {
+    const schema = await env.DB.prepare('PRAGMA table_info(reports)').all();
+    const columns = new Set((schema.results || []).map(column => column.name));
+    const required = ['report_type', 'line_count', 'stocked_by'];
+    if (!required.every(column => columns.has(column))) {
       return json({
         ok: false,
-        error: 'membership_required'
-      }, 403);
+        error: 'line_reports_not_enabled',
+        message: 'Line reports are temporarily unavailable while this database uses the legacy schema.'
+      }, 503);
     }
   } catch (error) {
-    console.error('Membership check error:', error);
-
-    return json({
-      ok: false,
-      error: 'membership_check_failed'
-    }, 500);
+    console.error('Line report schema check failed:', error);
+    return json({ ok: false, error: 'database_schema_check_failed' }, 503);
   }
 
-  const alertUrl = env.DISCORD_WEBHOOK_URL || '';
 
-  if (!WEBHOOK_PREFIX.test(alertUrl)) {
+  const errors = {};
+  ['state', 'retailer', 'branch'].forEach(function (id) {
+    const field = formConfig.getField(id);
+    const options = formConfig.getOptions(id, {
+      get: function (key) { return data[key] || ''; }
+    }) || [];
+    const message = validate.validateField(field, data[id], { options });
+    if (message) errors[id] = message;
+  });
+
+  ['lineCount', 'lineSeenAt', 'stockedBy'].forEach(function (id) {
+    const field = formConfig.getField(id);
+    const options = formConfig.getOptions(id) || [];
+    const message = validate.validateField(field, data[id], {
+      options,
+      futureToleranceMs: 15 * 60 * 1000
+    });
+    if (message) errors[id] = message;
+  });
+
+  if (data.branch === 'manual') {
+    if (String(data.storeTown || '').trim().length < 2) {
+      errors.storeTown = 'Enter the town or city for this store.';
+    }
+    if (String(data.storeAddress || '').trim().length < 3) {
+      errors.storeAddress = 'Enter the street address for this store.';
+    }
+  }
+
+  if (Object.keys(errors).length) {
+    return json({ ok: false, error: 'invalid', errors }, 422);
+  }
+
+  // Optional photo evidence is processed using the same limits as stock reports.
+  const files = form.getAll('photos').filter(function (file) {
+    return typeof file !== 'string' && file.size > 0;
+  });
+
+  if (files.length > MAX_PHOTOS) {
+    return json({ ok: false, error: 'too_many_photos' }, 422);
+  }
+
+  let totalPhotoBytes = 0;
+  const photos = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      return json({ ok: false, error: 'bad_photo' }, 422);
+    }
+
+    if (file.size > MAX_PHOTO_BYTES) {
+      return json({ ok: false, error: 'photo_too_large' }, 413);
+    }
+
+    totalPhotoBytes += file.size;
+    if (totalPhotoBytes > MAX_TOTAL_PHOTO_BYTES) {
+      return json({ ok: false, error: 'photo_too_large' }, 413);
+    }
+
+    const extension = file.type === 'image/png'
+      ? 'png'
+      : file.type === 'image/webp'
+        ? 'webp'
+        : 'jpg';
+
+    photos.push({ file, name: 'line-photo' + (i + 1) + '.' + extension });
+  }
+
+  let photoNames;
+  try {
+    photoNames = await persistReportPhotos(env, photos);
+  } catch (error) {
+    console.error('Report photo upload failed:', error);
+    return json({ ok: false, error: String(error && error.message || '').includes('not_configured') ? 'photo_storage_not_configured' : 'photo_upload_failed' }, String(error && error.message || '').includes('not_configured') ? 503 : 500);
+  }
+
+  const store = makeStoreDetails(data);
+  const lineNotes = String(data.lineNotes || '').trim().slice(0, 1000);
+  const stockedByLabels = {
+    vendor: 'Vendor',
+    store_employees: 'Store employees',
+    unknown: 'Not sure'
+  };
+  const report = {
+    reportType: 'line',
+    state: data.state,
+    retailer: data.retailer,
+    branch: data.branch,
+    branchLabel: store.branchLabel,
+    storeTown: store.town,
+    storeAddress: store.address,
+    location: store.location,
+    lineCount: data.lineCount,
+    lineSeenAt: new Date(data.lineSeenAt).toISOString(),
+    stockedBy: data.stockedBy,
+    stockedByLabel: stockedByLabels[data.stockedBy] || 'Not sure'
+  };
+
+  try {
+    await env.DB.prepare(`
+      INSERT INTO reports (
+        store, location, product, quantity, price, reported_by, photo_url,
+        notes, price_type, product_located, seen_at, still_there, state,
+        branch_id, store_town, store_address, product_name, quantity_text,
+        shelf_price, msrp, report_type, line_count, stocked_by
+      ) VALUES (
+        ?, ?, '', NULL, NULL, '', ?, ?, 'Line report', '', ?, '', ?,
+        ?, ?, ?, '', ?, NULL, NULL, 'line', ?, ?
+      )
+    `).bind(
+      report.retailer,
+      report.location,
+      photoNames.join(', '),
+      [
+        'Line report — ' + report.lineCount + ' people; stocked by ' + report.stockedByLabel,
+        lineNotes ? 'Additional notes: ' + lineNotes : ''
+      ].filter(Boolean).join('\\n'),
+      report.lineSeenAt,
+      report.state,
+      report.branch,
+      report.storeTown,
+      report.storeAddress,
+      Number(report.lineCount),
+      report.lineCount,
+      report.stockedBy
+    ).run();
+  } catch (error) {
+    console.error('Line report D1 database error:', error);
+    return json({ ok: false, error: 'database_error' }, 500);
+  }
+
+  try {
+    const delivery = await notifyReport(env, report);
+    return json({ ok: true, alerted: delivery.inAppCreated > 0 || delivery.pushDelivered > 0, delivery });
+  } catch (error) {
+    console.error('Line report notification fan-out failed after report was saved:', error);
+    return json({ ok: true, alerted: false, warning: 'notification_delivery_failed' });
+  }
+}
+
+export async function onRequestPost({ request, env }) {
+  let access;
+  try {
+    access = await requireActivePaidAccount(request, env);
+  } catch (error) {
+    console.error('Paid report access check failed:', error);
+    return json({ ok: false, error: 'membership_check_failed' }, 500);
+  }
+  if (!access.ok) {
     return json({
       ok: false,
-      error: 'not_configured'
-    }, 500);
+      error: access.error,
+      message: access.error === 'login_required'
+        ? 'Sign in to a PokePrizePool account with an active paid membership to submit reports.'
+        : 'An active paid PokePrizePool membership is required to submit reports.'
+    }, access.status);
   }
 
   const declared = Number(
@@ -292,6 +430,10 @@ export async function onRequestPost({ request, env }) {
       ok: false,
       error: 'bad_request'
     }, 400);
+  }
+
+  if (data.reportType === 'line') {
+    return handleLineReport(data, env, form);
   }
 
   const result = validate.validateAll(
@@ -382,9 +524,13 @@ export async function onRequestPost({ request, env }) {
     });
   }
 
-  const photoNames = photos.map(function (photo) {
-    return photo.name;
-  });
+  let photoNames;
+  try {
+    photoNames = await persistReportPhotos(env, photos);
+  } catch (error) {
+    console.error('Report photo upload failed:', error);
+    return json({ ok: false, error: String(error && error.message || '').includes('not_configured') ? 'photo_storage_not_configured' : 'photo_upload_failed' }, String(error && error.message || '').includes('not_configured') ? 503 : 500);
+  }
 
   /*
    * SAVE REPORT TO D1.
@@ -462,99 +608,16 @@ export async function onRequestPost({ request, env }) {
   }
 
   /*
-   * BUILD DISCORD ALERT.
-   * The current alert builder receives compatibility fields above.
+   * Reports are stored before notification delivery. Push failures must not
+   * make a successful database write look like a failed report submission.
    */
-  let alert;
-
   try {
-    alert = buildAlert(report, {
-      roleId: env.DISCORD_ALERT_ROLE_ID || '',
-      photoNames
-    });
+    const delivery = await notifyReport(env, report);
+    return json({ ok: true, alerted: delivery.inAppCreated > 0 || delivery.pushDelivered > 0, delivery });
   } catch (error) {
-    console.error('Discord alert build error:', error);
-
-    // The report has already been saved. Do not report it as unsaved.
-    return json({
-      ok: true,
-      alerted: false,
-      warning: 'alert_build_failed'
-    });
+    console.error('Stock report notification fan-out failed after report was saved:', error);
+    return json({ ok: true, alerted: false, warning: 'notification_delivery_failed' });
   }
-
-  const sends = [];
-
-  // Main alert channel: only reports marked as still in stock.
-  if (alert.inStock) {
-    sends.push(postToDiscord(alertUrl, alert.payload, photos));
-  }
-
-  // Optional log channel: all valid reports.
-  const logUrl = env.DISCORD_LOG_WEBHOOK_URL || '';
-
-  if (WEBHOOK_PREFIX.test(logUrl)) {
-    try {
-      const log = buildAlert(report, {
-        roleId: '',
-        photoNames
-      });
-
-      sends.push(postToDiscord(logUrl, log.payload, photos));
-    } catch (error) {
-      console.error('Discord log alert build error:', error);
-    }
-  }
-
-  let responses;
-
-  try {
-    responses = await Promise.all(sends);
-  } catch (error) {
-    console.error('Discord connection error:', error);
-
-    // D1 already contains the report. Return success to prevent accidental
-    // duplicate submissions when only Discord delivery failed.
-    return json({
-      ok: true,
-      alerted: false,
-      warning: 'discord_unreachable'
-    });
-  }
-
-  if (responses.some(function (response) {
-    return response.status === 429;
-  })) {
-    console.error('Discord rate limit reached after report was saved.');
-
-    return json({
-      ok: true,
-      alerted: false,
-      warning: 'discord_rate_limited'
-    });
-  }
-
-  if (responses.some(function (response) {
-    return !response.ok;
-  })) {
-    console.error(
-      'Discord rejected an alert after report was saved:',
-      responses.map(function (response) {
-        return response.status;
-      })
-    );
-
-    return json({
-      ok: true,
-      alerted: false,
-      warning: 'discord_rejected'
-    });
-  }
-
-  return json({
-    ok: true,
-    alerted: !!alert.inStock
-  });
 }
 
 export async function onRequest() {

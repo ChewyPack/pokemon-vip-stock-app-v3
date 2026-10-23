@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>News &amp; Exclusives | Pokémon VIP</title>
+  <title>News | PokePrizePool</title>
   <meta
     name="description"
     content="Pokémon TCG news and hobby updates from PokePrizePool."
@@ -75,7 +75,21 @@
       line-height: 1.6;
     }
 
-    /* Keep the shared navigation above the page content. */
+    .news-story-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+    .news-story-card{overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(5,15,40,.78)}
+    .news-story-card img{display:block;width:100%;max-height:240px;aspect-ratio:16/9;object-fit:cover;background:#0b204a}
+    .news-story-card__body{padding:18px}
+    .news-story-meta{font-size:.82rem;color:#b9c9e8;text-transform:uppercase;letter-spacing:.08em}
+    .news-story-card h2{font-size:1.35rem;line-height:1.25;margin:10px 0;color:#fff}
+    .news-story-card p{line-height:1.65;color:#e0e8f7;white-space:pre-line}
+    .news-read-link{display:inline-block;margin-top:8px;color:#9ec7ff;font-weight:700;text-decoration:underline}
+    .news-article-panel{margin-top:8px;padding:clamp(20px,4vw,36px);border-radius:14px;background:#fff;color:#202633;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+    .news-article-panel .news-story-meta{color:#5d687a}
+    .news-article-panel p{color:#303847;line-height:1.75}
+    .news-article-content{white-space:pre-line;line-height:1.85;font-size:1.04rem;color:#202633}
+    .news-article-image{display:block;width:100%;max-height:480px;object-fit:cover;border-radius:10px;margin:22px 0}
+    .news-back-link{display:inline-block;margin:0 0 18px;color:#a8caff}
+\n    /* Keep the shared navigation above the page content. */
     #news-navigation {
       position: relative;
       z-index: 100;
@@ -95,252 +109,67 @@
 
 <body>
   <main class="news-page">
-    <div id="news-navigation"></div>
+    <div id="site-navigation"></div>
 
     <section
       class="news-content"
       aria-labelledby="news-title"
     >
-      <h1 id="news-title">News &amp; Exclusives</h1>
+      <h1 id="news-title">News</h1>
 
-      <div class="news-empty">
-        <p>News stories will appear here.</p>
+      <div id="news-stories">
+        <div class="news-empty">
+          <p>Loading the latest stories…</p>
+        </div>
       </div>
     </section>
   </main>
 
+  <script src="/js/ui/site-nav.js"></script>
   <script>
-    (function () {
+    (function(){
       'use strict';
-
-      var root = document.getElementById('news-navigation');
-
-      if (!root) {
-        return;
+      var container=document.getElementById('news-stories');
+      var heading=document.getElementById('news-title');
+      if(!container||!heading)return;
+      function add(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
+      function dateLabel(value){if(!value)return '';var d=new Date(value);return isNaN(d.getTime())?value:d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});}
+      function api(url){return fetch(url,{credentials:'omit',cache:'no-store'}).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok||!d.ok)throw new Error(d.error||'Could not load stories');return d;});});}
+      function renderList(stories){
+        container.replaceChildren();
+        if(!stories.length){container.appendChild(add('p','', 'No stories have been published yet. Check back soon.'));return;}
+        var grid=add('div','news-story-list');
+        stories.forEach(function(story){
+          var card=add('article','news-story-card');
+          if(story.image_url){var img=add('img','');img.src=story.image_url;img.alt='';img.loading='lazy';img.onerror=function(){img.remove();};card.appendChild(img);}
+          var body=add('div','news-story-card__body');
+          body.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
+          body.appendChild(add('h2','',story.title));
+          if(story.excerpt)body.appendChild(add('p','',story.excerpt));
+          var link=add('a','news-read-link','Read story →');link.href='/news.html?story='+encodeURIComponent(story.slug);body.appendChild(link);
+          card.appendChild(body);grid.appendChild(card);
+        });
+        container.appendChild(grid);
       }
-
-      function make(tag, attrs, children) {
-        var node = document.createElement(tag);
-
-        Object.keys(attrs || {}).forEach(function (key) {
-          if (key === 'class') {
-            node.className = attrs[key];
-          } else {
-            node.setAttribute(key, attrs[key]);
-          }
-        });
-
-        (children || []).forEach(function (child) {
-          if (child) {
-            node.appendChild(child);
-          }
-        });
-
-        return node;
+      function renderStory(story){
+        heading.textContent=story.title;
+        container.replaceChildren();
+        var back=add('a','news-back-link','← All News');back.href='/news.html';container.appendChild(back);
+        var panel=add('article','news-article-panel');
+        panel.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
+        if(story.image_url){var img=add('img','news-article-image');img.src=story.image_url;img.alt='';img.onerror=function(){img.remove();};panel.appendChild(img);}
+        if(story.excerpt)panel.appendChild(add('p','',story.excerpt));
+        panel.appendChild(add('div','news-article-content',story.content));
+        container.appendChild(panel);
       }
-
-      function textElement(tag, attrs, value) {
-        var node = make(tag, attrs);
-        node.textContent = value;
-        return node;
+      var slug=new URLSearchParams(location.search).get('story');
+      if(slug){
+        api('/api/news?slug='+encodeURIComponent(slug)).then(function(data){renderStory(data.story);}).catch(function(){heading.textContent='News';container.replaceChildren(add('p','', 'That story could not be found or is no longer published.'),Object.assign(add('a','news-back-link','← Back to News'),{href:'/news.html'}));});
+      }else{
+        api('/api/news?category=News').then(function(data){renderList(data.stories||[]);}).catch(function(){container.replaceChildren(add('p','', 'We could not load the latest stories right now. Please try again soon.'));});
       }
-
-      function link(label, href) {
-        return textElement('a', {
-          class: 'site-nav__link',
-          href: href
-        }, label);
-      }
-
-      function closeDropdowns(header) {
-        header.querySelectorAll('.site-nav__toggle').forEach(function (button) {
-          button.setAttribute('aria-expanded', 'false');
-        });
-
-        header.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-          menu.hidden = true;
-        });
-      }
-
-      function dropdown(label, items) {
-        var id = 'news-nav-' +
-          label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-        var button = textElement('button', {
-          class: 'site-nav__toggle',
-          type: 'button',
-          'aria-expanded': 'false',
-          'aria-controls': id
-        }, label + ' ▾');
-
-        var menu = make('div', {
-          class: 'site-nav__menu',
-          id: id
-        });
-
-        menu.hidden = true;
-
-        items.forEach(function (item) {
-          var children = [
-            textElement('span', {
-              class: 'site-nav__item-title'
-            }, item.title)
-          ];
-
-          if (item.description) {
-            children.push(
-              textElement('span', {
-                class: 'site-nav__item-description'
-              }, item.description)
-            );
-          }
-
-          menu.appendChild(
-            make('a', {
-              class: 'site-nav__item',
-              href: item.href
-            }, children)
-          );
-        });
-
-        button.addEventListener('click', function () {
-          var opening =
-            button.getAttribute('aria-expanded') !== 'true';
-
-          closeDropdowns(root);
-
-          if (opening) {
-            button.setAttribute('aria-expanded', 'true');
-            menu.hidden = false;
-          }
-        });
-
-        return make('div', {
-          class: 'site-nav__dropdown'
-        }, [button, menu]);
-      }
-
-      /*
-       * Keep the same navigation structure as Home:
-       * the brand is outside the nav, and the CTA is
-       * the final direct child inside the nav.
-       */
-      var nav = make('nav', {
-        class: 'site-nav',
-        'aria-label': 'Main navigation'
-      }, [
-        link('Home', '/'),
-
-        dropdown('Poke Report', [
-          {
-            title: 'Report a Sighting',
-            description: 'Submit an in-store stock report',
-            href: '/#report'
-          },
-          {
-            title: 'News & Exclusives',
-            description: 'Pokémon news and hobby updates',
-            href: '/news.html'
-          },
-          {
-            title: 'Market Intelligence',
-            description: 'Market trends and product insights',
-            href: '/market-intelligence.html'
-          },
-          {
-            title: 'Events Calendar',
-            description: 'Shows, trade nights, and releases',
-            href: '/events.html'
-          },
-          {
-            title: 'Vendor Directory',
-            description: 'Discover vendors and their specialties',
-            href: '/vendors.html'
-          }
-        ]),
-
-        dropdown('Shop', [
-          {
-            title: 'Sealed Products',
-            href: '/shop-sealed.html'
-          },
-          {
-            title: 'Raw Singles',
-            href: '/shop-singles.html'
-          },
-          {
-            title: 'Graded Cards',
-            href: '/shop-slabs.html'
-          },
-          {
-            title: 'Merchandise',
-            href: '/shop-merch.html'
-          }
-        ]),
-
-        dropdown('Giveaways', [
-          {
-            title: 'My Entries',
-            href: '/giveaway-entries.html'
-          },
-          {
-            title: 'Giveaway Rules',
-            href: '/giveaway-rules.html'
-          },
-          {
-            title: 'Live Draws & Videos',
-            href: '/giveaway-live.html'
-          }
-        ]),
-
-        dropdown('Community', [
-          {
-            title: 'Discord Community',
-            href: '/community-discord.html'
-          },
-          {
-            title: 'Collector Resources',
-            href: '/community-resources.html'
-          },
-          {
-            title: 'VIP Badge Collection',
-            href: '/vip-badges.html'
-          },
-          {
-            title: 'Member Support',
-            href: '/community-support.html'
-          }
-        ]),
-
-        /* Keep this inside .site-nav for the shared CTA styles. */
-        link('Report a Sighting', '/#report')
-      ]);
-
-      var header = make('header', {
-        class: 'site-nav-header'
-      }, [
-        make('div', {
-          class: 'wrap site-nav-header__inner'
-        }, [
-          link('Pokémon VIP', '/'),
-          nav
-        ])
-      ]);
-
-      root.appendChild(header);
-
-      document.addEventListener('click', function (event) {
-        if (!header.contains(event.target)) {
-          closeDropdowns(header);
-        }
-      });
-
-      header.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
-          closeDropdowns(header);
-        }
-      });
     })();
   </script>
+<script src="/js/ui/pokereport-sidebar.js"></script>
 </body>
 </html>

@@ -9,346 +9,412 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
 
   <style>
-    body.market-page {
-      min-height: 100vh;
-      color: #fff;
-      background:
-        linear-gradient(rgba(3, 12, 43, .86), rgba(3, 12, 43, .94)),
-        url("/assets/backgrounds/vip-collage.jpg") center top / cover fixed,
-        #06174A;
-    }
+    body.market-page{min-height:100vh;color:#eef3ff;background:#080c15;font-family:Barlow,Arial,sans-serif}
+    body.market-page:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 15% 0%,rgba(39,86,170,.18),transparent 42%),radial-gradient(ellipse at 90% 20%,rgba(0,211,190,.07),transparent 32%);z-index:-1}
+    body.market-access-pending .market-content> :not(#market-access-gate),body.market-access-locked .market-content> :not(#market-access-gate){display:none!important}
+    body.market-access-pending .market-content,body.market-access-locked .market-content{min-height:70vh}
+    #market-access-gate .mi-actions{margin-top:20px}
+    .market-content{width:min(1240px,calc(100% - 36px));margin:0 auto;padding:42px 0 84px}
+    .mi-topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:#9ba9c3;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase}
+    .mi-live{display:inline-flex;align-items:center;gap:8px;color:#9ff5d0;border:1px solid rgba(91,235,177,.25);background:rgba(38,180,125,.08);padding:8px 11px;border-radius:999px;letter-spacing:.06em}
+    .mi-dot{width:7px;height:7px;border-radius:50%;background:#49e3a2;box-shadow:0 0 12px #49e3a2}
+    .market-hero{margin:20px 0 20px;padding:clamp(24px,5vw,48px);border:1px solid #222e43;border-radius:20px;background:linear-gradient(125deg,rgba(20,31,51,.97),rgba(11,17,29,.96));position:relative;overflow:hidden}
+    .market-hero:after{content:"";position:absolute;width:300px;height:300px;right:-110px;top:-160px;border-radius:50%;border:1px solid rgba(72,224,196,.18);box-shadow:0 0 0 35px rgba(72,224,196,.025),0 0 0 70px rgba(72,224,196,.02);pointer-events:none}
+    .mi-kicker{color:#6ce6d0;font-size:.78rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;margin:0 0 12px}
+    .market-hero h1{margin:0 0 14px;font-size:clamp(2.4rem,6vw,4.5rem);line-height:.98;letter-spacing:-.04em;font-weight:800}
+    .market-hero p{max-width:760px;margin:0;color:#aebbd0;line-height:1.7;font-size:1.05rem}
+    .mi-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+    .mi-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:10px;border:1px solid #33435d;background:#172338;color:#f3f7ff;text-decoration:none;font-weight:800}
+    .mi-button.primary{background:#a5f3e6;color:#061b22;border-color:#a5f3e6}
+    .mi-section-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin:34px 0 14px}
+    .mi-section-heading h2{font-size:1.45rem;margin:0;letter-spacing:-.02em}
+    .mi-section-heading p{margin:5px 0 0;color:#8e9cb4;font-size:.92rem}
+    .mi-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .mi-stat,.mi-panel,.mi-mover{border:1px solid #243047;border-radius:14px;background:rgba(16,24,39,.9)}
+    .mi-stat{padding:18px}
+    .mi-label{color:#91a0b9;font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700}
+    .mi-stat strong{display:block;margin:8px 0 4px;font-size:1.65rem;letter-spacing:-.03em}
+    .mi-stat small{color:#8998b1;line-height:1.45}
+    .mi-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+    .mi-tabs a{color:#9caac0;text-decoration:none;border:1px solid #2a354a;background:#101827;border-radius:9px;padding:10px 14px;font-weight:800}
+    .mi-tabs a.active{color:#a5f3e6;border-color:#4e9f98;background:rgba(63,180,163,.1)}
+    .mi-movers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .mi-panel{padding:18px;min-width:0}
+    .mi-panel h3{margin:0 0 4px;font-size:1.05rem}
+    .mi-subtitle{margin:0 0 15px;color:#8e9cb4;font-size:.86rem}
+    .mi-mover{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px;margin-top:8px;background:#0c1320;border-color:#202b3f}\n    .mi-expand{margin-top:12px;border:1px solid #2c3c54;border-radius:10px;background:#101a29;color:#a5f3e6;padding:11px 14px;font-weight:800;cursor:pointer;width:100%;text-align:left}\n    .mi-expand:hover{background:#16263a}\n    .mi-details-content{padding-top:4px}\n    .mi-data-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.9rem}\n    .mi-data-table th,.mi-data-table td{text-align:left;padding:10px 8px;border-bottom:1px solid #26334a;vertical-align:top}\n    .mi-data-table th{font-size:.75rem;color:#91a0b9;text-transform:uppercase;letter-spacing:.06em}\n    .mi-data-table td:last-child,.mi-data-table th:last-child{text-align:right;white-space:nowrap}\n    .mi-data-table .mi-up{color:#5ee3ad;font-weight:800}\n    .mi-data-table .mi-down{color:#ff8d9c;font-weight:800}\n    .mi-table-scroll{overflow-x:auto}\n    details.mi-expand-wrap{margin-top:12px;border:1px solid #2c3c54;border-radius:10px;background:#101a29}\n    details.mi-expand-wrap>summary{cursor:pointer;color:#a5f3e6;padding:12px 14px;font-weight:800;list-style-position:inside}\n    details.mi-expand-wrap[open]>summary{border-bottom:1px solid #2c3c54}\n    details.mi-expand-wrap .mi-details-content{padding:0 10px 10px}
+    .mi-rank{color:#74839c;font-weight:800;font-size:.85rem}
+    .mi-name{font-weight:800;line-height:1.35}
+    .mi-product{color:#8797b0;font-size:.8rem;margin-top:3px;line-height:1.4}
+    .mi-price{text-align:right;white-space:nowrap;font-weight:800}
+    .mi-change{display:block;color:#5ee3ad;font-size:.82rem;margin-top:3px}
+    .mi-change.down{color:#ff8d9c}
+    .mi-empty{padding:20px;border:1px dashed #35435a;border-radius:12px;color:#9aa8bd;line-height:1.6;background:rgba(8,13,23,.5)}
+    .mi-artist-spotlight{grid-column:1/-1;overflow:hidden;position:relative}
+    .mi-artist-topline,.mi-hype-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .mi-artist-date,.mi-hype-status{font-size:.75rem;color:#a5f3e6;border:1px solid #315e62;background:rgba(53,132,124,.12);border-radius:999px;padding:6px 9px}
+    .mi-artist-feature{display:flex;align-items:center;gap:16px;margin:20px 0}
+    .mi-artist-monogram{display:grid;place-items:center;flex:0 0 76px;width:76px;height:76px;border-radius:18px;background:linear-gradient(145deg,#1b4c58,#17263c);border:1px solid #397b7a;color:#a5f3e6;font-size:1.4rem;font-weight:800}
+    .mi-artist-eyebrow{margin:0 0 4px;color:#6ce6d0;text-transform:uppercase;letter-spacing:.1em;font-size:.72rem;font-weight:800}
+    .mi-artist-feature h4{margin:0;font-size:1.55rem;line-height:1.2}
+    .mi-artist-style,.mi-artist-bio{color:#a6b3c8;line-height:1.65}
+    .mi-artist-style{margin:6px 0 0}
+    .mi-artist-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+    .mi-artist-facts>div{padding:14px;border:1px solid #26364d;border-radius:10px;background:#0c1421}
+    .mi-artist-facts strong{display:block;margin-top:7px;line-height:1.45;font-size:.95rem}
+    .mi-artist-cardlist{margin-top:16px}
+    .mi-artist-cardlist ul{padding-left:20px;color:#dce6f7;line-height:1.8}
+    .mi-hype-meter{margin-top:18px;padding:16px;border:1px solid #2b3c54;border-radius:12px;background:#0b1320}
+    .mi-hype-heading strong{font-size:1rem}
+    .mi-hype-track{display:flex;gap:5px;margin:13px 0 10px}
+    .mi-hype-track span{height:7px;flex:1;border-radius:99px;background:#27364a}
+    .mi-hype-meter p,.mi-artist-footnote{color:#91a0b9;font-size:.84rem;line-height:1.6;margin:0}
+    .mi-artist-footnote{margin-top:13px}
+    @media(max-width:600px){.mi-artist-facts{grid-template-columns:1fr}.mi-artist-feature{align-items:flex-start}.mi-artist-monogram{flex-basis:60px;width:60px;height:60px;border-radius:14px}}
+    .mi-grade-tool{grid-column:1/-1}
+    .mi-grade-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+    .mi-grade-fields label{display:flex;flex-direction:column;gap:7px;color:#dce6f7;font-size:.9rem;font-weight:700}
+    .mi-grade-fields select{width:100%;min-height:44px;border:1px solid #33435d;border-radius:9px;background:#0b1320;color:#eef3ff;padding:10px;font:inherit}
+    .mi-grade-result{border:1px solid #347c77;border-radius:12px;background:rgba(45,156,141,.1);padding:16px;margin-top:12px}
+    .mi-grade-result strong{display:block;font-size:1.8rem;color:#a5f3e6;margin:7px 0}
+    .mi-grade-result p,.mi-grade-disclaimer{margin:0;color:#a6b3c8;font-size:.9rem;line-height:1.6}
+    .mi-grade-disclaimer{margin-top:14px;font-size:.82rem}
+    @media(max-width:600px){.mi-grade-fields{grid-template-columns:1fr}}
 
-    .market-content {
-      width: min(1100px, calc(100% - 32px));
-      margin: 0 auto;
-      padding: 56px 0 80px;
-    }
-
-    .market-hero {
-      padding: 36px 28px;
-      margin-bottom: 28px;
-      border: 1px solid rgba(255, 255, 255, .18);
-      border-radius: 18px;
-      background: rgba(5, 22, 67, .82);
-      text-align: center;
-    }
-
-    .market-hero h1 {
-      margin: 0 0 12px;
-      font-family: Bangers, sans-serif;
-      font-size: clamp(2.5rem, 7vw, 4.5rem);
-      letter-spacing: 1px;
-    }
-
-    .market-hero p {
-      max-width: 720px;
-      margin: 0 auto;
-      line-height: 1.7;
-    }
-
-    .market-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-      gap: 18px;
-    }
-
-    .market-card {
-      padding: 24px;
-      border: 1px solid rgba(255, 255, 255, .16);
-      border-radius: 14px;
-      background: rgba(5, 22, 67, .86);
-    }
-
-    .market-card h2 {
-      margin-top: 0;
-      font-size: 1.2rem;
-    }
-
-    .market-card p {
-      margin-bottom: 0;
-      line-height: 1.7;
-      color: rgba(255, 255, 255, .85);
-    }
-
-    .market-note {
-      margin-top: 24px;
-      padding: 18px 20px;
-      border-left: 4px solid #f6cb45;
-      background: rgba(255, 255, 255, .08);
-      line-height: 1.7;
-    }
-
-    .market-home {
-      display: inline-block;
-      margin-top: 24px;
-      color: #fff;
-      font-weight: 800;
-    }
-
-    @media (max-width: 760px) {
-      body.market-page {
-        background-attachment: scroll;
-      }
-
-      .market-content {
-        padding-top: 32px;
-      }
-    }
+    .mi-bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .mi-note{padding:20px;border:1px solid #26334a;border-radius:14px;background:rgba(16,24,39,.8)}
+    .mi-note h3{margin:0 0 8px}
+    .mi-note p,.mi-note li{color:#a6b3c8;line-height:1.65}
+    .mi-note ul{padding-left:19px;margin-bottom:0}
+    .market-note{margin-top:18px;padding:16px 18px;border-left:3px solid #6ce6d0;background:#111c2b;color:#aab8cd;line-height:1.65;border-radius:0 10px 10px 0}
+    .market-home{display:inline-block;margin-top:24px;color:#b9c6dc;font-weight:800}
+    @media(max-width:760px){.market-content{padding-top:28px}.mi-stats{grid-template-columns:1fr}.mi-movers,.mi-bottom-grid{grid-template-columns:1fr}.mi-mover{grid-template-columns:24px minmax(0,1fr) auto}.mi-price{font-size:.93rem}.market-hero h1{line-height:1.02}}
   </style>
 </head>
 
-<body class="market-page">
+<body class="market-page market-access-pending">
   <div id="site-navigation"></div>
 
+
   <main class="market-content">
+    <section id="market-access-gate" class="mi-panel" role="status" aria-live="polite" style="margin:24px 0;padding:28px">
+      <p class="mi-kicker">Membership access</p>
+      <h1 style="font-size:clamp(1.8rem,4vw,2.6rem);margin:0 0 12px">Checking your membership…</h1>
+      <p class="mi-subtitle">Market Intelligence is a member benefit. Please wait while we verify your access.</p>
+    </section>
+    <div class="mi-topline">
+      <span>PokePrizePool / Market Intelligence</span>
+      <span class="mi-live"><span class="mi-dot"></span> Source-linked research</span>
+    </div>
+
     <header class="market-hero">
-      <h1>Market Intelligence</h1>
-      <p>
-        A collector-focused look at Pokémon TCG prices, products, demand,
-        and restock observations. Our goal is to help collectors make more
-        informed decisions using clearly identified information.
-      </p>
+      <p class="mi-kicker">Collector market terminal</p>
+      <h1>Know what’s moving.<br>Know what to watch.</h1>
+      <p>Market context for Pokémon TCG collectors — price movement, sealed product signals, graded-card supply, and real-world stock observations. Clear time windows, named sources, and no invented numbers.</p>
+      <div class="mi-actions">
+        <a class="mi-button primary" href="#singles">Explore market movers ↓</a>
+        <a class="mi-button" href="#research">How to read the data</a>
+      </div>
     </header>
 
-    <section class="market-grid" aria-label="Market intelligence features">
-      <article class="market-card">
-        <h2>Price Tracking</h2>
-        <p>
-          Compare selected sealed products and cards over time. Future reports
-          will identify their sources and the dates prices were observed.
-        </p>
-      </article>
 
-      <article class="market-card">
-        <h2>Product Watch</h2>
-        <p>
-          Follow notable releases, product availability, collector interest,
-          and developments worth watching.
-        </p>
-      </article>
+    <div class="mi-section-heading">
+      <div><h2>Market at a glance</h2><p>Multiple source snapshots · October 18, 2026 · check each source for its latest refresh</p></div>
+    </div>
+    <section class="mi-stats" aria-label="Market overview">
+      <article class="mi-stat"><span class="mi-label">Tracked coverage</span><strong>2,986</strong><small>Products included in the dated market snapshot. Comparison period: August 8–October 18, 2026.</small></article>
+      <article class="mi-stat"><span class="mi-label">Price windows</span><strong>7 / 30 days</strong><small>Short-term card movers and separately sourced longer-term index context.</small></article>
+      <article class="mi-stat"><span class="mi-label">Data status</span><strong>Source dated</strong><small>Figures below retain their source and snapshot dates. This page is not a live API feed.</small></article>
+    </section>
 
-      <article class="market-card">
-        <h2>Restock Patterns</h2>
-        <p>
-          Explore longer-term patterns from observed store visits and member
-          reports. Patterns are observations, not guarantees of future stock.
-        </p>
+    <section class="mi-panel" id="snapshot-history" aria-labelledby="snapshot-history-title" style="margin:18px 0">
+      <h3 id="snapshot-history-title">Snapshot history &amp; momentum baseline</h3>
+      <p class="mi-subtitle">Baseline recorded October 18, 2026 · first checkpoint only · no prior comparable archive is currently available on this page.</p>
+      <p>Use this checkpoint to compare the same card and printing in the next dated research update. The 7-day change below belongs to the October 18 snapshot; it is not a change between archived snapshots. Future momentum and PSA population direction will only be reported after comparable dated observations are added.</p>
+      <div class="mi-table-scroll">
+        <table class="mi-data-table">
+          <thead><tr><th>Card / printing</th><th>Snapshot price</th><th>7-day move</th><th>History status</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Zacian V</strong><br><span class="mi-product">30th Celebration Classic Collection · Holofoil</span></td><td>$11.08</td><td class="mi-up">+71.3%</td><td>Baseline set</td></tr>
+            <tr><td><strong>Arceus VSTAR</strong><br><span class="mi-product">30th Celebration Classic Collection · Holofoil</span></td><td>$11.54</td><td class="mi-up">+54.5%</td><td>Baseline set</td></tr>
+            <tr><td><strong>Hop’s Snorlax · 117/159</strong><br><span class="mi-product">Prize Pack Series Cards · Cosmos Holo</span></td><td>$8.20</td><td class="mi-up">+36.7%</td><td>Baseline set</td></tr>
+            <tr><td><strong>Bulbasaur · 133/132</strong><br><span class="mi-product">Mega Evolution · Holofoil</span></td><td>$17.93</td><td class="mi-up">+23.9%</td><td>Baseline set</td></tr>
+            <tr><td><strong>Meowth ex · 107/088</strong><br><span class="mi-product">Perfect Order · Holofoil</span></td><td>$12.11</td><td class="mi-up">+21.0%</td><td>Baseline set</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mi-artist-footnote">Next update checklist: capture the same printing’s price and source/date; record the next 7-day move; and record PSA population and observation date only when a comparable population source is available. Do not infer graded-supply growth from a missing alert or a different printing.</p>
+    </section>
+
+    <div class="mi-section-heading"><div><h2>Singles market movers</h2><p>All 15 gainers and all 15 decliners from the supplied verified-movers snapshot are included; sealed items remain explicitly labeled.</p></div></div>
+    <nav class="mi-tabs" aria-label="Market categories">
+      <a class="active" href="#singles">Singles</a><a href="#slabs">Graded & population</a><a href="#sealed">Sealed</a><a href="#research">Research tools</a><a href="#watchlist">Collector watchlist</a>
+    </nav>
+    <section id="singles" class="mi-movers" aria-label="Singles market movers">
+      <article class="mi-panel">
+        <h3>Verified gainers</h3><p class="mi-subtitle">All 15 source rows · 7-day moves · 2,986 tracked products · comparison dates: Aug 8–Oct 18, 2026</p>
+        <div class="mi-mover"><span class="mi-rank">01</span><div><div class="mi-name">Zacian V</div><div class="mi-product">ME: 30th Celebration Classic Collection (Holofoil)</div><div class="mi-product">7-day low / mid: +20.8% / +13.6%</div></div><div class="mi-price">$11.08<span class="mi-change">+71.3%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">02</span><div><div class="mi-name">Arceus VSTAR</div><div class="mi-product">ME: 30th Celebration Classic Collection (Holofoil)</div><div class="mi-product">7-day low / mid: +23.3% / +30.0%</div></div><div class="mi-price">$11.54<span class="mi-change">+54.5%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">03</span><div><div class="mi-name">Hop’s Snorlax · 117/159 (Cosmos Holo)</div><div class="mi-product">Prize Pack Series Cards (Holofoil)</div><div class="mi-product">7-day low / mid: +142.6% / +92.9%</div></div><div class="mi-price">$8.20<span class="mi-change">+36.7%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">04</span><div><div class="mi-name">Bulbasaur · 133/132</div><div class="mi-product">ME01: Mega Evolution (Holofoil)</div><div class="mi-product">7-day low / mid: +11.9% / +2.1%</div></div><div class="mi-price">$17.93<span class="mi-change">+23.9%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">05</span><div><div class="mi-name">Meowth ex · 107/088</div><div class="mi-product">ME03: Perfect Order (Holofoil)</div><div class="mi-product">7-day low / mid: +22.1% / +4.5%</div></div><div class="mi-price">$12.11<span class="mi-change">+21.0%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <details class="mi-expand-wrap"><summary>Show all 15 gainers (10 more)</summary><div class="mi-details-content">
+        <div class="mi-mover"><span class="mi-rank">06</span><div><div class="mi-name">Steelix · 150/132</div><div class="mi-product">ME01: Mega Evolution (Holofoil)</div><div class="mi-product">7-day low / mid: +1.3% / +6.0%</div></div><div class="mi-price">$6.33<span class="mi-change">+20.6%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">07</span><div><div class="mi-name">Inteleon VMAX · 079/264</div><div class="mi-product">Prize Pack Series Cards (Holofoil)</div><div class="mi-product">7-day low / mid: +44.8% / +44.8%</div></div><div class="mi-price">$150.00<span class="mi-change">+20.0%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">08</span><div><div class="mi-name">Charizard</div><div class="mi-product">Pokémon GO (Holofoil)</div><div class="mi-product">7-day low / mid: +20.9% / +7.1%</div></div><div class="mi-price">$4.22<span class="mi-change">+19.9%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">09</span><div><div class="mi-name">Radiant Greninja</div><div class="mi-product">SWSH10: Astral Radiance (Holofoil)</div><div class="mi-product">7-day low / mid: +2.5% / +8.4%</div></div><div class="mi-price">$3.64<span class="mi-change">+19.7%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">10</span><div><div class="mi-name">Jirachi · 126/182 (Cosmos Holo)</div><div class="mi-product">Prize Pack Series Cards (Holofoil)</div><div class="mi-product">7-day low / mid: +62.0% / +85.7%</div></div><div class="mi-price">$7.48<span class="mi-change">+19.5%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">11</span><div><div class="mi-name">Dawn · 118/094</div><div class="mi-product">ME02: Phantasmal Flames (Holofoil)</div><div class="mi-product">7-day low / mid: +25.3% / +1.2%</div></div><div class="mi-price">$5.13<span class="mi-change">+17.9%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">12</span><div><div class="mi-name">Clefairy · 094/088</div><div class="mi-product">ME03: Perfect Order (Holofoil)</div><div class="mi-product">7-day low / mid: +5.3% / +11.0%</div></div><div class="mi-price">$13.23<span class="mi-change">+16.3%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">13</span><div><div class="mi-name">Uxie</div><div class="mi-product">ME: 30th Celebration Classic Collection (Holofoil)</div><div class="mi-product">7-day low / mid: +12.8% / +0.2%</div></div><div class="mi-price">$5.45<span class="mi-change">+16.2%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">14</span><div><div class="mi-name">Wugtrio · 122/091</div><div class="mi-product">SV: Paldean Fates (Holofoil)</div><div class="mi-product">7-day low / mid: +3.5% / +8.8%</div></div><div class="mi-price">$3.62<span class="mi-change">+15.3%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">15</span><div><div class="mi-name">Arceus VSTAR (Secret) · 184</div><div class="mi-product">SWSH09: Brilliant Stars (Holofoil)</div><div class="mi-product">7-day low / mid: +7.6% / +9.4%</div></div><div class="mi-price">$18.44<span class="mi-change">+14.7%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        </div></details>
+      </article>
+      <article class="mi-panel">
+        <h3>Raw-card decliners</h3><p class="mi-subtitle">Raw singles only · 7-day movement · 2,986 tracked products · comparison dates: Aug 8–Oct 18, 2026</p>
+        <div class="mi-mover"><span class="mi-rank">01</span><div><div class="mi-name">Marnie’s Grimmsnarl ex · 136/182</div><div class="mi-product">Prize Pack Series Cards (Holofoil)</div><div class="mi-product">7-day low / mid: low −33.5% · mid −41.3%</div></div><div class="mi-price">$3.18<span class="mi-change down">−51.3%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">02</span><div><div class="mi-name">Lapras · 131/128</div><div class="mi-product">ME: 30th Celebration (Holofoil)</div><div class="mi-product">7-day low / mid: low −63.3% · mid −21.9%</div></div><div class="mi-price">$4.34<span class="mi-change down">−39.9%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">03</span><div><div class="mi-name">Pikachu ex · 109 (30th Celebration)</div><div class="mi-product">ME: Mega Evolution Promo (Holofoil)</div><div class="mi-product">7-day low / mid: low −50.0% · mid −50.0%</div></div><div class="mi-price">$211.99<span class="mi-change down">−29.3%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">04</span><div><div class="mi-name">Enriching Energy</div><div class="mi-product">SV08: Surging Sparks (Holofoil)</div><div class="mi-product">7-day low / mid: low −1.6% · mid −10.3%</div></div><div class="mi-price">$3.60<span class="mi-change down">−28.7%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <details class="mi-expand-wrap"><summary>Show all 13 raw-card decliners (8 more)</summary><div class="mi-details-content">
+        <div class="mi-mover"><span class="mi-rank">05</span><div><div class="mi-name">Mega Hawlucha ex · 268/217</div><div class="mi-product">ME: Ascended Heroes (Holofoil)</div><div class="mi-product">7-day low / mid: low −1.1% · mid −12.7%</div></div><div class="mi-price">$3.99<span class="mi-change down">−25.1%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">06</span><div><div class="mi-name">Yveltal ex · 053/088</div><div class="mi-product">Prize Pack Series Cards (Holofoil)</div><div class="mi-product">7-day low / mid: low −2.0% · mid −7.4%</div></div><div class="mi-price">$3.14<span class="mi-change down">−24.3%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">07</span><div><div class="mi-name">Marnie’s Grimmsnarl ex</div><div class="mi-product">ME: Ascended Heroes (Holofoil)</div><div class="mi-product">7-day low / mid: low −18.4% · mid −15.8%</div></div><div class="mi-price">$38.52<span class="mi-change down">−23.8%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">08</span><div><div class="mi-name">Mega Charizard X ex · 013/094</div><div class="mi-product">ME02: Phantasmal Flames (Holofoil)</div><div class="mi-product">7-day low / mid: low −0.7% · mid −5.3%</div></div><div class="mi-price">$4.08<span class="mi-change down">−23.5%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">09</span><div><div class="mi-name">Pikachu ex · 179/131</div><div class="mi-product">SV: Prismatic Evolutions (Holofoil)</div><div class="mi-product">7-day low / mid: low −2.7% · mid −5.3%</div></div><div class="mi-price">$43.81<span class="mi-change down">−23.3%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">10</span><div><div class="mi-name">Mega Eelektross ex · 278/217</div><div class="mi-product">ME: Ascended Heroes (Holofoil)</div><div class="mi-product">7-day low / mid: low −1.4% · mid −22.6%</div></div><div class="mi-price">$19.17<span class="mi-change down">−22.9%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">11</span><div><div class="mi-name">Iono’s Bellibolt ex · 279/217</div><div class="mi-product">ME: Ascended Heroes (Holofoil)</div><div class="mi-product">7-day low / mid: low −14.4% · mid −11.7%</div></div><div class="mi-price">$41.42<span class="mi-change down">−21.9%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">12</span><div><div class="mi-name">Charizard ex · 054/091</div><div class="mi-product">SV: Paldean Fates (Holofoil)</div><div class="mi-product">7-day low / mid: low −5.0% · mid −6.4%</div></div><div class="mi-price">$4.05<span class="mi-change down">−21.8%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        <div class="mi-mover"><span class="mi-rank">13</span><div><div class="mi-name">Pikachu ex · 276/217</div><div class="mi-product">ME: Ascended Heroes (Holofoil)</div><div class="mi-product">7-day low / mid: low −14.7% · mid −13.9%</div></div><div class="mi-price">$689.42<span class="mi-change down">−21.4%</span><div class="mi-product"><a href="https://www.tcgplayer.com/" target="_blank" rel="noopener noreferrer" style="color:#a5f3e6">TCGplayer ↗</a></div></div></div>
+        </div></details>
       </article>
     </section>
 
-    <div class="market-note">
-      <strong>Building this feature:</strong>
-      This page is the starting point for Market Intelligence. Live charts,
-      historical comparisons, and other data-driven features will be added
-      when reliable data sources are connected. No live market data is
-      currently being represented here.
-    </div>
+    <div class="mi-section-heading" id="slabs"><div><h2>Graded cards & population signals</h2><p>PSA supply growth over the last 30 days · source snapshot accessed October 18, 2026</p></div></div>
+    <section class="mi-bottom-grid">
+      <article class="mi-note" style="grid-column:1/-1">
+        <h3>Pop spike alerts: supply expanding</h3>
+        <p>Established cards with the fastest PSA population growth over the last 30 days. New graded supply can put pressure on prices; growth is a reason to investigate, not proof that prices must fall.</p>
+        
+        <div class="mi-table-scroll"><table class="mi-data-table"><thead><tr><th>Card / set</th><th>New grades 30d</th><th>Growth</th><th>Pop now</th><th>PSA 10 price</th></tr></thead><tbody><tr><td><strong>Ampharos Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 090</div></td><td>+1,055</td><td class="mi-down">+265.1%</td><td>1,453</td><td>$82.53</td></tr><tr><td><strong>Xerneas Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 091</div></td><td>+965</td><td class="mi-down">+265.1%</td><td>1,329</td><td>$82.50</td></tr><tr><td><strong>Mega Floette ex Special Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 117</div></td><td>+498</td><td class="mi-down">+241.7%</td><td>704</td><td>$98.80</td></tr><tr><td><strong>Froakie Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 088</div></td><td>+1,524</td><td class="mi-down">+235.2%</td><td>2,172</td><td>$77.67</td></tr><tr><td><strong>Tauros Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 096</div></td><td>+463</td><td class="mi-down">+227.0%</td><td>667</td><td>$71.77</td></tr></tbody></table></div>
+        <details class="mi-expand-wrap"><summary>Show all 12 population alerts (7 more)</summary><div class="mi-details-content"><div class="mi-table-scroll"><table class="mi-data-table"><thead><tr><th>Card / set</th><th>New grades 30d</th><th>Growth</th><th>Pop now</th><th>PSA 10 price</th></tr></thead><tbody><tr><td><strong>Mega Dragalge ex Special Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 118</div></td><td>+616</td><td class="mi-down">+225.6%</td><td>889</td><td>$110.00</td></tr><tr><td><strong>Chespin Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 087</div></td><td>+466</td><td class="mi-down">+223.0%</td><td>675</td><td>$72.14</td></tr><tr><td><strong>Crobat Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 093</div></td><td>+471</td><td class="mi-down">+216.1%</td><td>689</td><td>$50.41</td></tr><tr><td><strong>Pikachu-Holo 7-11-Green</strong><div class="mi-product">Japanese World Collection</div></td><td>+450</td><td class="mi-down">+212.3%</td><td>662</td><td>Not priced</td></tr><tr><td><strong>Frogadier Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 089</div></td><td>+1,219</td><td class="mi-down">+207.0%</td><td>1,808</td><td>$66.62</td></tr><tr><td><strong>Cinccino ex Special Illustration Rare</strong><div class="mi-product">Cri EN · Chaos Rising 119</div></td><td>+906</td><td class="mi-down">+193.6%</td><td>1,374</td><td>$126.00</td></tr><tr><td><strong>Goldeen Art Rare</strong><div class="mi-product">Japanese M5 · Abyss Eye 084</div></td><td>+854</td><td class="mi-down">+175.0%</td><td>1,342</td><td>$24.53</td></tr></tbody></table></div></div></details>
+        <p class="mi-subtitle" style="margin:12px 0 0">Source-provided PSA 10 prices are shown where available; “Not priced” means the source did not provide a price. Confirm the latest population and sold prices before making decisions.</p>
+      </article>
+    </section>
 
-    <a class="market-home" href="/">← Back to Pokémon VIP Home</a>
+    <div class="mi-section-heading" id="sealed"><div><h2>Sealed market: 7-day movers</h2><p>Products with a non-zero 7-day move in the market snapshot captured October 18, 2026. Data last updated October 14, 2026.</p></div></div>
+    <section class="mi-movers">
+      <article class="mi-panel">
+        <h3>Sealed gainers</h3><p class="mi-subtitle">10 products with a positive 7-day move</p>
+        <div class="mi-mover"><span class="mi-rank">01</span><div><div class="mi-name">30th Celebration Pokémon Center ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$299.67<span class="mi-change">+3.5%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">02</span><div><div class="mi-name">Surging Sparks Booster Box</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$298.11<span class="mi-change">+3.5%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">03</span><div><div class="mi-name">Brilliant Stars ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$165.01<span class="mi-change">+3.1%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">04</span><div><div class="mi-name">Phantasmal Flames Booster Box</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$394.45<span class="mi-change">+2.4%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">05</span><div><div class="mi-name">Temporal Forces Booster Box</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$306.92<span class="mi-change">+2.0%</span></div></div>
+        <details class="mi-expand-wrap"><summary>Show all 10 sealed gainers (5 more)</summary><div class="mi-details-content">
+        <div class="mi-mover"><span class="mi-rank">06</span><div><div class="mi-name">Temporal Forces ETB [Iron Leaves ex]</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$125.63<span class="mi-change">+1.1%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">07</span><div><div class="mi-name">Paldean Fates Great Tusk ex & Iron Treads ex Premium Collection</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$248.23<span class="mi-change">+0.9%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">08</span><div><div class="mi-name">Stellar Crown Pokémon Center ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$171.73<span class="mi-change">+0.8%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">09</span><div><div class="mi-name">Perfect Order Booster Bundle</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$39.39<span class="mi-change">+0.8%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">10</span><div><div class="mi-name">Twilight Masquerade Half Booster Box</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$199.75<span class="mi-change">+0.5%</span></div></div>
+      
+        </div></details></article>
+      <article class="mi-panel">
+        <h3>Sealed decliners</h3><p class="mi-subtitle">24 products with a negative 7-day move</p>
+        <div class="mi-mover"><span class="mi-rank">01</span><div><div class="mi-name">Prismatic Evolutions ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$118.90<span class="mi-change down">−10.6%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">02</span><div><div class="mi-name">Ascended Heroes ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$144.99<span class="mi-change down">−8.0%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">03</span><div><div class="mi-name">Prismatic Evolutions Booster Bundle</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$80.04<span class="mi-change down">−5.9%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">04</span><div><div class="mi-name">Ascended Heroes Pokémon Center ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$332.74<span class="mi-change down">−4.9%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">05</span><div><div class="mi-name">Astral Radiance ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$127.32<span class="mi-change down">−4.5%</span></div></div>
+        <details class="mi-expand-wrap"><summary>Show all 24 sealed decliners (19 more)</summary><div class="mi-details-content">
+        <div class="mi-mover"><span class="mi-rank">06</span><div><div class="mi-name">Destined Rivals Booster Bundle</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$56.35<span class="mi-change down">−4.5%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">07</span><div><div class="mi-name">Pitch Black Booster Box</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$182.12<span class="mi-change down">−4.4%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">08</span><div><div class="mi-name">Destined Rivals ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$113.58<span class="mi-change down">−4.1%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">09</span><div><div class="mi-name">30th Celebration Ultra-Premium Collection [Night]</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$675.12<span class="mi-change down">−3.6%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">10</span><div><div class="mi-name">Journey Together Enhanced Booster Box</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$236.78<span class="mi-change down">−2.9%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">11</span><div><div class="mi-name">Ascended Heroes Focused Fighters Premium Collection (Sam’s Club)</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$163.71<span class="mi-change down">−2.7%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">12</span><div><div class="mi-name">Destined Rivals Booster Box</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$402.51<span class="mi-change down">−1.7%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">13</span><div><div class="mi-name">Chaos Rising Pokémon Center ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$125.18<span class="mi-change down">−1.5%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">14</span><div><div class="mi-name">Paradox Rift ETB [Roaring Moon]</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$133.32<span class="mi-change down">−1.2%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">15</span><div><div class="mi-name">Scarlet & Violet ETB [Miraidon]</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$143.43<span class="mi-change down">−0.9%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">16</span><div><div class="mi-name">Stellar Crown Booster Box</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$299.10<span class="mi-change down">−0.8%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">17</span><div><div class="mi-name">Paldea Evolved Booster Bundle</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$126.55<span class="mi-change down">−0.8%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">18</span><div><div class="mi-name">Crown Zenith Pokémon Center ETB Plus</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$530.86<span class="mi-change down">−0.7%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">19</span><div><div class="mi-name">Surging Sparks Pokémon Center ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$265.43<span class="mi-change down">−0.7%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">20</span><div><div class="mi-name">30th Celebration Ultra-Premium Collection [Day]</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$561.28<span class="mi-change down">−0.5%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">21</span><div><div class="mi-name">Morpeko V-UNION Playmat Premium Collection</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$138.82<span class="mi-change down">−0.4%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">22</span><div><div class="mi-name">Paldean Fates Premium Collection [Skeledirge ex]</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$238.42<span class="mi-change down">−0.3%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">23</span><div><div class="mi-name">Journey Together Pokémon Center ETB</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$193.17<span class="mi-change down">−0.3%</span></div></div>
+        <div class="mi-mover"><span class="mi-rank">24</span><div><div class="mi-name">Scarlet & Violet Booster Bundle</div><div class="mi-product">Sealed market snapshot · 7-day change</div></div><div class="mi-price">$104.17<span class="mi-change down">−0.2%</span></div></div>
+      
+        </div></details></article>
+    </section>
+
+
+
+
+    <div class="mi-section-heading" id="research"><div><h2>More research signals</h2><p>Coverage beyond a movers leaderboard.</p></div></div>
+    <section class="mi-bottom-grid">
+      <article class="mi-note mi-grade-tool">
+        <h3>Raw Card PSA Grade Estimator</h3>
+        <p>Check the card’s visible condition across four areas for a conservative, educational estimate of the PSA grade range it may fall into. This is not an official grade or a guarantee.</p>
+        <div class="mi-grade-fields">
+          <label>Centering
+            <select id="grade-centering">
+              <option value="10">Very balanced; about 55/45 or better</option>
+              <option value="8">Slightly off-center; about 60/40</option>
+              <option value="6">Noticeably off-center; about 65/35</option>
+              <option value="3">Heavily off-center; beyond about 65/35</option>
+            </select>
+          </label>
+          <label>Corners
+            <select id="grade-corners">
+              <option value="10">Sharp corners, no visible whitening</option>
+              <option value="8">Tiny wear or one very small white spot</option>
+              <option value="6">Visible whitening or slight corner wear</option>
+              <option value="4">Multiple worn / soft corners</option>
+              <option value="2">Heavy corner damage or bends</option>
+            </select>
+          </label>
+          <label>Edges
+            <select id="grade-edges">
+              <option value="10">Clean edges, no visible chipping</option>
+              <option value="8">Minimal edge whitening / tiny chip</option>
+              <option value="6">Several small chips or visible whitening</option>
+              <option value="4">Obvious edge wear or chipping</option>
+              <option value="2">Heavy damage, peeling, or dents</option>
+            </select>
+          </label>
+          <label>Surface
+            <select id="grade-surface">
+              <option value="10">Clean under bright angled light</option>
+              <option value="8">One or two faint marks only visible in light</option>
+              <option value="6">Visible scratches, print lines, or small flaw</option>
+              <option value="4">Multiple scratches, dents, or noticeable defect</option>
+              <option value="2">Crease, deep dent, stain, or major surface damage</option>
+            </select>
+          </label>
+        </div>
+        <div class="mi-grade-result" aria-live="polite">
+          <span class="mi-label">Estimated PSA grade range</span>
+          <strong id="grade-result">PSA 8–10</strong>
+          <p id="grade-explanation">Based on your selected condition factors. Review the card under bright, angled light before deciding whether to submit.</p>
+        </div>
+        <p class="mi-grade-disclaimer">Important: PSA considers the entire card and its own grading standards. Hidden print defects, dents, altered surfaces, damage, and grader judgment can change the result. This tool does not inspect an uploaded image and cannot predict an actual grade.</p>
+      </article>
+      <article class="mi-note mi-artist-spotlight" id="artist-spotlight">
+        <div class="mi-artist-topline"><span class="mi-label">Rotating collector feature</span><span id="artist-rotation-date" class="mi-artist-date">Snapshot · Oct 18, 2026</span></div>
+        <h3>Artist Spotlight & Collector Hype</h3>
+        <div class="mi-artist-feature"><div class="mi-artist-monogram" id="artist-monogram" aria-hidden="true">5G</div><div><p class="mi-artist-eyebrow">Featured illustrator · matched to market movers</p><h4 id="artist-name">5ban Graphics</h4><p id="artist-style" class="mi-artist-style">Digital studio artwork with bold, polished full-card compositions.</p></div></div>
+        <p id="artist-bio" class="mi-artist-bio">This spotlight links exact printings in the October 18 PokePrizePool movers snapshot to verified illustrator credits. It is a matched sample—not a claim about the artist’s entire catalogue or a standalone artist index.</p>
+        <div class="mi-artist-facts"><div><span class="mi-label">Market snapshot</span><strong>October 18, 2026 · 2,986 tracked products</strong></div><div><span class="mi-label">Matched cards in visible movers</span><strong id="artist-match-count">2 verified printings</strong></div></div>
+        <div class="mi-artist-cardlist"><span class="mi-label">Matched cards · PokePrizePool snapshot</span><ul id="artist-card-examples"><li>Meowth ex · 107/088, Perfect Order — +21.0% over 7 days (<a href="https://www.tcgdex.net/database/me-mega-evolution/me03-perfect-order/107-meowth-ex" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li><li>Zacian V · 30th Classic Collection — +71.3% over 7 days (<a href="https://pooka.app/card/en-me55c-138/Zacian%20V" target="_blank" rel="noopener noreferrer">illustrator reference</a>)</li></ul></div>
+        <div class="mi-hype-meter" id="artist-population-check"><div class="mi-hype-heading"><strong>PSA population cross-check</strong><span id="artist-population-status" class="mi-hype-status">Exact-printing match only</span></div><p id="artist-population-note">Comparing the featured card printings against the PSA population alerts in this snapshot.</p><ul id="artist-population-results"></ul><p class="mi-artist-footnote">Only the same card and printing count as a match. No match in this short alert list does not mean a card has no PSA population; it means this snapshot has no directly comparable alert.</p></div>
+        <div class="mi-hype-meter"><div class="mi-hype-heading"><strong>Collector hype meter</strong><span id="artist-hype-status" class="mi-hype-status">Early signal · limited sample</span></div><div id="artist-hype-track" class="mi-hype-track" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><p id="artist-hype-note">Matched cards show movement in the supplied snapshot, but this small sample is not enough to claim broad artist-level demand. This is a research flag, not a numerical hype score or buy/sell signal.</p></div>
+        <p class="mi-artist-footnote">Artist credits are checked against linked card references; price changes come from the dated PokePrizePool snapshot. The spotlight rotates among matched artists only. No price movement is attributed to an artist unless the exact printing and credit match.</p>
+      </article>
+    </section>
+
+    <div class="mi-section-heading" id="watchlist"><div><h2>Collector watchlist & field intelligence</h2><p>Signals to investigate — not automatic buy or sell calls.</p></div></div>
+    <section class="mi-bottom-grid">
+      <article class="mi-note"><h3>What to monitor</h3><ul><li>Whether price movement persists across multiple daily snapshots.</li><li>Recent completed sales, sales volume, spread, and listing depth—not just the lowest ask.</li><li>PSA population growth and the pace of new graded supply.</li><li>Artist / card attention alongside actual price and liquidity.</li><li>Set release calendars, promo distribution, regional exclusives, and restock patterns.</li><li>PokePrizePool firsthand reports with timestamps, store location, quantities, and photos where available.</li></ul></article>
+      <article class="mi-note"><h3>Before selling or buying</h3><p>We will not label a card “buy now” or “sell now” from a percentage move alone. Compare recent completed sales, cost basis, fees, shipping, condition, and actual sell-through. High percentage moves on thinly traded cards can reverse quickly.</p><p>Market data is informational, not a guarantee of future prices or sale proceeds.</p></article>
+    </section>
+
+    <div class="market-note">PokePrizePool Market Intelligence is built for collectors who want to understand the Pokémon TCG market beyond the latest price tag. Track singles gaining or losing value, monitor graded-card population growth, and follow sealed product price movements in one place. The goal is to make market trends easier to spot, separate meaningful movement from day to day noise, and give collectors a clearer picture of what may be worth a closer look. Market data is a research tool, not a guarantee. Always verify current prices and recent sales before making a purchase or trade.</div>
+        <a class="market-home" href="/">← Back to PokePrizePool</a>
   </main>
+
+  <script src="/js/ui/site-nav.js"></script>
 
   <script>
     (function () {
-      var navRoot = document.getElementById('site-navigation');
-
-      function createElement(tag, attributes, children) {
-        var element = document.createElement(tag);
-
-        Object.keys(attributes || {}).forEach(function (key) {
-          if (key === 'class') {
-            element.className = attributes[key];
-          } else if (key === 'hidden') {
-            element.hidden = attributes[key];
-          } else {
-            element.setAttribute(key, attributes[key]);
-          }
+      var gradeFields = ['grade-centering', 'grade-corners', 'grade-edges', 'grade-surface'];
+      function estimateRawGrade() {
+        var values = gradeFields.map(function (id) {
+          var field = document.getElementById(id);
+          return field ? Number(field.value) : 10;
         });
-
-        (children || []).forEach(function (child) {
-          if (child) element.appendChild(child);
-        });
-
-        return element;
-      }
-
-      function link(label, href) {
-        var anchor = createElement('a', {
-          class: 'site-nav__link',
-          href: href
-        });
-
-        anchor.textContent = label;
-        return anchor;
-      }
-
-      function dropdown(label, items) {
-        var menuId = 'nav-' + label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-        var button = createElement('button', {
-          class: 'site-nav__toggle',
-          type: 'button',
-          'aria-expanded': 'false',
-          'aria-controls': menuId
-        });
-
-        button.textContent = label + ' ▾';
-
-        var menu = createElement('div', {
-          class: 'site-nav__menu',
-          id: menuId,
-          hidden: true
-        });
-
-        items.forEach(function (item) {
-          var anchor = createElement('a', {
-            class: 'site-nav__item',
-            href: item.href
-          });
-
-          var title = createElement('span', {
-            class: 'site-nav__item-title'
-          });
-
-          title.textContent = item.title;
-          anchor.appendChild(title);
-
-          if (item.description) {
-            var description = createElement('span', {
-              class: 'site-nav__item-description'
-            });
-
-            description.textContent = item.description;
-            anchor.appendChild(description);
-          }
-
-          menu.appendChild(anchor);
-        });
-
-        button.addEventListener('click', function () {
-          var wasOpen = button.getAttribute('aria-expanded') === 'true';
-
-          navRoot.querySelectorAll('.site-nav__toggle').forEach(function (otherButton) {
-            otherButton.setAttribute('aria-expanded', 'false');
-          });
-
-          navRoot.querySelectorAll('.site-nav__menu').forEach(function (otherMenu) {
-            otherMenu.hidden = true;
-          });
-
-          if (!wasOpen) {
-            button.setAttribute('aria-expanded', 'true');
-            menu.hidden = false;
-          }
-        });
-
-        return createElement('div', {
-          class: 'site-nav__dropdown'
-        }, [button, menu]);
-      }
-
-      function buildNavigation() {
-        var nav = createElement('nav', {
-          class: 'site-nav',
-          'aria-label': 'Main navigation'
-        }, [
-          link('Home', '/#home'),
-
-          dropdown('Poke Report', [
-            {
-              title: 'Report a Sighting',
-              description: 'Submit an in-store stock report',
-              href: '/#report'
-            },
-            {
-              title: 'News & Exclusives',
-              description: 'Pokémon news and hobby updates',
-              href: '/news.html'
-            },
-            {
-              title: 'Market Intelligence',
-              description: 'Market trends and product insights',
-              href: '/market-intelligence.html'
-            },
-            {
-              title: 'Events Calendar',
-              description: 'Shows, trade nights, and releases',
-              href: '/events.html'
-            },
-            {
-              title: 'Vendor Directory',
-              description: 'Discover vendors and their specialties',
-              href: '/vendors.html'
-            }
-          ]),
-
-          dropdown('Shop', [
-            { title: 'Sealed Products', href: '/shop-sealed.html' },
-            { title: 'Raw Singles', href: '/shop-singles.html' },
-            { title: 'Graded Cards', href: '/shop-slabs.html' },
-            { title: 'Merchandise', href: '/shop-merch.html' }
-          ]),
-
-          dropdown('Giveaways', [
-            { title: 'My Entries', href: '/giveaway-entries.html' },
-            { title: 'Giveaway Rules', href: '/giveaway-rules.html' },
-            { title: 'Live Draws & Videos', href: '/giveaway-live.html' }
-          ]),
-
-          dropdown('Community', [
-            { title: 'Discord Community', href: '/community-discord.html' },
-            { title: 'Collector Resources', href: '/community-resources.html' },
-            { title: 'VIP Badge Collection', href: '/vip-badges.html' },
-            { title: 'Member Support', href: '/community-support.html' }
-          ]),
-
-          link('Report a Sighting', '/#report')
-        ]);
-
-        var header = createElement('header', {
-          class: 'site-nav-header'
-        }, [
-          createElement('div', {
-            class: 'wrap site-nav-header__inner'
-          }, [
-            link('Pokémon VIP', '/#home'),
-            nav
-          ])
-        ]);
-
-        return header;
-      }
-
-      navRoot.appendChild(buildNavigation());
-
-      document.addEventListener('click', function (event) {
-        if (!navRoot.contains(event.target)) {
-          navRoot.querySelectorAll('.site-nav__toggle').forEach(function (button) {
-            button.setAttribute('aria-expanded', 'false');
-          });
-
-          navRoot.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-            menu.hidden = true;
-          });
+        var lowest = Math.min.apply(null, values);
+        var average = values.reduce(function (sum, value) { return sum + value; }, 0) / values.length;
+        var grade = lowest;
+        if (lowest >= 10 && average >= 9.8) grade = 10;
+        else if (lowest >= 8 && average >= 8.5) grade = 9;
+        else if (lowest >= 6 && average >= 6.8) grade = 8;
+        else if (lowest >= 4 && average >= 5) grade = 6;
+        else grade = Math.max(1, Math.min(5, Math.round(average / 2)));
+        // A single major flaw can cap the practical estimate even if the other traits are strong.
+        if (lowest <= 3) grade = Math.min(grade, 5);
+        else if (lowest <= 4) grade = Math.min(grade, 6);
+        else if (lowest <= 6) grade = Math.min(grade, 8);
+        var low = Math.max(1, grade - 1);
+        var high = Math.min(10, grade + (grade >= 9 ? 0 : 1));
+        var result = document.getElementById('grade-result');
+        var explanation = document.getElementById('grade-explanation');
+        if (result) result.textContent = 'PSA ' + low + '–' + high;
+        if (explanation) {
+          explanation.textContent = grade >= 9
+            ? 'Your selections describe a strong-looking copy, but small hidden flaws can still prevent a high grade. Treat PSA 10 as possible, not expected.'
+            : grade >= 7
+              ? 'Your selections suggest some condition limitations. Compare the card with graded examples and inspect every surface before submitting.'
+              : 'Your selections include noticeable condition issues that may limit the grade. Consider grading fees and likely resale value before submitting.';
         }
+      }
+      gradeFields.forEach(function (id) {
+        var field = document.getElementById(id);
+        if (field) field.addEventListener('change', estimateRawGrade);
       });
-
-      navRoot.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
-          navRoot.querySelectorAll('.site-nav__toggle').forEach(function (button) {
-            button.setAttribute('aria-expanded', 'false');
-          });
-
-          navRoot.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-            menu.hidden = true;
-          });
-        }
-      });
+      estimateRawGrade();
     })();
   </script>
+
+<script>
+(function(){
+  var body=document.body;
+  var gate=document.getElementById('market-access-gate');
+  function showGate(title, message, links){
+    body.classList.remove('market-access-pending');
+    body.classList.add('market-access-locked');
+    gate.innerHTML='<p class="mi-kicker">Member-only research</p><h1 style="font-size:clamp(1.8rem,4vw,2.6rem);margin:0 0 12px">'+title+'</h1><p class="mi-subtitle">'+message+'</p><div class="mi-actions">'+links+'</div>';
+  }
+  function unlock(){
+    body.classList.remove('market-access-pending','market-access-locked');
+    if(gate) gate.remove();
+  }
+  function activePaidMembership(data){
+    if(!data||!data.ok||!data.authenticated||!data.membership)return false;
+    var m=data.membership;
+    var status=String(m.status||'').toLowerCase();
+    var tier=String(m.entitlement_tier||m.billing_tier||m.tier||'free').toLowerCase().replace(/[-_]/g,' ');
+    var account=data.account||{};
+    return account.is_admin===true || (['active','trialing'].includes(status)&&!['','free','none','inactive'].includes(tier));
+  }
+  Promise.all([
+    fetch('/api/account/me',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null}),
+    fetch('/api/membership',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})
+  ]).then(function(results){
+    var account=results[0], vip=results[1];
+    if(activePaidMembership(account) || (vip&&vip.ok&&vip.active===true)){
+      unlock();
+      return;
+    }
+    showGate('Market Intelligence is for members',
+      'Your current account does not have an active paid membership with Market Intelligence access. Upgrade or sign in with your paid member account to unlock market movers, research tools, and collector insights.',
+      '<a class="mi-button primary" href="/account.html">View membership options</a><a class="mi-button" href="/account.html">Sign in / account</a><a class="mi-button" href="/">Back to PokePrizePool</a>');
+  }).catch(function(){
+    showGate('We could not verify your membership',
+      'Market Intelligence stays locked until your membership can be verified. Please try again or open your account page.',
+      '<a class="mi-button primary" href="/account.html">Open account</a><a class="mi-button" href="/">Back to PokePrizePool</a>');
+  });
+})();
+</script>
+<script src="/js/ui/market-ticker.js"></script>
+<script src="/js/ui/pokereport-sidebar.js"></script>
 </body>
 </html>
 

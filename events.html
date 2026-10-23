@@ -431,7 +431,7 @@
 
 <body>
   <div class="events-page">
-    <div id="events-navigation"></div>
+    <div id="site-navigation"></div>
 
     <main class="events-main">
       <section class="events-hero" aria-labelledby="events-title">
@@ -571,200 +571,7 @@
     </main>
   </div>
 
-  <script>
-    (function () {
-      'use strict';
-
-      var root = document.getElementById('events-navigation');
-
-      if (!root) {
-        return;
-      }
-
-      function make(tag, attrs, children) {
-        var node = document.createElement(tag);
-
-        Object.keys(attrs || {}).forEach(function (key) {
-          if (key === 'class') {
-            node.className = attrs[key];
-          } else {
-            node.setAttribute(key, attrs[key]);
-          }
-        });
-
-        (children || []).forEach(function (child) {
-          if (child) {
-            node.appendChild(child);
-          }
-        });
-
-        return node;
-      }
-
-      function textElement(tag, attrs, value) {
-        var node = make(tag, attrs);
-        node.textContent = value;
-        return node;
-      }
-
-      function link(label, href) {
-        return textElement('a', {
-          class: 'site-nav__link',
-          href: href
-        }, label);
-      }
-
-      function closeDropdowns(header) {
-        header.querySelectorAll('.site-nav__toggle').forEach(function (button) {
-          button.setAttribute('aria-expanded', 'false');
-        });
-
-        header.querySelectorAll('.site-nav__menu').forEach(function (menu) {
-          menu.hidden = true;
-        });
-      }
-
-      function dropdown(label, items) {
-        var id = 'events-nav-' +
-          label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-        var button = textElement('button', {
-          class: 'site-nav__toggle',
-          type: 'button',
-          'aria-expanded': 'false',
-          'aria-controls': id
-        }, label + ' ▾');
-
-        var menu = make('div', {
-          class: 'site-nav__menu',
-          id: id
-        });
-
-        menu.hidden = true;
-
-        items.forEach(function (item) {
-          var children = [
-            textElement('span', {
-              class: 'site-nav__item-title'
-            }, item.title)
-          ];
-
-          if (item.description) {
-            children.push(
-              textElement('span', {
-                class: 'site-nav__item-description'
-              }, item.description)
-            );
-          }
-
-          menu.appendChild(
-            make('a', {
-              class: 'site-nav__item',
-              href: item.href
-            }, children)
-          );
-        });
-
-        button.addEventListener('click', function () {
-          var opening =
-            button.getAttribute('aria-expanded') !== 'true';
-
-          closeDropdowns(root);
-
-          if (opening) {
-            button.setAttribute('aria-expanded', 'true');
-            menu.hidden = false;
-          }
-        });
-
-        return make('div', {
-          class: 'site-nav__dropdown'
-        }, [button, menu]);
-      }
-
-      var nav = make('nav', {
-        class: 'site-nav',
-        'aria-label': 'Main navigation'
-      }, [
-        link('Home', '/'),
-
-        dropdown('Poke Report', [
-          {
-            title: 'Report a Sighting',
-            description: 'Submit an in-store stock report',
-            href: '/#report'
-          },
-          {
-            title: 'News & Exclusives',
-            description: 'Pokémon news and hobby updates',
-            href: '/news.html'
-          },
-          {
-            title: 'Market Intelligence',
-            description: 'Market trends and product insights',
-            href: '/market-intelligence.html'
-          },
-          {
-            title: 'Events Calendar',
-            description: 'Shows, trade nights, and releases',
-            href: '/events.html'
-          },
-          {
-            title: 'Vendor Directory',
-            description: 'Discover vendors and their specialties',
-            href: '/vendors.html'
-          }
-        ]),
-
-        dropdown('Shop', [
-          { title: 'Sealed Products', href: '/shop-sealed.html' },
-          { title: 'Raw Singles', href: '/shop-singles.html' },
-          { title: 'Graded Cards', href: '/shop-slabs.html' },
-          { title: 'Merchandise', href: '/shop-merch.html' }
-        ]),
-
-        dropdown('Giveaways', [
-          { title: 'My Entries', href: '/giveaway-entries.html' },
-          { title: 'Giveaway Rules', href: '/giveaway-rules.html' },
-          { title: 'Live Draws & Videos', href: '/giveaway-live.html' }
-        ]),
-
-        dropdown('Community', [
-          { title: 'Discord Community', href: '/community-discord.html' },
-          { title: 'Collector Resources', href: '/community-resources.html' },
-          { title: 'VIP Badge Collection', href: '/vip-badges.html' },
-          { title: 'Member Support', href: '/community-support.html' }
-        ]),
-
-        link('Report a Sighting', '/#report')
-      ]);
-
-      var header = make('header', {
-        class: 'site-nav-header'
-      }, [
-        make('div', {
-          class: 'wrap site-nav-header__inner'
-        }, [
-          link('Pokémon VIP', '/'),
-          nav
-        ])
-      ]);
-
-      root.appendChild(header);
-
-      document.addEventListener('click', function (event) {
-        if (!header.contains(event.target)) {
-          closeDropdowns(header);
-        }
-      });
-
-      header.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
-          closeDropdowns(header);
-        }
-      });
-    })();
-  </script>
+  <script src="/js/ui/site-nav.js"></script>
 
   <script>
     (function () {
@@ -1034,5 +841,6 @@
       render();
     })();
   </script>
+<script src="/js/ui/pokereport-sidebar.js"></script>
 </body>
 </html>
