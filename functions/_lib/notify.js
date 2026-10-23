@@ -43,9 +43,18 @@ export async function notifyReport(env, report) {
   const body = line
     ? String(report.lineCount || '?') + ' people in line' + (report.location ? ' at ' + report.location : '')
     : [
-        String(report.product || '').trim(),
-        String(report.productName || '').trim()
-      ].filter(Boolean).join(' — ') + (report.location ? ' at ' + report.location : '');
+        [
+          [
+            String(report.product || '').trim(),
+            String(report.productName || '').trim()
+          ].filter(Boolean).join(' — '),
+          report.location ? 'at ' + report.location : ''
+        ].filter(Boolean).join(' '),
+        [
+          formatPrice(report.shelfPrice) ? 'Shelf price: ' + formatPrice(report.shelfPrice) : '',
+          formatPrice(report.msrp) ? 'MSRP: ' + formatPrice(report.msrp) : ''
+        ].filter(Boolean).join(' · ')
+      ].filter(Boolean).join(' | ');
   const url = '/notifications.html';
   let inAppCreated = 0, pushAttempted = 0, pushDelivered = 0, pushFailed = 0;
 
@@ -62,7 +71,9 @@ export async function notifyReport(env, report) {
           reportType: report.reportType || 'stock',
           state: report.state || '',
           retailer: report.retailer || '',
-          location: report.location || ''
+          location: report.location || '',
+          shelfPrice: formatPrice(report.shelfPrice) || null,
+          msrp: formatPrice(report.msrp) || null
         })).run();
         inAppCreated++;
       }
