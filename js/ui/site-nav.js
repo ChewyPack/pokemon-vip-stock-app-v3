@@ -106,6 +106,7 @@
   ]),
   link('Giveaways','/giveaways.html'),
   link('Chat','/chat.html'),
+  link('Advertise','/advertise.html'),
   dropdown('Resources',[
    {title:'Securing Product',href:'/resources/securing-product.html'},
    {title:'Spotting Fakes',href:'/resources/spotting-fakes.html'},

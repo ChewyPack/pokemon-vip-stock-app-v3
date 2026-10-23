@@ -2,7 +2,7 @@ import { currentChatAccount } from "../_lib/chat.js";
 
 const ALLOWED_SLOTS = new Set([
   "home-top", "home-left", "home-right",
-  "chat-top", "chat-left", "chat-right",
+  "chat-top", "chat-inline", "chat-left", "chat-right",
   "events-top", "events-left", "events-right",
   "giveaways-top", "giveaways-left", "giveaways-right"
 ]);

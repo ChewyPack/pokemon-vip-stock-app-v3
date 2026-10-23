@@ -22,7 +22,7 @@ async function loadPreferences(env, account) {
     env.DB.prepare("SELECT membership_status, membership_entitlement_tier, membership_tier FROM accounts WHERE id = ? LIMIT 1").bind(account.id).first().catch(() => null)
   ]);
   const tier = String(member?.membership_entitlement_tier || member?.membership_tier || "").toLowerCase();
-  const canCustomizeNameColor = member?.membership_status === "active" && ["collector_plus", "vendor", "vendor_plus", "organizer"].includes(tier);
+  const canCustomizeNameColor = Boolean(account.is_admin) || (member?.membership_status === "active" && ["collector_plus", "vendor", "vendor_plus", "organizer"].includes(tier));
   return {
     ok: true,
     preferences: {
@@ -67,7 +67,7 @@ export async function onRequestPost({ request, env }) {
     if (Object.prototype.hasOwnProperty.call(data || {}, "chat_name_color")) {
       const member = await env.DB.prepare("SELECT membership_status, membership_entitlement_tier, membership_tier FROM accounts WHERE id = ? LIMIT 1").bind(account.id).first();
       const tier = String(member?.membership_entitlement_tier || member?.membership_tier || "").toLowerCase();
-      const eligible = member?.membership_status === "active" && ["collector_plus", "vendor", "vendor_plus", "organizer"].includes(tier);
+      const eligible = Boolean(account.is_admin) || (member?.membership_status === "active" && ["collector_plus", "vendor", "vendor_plus", "organizer"].includes(tier));
       if (!eligible) return chatJson({ ok: false, error: "collector_plus_required", message: "Custom chat username colors are a Collector+ subscriber perk." }, 403);
       const requestedColor = String(data.chat_name_color || "").toLowerCase();
       if (!COLLECTOR_CHAT_COLORS.some(color => color.value === requestedColor)) {

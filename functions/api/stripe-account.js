@@ -1,4 +1,5 @@
 import { applyMarketplaceBoostCheckout } from "../_lib/marketplace-boost.js";
+import { applyEventBoostCheckout } from "../_lib/event-boost.js";
 /*
  * POST /api/stripe-account
  * Account-membership webhook. Test Mode is the default; live mode requires its own secret.
@@ -93,6 +94,8 @@ export async function onRequestPost({ request, env }) {
         processed = true;
       } else if (session.metadata?.purchase_type === 'marketplace_listing_boost') {
         processed = await applyMarketplaceBoostCheckout(session, env);
+      } else if (session.metadata?.purchase_type === 'event_boost') {
+        processed = await applyEventBoostCheckout(session, env);
       } else {
         const accountId = Number(rawAccountId);
         const subscriptionId = stripeId(session.subscription);
@@ -115,7 +118,7 @@ export async function onRequestPost({ request, env }) {
       const subscription = event.data.object;
       processed = !subscription?.metadata?.account_id || await saveSubscription(subscription, env, stripe, 'canceled');
     }
-    if (!processed) return json({ ok: false, error: event.data?.object?.metadata?.purchase_type === 'marketplace_listing_boost' ? 'boost_not_applied' : 'membership_not_applied' }, 500);
+    if (!processed) return json({ ok: false, error: ['marketplace_listing_boost','event_boost'].includes(event.data?.object?.metadata?.purchase_type) ? 'boost_not_applied' : 'membership_not_applied' }, 500);
     await env.DB.prepare('INSERT INTO stripe_account_events (event_id, event_type) VALUES (?, ?)').bind(event.id, event.type).run();
     return json({ received: true });
   } catch (error) {

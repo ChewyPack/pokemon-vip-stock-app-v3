@@ -167,6 +167,7 @@
           ]),
           navLink('Giveaways', '/giveaways.html'),
           navLink('Chat', '/chat.html'),
+          navLink('Advertise', '/advertise.html'),
           dropdown('Resources', [
             { title: 'Securing Product', href: '/resources/securing-product.html' },
             { title: 'Spotting Fakes', href: '/resources/spotting-fakes.html' },
@@ -472,6 +473,7 @@
     var giveaways = panel('Giveaways','/giveaways.html#gallery','All giveaways ↗','New giveaways will appear here when published.');
     var listings = panel('Collector Marketplace','/marketplace.html','Browse listings ↗','Member shop listings will appear here as members publish them.');
     var social = panel('News Feed','/newsfeed','View feed ↗','No community posts yet. Be the first to share.','ppp-home-previews__panel--social');
+    var featuredEvents = panel('Featured Events','/events.html','All events ↗','Upcoming community events will be featured here when organizers boost them.');
 
     fetch('/api/collector/posts?feed=latest&limit=2',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('community feed unavailable');return r.json();}).then(function(data){
       var rows=Array.isArray(data.posts)?data.posts.slice(0,2):[];
@@ -512,6 +514,17 @@
       listings.feed.replaceChildren();
       rows.forEach(function(listing){var price=listing.price_cents==null?'Contact for price':'$'+(Number(listing.price_cents)/100).toFixed(2);addItem(listings,{title:listing.item_name,copy:[listing.shop_name||listing.username,price].filter(Boolean).join(' · '),meta:listing.category||'Member listing',image:listing.image_url,href:listing.shop_url||'/marketplace.html'});});
     }).catch(function(){empty(listings,'Marketplace listings could not load right now.');});
+
+    fetch('/api/events?featured=1',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('featured events unavailable');return r.json();}).then(function(data){
+      var rows=Array.isArray(data.events)?data.events.slice(0,2):[];
+      if(!rows.length){empty(featuredEvents,featuredEvents.emptyCopy);return;}
+      featuredEvents.feed.replaceChildren();
+      rows.forEach(function(event){
+        var location=[event.city,event.state_name||event.state].filter(Boolean).join(', ');
+        var copy=[dateLabel(event.event_date),event.venue,location].filter(Boolean).join(' · ');
+        addItem(featuredEvents,{title:event.title,copy:copy,meta:'Featured · Boosted event',image:event.image_url,href:'/event.html?id='+encodeURIComponent(event.id)});
+      });
+    }).catch(function(){empty(featuredEvents,'Featured events could not load right now.');});
 
     return section;
   }

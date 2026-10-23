@@ -16,6 +16,8 @@ var css=`
 .ppp-ad-art{display:block;width:100%;max-height:70px;object-fit:contain;border-radius:5px}
 .ppp-ad-art-wrap{width:135px;max-width:24%;flex-shrink:0}
 .ppp-ad-slot--top{width:min(970px,calc(100% - 32px));min-height:100px;margin:18px auto 24px;border-radius:10px}
+.ppp-ad-slot--inline{width:min(100%,920px);min-height:82px;margin:12px auto 16px;border-radius:10px}
+.ppp-ad-slot--inline .ppp-ad-inner{padding:12px 15px}
 .ppp-ad-slot--top .ppp-ad-inner{padding-top:23px}
 .ppp-ad-slot--rail{position:fixed;top:175px;display:none;width:100px;height:520px;border-radius:10px}
 .ppp-ad-slot--left{left:6px}
@@ -35,7 +37,7 @@ var css=`
  body[data-page="giveaways"] .wrap{max-width:min(1180px,calc(100% - 230px))}
 }
 @media(max-width:1279px){.ppp-ad-slot--rail{display:none!important}}
-@media(max-width:600px){.ppp-ad-slot--top{min-height:70px;margin:12px auto 18px}.ppp-ad-slot--top .ppp-ad-inner{gap:9px;padding:21px 9px 8px}.ppp-ad-slot--top .ppp-ad-art-wrap{width:70px;max-width:24%}.ppp-ad-slot--top .ppp-ad-art{max-height:46px}.ppp-ad-slot--top .ppp-ad-headline{font-size:14px}.ppp-ad-slot--top .ppp-ad-description{font-size:10px}.ppp-ad-slot--top .ppp-ad-cta{min-height:30px;padding:6px 7px;font-size:10px}.ppp-ad-slot--top .ppp-ad-label{font-size:8px}}
+@media(max-width:600px){.ppp-ad-slot--inline{min-height:64px;margin:8px auto 12px}.ppp-ad-slot--inline .ppp-ad-inner{gap:8px;padding:9px 8px}.ppp-ad-slot--top{min-height:70px;margin:12px auto 18px}.ppp-ad-slot--top .ppp-ad-inner{gap:9px;padding:21px 9px 8px}.ppp-ad-slot--top .ppp-ad-art-wrap{width:70px;max-width:24%}.ppp-ad-slot--top .ppp-ad-art{max-height:46px}.ppp-ad-slot--top .ppp-ad-headline{font-size:14px}.ppp-ad-slot--top .ppp-ad-description{font-size:10px}.ppp-ad-slot--top .ppp-ad-cta{min-height:30px;padding:6px 7px;font-size:10px}.ppp-ad-slot--top .ppp-ad-label{font-size:8px}}
 `;
 var style=document.createElement('style');style.setAttribute('data-ppp-ad-style','');style.textContent=css;document.head.appendChild(style);
 function element(tag,className,text){
@@ -121,6 +123,16 @@ function addSlots(){
   else initializeSlot(el,slot,'rail',side);
   loadCampaign(slot);
  });
+ if(page==='chat'){
+  var inlineSlot='chat-inline',inline=document.querySelector('[data-ad-slot="'+inlineSlot+'"]');
+  if(!inline){
+   inline=make(inlineSlot,'inline','inline');
+   var chatHero=document.querySelector('.chat-hero');
+   if(chatHero&&chatHero.parentNode)chatHero.parentNode.insertBefore(inline,chatHero.nextSibling);
+   else document.body.appendChild(inline);
+  }else initializeSlot(inline,inlineSlot,'inline','inline');
+  loadCampaign(inlineSlot);
+ }
 }
 addSlots();
 var observer=new MutationObserver(function(){addSlots();});

@@ -104,6 +104,18 @@ textarea{min-height:100px;resize:vertical}
 </div>
 <div class="actions" id="event-links"></div>
 </section>
+<section class="panel" id="event-boost-panel" hidden>
+<p class="eyebrow">Promote this event</p>
+<h2>Boost this event</h2>
+<p class="muted">Featured events receive priority placement in the Events Calendar and the homepage’s Explore PokePrizePool section while the boost is active.</p>
+<div class="actions" style="align-items:end">
+<label for="event-boost-duration" style="min-width:min(100%,260px);margin:0">Boost duration
+<select id="event-boost-duration"><option value="3">3 days — $2.99</option><option value="7">7 days — $4.99</option><option value="14">14 days — $8.99</option></select>
+</label>
+<button class="btn primary" id="boost-event-button" type="button">Boost event</button>
+</div>
+<p class="status" id="event-boost-status" role="status" aria-live="polite">Choose a duration to promote your upcoming event.</p>
+</section>
 <section class="panel" id="media-section" hidden>
 <h2>Photos &amp; Videos</h2>
 <div id="event-media" class="media-grid"></div>
@@ -191,7 +203,7 @@ function renderPublic(){
  $('event-title').textContent=record.title||'Event details';
  $('event-eyebrow').textContent=TYPE_LABELS[record.event_type]||'PokePrizePool Event';
  var pills=$('event-pills');pills.replaceChildren();
- [record.badge,previewActive?'Published':(record.status==='draft'?'Draft (admin preview)':'Published')].filter(Boolean).forEach(function(v){text(pills,'span','pill',v);});
+ [record.badge,record.boosted?'Featured · Boosted':'',previewActive?'Published':(record.status==='draft'?'Draft (admin preview)':'Published')].filter(Boolean).forEach(function(v){text(pills,'span','pill',v);});
  var cover=$('event-cover');if(record.image_url){cover.src=approvedUrl(record.image_url)||record.image_url;cover.alt=record.title+' cover image';cover.hidden=false;}else{cover.hidden=true;cover.removeAttribute('src');}
  $('event-description').textContent=record.description||'';
  $('event-details-wrap').hidden=!(record.details||'').trim();
@@ -205,6 +217,13 @@ function renderPublic(){
  if(record.image_url&&!allMedia.some(function(x){return x&&x.url===record.image_url;})){allMedia.unshift({type:'image',url:record.image_url,caption:'Cover image'});}
  var added=0;allMedia.forEach(function(item,i){var tile=renderMediaTile(item,i);if(tile){list.appendChild(tile);added++;}});
  $('media-section').hidden=added===0;
+ var today=new Date().toISOString().slice(0,10);
+ var canBoost=canEdit&&record.status==='published'&&String(record.event_date||'')>=today;
+ $('event-boost-panel').hidden=!canBoost;
+ if(canBoost){
+  if(record.boosted_until){var until=new Date(String(record.boosted_until).replace(' ','T')+'Z');say($('event-boost-status'),'This event is boosted through '+(Number.isNaN(until.getTime())?record.boosted_until:until.toLocaleString())+'.','success');}
+  else say($('event-boost-status'),'Choose a duration to feature this upcoming event.');
+ }
  $('edit-panel').hidden=!canEdit;
  if(canEdit)populateEditor();
 }
@@ -238,10 +257,23 @@ async function api(url,options){var response=await fetch(url,Object.assign({cred
 async function load(){
  var params=new URLSearchParams(location.search),id=params.get('id');
  if(!id||!/^\d+$/.test(id)){showError('This event link is missing a valid event ID.');return;}
- try{var result=await api('/api/events?id='+encodeURIComponent(id));record=result.event;canEdit=!!result.can_edit;isAdmin=!!result.is_admin;renderPublic();}
+ try{var result=await api('/api/events?id='+encodeURIComponent(id));record=result.event;canEdit=!!result.can_edit;isAdmin=!!result.is_admin;renderPublic();
+  var boostState=params.get('boost');
+  if(boostState==='success')say($('event-boost-status'),'Checkout returned successfully. Your boost will activate after Stripe confirms the payment.','success');
+  else if(boostState==='cancelled')say($('event-boost-status'),'Checkout was cancelled. No event boost payment was completed.');
+ }
  catch(e){showError(e.message==='event_not_found'?'This event is no longer published or could not be found.':'We could not load this event. Please refresh and try again.');}
 }
 function showError(message){$('event-content').hidden=true;$('not-found').hidden=false;$('error-message').textContent=message;}
+$('boost-event-button').addEventListener('click',async function(){
+ var button=$('boost-event-button'),duration=Number($('event-boost-duration').value);
+ button.disabled=true;say($('event-boost-status'),'Opening secure checkout…');
+ try{
+  var result=await api('/api/event-boost-checkout',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({event_id:Number(record.id),duration_days:duration})});
+  if(!result.url)throw new Error('Secure checkout did not return a payment link.');
+  location.assign(result.url);
+ }catch(error){say($('event-boost-status'),error.message||'Could not start event boost checkout.','error');button.disabled=false;}
+});
 $('media-upload').addEventListener('change',async function(){
  var files=Array.from(this.files||[]);if(!files.length)return;
  var input=this;input.disabled=true;$('save-event').disabled=true;
