@@ -695,7 +695,7 @@
           "    const loading = host.querySelector('.cubone-hero__loading'); if (loading) loading.remove();",
           "  }, undefined, (error) => {",
           "    console.error('PokePrizePool 3D model failed to load:', error);",
-          "    host.textContent = '3D model is temporarily unavailable.';"",
+          "    host.textContent = '3D model is temporarily unavailable.';",
           "  });",
           "  const resize = () => { const w = Math.max(1, host.clientWidth); const h = Math.max(1, host.clientHeight); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h); };",
           "  const observer = new ResizeObserver(resize); observer.observe(host);",
