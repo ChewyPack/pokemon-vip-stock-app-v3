@@ -529,6 +529,123 @@
     return section;
   }
 
+
+  function buildHomeGiveawayMeter() {
+    var styleId = 'ppp-home-giveaway-meter-style';
+    if (!document.getElementById(styleId)) {
+      var style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = '.ppp-home-gm{padding:40px 0 54px;background:linear-gradient(180deg,rgba(4,13,37,.15),rgba(4,13,37,.72))}.ppp-home-gm__card{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(270px,.9fr);gap:25px;padding:clamp(19px,3vw,30px);border:2px solid rgba(255,210,31,.26);border-radius:18px;background:linear-gradient(130deg,rgba(6,23,65,.97),rgba(7,18,49,.97));box-shadow:0 14px 36px rgba(0,0,0,.2);color:#fff}.ppp-home-gm__eyebrow{margin:0 0 7px;color:#ffd21f;font-size:.76rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase}.ppp-home-gm__title{margin:0 0 10px;color:#fff;font:400 clamp(1.9rem,4vw,2.65rem)/1.06 Bangers,cursive}.ppp-home-gm__copy{max-width:60ch;color:#d6e2fa;font-size:.94rem;line-height:1.6}.ppp-home-gm__count-row{display:grid;grid-template-columns:132px minmax(0,1fr);gap:13px;align-items:center;margin:18px 0 14px}.ppp-home-gm__count{display:grid;gap:4px;padding:12px;border:1px solid #8db9ff50;border-radius:12px;background:#ffffff08}.ppp-home-gm__count strong{font:400 2.4rem/1 Bangers,cursive;color:#ffd21f}.ppp-home-gm__count span,.ppp-home-gm__kicker{font-size:.66rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#abc2e9}.ppp-home-gm__next{display:grid;gap:5px;min-width:0}.ppp-home-gm__next strong{font-size:1.05rem;line-height:1.3;overflow-wrap:anywhere}.ppp-home-gm__next small{color:#abc2e9;font-size:.8rem;line-height:1.4}.ppp-home-gm__track{height:13px;overflow:hidden;border:1px solid #ffffff22;border-radius:99px;background:#ffffff16}.ppp-home-gm__fill{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2da8ff,#9b5cff,#ffd21f);transition:width .6s ease}.ppp-home-gm__progress-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:7px;color:#abc2e9;font-size:.77rem}.ppp-home-gm__progress-row strong{color:#fff}.ppp-home-gm__status{min-height:1.3em;margin:10px 0 0;color:#abc2e9;font-size:.74rem;line-height:1.45}.ppp-home-gm__cta{margin-top:14px}.ppp-home-gm__tiers{display:grid;gap:9px;align-content:center}.ppp-home-gm__tier{display:grid;grid-template-columns:61px minmax(0,1fr);gap:11px;align-items:center;padding:11px;border:1px solid #ffffff20;border-radius:12px;background:#ffffff05;min-width:0}.ppp-home-gm__threshold{display:grid;place-items:center;min-height:54px;border-radius:9px;background:#ffffff0d;color:#fff;font:400 1.7rem/1 Bangers,cursive}.ppp-home-gm__tier-copy{display:grid;gap:3px;min-width:0}.ppp-home-gm__tier-copy strong{font-size:.84rem;line-height:1.3}.ppp-home-gm__tier-copy small{color:#abc2e9;font-size:.72rem;line-height:1.35}.ppp-home-gm__tier-state{color:#abc2e9;font-size:.59rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.ppp-home-gm__tier.is-next{border-color:#ffd21f99;box-shadow:inset 3px 0 #ffd21f;background:#ffd21f0b}.ppp-home-gm__tier.is-next .ppp-home-gm__tier-state{color:#ffd21f}.ppp-home-gm__tier.is-unlocked{border-color:#3ddc9770;background:#3ddc970b}.ppp-home-gm__tier.is-unlocked .ppp-home-gm__tier-state{color:#3ddc97}.ppp-home-gm__footnote{grid-column:1/-1;margin:0;padding-top:12px;border-top:1px solid #ffffff1f;color:#abc2e9;font-size:.72rem;line-height:1.5}@media(max-width:780px){.ppp-home-gm{padding:28px 0 40px}.ppp-home-gm__card{grid-template-columns:1fr}.ppp-home-gm__tiers{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}.ppp-home-gm__tier{grid-template-columns:1fr;align-content:start;gap:7px}.ppp-home-gm__threshold{min-height:44px}.ppp-home-gm__footnote{grid-column:1/-1}}@media(max-width:540px){.ppp-home-gm__count-row{grid-template-columns:1fr}.ppp-home-gm__count{grid-template-columns:auto 1fr;align-items:center;gap:10px}.ppp-home-gm__tiers{grid-template-columns:1fr}.ppp-home-gm__tier{grid-template-columns:61px minmax(0,1fr)}.ppp-home-gm__threshold{min-height:54px}}@media(prefers-reduced-motion:reduce){.ppp-home-gm__fill{transition:none}}';
+      document.head.appendChild(style);
+    }
+
+    var milestones = [
+      { count: 50, title: '30th Anniversary ETB Giveaway', prize: 'First community prize milestone' },
+      { count: 100, title: 'ETB + bonus collector prizes', prize: 'A bigger prize mix for the community' },
+      { count: 500, title: '$1,500 cash + prizes', prize: 'The major community unlock' }
+    ];
+    var section = h('section', { class: 'ppp-home-gm', id: 'home-giveaway-meter', 'aria-labelledby': 'ppp-home-gm-title' });
+    var wrap = h('div', { class: 'wrap' });
+    var card = h('div', { class: 'ppp-home-gm__card' });
+    var main = h('div', { class: 'ppp-home-gm__main' });
+    main.append(
+      h('p', { class: 'ppp-home-gm__eyebrow' }, 'Community giveaway'),
+      h('h2', { class: 'ppp-home-gm__title', id: 'ppp-home-gm-title' }, 'The next giveaway grows with us'),
+      h('p', { class: 'ppp-home-gm__copy' }, 'As our active VIP community grows, so does the next giveaway. Follow the meter to see which prize tier we’re working toward together.'),
+      h('div', { class: 'ppp-home-gm__count-row' },
+        h('div', { class: 'ppp-home-gm__count' },
+          h('strong', { id: 'ppp-home-gm-count' }, '—'),
+          h('span', null, 'Active VIP subs')
+        ),
+        h('div', { class: 'ppp-home-gm__next' },
+          h('span', { class: 'ppp-home-gm__kicker' }, 'Next unlock'),
+          h('strong', { id: 'ppp-home-gm-next-title' }, 'Checking the community total…'),
+          h('small', { id: 'ppp-home-gm-next-copy' }, 'Milestone progress is loading.')
+        )
+      ),
+      h('div', { class: 'ppp-home-gm__track', id: 'ppp-home-gm-track', role: 'progressbar', 'aria-label': 'Progress toward the next giveaway milestone', 'aria-valuemin': '0', 'aria-valuemax': '50', 'aria-valuenow': '0', 'aria-valuetext': 'Loading subscriber progress' },
+        h('span', { class: 'ppp-home-gm__fill', id: 'ppp-home-gm-fill' })
+      ),
+      h('div', { class: 'ppp-home-gm__progress-row' },
+        h('span', { id: 'ppp-home-gm-progress' }, 'Loading progress…'),
+        h('strong', { id: 'ppp-home-gm-percent' }, '—')
+      ),
+      h('p', { class: 'ppp-home-gm__status', id: 'ppp-home-gm-status', role: 'status', 'aria-live': 'polite' }, 'Subscriber total refreshes periodically.'),
+      h('div', { class: 'ppp-home-gm__cta' },
+        h('a', { class: 'btn btn--lg', href: '/giveaways.html#giveaway-meter' }, 'Explore Giveaways')
+      )
+    );
+
+    var tiers = h('div', { class: 'ppp-home-gm__tiers', 'aria-label': 'Giveaway prize milestones' });
+    milestones.forEach(function (milestone) {
+      var tile = h('article', { class: 'ppp-home-gm__tier', 'data-home-gm-milestone': String(milestone.count) },
+        h('span', { class: 'ppp-home-gm__threshold' }, String(milestone.count)),
+        h('div', { class: 'ppp-home-gm__tier-copy' },
+          h('span', { class: 'ppp-home-gm__tier-state' }, 'Milestone'),
+          h('strong', null, milestone.title),
+          h('small', null, milestone.prize)
+        )
+      );
+      tiers.appendChild(tile);
+    });
+
+    card.append(main, tiers,
+      h('p', { class: 'ppp-home-gm__footnote' }, 'Subscriber milestones determine the announced prize tier, not anyone’s odds of winning. Each giveaway’s eligibility, entry methods, and official rules apply separately.')
+    );
+    wrap.appendChild(card);
+    section.appendChild(wrap);
+
+    async function refresh() {
+      try {
+        var response = await fetch('/api/giveaway-meter', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error('Subscriber count unavailable.');
+        var data = await response.json();
+        var raw = Number(data && data.active_subscribers);
+        if (!data || !data.ok || !Number.isFinite(raw) || raw < 0) throw new Error('Invalid subscriber count.');
+        var count = Math.floor(raw);
+        var next = milestones.find(function (milestone) { return count < milestone.count; }) || null;
+        var target = next ? next.count : milestones[milestones.length - 1].count;
+        var percent = next ? Math.min(100, Math.round(count / target * 100)) : 100;
+
+        section.querySelector('#ppp-home-gm-count').textContent = count.toLocaleString();
+        section.querySelector('#ppp-home-gm-next-title').textContent = next ? next.title : 'All announced milestones unlocked!';
+        section.querySelector('#ppp-home-gm-next-copy').textContent = next ? 'Unlocks at ' + next.count.toLocaleString() + ' active VIP subscribers.' : 'The community has reached the current top tier.';
+        section.querySelector('#ppp-home-gm-progress').textContent = next
+          ? count.toLocaleString() + ' / ' + next.count.toLocaleString() + ' active subs · ' + (next.count - count).toLocaleString() + ' to go'
+          : count.toLocaleString() + ' active subs · top tier reached';
+        section.querySelector('#ppp-home-gm-percent').textContent = percent + '%';
+        var track = section.querySelector('#ppp-home-gm-track');
+        track.setAttribute('aria-valuemax', String(target));
+        track.setAttribute('aria-valuenow', String(Math.min(count, target)));
+        track.setAttribute('aria-valuetext', next
+          ? count.toLocaleString() + ' of ' + target.toLocaleString() + ' active VIP subscribers toward ' + next.title
+          : 'All announced giveaway milestones unlocked');
+        section.querySelector('#ppp-home-gm-fill').style.width = percent + '%';
+        section.querySelectorAll('[data-home-gm-milestone]').forEach(function (tile) {
+          var threshold = Number(tile.getAttribute('data-home-gm-milestone'));
+          var unlocked = count >= threshold;
+          var isNext = !!next && next.count === threshold;
+          tile.classList.toggle('is-unlocked', unlocked);
+          tile.classList.toggle('is-next', isNext);
+          var stateLabel = tile.querySelector('.ppp-home-gm__tier-state');
+          stateLabel.textContent = unlocked ? 'Unlocked' : isNext ? 'Next goal' : 'Coming up';
+        });
+        section.querySelector('#ppp-home-gm-status').textContent = 'Active monthly/yearly VIP subscriptions · count refreshes about once per minute.';
+      } catch (error) {
+        section.querySelector('#ppp-home-gm-count').textContent = '—';
+        section.querySelector('#ppp-home-gm-next-title').textContent = 'Community milestone meter';
+        section.querySelector('#ppp-home-gm-next-copy').textContent = 'The current subscriber count is temporarily unavailable.';
+        section.querySelector('#ppp-home-gm-progress').textContent = 'Progress will appear once the count loads.';
+        section.querySelector('#ppp-home-gm-percent').textContent = '—';
+        section.querySelector('#ppp-home-gm-status').textContent = 'Could not load the subscriber total. Please refresh to try again.';
+      }
+    }
+
+    refresh();
+    window.setInterval(refresh, 60000);
+    return section;
+  }
+
   VIP.landing = {
     render: function (root) {
       var cfg = VIP.siteConfig;
@@ -691,6 +808,7 @@
       }, 'Ad placement · home · top');
       root.appendChild(homeAdTop);
       root.appendChild(hero);
+      root.appendChild(buildHomeGiveawayMeter());
       root.appendChild(buildHomepagePreviews());
       root.appendChild(universes);
       root.appendChild(how);
