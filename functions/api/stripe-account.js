@@ -115,7 +115,7 @@ export async function onRequestPost({ request, env }) {
       const subscription = event.data.object;
       processed = !subscription?.metadata?.account_id || await saveSubscription(subscription, env, stripe, 'canceled');
     }
-    if (!processed) return json({ ok: false, error: 'purchase_not_applied' }, 500);
+    if (!processed) return json({ ok: false, error: event.data?.object?.metadata?.purchase_type === 'marketplace_listing_boost' ? 'boost_not_applied' : 'membership_not_applied' }, 500);
     await env.DB.prepare('INSERT INTO stripe_account_events (event_id, event_type) VALUES (?, ?)').bind(event.id, event.type).run();
     return json({ received: true });
   } catch (error) {
