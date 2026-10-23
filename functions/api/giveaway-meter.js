@@ -1,3 +1,5 @@
+import { activateGoalGiveaways } from '../_lib/giveaway-goal.js';
+
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -13,20 +15,7 @@ export async function onRequestGet({ env }) {
   if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
 
   try {
-    const result = await env.DB.prepare(
-      "SELECT COUNT(DISTINCT id) AS active_subscribers FROM users " +
-      "WHERE membership_status = 'active' " +
-      "AND lower(COALESCE(membership_type, '')) IN ('monthly', 'yearly')"
-    ).first();
-
-    // The live membership list was owner-verified at 12; the legacy users
-    // table currently overstates that tally by two rows. Keep the meter aligned
-    // while tracking future additions/removals until those old rows are reconciled.
-    const SUBSCRIBER_COUNT_CORRECTION = -2;
-    const activeSubscribers = Math.max(
-      0,
-      Number(result?.active_subscribers || 0) + SUBSCRIBER_COUNT_CORRECTION
-    );
+    const activeSubscribers = await activateGoalGiveaways(env);
 
     return json({
       ok: true,
