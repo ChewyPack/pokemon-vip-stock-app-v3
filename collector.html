@@ -138,6 +138,21 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .social-empty-comments{font-size:.86rem;color:var(--muted);text-align:center;padding:10px}
 @media(max-width:640px){.cp-social-composer,.social-post{padding:12px}.cp-social-composer-row{grid-template-columns:1fr}.social-post-type{max-width:100px;overflow:hidden;text-overflow:ellipsis}}
 
+
+/* Partner Pokémon and earned Gym Badge profile rewards. */
+.cp-buddy-display{display:flex;align-items:center;gap:12px;width:max-content;max-width:100%;margin:13px 0;padding:9px 14px 9px 9px;border:1px solid #ffffff45;border-radius:15px;background:#061744a8;box-shadow:0 4px 16px #020b2440}
+.cp-buddy-display img{width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 3px 5px #0004)}
+.cp-buddy-display>div{display:grid;gap:3px}.cp-buddy-kicker{font-size:.67rem;font-weight:1000;letter-spacing:.12em;color:#ffd21f}.cp-buddy-display strong{font-size:1.06rem;color:#fff}.cp-buddy-display small{font-size:.78rem;color:#dbe8ff}
+.cp-buddy-editor{display:grid;grid-template-columns:minmax(150px,260px) auto;align-items:end;gap:9px;max-width:600px;margin:7px 0 15px;padding:12px;border:1px solid #ffffff3c;border-radius:12px;background:#07194d8c}
+.cp-buddy-editor label{display:grid;gap:5px;font-size:.82rem;font-weight:900;color:#fff}.cp-buddy-editor select{width:100%;min-height:40px;border-radius:8px;border:1px solid #b9c9e6;background:#fff;color:#0b2a6b;padding:8px;font:inherit}.cp-buddy-editor .cp-status{grid-column:1/-1;margin:0;color:#fff}
+.cp-gym-panel{margin:16px 0;padding:17px;border:1px solid #bfd0ee;border-radius:14px;background:#fff;box-shadow:0 3px 12px #07194d08;color:var(--navy)}
+.cp-gym-header{display:flex;align-items:end;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:13px}.cp-gym-header h2{margin:0;font:1.7rem Bangers,cursive;color:var(--navy)}.cp-gym-progress{font-size:.82rem;color:var(--muted);font-weight:900}
+.cp-gym-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.cp-gym-badge{display:grid;justify-items:center;align-content:start;gap:6px;min-width:0;padding:12px 7px 10px;border:1px solid #d2deef;border-radius:11px;background:#f7f9fd;text-align:center}
+.cp-gym-badge-token{display:grid;place-items:center;width:54px;height:54px;border:3px solid var(--badge-color,#9aa9bf);border-radius:50% 50% 42% 42%;background:linear-gradient(145deg,#fff,var(--badge-color,#d9e0e9));color:#10244c;font-size:1.6rem;font-weight:1000;box-shadow:inset 0 0 0 3px #ffffff9c,0 2px 3px #0b2a6b20}
+.cp-gym-badge strong{font-size:.79rem;line-height:1.3;color:var(--navy);overflow-wrap:anywhere}.cp-gym-badge small{font-size:.7rem;line-height:1.4;color:var(--muted)}
+.cp-gym-badge.is-locked{filter:grayscale(1);opacity:.55}.cp-gym-badge.is-earned{border-color:#9cb8e5;background:linear-gradient(145deg,#fff,#edf4ff)}.cp-gym-badge.is-earned .cp-gym-badge-token{box-shadow:0 0 0 3px #dce9ff,0 4px 8px #0b2a6b20}
+@media(max-width:640px){.cp-buddy-editor{grid-template-columns:1fr}.cp-gym-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-buddy-display img{width:60px;height:60px}}
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="mobile-web-app-capable" content="yes">
@@ -154,9 +169,13 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <section class="cp-discover" aria-label="Search collectors"><form id="collector-search-form" class="cp-discover-form"><input id="collector-search-query" class="cp-search" type="search" minlength="2" maxlength="60" placeholder="Search by collector name or username…" autocomplete="off" aria-label="Search collectors"><button class="cp-search-ball" type="submit" aria-label="Search collectors" title="Search collectors"></button></form><p id="collector-search-status" class="cp-status" role="status" aria-live="polite"></p><div id="collector-search-results" class="cp-discover-results"></div></section>
 <section class="cp-hero" id="profile-hero">
 <button id="avatar" class="cp-avatar cp-avatar-edit" type="button" aria-label="Change profile photo" title="Click to change profile photo">Card</button><input id="profile-photo-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="Upload profile photo"><input id="profile-cover-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="Upload cover photo"><button id="change-cover" class="cp-cover-edit" type="button" hidden>Change cover photo</button>
-<div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><button id="bio-display" class="cp-bio-click" type="button" aria-label="Edit profile bio" title="Click to edit your bio">Your collection, your chase, your story.</button><button id="edit-bio" class="cp-bio-edit" type="button" hidden>Edit bio</button></div><form id="bio-editor" class="cp-bio-editor" hidden><textarea id="bio-input" maxlength="500" placeholder="Tell other collectors about yourself…"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cp-btn" type="submit">Save bio</button><button id="cancel-bio" class="cp-btn secondary" type="button">Cancel</button></div><p id="bio-status" class="cp-status" role="status" aria-live="polite"></p></form><div class="cp-follow-row"><button class="cp-follow-count cp-follow-list-trigger" id="followers-trigger" type="button"><strong id="followers-count">0</strong> followers</button><button class="cp-follow-count cp-follow-list-trigger" id="following-trigger" type="button"><strong id="following-count">0</strong> following</button><button id="follow-button" class="cp-follow-btn" type="button" hidden>Follow</button><div id="profile-menu-wrap" class="cp-profile-menu-wrap" hidden><button id="profile-menu-trigger" class="cp-profile-menu-trigger" type="button" aria-label="More profile options" aria-haspopup="menu" aria-expanded="false">···</button><div id="profile-menu" class="cp-profile-menu" role="menu" hidden><button id="menu-unfollow" type="button" role="menuitem">Unfollow</button><button id="menu-block" class="danger" type="button" role="menuitem">Block</button></div></div></div></div>
+<div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><button id="bio-display" class="cp-bio-click" type="button" aria-label="Edit profile bio" title="Click to edit your bio">Your collection, your chase, your story.</button><button id="edit-bio" class="cp-bio-edit" type="button" hidden>Edit bio</button></div><form id="bio-editor" class="cp-bio-editor" hidden><textarea id="bio-input" maxlength="500" placeholder="Tell other collectors about yourself…"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cp-btn" type="submit">Save bio</button><button id="cancel-bio" class="cp-btn secondary" type="button">Cancel</button></div><p id="bio-status" class="cp-status" role="status" aria-live="polite"></p></form>
+<div id="buddy-pokemon-display" class="cp-buddy-display" hidden><img id="buddy-pokemon-image" alt=""><div><span class="cp-buddy-kicker">PARTNER POKÉMON</span><strong id="buddy-pokemon-name">Pikachu</strong><small id="buddy-pokemon-caption">Your profile companion</small></div></div>
+<form id="buddy-pokemon-editor" class="cp-buddy-editor" hidden><label for="buddy-pokemon-select">Choose your Buddy Pokémon<select id="buddy-pokemon-select"></select></label><button class="cp-btn" type="submit" id="buddy-pokemon-save">Save Buddy Pokémon</button><p id="buddy-pokemon-status" class="cp-status" role="status" aria-live="polite"></p></form>
+<div class="cp-follow-row"><button class="cp-follow-count cp-follow-list-trigger" id="followers-trigger" type="button"><strong id="followers-count">0</strong> followers</button><button class="cp-follow-count cp-follow-list-trigger" id="following-trigger" type="button"><strong id="following-count">0</strong> following</button><button id="follow-button" class="cp-follow-btn" type="button" hidden>Follow</button><div id="profile-menu-wrap" class="cp-profile-menu-wrap" hidden><button id="profile-menu-trigger" class="cp-profile-menu-trigger" type="button" aria-label="More profile options" aria-haspopup="menu" aria-expanded="false">···</button><div id="profile-menu" class="cp-profile-menu" role="menu" hidden><button id="menu-unfollow" type="button" role="menuitem">Unfollow</button><button id="menu-block" class="danger" type="button" role="menuitem">Block</button></div></div></div></div>
 </section>
 </section>
+<section id="profile-badges" class="cp-gym-panel" aria-label="Gym Badge achievements" hidden></section>
 <section id="wishlist-match-dashboard" class="cp-panel cp-wishlist-dashboard" hidden>
  <div class="cp-match-header"><h2>Wishlist Matches</h2><p class="cp-status" id="wishlist-match-status" role="status" aria-live="polite"></p></div>
  <div id="wishlist-match-results" class="cp-match-grid"><div class="cp-match-empty">Checking your wishlist…</div></div>
@@ -265,7 +284,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <script>
 (function(){
  const $=id=>document.getElementById(id);
- let own=false,profile=null,items=[],activeList='posts',viewUsername=new URLSearchParams(location.search).get('user')||'';
+ let own=false,profile=null,items=[],buddyOptions=[],activeList='posts',viewUsername=new URLSearchParams(location.search).get('user')||'';
  let catalogSets=[],catalogTimer=null,catalogRequest=0,selectedCatalogProductId=null,selectedCatalogProductName='',followState={followers:0,following:0,isFollowing:false};
 
  const money=cents=>cents===null||cents===undefined?'Not set':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents)/100);
@@ -327,8 +346,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    $('items').querySelectorAll('[data-edit-collector-item]').forEach(button=>button.addEventListener('click',()=>startEditCollectorItem(button.dataset.editCollectorItem)));
   }
   function showProfile(p,accountName){
-  profile=p;const hero=$('profile-hero');if(hero)hero.style.backgroundImage=p?.cover_url?'url("'+String(p.cover_url).replace(/["\\\\]/g,'')+'"), linear-gradient(120deg,#07194d,#123d8c)':'';
-  
+  profile=p;const hero=$('profile-hero');if(hero)hero.style.backgroundImage=p?.cover_url?'url("'+String(p.cover_url).replace(/["\\]/g,'')+'"), linear-gradient(120deg,#07194d,#123d8c)':'';
   $('handle').textContent=p?.username?'@'+p.username:'Create your collector handle';
   const displayName=String(accountName||p?.display_name||p?.username||'Collector Profile').trim();
   $('display-name').textContent=displayName;
@@ -337,6 +355,34 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   $('edit-bio').hidden=!own;$('bio-editor').hidden=true;$('bio-input').value=p?.bio||'';
   if(p?.avatar_url)$('avatar').innerHTML='<img src="'+safe(p.avatar_url)+'" alt="Profile photo">';else $('avatar').textContent='Card';
   $('avatar').disabled=!own;$('avatar').title=own?'Click to change profile photo':'';$('change-cover').hidden=!own;
+  const buddy=buddyOptions.find(item=>item.key===(p?.buddy_pokemon||'pikachu'));
+  const buddyName=p?.buddy_name||buddy?.name||'Pikachu';
+  const buddyImage=p?.buddy_image_url||buddy?.image_url||'';
+  $('buddy-pokemon-display').hidden=!p;
+  $('buddy-pokemon-editor').hidden=!own;
+  $('buddy-pokemon-name').textContent=buddyName;
+  $('buddy-pokemon-caption').textContent='Your profile companion';
+  const buddyImg=$('buddy-pokemon-image');buddyImg.alt=buddyName+' partner Pokémon';if(buddyImage){buddyImg.src=buddyImage;buddyImg.hidden=false;}else{buddyImg.removeAttribute('src');buddyImg.hidden=true;}
+  const selector=$('buddy-pokemon-select');selector.replaceChildren();
+  buddyOptions.forEach(item=>{const option=document.createElement('option');option.value=item.key;option.textContent=item.name;selector.appendChild(option);});
+  selector.value=p?.buddy_pokemon||'pikachu';
+  const earned=Array.isArray(p?.achievements)?p.achievements:[];
+  const progress=p?.achievement_progress||{};
+  const badgePanel=$('profile-badges');
+  if(!earned.length){badgePanel.hidden=true;badgePanel.replaceChildren();}
+  else{
+   badgePanel.hidden=false;badgePanel.replaceChildren();
+   const header=document.createElement('div');header.className='cp-gym-header';
+   const heading=document.createElement('h2');heading.textContent='Gym Badge Collection';header.appendChild(heading);
+   const count=document.createElement('span');count.className='cp-gym-progress';count.textContent=Number(progress.earned_count||earned.filter(x=>x.earned).length)+' / '+Number(progress.total_badges||earned.length)+' badges earned';header.appendChild(count);badgePanel.appendChild(header);
+   const grid=document.createElement('div');grid.className='cp-gym-grid';
+   earned.forEach(badge=>{const tile=document.createElement('article');tile.className='cp-gym-badge '+(badge.earned?'is-earned':'is-locked');tile.title=badge.description||badge.name;tile.style.setProperty('--badge-color',badge.color||'#9aa9bf');
+    const token=document.createElement('span');token.className='cp-gym-badge-token';token.textContent=badge.earned?badge.icon:'?';tile.appendChild(token);
+    const name=document.createElement('strong');name.textContent=badge.name;tile.appendChild(name);
+    const detail=document.createElement('small');detail.textContent=badge.earned?'Earned '+(badge.earned_at?new Date(badge.earned_at.replace(' ','T')+'Z').toLocaleDateString():''):(badge.description||'Keep collecting to unlock');tile.appendChild(detail);grid.appendChild(tile);
+   });
+   badgePanel.appendChild(grid);
+  }
  }
  function stats(){
   const collection=items.filter(x=>x.list_type==='collection');
@@ -552,10 +598,12 @@ async function searchCollectors(query){
    if(viewUsername){
     const r=await fetch('/api/collector/profile?username='+encodeURIComponent(viewUsername),{cache:'no-store'}),d=await r.json();
     if(!r.ok||!d.ok)throw new Error('This collector profile could not be found or is private.');
+    buddyOptions=Array.isArray(d.buddy_options)?d.buddy_options:buddyOptions;
     own=false;profile=d.profile;items=d.items||[];$('owner-tools').classList.add('cp-hidden');$('copy-profile').classList.add('cp-hidden');document.querySelector('.cp-layout').classList.add('cp-public-layout');$('collector-settings').hidden=true;$('collector-signin').hidden=false;$('collector-logout').hidden=true;$('make-offer-button').hidden=false;$('send-message-button').hidden=false;showProfile(profile,profile.display_name);await loadFollowState(profile.username);
    }else{
     const r=await fetch('/api/collector/profile',{credentials:'include',cache:'no-store'}),d=await r.json();
     if(r.status===401){location.href='/account.html';return;}if(!r.ok||!d.ok)throw new Error('Could not load your collector profile. Apply the staging database migration if it has not been run.');
+    buddyOptions=Array.isArray(d.buddy_options)?d.buddy_options:buddyOptions;
     own=true;profile=d.profile;items=d.items||[];document.querySelector('.cp-layout').classList.remove('cp-public-layout');$('make-offer-button').hidden=true;$('send-message-button').hidden=true;$('collector-signin').hidden=true;$('collector-logout').hidden=false;showProfile(profile,d.account?.display_name);await loadFollowState(profile.username)
     if(!profile){$('handle').textContent='Profile not published yet';}
    }
@@ -564,6 +612,17 @@ async function searchCollectors(query){
  }
  function openBioEditor(){if(!own)return;$('bio-input').value=profile?.bio||'';$('bio-editor').hidden=false;$('bio-input').focus();}
  $('edit-bio').addEventListener('click',openBioEditor);$('bio-display').addEventListener('click',openBioEditor);
+ $('buddy-pokemon-editor').addEventListener('submit',async e=>{
+  e.preventDefault();if(!own||!profile)return;
+  const button=$('buddy-pokemon-save');button.disabled=true;setStatus('buddy-pokemon-status','Saving your Buddy Pokémon…');
+  try{
+   const payload={username:profile.username,bio:profile.bio||'',avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1,buddy_pokemon:$('buddy-pokemon-select').value};
+   const response=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await response.json();
+   if(!response.ok||!data.ok)throw new Error(data.error==='invalid_buddy_pokemon'?'Choose one of the available Buddy Pokémon.':'Could not save your Buddy Pokémon. Please try again.');
+   profile={...profile,...data.profile};showProfile(profile,profile.display_name||profile.username);setStatus('buddy-pokemon-status',profile.buddy_name+' is now your Buddy Pokémon.','success');
+  }catch(error){setStatus('buddy-pokemon-status',error.message||'Could not save your Buddy Pokémon.');}
+  finally{button.disabled=false;}
+ });
  $('cancel-bio').addEventListener('click',()=>{$('bio-editor').hidden=true;setStatus('bio-status','');});
  $('bio-editor').addEventListener('submit',async e=>{e.preventDefault();const button=e.submitter;button.disabled=true;setStatus('bio-status','Saving bio…');try{const payload={username:profile.username,bio:$('bio-input').value,avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1};const r=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error==='bio_too_long'?'Bio must be 500 characters or fewer.':'Could not save bio. Please try again.');profile={...profile,...d.profile};$('bio-display').textContent=profile.bio||'Pokémon collector — add a bio to tell your story.';$('bio-editor').hidden=true;setStatus('view-status','Bio updated.');}catch(error){setStatus('bio-status',error.message||'Could not save bio.');}finally{button.disabled=false;}});
  $('collector-logout').addEventListener('click',async()=>{
