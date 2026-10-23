@@ -48,6 +48,30 @@ textarea{min-height:100px;resize:vertical}
 .status{white-space:pre-line;line-height:1.6;color:var(--ev-muted);margin:12px 0}
 .status.error{color:#ffb4bd}.status.success{color:#b6f3d0}
 .helper{font-size:.88rem;color:var(--ev-muted);line-height:1.6}
+/* High-contrast white text throughout the public event details. */
+#event-content,
+#event-content .eyebrow,
+#event-content .pill,
+#event-content p,
+#event-content .muted,
+#event-content .event-description,
+#event-content .event-details-copy,
+#event-content .fact,
+#event-content .fact strong,
+#event-content .fact div,
+#event-content .media-caption {
+  color: #fff !important;
+}
+#event-links .btn,
+#event-links .btn.primary {
+  color: #fff !important;
+  background: #0a1b3d !important;
+  border-color: rgba(255,255,255,.45) !important;
+}
+#event-content .pill {
+  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(255,255,255,.3) !important;
+}
 @media(max-width:650px){.page{width:calc(100% - 24px);padding-top:20px}.facts,.media-grid,.form-grid{grid-template-columns:1fr}.media-row{grid-template-columns:70px minmax(0,1fr)}.media-row .remove-media{grid-column:1/-1}.media-tools{grid-template-columns:1fr}.panel{padding:16px}}
 </style>
 </head>
