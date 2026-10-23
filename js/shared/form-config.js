@@ -23,6 +23,7 @@
     'Target',
     'GameStop',
     'Best Buy',
+    'BoxLunch',
     'Barnes & Noble',
     'Costco',
     "Sam's Club",
