@@ -73,7 +73,10 @@
 <label class="field">Preferred start date<input name="start_date" type="date"></label><label class="field">Preferred end date<input name="end_date" type="date"></label>
 </div>
 <label class="field">Destination link (optional)<input name="destination_url" type="url" maxlength="1200" placeholder="https://your-shop-or-event.com"></label>
-<label class="field">Artwork image URL (optional)<input name="creative_url" type="url" maxlength="1200" placeholder="HTTPS link to a preview of your artwork"></label>
+<label class="field">Upload artwork (optional)<input id="creative-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><span class="advertise-note">Upload a JPG, PNG, WebP, or AVIF image up to 5 MB. Please don’t paste a photo URL.</span></label>
+<input id="creative-url" name="creative_url" type="hidden" value="">
+<p id="creative-upload-status" class="advertise-status" role="status" aria-live="polite"></p>
+<img id="creative-preview" alt="Advertising artwork preview" hidden style="display:block;max-width:100%;max-height:220px;object-fit:contain;border:1px solid #d1def2;border-radius:10px;background:#f6f8fc;padding:8px">
 <label class="field">What are you promoting?<textarea name="campaign_message" maxlength="3000" placeholder="Tell us about your business, offer, audience, artwork, and any scheduling preferences."></textarea></label>
 <div aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden"><label>Leave this field blank<input name="fax" tabindex="-1" autocomplete="off"></label></div>
 <button class="advertise-button" id="advertise-submit" type="submit">Send advertising inquiry</button>
@@ -87,8 +90,23 @@
 (function(){
 'use strict';
 const form=document.getElementById('advertise-form'),status=document.getElementById('advertise-status'),button=document.getElementById('advertise-submit');
+const creativeFile=document.getElementById('creative-file'),creativeUrl=document.getElementById('creative-url'),creativePreview=document.getElementById('creative-preview'),creativeStatus=document.getElementById('creative-upload-status');
+let creativeUploading=false;
+creativeFile.addEventListener('change',async function(){
+ const file=creativeFile.files&&creativeFile.files[0];if(!file)return;
+ creativeUrl.value='';creativePreview.hidden=true;creativeStatus.className='advertise-status';creativeStatus.textContent='';
+ const data=new FormData();data.append('file',file);creativeUploading=true;button.disabled=true;creativeStatus.textContent='Uploading artwork…';
+ try{
+  const response=await fetch('/api/advertising-media',{method:'POST',credentials:'same-origin',body:data});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.ok)throw new Error(result.message||'Artwork upload failed.');
+  creativeUrl.value=result.image_url;creativePreview.src=result.image_url;creativePreview.hidden=false;creativePreview.style.display='block';creativeStatus.classList.add('success');creativeStatus.textContent='Artwork uploaded and attached to your inquiry.';
+ }catch(error){creativeUrl.value='';creativeStatus.classList.add('error');creativeStatus.textContent=error.message||'Artwork upload failed.';}
+ finally{creativeUploading=false;button.disabled=false;creativeFile.value='';}
+});
 form.addEventListener('submit',async function(event){
- event.preventDefault();if(!form.reportValidity())return;
+ event.preventDefault();if(creativeUploading)return;
+ if(!form.reportValidity())return;
  const body=Object.fromEntries(new FormData(form).entries());body.action='submit_inquiry';
  button.disabled=true;button.textContent='Sending inquiry…';status.className='advertise-status';status.textContent='Submitting your request…';
  try{
