@@ -473,6 +473,7 @@
     var giveaways = panel('Giveaways','/giveaways.html#gallery','All giveaways ↗','New giveaways will appear here when published.');
     var listings = panel('Collector Marketplace','/marketplace.html','Browse listings ↗','Member shop listings will appear here as members publish them.');
     var social = panel('News Feed','/newsfeed','View feed ↗','No community posts yet. Be the first to share.','ppp-home-previews__panel--social');
+    var featuredEvents = panel('Featured Events','/events.html','All events ↗','Upcoming community events will be featured here when organizers boost them.');
 
     fetch('/api/collector/posts?feed=latest&limit=2',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('community feed unavailable');return r.json();}).then(function(data){
       var rows=Array.isArray(data.posts)?data.posts.slice(0,2):[];
@@ -511,8 +512,195 @@
       var rows=Array.isArray(data.listings)?data.listings.slice(0,2):[];
       if(!rows.length){empty(listings,listings.emptyCopy);return;}
       listings.feed.replaceChildren();
-      rows.forEach(function(listing){var price=listing.price_cents==null?'Contact for price':'$'+(Number(listing.price_cents)/100).toFixed(2);addItem(listings,{title:listing.item_name,copy:[listing.shop_name||listing.username,price].filter(Boolean).join(' · '),meta:listing.category||'Member listing',image:listing.image_url,href:listing.shop_url||'/marketplace.html'});});
+      rows.forEach(function(listing){var price=listing.price_cents==null?'Contact for price':'
+
+    return section;
+  }
+
+  VIP.landing = {
+    render: function (root) {
+      var cfg = VIP.siteConfig;
+      var poster = VIP.assets.heroPoster;
+
+      var navigation = buildNavigation();
+
+      /* Original hero — preserved. */
+      var hero = h(
+        'header',
+        { class: 'hero', id: 'home' },
+        h(
+          'div',
+          { class: 'wrap hero__grid' },
+          h(
+            'h1',
+            { class: 'wordmark' },
+            h('span', { class: 'wordmark__top' }, 'PokePrize'),
+            h('span', { class: 'wordmark__bottom' }, 'Pool')
+          ),
+          h(
+            'figure',
+            { class: 'poster poster--logo' },
+            h('img', {
+              src: poster.src,
+              alt: poster.alt,
+              width: '512',
+              height: '512',
+              fetchpriority: 'high'
+            })
+          ),
+          h(
+            'div',
+            { class: 'hero__copy' },
+            h('p', { class: 'hero__lead' }, cfg.brand.lead),
+            h(
+              'div',
+              { class: 'hero__actions' },
+              h('a', {
+                class: 'btn btn--lg',
+                href: '#report'
+              }, 'Report a sighting'),
+              h('a', {
+                class: 'text-link',
+                href: '#how'
+              }, 'See how it works')
+            )
+          )
+        ),
+        bolt()
+      );
+
+      /* Original universe cards — preserved. */
+      var universes = h(
+        'section',
+        {
+          class: 'section',
+          id: 'universes',
+          'aria-labelledby': 'uni-title'
+        },
+        h(
+          'div',
+          { class: 'wrap' },
+          h('h2', {
+            class: 'section__title',
+            id: 'uni-title'
+          }, 'Where the crew hunts'),
+          h('p', {
+            class: 'section__sub'
+          }, 'Pokémon is live. More universes are on the way.')
+        ),
+        h(
+          'div',
+          { class: 'binder' },
+          h('div', {
+            class: 'binder__row'
+          }, cfg.universes.map(universeCard))
+        )
+      );
+
+      /* Original how-it-works section — preserved. */
+      var how = h(
+        'section',
+        {
+          class: 'section',
+          id: 'how',
+          'aria-labelledby': 'how-title'
+        },
+        h(
+          'div',
+          { class: 'wrap' },
+          h('h2', {
+            class: 'section__title',
+            id: 'how-title'
+          }, 'How it works'),
+          h(
+            'ol',
+            { class: 'steps' },
+            cfg.howItWorks.map(function (s, i) {
+              return h(
+                'li',
+                { class: 'step-card' },
+                h('span', {
+                  class: 'step-card__num',
+                  'aria-hidden': 'true'
+                }, String(i + 1)),
+                h('span', {
+                  class: 'step-card__icon',
+                  'aria-hidden': 'true'
+                }, s.icon),
+                h('h3', {
+                  class: 'step-card__title'
+                }, s.title),
+                h('p', {
+                  class: 'step-card__text'
+                }, s.text)
+              );
+            })
+          )
+        )
+      );
+
+      /* Original call-to-action — preserved. */
+      var cta = h(
+        'section',
+        { class: 'cta-band' },
+        h(
+          'div',
+          { class: 'wrap cta-band__inner' },
+          h('h2', {
+            class: 'cta-band__title'
+          }, 'Spotted something?'),
+          h('a', {
+            class: 'btn btn--lg',
+            href: '#report'
+          }, 'Report a sighting'),
+          h('p', {
+            class: 'notice notice--light'
+          }, cfg.notice)
+        )
+      );
+
+      /* Original footer — preserved. */
+      var footer = h(
+        'footer',
+        { class: 'footer' },
+        h(
+          'div',
+          { class: 'wrap' },
+          h('p', null, cfg.legal)
+        )
+      );
+
+      VIP.clear(root);
+      root.appendChild(navigation);
+      var homeAdTop = h('aside', {
+        class: 'ppp-ad-slot ppp-ad-slot--top',
+        'data-ad-slot': 'home-top',
+        'aria-label': 'Advertisement placement: home top'
+      }, 'Ad placement · home · top');
+      root.appendChild(homeAdTop);
+      root.appendChild(hero);
+      root.appendChild(buildHomepagePreviews());
+      root.appendChild(universes);
+      root.appendChild(how);
+      root.appendChild(cta);
+      root.appendChild(footer);
+    }
+  };
+})();
+
++(Number(listing.price_cents)/100).toFixed(2);addItem(listings,{title:listing.item_name,copy:[listing.shop_name||listing.username,price].filter(Boolean).join(' · '),meta:listing.category||'Member listing',image:listing.image_url,href:listing.shop_url||'/marketplace.html'});});
     }).catch(function(){empty(listings,'Marketplace listings could not load right now.');});
+
+    fetch('/api/events?featured=1',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('featured events unavailable');return r.json();}).then(function(data){
+      var rows=Array.isArray(data.events)?data.events.slice(0,2):[];
+      if(!rows.length){empty(featuredEvents,featuredEvents.emptyCopy);return;}
+      featuredEvents.feed.replaceChildren();
+      rows.forEach(function(event){
+        var location=[event.city,event.state_name||event.state].filter(Boolean).join(', ');
+        var copy=[dateLabel(event.event_date),event.venue,location].filter(Boolean).join(' · ');
+        addItem(featuredEvents,{title:event.title,copy:copy,meta:'Featured · Boosted event',image:event.image_url,href:'/event.html?id='+encodeURIComponent(event.id)});
+      });
+    }).catch(function(){empty(featuredEvents,'Featured events could not load right now.');});
 
     return section;
   }
