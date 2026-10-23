@@ -50,6 +50,11 @@ CREATE INDEX IF NOT EXISTS idx_tcgcsv_products_type_name
 CREATE INDEX IF NOT EXISTS idx_tcgcsv_products_clean_name
   ON tcgcsv_products(clean_name);
 
+CREATE INDEX IF NOT EXISTS idx_tcgcsv_products_name_nocase
+  ON tcgcsv_products(name COLLATE NOCASE);
+CREATE INDEX IF NOT EXISTS idx_tcgcsv_products_card_number_nocase
+  ON tcgcsv_products(card_number COLLATE NOCASE);
+
 CREATE TABLE IF NOT EXISTS tcgcsv_prices (
   product_id INTEGER NOT NULL,
   subtype_name TEXT NOT NULL DEFAULT 'Normal',
