@@ -1,0 +1,1 @@
+PokePrizePool collector badge artwork
