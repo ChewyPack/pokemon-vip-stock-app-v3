@@ -2011,7 +2011,7 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 
 /* Custom self-hosted Poké Ball 3D viewer (staging). */
 /* Hide the model attribution caption under the Poké Ball; attribution remains in the footer. */
-.cubone-hero figcaption.cubone-hero__credit { display: none !important; }
+.cubone-hero figcaption.cubone-hero__credit { visibility: hidden !important; }
 
 .cubone-hero {
   display: flex;
