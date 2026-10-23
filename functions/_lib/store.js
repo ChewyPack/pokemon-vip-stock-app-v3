@@ -41,11 +41,15 @@ export function assertStoreStripeMode(env) {
   if (!["staging", "production"].includes(mode)) {
     throw new HttpError(503, "Store checkout is disabled until STORE_ENV is configured");
   }
-  const prefix = mode === "staging" ? "sk_test_" : "sk_live_";
-  if (!key.startsWith(prefix)) {
+  // Accept both standard secret keys (sk_...) and restricted API keys (rk_...),
+  // while enforcing the environment's live/test mode.
+  const allowedPrefixes = mode === "staging"
+    ? ["sk_test_", "rk_test_"]
+    : ["sk_live_", "rk_live_"];
+  if (!allowedPrefixes.some((prefix) => key.startsWith(prefix))) {
     throw new HttpError(503, mode === "staging"
-      ? "Store staging requires a Stripe test-mode secret key"
-      : "Store production requires a Stripe live-mode secret key");
+      ? "Store staging requires a Stripe test-mode secret or restricted key"
+      : "Store production requires a Stripe live-mode secret or restricted key");
   }
 }
 
