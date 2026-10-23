@@ -1,4 +1,4 @@
-import { json, fail, verifyStripeSignature } from './_lib.js';
+import { json, fail, verifyStripeSignature } from '../../_lib/store.js';
 import { releaseOrder } from './checkout.js';
 
 // POST /api/store/webhook  — register this as its OWN Stripe endpoint with its OWN signing secret

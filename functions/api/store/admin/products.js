@@ -1,4 +1,4 @@
-import { json, wrap, readJson, requireAdmin, HttpError } from '../_lib.js';
+import { json, wrap, readJson, requireAdmin, HttpError } from '../../../_lib/store.js';
 
 const CATS = ['sealed', 'singles', 'slabs', 'accessories', 'merch'];
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
@@ -15,7 +15,7 @@ function clean(b, partial) {
   for (const [k, c] of [['productType', 'product_type'], ['set', 'set_name'], ['language', 'language'], ['condition', 'condition'], ['gradeCompany', 'grade_company'], ['grade', 'grade'], ['releaseDate', 'release_date']]) {
     if (!partial || b[k] !== undefined) o[c] = txt(b[k], 120);
   }
-  set('price_cents', () => int(b.priceCents));
+  if (!partial || b.priceCents !== undefined) o.price_cents = int(b.priceCents);
   if (!partial || b.compareAtCents !== undefined) o.compare_at_cents = b.compareAtCents == null ? null : int(b.compareAtCents);
   set('inventory', () => int(b.inventory));
   set('active', () => (b.active ? 1 : 0));

@@ -26,15 +26,27 @@ export const wrap = (fn) => async (ctx) => {
   }
 };
 
-// ADMIN AUTH: default deny. Wire this to the site's EXISTING verified-admin check.
-// The staging token only works when STORE_ENV === 'staging' and the token secret is set.
+// Use the site's existing signed collector session and server-verified admin flag.
+import { currentChatAccount } from "./chat.js";
+
 export async function requireAdmin({ request, env }) {
-  // TODO(integration): call the existing admin session verification here and return an actor id.
-  if (env.STORE_ENV === 'staging' && env.STORE_STAGING_ADMIN_TOKEN) {
-    const got = request.headers.get('x-store-admin-token') || '';
-    if (got && timingSafeEqual(got, env.STORE_STAGING_ADMIN_TOKEN)) return 'staging-admin';
+  const account = await currentChatAccount(request, env);
+  if (!account || !account.is_admin) throw new HttpError(403, "Admin access required");
+  return "account:" + account.id;
+}
+
+export function assertStoreStripeMode(env) {
+  const mode = String(env.STORE_ENV || "");
+  const key = String(env.STRIPE_STORE_SECRET_KEY || "");
+  if (!["staging", "production"].includes(mode)) {
+    throw new HttpError(503, "Store checkout is disabled until STORE_ENV is configured");
   }
-  throw new HttpError(403, 'Forbidden');
+  const prefix = mode === "staging" ? "sk_test_" : "sk_live_";
+  if (!key.startsWith(prefix)) {
+    throw new HttpError(503, mode === "staging"
+      ? "Store staging requires a Stripe test-mode secret key"
+      : "Store production requires a Stripe live-mode secret key");
+  }
 }
 
 export function timingSafeEqual(a, b) {
@@ -65,10 +77,10 @@ export function formEncode(obj, prefix = '', out = []) {
 }
 
 export async function stripe(env, path, params) {
-  if (!env.STRIPE_SECRET_KEY) throw new HttpError(503, 'Payments are not configured');
+  assertStoreStripeMode(env);
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: 'POST',
-    headers: { authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'content-type': 'application/x-www-form-urlencoded' },
+    headers: { authorization: `Bearer ${env.STRIPE_STORE_SECRET_KEY}`, 'content-type': 'application/x-www-form-urlencoded' },
     body: formEncode(params).join('&'),
   });
   const data = await res.json();

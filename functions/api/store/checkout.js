@@ -1,16 +1,18 @@
-import { json, wrap, readJson, HttpError, stripe, randomId, orderNumber } from './_lib.js';
+import { json, wrap, readJson, HttpError, stripe, randomId, orderNumber, assertStoreStripeMode } from '../../_lib/store.js';
 
 // POST /api/store/checkout  body: { items: [{ productId, quantity }], email? }
 // The client only says WHICH products and HOW MANY. Prices, stock and totals come from D1.
 // Stock is reserved atomically when the order is created and released if the session expires or fails.
 export const onRequestPost = wrap(async ({ request, env }) => {
-  const origin = env.STORE_PUBLIC_URL;
-  if (!origin) throw new HttpError(503, 'Store is not configured');
+  assertStoreStripeMode(env);
+  const origin = new URL(request.url).origin;
 
   // Refuse to sell if shipping or tax are not configured, so no order is priced incorrectly.
   let shippingOptions;
   try { shippingOptions = JSON.parse(env.STORE_SHIPPING_OPTIONS || '[]'); } catch { shippingOptions = []; }
-  if (!shippingOptions.length) throw new HttpError(503, 'Shipping is not configured');
+  if (!Array.isArray(shippingOptions) || !shippingOptions.length || shippingOptions.length > 10 || shippingOptions.some(o => !o || typeof o.name !== 'string' || !o.name.trim() || o.name.length > 80 || !Number.isInteger(Number(o.amountCents)) || Number(o.amountCents) < 0 || Number(o.amountCents) > 100000)) {
+    throw new HttpError(503, 'Shipping is not configured');
+  }
   const autoTax = env.STORE_TAX_MODE === 'stripe_automatic';
   if (!autoTax && env.STORE_TAX_MODE !== 'none_confirmed') throw new HttpError(503, 'Tax is not configured');
 
@@ -65,8 +67,8 @@ export const onRequestPost = wrap(async ({ request, env }) => {
       mode: 'payment', // one-time payment only. Never 'subscription'.
       client_reference_id: num,
       customer_email: email || undefined,
-      success_url: `${origin}/store/order?n=${num}&t=${token}`,
-      cancel_url: `${origin}/store?canceled=1`,
+      success_url: `${origin}/store/order.html?n=${encodeURIComponent(num)}&t=${encodeURIComponent(token)}`,
+      cancel_url: `${origin}/store.html?checkout=cancelled`,
       expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
       metadata: { ppp_store_order_id: String(order.id), ppp_order_number: num },
       payment_intent_data: { metadata: { ppp_store_order_id: String(order.id) } },
@@ -81,7 +83,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
         shipping_rate_data: {
           type: 'fixed_amount', display_name: String(o.name),
           fixed_amount: { amount: Number(o.amountCents), currency: 'usd' },
-          ...(autoTax ? { tax_behavior: 'exclusive' } : {}),
+          ...(autoTax ? { tax_behavior: 'exclusive', tax_code: env.STORE_SHIPPING_TAX_CODE || 'txcd_92010001' } : {}),
         },
       })),
     });

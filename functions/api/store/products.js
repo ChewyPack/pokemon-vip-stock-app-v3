@@ -1,4 +1,4 @@
-import { json, wrap, publicProduct } from './_lib.js';
+import { json, wrap, publicProduct } from '../../_lib/store.js';
 
 // GET /api/store/products?q=&category=&availability=in|pre&min=&max=&sort=new|lo|hi&page=1&slug=
 export const onRequestGet = wrap(async ({ request, env }) => {

@@ -1,4 +1,4 @@
-import { json, fail, wrap } from './_lib.js';
+import { json, fail, wrap } from '../../_lib/store.js';
 
 // GET /api/store/order?n=PPP-XXXXXX&t=<public token>  — confirmation page data.
 // Status comes from the database (set by the verified webhook), never from the success URL.
