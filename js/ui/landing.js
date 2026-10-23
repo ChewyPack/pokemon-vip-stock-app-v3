@@ -730,20 +730,6 @@
             },
               h('div', { class: 'cubone-hero__loading', 'aria-hidden': 'true' }, 'Loading 3D model…')
             ),
-            h('figcaption', { class: 'cubone-hero__credit' },
-              '3D model: ',
-              h('a', {
-                href: 'https://sketchfab.com/3d-models/poke-ball-pokemon-pokeball-c266163bd310411bac727783e4c79c4a',
-                target: '_blank',
-                rel: 'noopener noreferrer'
-              }, 'Poké Ball by Jesús Orgaz'),
-              ' · ',
-              h('a', {
-                href: 'https://creativecommons.org/licenses/by/4.0/',
-                target: '_blank',
-                rel: 'noopener noreferrer'
-              }, 'CC BY 4.0')
-            )
           ),
           h(
             'div',
@@ -863,7 +849,13 @@
         h(
           'div',
           { class: 'wrap' },
-          h('p', null, cfg.legal)
+          h('p', null, cfg.legal),
+          h('p', { class: 'asset-credit' },
+            '3D asset credit: ',
+            h('a', { href: 'https://sketchfab.com/3d-models/poke-ball-pokemon-pokeball-c266163bd310411bac727783e4c79c4a', target: '_blank', rel: 'noopener noreferrer' }, 'Poké Ball by Jesús Orgaz'),
+            ' · ',
+            h('a', { href: 'https://creativecommons.org/licenses/by/4.0/', target: '_blank', rel: 'noopener noreferrer' }, 'CC BY 4.0')
+          )
         )
       );
 
