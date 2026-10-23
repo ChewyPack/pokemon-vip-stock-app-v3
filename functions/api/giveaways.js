@@ -1,3 +1,5 @@
+import { activateGoalGiveaways } from '../_lib/giveaway-goal.js';
+
 const COOKIE = 'collector_session';
 
 function json(body, status = 200) {
@@ -34,6 +36,9 @@ async function ensureTable(env) {
     prize_value REAL,
     image_url TEXT NOT NULL DEFAULT '',
     start_at TEXT,
+    start_mode TEXT NOT NULL DEFAULT 'date',
+    start_goal INTEGER,
+    goal_started_at TEXT,
     end_at TEXT,
     eligibility TEXT NOT NULL DEFAULT '',
     rules TEXT NOT NULL DEFAULT '',
@@ -55,6 +60,18 @@ async function ensureTable(env) {
   }
   if (!names.has('winner_selected_at')) {
     try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN winner_selected_at TEXT').run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
+  if (!names.has('start_mode')) {
+    try { await env.DB.prepare("ALTER TABLE poke_prize_giveaways ADD COLUMN start_mode TEXT NOT NULL DEFAULT 'date'").run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
+  if (!names.has('start_goal')) {
+    try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN start_goal INTEGER').run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
+  if (!names.has('goal_started_at')) {
+    try { await env.DB.prepare('ALTER TABLE poke_prize_giveaways ADD COLUMN goal_started_at TEXT').run(); }
     catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
   }
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poke_prize_giveaway_entries (
@@ -133,6 +150,7 @@ export async function onRequestGet({ request, env }) {
     if (adminView) {
       const access = await requireAdmin(request, env);
       if (access.response) return access.response;
+      await activateGoalGiveaways(env);
       const rows = await env.DB.prepare(
         `SELECT g.*,
         (SELECT COALESCE(SUM(1 + e.bonus_entries), 0) FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = g.id) AS actual_entry_count,
@@ -142,8 +160,12 @@ export async function onRequestGet({ request, env }) {
       ).all();
       return json({ ok: true, giveaways: (rows.results || []).map(shape) });
     }
+    await activateGoalGiveaways(env);
     const rows = await env.DB.prepare(
-      `SELECT g.id, g.title, g.description, g.prize_value, g.image_url, g.start_at, g.end_at, g.eligibility, g.rules, g.status, g.featured, g.vip_only,
+      `SELECT g.id, g.title, g.description, g.prize_value, g.image_url,
+        COALESCE(g.start_at, g.goal_started_at) AS start_at, g.end_at,
+        g.start_mode, g.start_goal, g.goal_started_at,
+        g.eligibility, g.rules, g.status, g.featured, g.vip_only,
         (SELECT COALESCE(SUM(1 + e.bonus_entries), 0) FROM poke_prize_giveaway_entries e JOIN accounts a ON a.id = e.account_id WHERE e.giveaway_id = g.id) AS actual_entry_count,
         g.published_at, g.created_at, g.winner_selected_at,
         (SELECT p.username FROM poke_prize_giveaway_entries e JOIN collector_profiles p ON p.account_id = e.account_id WHERE e.id = g.winner_entry_id LIMIT 1) AS winner_username
@@ -167,7 +189,10 @@ export async function onRequestPost({ request, env }) {
   const title = clean(data.title, 180);
   const description = clean(data.description, 4000);
   const imageUrl = clean(data.image_url, 1000);
-  const startAtInput = clean(data.start_at, 40);
+  const startMode = data.start_mode === 'goal' ? 'goal' : 'date';
+  const rawGoal = Number(data.start_goal);
+  const startGoal = [50, 100, 500].includes(rawGoal) ? rawGoal : null;
+  const startAtInput = startMode === 'date' ? clean(data.start_at, 40) : '';
   const endAtInput = clean(data.end_at, 40);
   const eligibility = clean(data.eligibility, 1500);
   const rules = clean(data.rules, 8000);
@@ -185,29 +210,38 @@ export async function onRequestPost({ request, env }) {
   const startAt = normalizeDateTime(startAtInput);
   const endAt = normalizeDateTime(endAtInput);
   if ((startAtInput && !startAt) || (endAtInput && !endAt)) return json({ ok: false, error: 'invalid_date_time' }, 400);
-  if (startAt && endAt && Date.parse(startAt) >= Date.parse(endAt)) return json({ ok: false, error: 'end_must_follow_start' }, 400);
-  if (status === 'published' && (!startAt || !endAt)) return json({ ok: false, error: 'published_dates_required' }, 400);
+  if (startMode === 'date' && startAt && endAt && Date.parse(startAt) >= Date.parse(endAt)) {
+    return json({ ok: false, error: 'end_must_follow_start' }, 400);
+  }
+  if (status === 'published' && !endAt) return json({ ok: false, error: 'published_end_required' }, 400);
+  if (status === 'published' && startMode === 'date' && !startAt) return json({ ok: false, error: 'published_start_required' }, 400);
+  if (status === 'published' && startMode === 'goal' && !startGoal) return json({ ok: false, error: 'published_goal_required' }, 400);
   if (!uploadedImageIsValid(imageUrl, request.url)) return json({ ok: false, error: 'image_must_be_uploaded' }, 400);
 
   try {
     await ensureTable(env);
     let existing = null;
     if (id) {
-      existing = await env.DB.prepare('SELECT id, published_at FROM poke_prize_giveaways WHERE id = ? LIMIT 1').bind(id).first();
+      existing = await env.DB.prepare('SELECT id, published_at, start_mode, start_goal, goal_started_at FROM poke_prize_giveaways WHERE id = ? LIMIT 1').bind(id).first();
       if (!existing) return json({ ok: false, error: 'giveaway_not_found' }, 404);
     }
     const publishedAt = status === 'published' ? (existing?.published_at || new Date().toISOString()) : null;
     const featured = truthy(data.featured) ? 1 : 0;
     const vipOnly = truthy(data.vip_only) ? 1 : 0;
+    const sameGoalTrigger = existing &&
+      existing.start_mode === 'goal' &&
+      startMode === 'goal' &&
+      Number(existing.start_goal) === Number(startGoal);
+    const goalStartedAt = sameGoalTrigger ? (existing.goal_started_at || null) : null;
     let savedId = id;
     if (existing) {
       await env.DB.prepare(
-        'UPDATE poke_prize_giveaways SET title=?, description=?, prize_value=?, image_url=?, start_at=?, end_at=?, eligibility=?, rules=?, status=?, featured=?, vip_only=?, published_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'
-      ).bind(title, description, prizeValue, imageUrl, startAt || null, endAt || null, eligibility, rules, status, featured, vipOnly, publishedAt, id).run();
+        'UPDATE poke_prize_giveaways SET title=?, description=?, prize_value=?, image_url=?, start_at=?, start_mode=?, start_goal=?, goal_started_at=?, end_at=?, eligibility=?, rules=?, status=?, featured=?, vip_only=?, published_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'
+      ).bind(title, description, prizeValue, imageUrl, startAt || null, startMode, startMode === 'goal' ? startGoal : null, goalStartedAt, endAt || null, eligibility, rules, status, featured, vipOnly, publishedAt, id).run();
     } else {
       const result = await env.DB.prepare(
-        'INSERT INTO poke_prize_giveaways (title, description, prize_value, image_url, start_at, end_at, eligibility, rules, status, featured, vip_only, published_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
-      ).bind(title, description, prizeValue, imageUrl, startAt || null, endAt || null, eligibility, rules, status, featured, vipOnly, publishedAt).run();
+        'INSERT INTO poke_prize_giveaways (title, description, prize_value, image_url, start_at, start_mode, start_goal, goal_started_at, end_at, eligibility, rules, status, featured, vip_only, published_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      ).bind(title, description, prizeValue, imageUrl, startAt || null, startMode, startMode === 'goal' ? startGoal : null, null, endAt || null, eligibility, rules, status, featured, vipOnly, publishedAt).run();
       savedId = Number(result.meta?.last_row_id || 0);
     }
     const saved = await env.DB.prepare('SELECT * FROM poke_prize_giveaways WHERE id = ? LIMIT 1').bind(savedId).first();
