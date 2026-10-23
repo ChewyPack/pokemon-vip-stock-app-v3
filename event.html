@@ -129,19 +129,15 @@ textarea{min-height:100px;resize:vertical}
 <textarea id="edit-description" name="description" maxlength="4000"></textarea>
 <label for="edit-details">Full event details</label>
 <textarea id="edit-details" name="details" maxlength="12000" placeholder="Schedule, registration instructions, featured vendors, what attendees should know, updates, etc."></textarea>
-<label for="edit-cover-url">Cover image URL (optional)</label>
-<input id="edit-cover-url" name="image_url" maxlength="1200" placeholder="Upload an image below, then choose Make cover">
-<p class="helper">Upload photos up to 5 MB and videos up to 25 MB. You can also add HTTPS image URLs, direct video links, YouTube, or Vimeo links below.</p>
+<input id="edit-cover-url" name="image_url" type="hidden" value="">
+<p class="helper">Photos must be uploaded from your device (up to 5 MB each). Videos can be uploaded (up to 25 MB) or linked from YouTube, Vimeo, or a direct video URL.</p>
 <h2 style="margin-top:28px">Photos &amp; Videos</h2>
 <div id="media-editor-list"></div>
 <div class="field"><label for="media-upload">Upload photos or videos</label><input id="media-upload" type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" multiple><p id="upload-status" class="status" aria-live="polite"></p></div>
-<div class="field"><label>Add a media link</label>
-<div class="media-tools">
-<select id="media-url-type" aria-label="Media type"><option value="image">Photo URL</option><option value="video">Video URL</option></select>
-<input id="media-url" type="url" placeholder="https://...">
-</div>
-<label for="media-caption">Caption (optional)</label><input id="media-caption" maxlength="240" placeholder="What does this photo or video show?">
-<div class="actions"><button class="btn" id="add-media-link" type="button">Add media link</button></div>
+<div class="field"><label for="media-url">Add a video link (optional)</label>
+<input id="media-url" type="url" placeholder="YouTube, Vimeo, or direct video URL (https://…)">
+<label for="media-caption">Caption (optional)</label><input id="media-caption" maxlength="240" placeholder="What does this video show?">
+<div class="actions"><button class="btn" id="add-media-link" type="button">Add video link</button></div>
 </div>
 <div id="edit-status-message" class="status" role="status" aria-live="polite"></div>
 <div class="actions"><button id="save-event" class="btn primary" type="submit">Save event changes</button><button id="cancel-edit" class="btn" type="button">Cancel</button></div>
@@ -221,7 +217,7 @@ function populateEditor(){
 }
 function renderMediaEditor(){
  var list=$('media-editor-list');list.replaceChildren();
- if(!mediaItems.length){text(list,'p','helper','No additional media yet. Add an upload or a link below.');return;}
+ if(!mediaItems.length){text(list,'p','helper','No additional media yet. Upload photos or videos. Video links can be added below.');return;}
  mediaItems.forEach(function(item,index){
   var row=make('div','media-row');text(row,'strong','',item.type==='video'?'Video':'Photo');
   var info=make('div');text(info,'div','',item.caption||'(No caption)');var small=text(info,'small','',item.url);small.title=item.url;row.appendChild(info);
@@ -258,7 +254,7 @@ $('media-upload').addEventListener('change',async function(){
  finally{input.disabled=false;$('save-event').disabled=false;input.value='';}
 });
 $('add-media-link').addEventListener('click',function(){
- var url=$('media-url').value.trim(),type=$('media-url-type').value,caption=$('media-caption').value.trim();
+ var url=$('media-url').value.trim(),type='video',caption=$('media-caption').value.trim();
  try{var u=new URL(url);if(u.protocol!=='https:')throw new Error();}catch{say($('edit-status-message'),'Enter a valid HTTPS media URL.','error');return;}
  if(mediaItems.length>=30){say($('edit-status-message'),'You can add up to 30 media items.','error');return;}
  mediaItems.push({type:type,url:url,caption:caption.slice(0,240)});$('media-url').value='';$('media-caption').value='';renderMediaEditor();say($('edit-status-message'),'Media link added. Save the event to apply changes.','success');
