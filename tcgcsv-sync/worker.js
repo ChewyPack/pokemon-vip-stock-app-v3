@@ -95,6 +95,12 @@ async function beginSync(db) {
   await db.prepare("UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1").run();
 
   try {
+    // Clear any stale resume cursor as soon as a new source build is confirmed.
+    // If source discovery fails, the scheduler must not resume/publish an older run.
+    await db.prepare(`UPDATE tcgcsv_sync_progress
+      SET run_token=NULL, source_timestamp=NULL, group_ids_json='[]', next_group_index=0
+      WHERE id=1`).run();
+
     const categoriesPayload = await getJson(SOURCE + '/categories');
     if (categoriesPayload?.success === false) throw new Error('TCGCSV categories response reported failure.');
     const pokemon = (categoriesPayload?.results || []).find(item =>
@@ -109,12 +115,6 @@ async function beginSync(db) {
     }
     const groups = groupsPayload.results;
     if (!groups.length) throw new Error('TCGCSV returned zero Pokémon groups; refusing to clear existing data.');
-
-    // Clear any stale resume cursor before touching staging rows. This prevents
-    // a failed start from accidentally publishing an older run's cursor.
-    await db.prepare(`UPDATE tcgcsv_sync_progress
-      SET run_token=NULL, source_timestamp=NULL, group_ids_json='[]', next_group_index=0
-      WHERE id=1`).run();
 
     await db.batch([
       db.prepare('DELETE FROM tcgcsv_groups_staging'),
@@ -306,7 +306,7 @@ export default {
             "UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1"
           ).run();
         }
-        console.log('Processing saved TCGCSV group batch', nextIndex + 1, 'of', groupCount);
+        console.log('Processing saved TCGCSV group batch', Math.min(nextIndex + 1, groupCount), 'of', groupCount);
         await processOneGroup(env.DB, progress.run_token).catch(error => {
           console.error('TCGCSV group batch failed:', error);
           return setError(env.DB, error);
