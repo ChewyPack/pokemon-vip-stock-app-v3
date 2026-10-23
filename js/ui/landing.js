@@ -522,7 +522,7 @@
       rows.forEach(function(event){
         var location=[event.city,event.state_name||event.state].filter(Boolean).join(', ');
         var copy=[dateLabel(event.event_date),event.venue,location].filter(Boolean).join(' · ');
-        addItem(featuredEvents,{title:event.title,copy:copy,meta:'Featured · Boosted event',image:event.image_url,href:'/event.html?id='+encodeURIComponent(event.id)});
+        addItem(featuredEvents,{title:event.title,copy:copy,meta:'Featured · Boosted event',image:event.image_url,href:event.slug?'/'+encodeURIComponent(event.slug):'/event.html?id='+encodeURIComponent(event.id)});
       });
     }).catch(function(){empty(featuredEvents,'Featured events could not load right now.');});
 

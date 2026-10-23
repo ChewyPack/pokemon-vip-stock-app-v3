@@ -769,7 +769,7 @@
 
         var titleHeading = make('h3');
         var titleLink = make('a', {
-          href: '/event.html?id=' + encodeURIComponent(event.id)
+          href: event.slug ? '/' + encodeURIComponent(event.slug) : '/event.html?id=' + encodeURIComponent(event.id)
         });
         titleLink.textContent = event.title;
         titleLink.style.color = 'inherit';
@@ -813,7 +813,7 @@
         });
 
         var detailLink = make('a', {
-          href: '/event.html?id=' + encodeURIComponent(event.id)
+          href: event.slug ? '/' + encodeURIComponent(event.slug) : '/event.html?id=' + encodeURIComponent(event.id)
         });
         detailLink.textContent = 'View event details, photos & videos →';
         footer.appendChild(detailLink);
@@ -903,7 +903,7 @@
 
       searchInput.addEventListener('input', render);
 
-      fetch('/api/events',{credentials:'same-origin',cache:'no-store'}).then(function(response){if(!response.ok)throw new Error('events_unavailable');return response.json();}).then(function(data){events=(data.events||[]).map(function(item){return {id:item.id,title:item.title,description:item.description||'',type:item.event_type||'show',date:item.event_date||'',start_time:item.start_time||'',end_time:item.end_time||'',venue:item.venue||'',city:item.city||'',state:item.state||'',stateName:item.state_name||item.state||'',url:item.url||'',status:item.badge||'',image_url:item.image_url||'',boosted:!!item.boosted,boosted_until:item.boosted_until||''};});render();}).catch(function(){events=[];render();count.textContent='The event calendar could not load right now. Please refresh in a moment.';});
+      fetch('/api/events',{credentials:'same-origin',cache:'no-store'}).then(function(response){if(!response.ok)throw new Error('events_unavailable');return response.json();}).then(function(data){events=(data.events||[]).map(function(item){return {id:item.id,slug:item.slug||'',title:item.title,description:item.description||'',type:item.event_type||'show',date:item.event_date||'',start_time:item.start_time||'',end_time:item.end_time||'',venue:item.venue||'',city:item.city||'',state:item.state||'',stateName:item.state_name||item.state||'',url:item.url||'',status:item.badge||'',image_url:item.image_url||'',boosted:!!item.boosted,boosted_until:item.boosted_until||''};});render();}).catch(function(){events=[];render();count.textContent='The event calendar could not load right now. Please refresh in a moment.';});
     })();
   </script>
 <script src="/js/ui/pokereport-sidebar.js"></script>
