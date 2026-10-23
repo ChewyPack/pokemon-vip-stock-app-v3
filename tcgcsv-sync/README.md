@@ -10,6 +10,10 @@ This Worker downloads only the Pokémon category (TCGplayer category ID 3), stor
 
 ## Deploy
 
+This is a Cloudflare Worker, so after deployment its Cron Triggers run in Cloudflare and do not require your PC to stay awake. Your PC only needs to be awake for the one-time setup/deployment or to manually start/check a sync.
+
+Before deploying, apply `migrations/tcgcsv_catalog.sql` and the collector/account schema migrations required by your staging app to the **staging** D1 database. Confirm that the binding below still points at `pokemon-vip-members-staging`.
+
 From the `tcgcsv-sync` directory in a terminal with Wrangler installed and authenticated:
 
 ```sh
@@ -19,7 +23,7 @@ npx wrangler deploy
 
 When prompted for `SYNC_SECRET`, enter a long random secret and save it somewhere secure. Do not commit it to GitHub or share it in chat.
 
-The Worker is scheduled for 09:00 UTC daily. It checks `https://tcgcsv.com/last-updated.txt` first and skips unchanged source builds. Requests use the custom User-Agent `PokePrizePoolMarket/1.0.0` and a 100 ms delay.
+The Worker checks `https://tcgcsv.com/last-updated.txt` at 21:00 UTC once per day, after TCGCSV's usual daily update window, and skips unchanged source builds. A separate every-minute trigger only advances a sync already in progress; it does not poll TCGCSV while idle. Imports can therefore resume unattended until every Pokémon group has been processed. Requests use the custom User-Agent `PokePrizePoolMarket/1.0.0` and a 100 ms delay.
 
 ## Resumable import
 
