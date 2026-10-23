@@ -74,7 +74,7 @@ function gatePage({ signedIn, error = '' } = {}) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${heading} | PokePrizePool</title>
-<link rel="stylesheet" href="/css/site-nav.css">
+<link rel="stylesheet" href="/css/site-nav.css?v=20261022-profile-inbox-pair">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap">
 <style>
@@ -93,7 +93,7 @@ ${errorMessage}<p>${message}</p>
 </div>
 <p class="fine">You’ll return to Securing Product after signing in. Your access is checked securely against your account membership.</p>
 </section></main>
-<script src="/js/ui/site-nav.js?v=20261022-inbox-dropdown-counts"></script>
+<script src="/js/ui/site-nav.js?v=20261022-profile-inbox-pair"></script>
 </body>
 </html>`;
 }
@@ -110,7 +110,10 @@ export async function onRequestGet({ request, env }) {
     const account = await currentAccount(request, env);
     if (!account) return htmlResponse(gatePage({ signedIn: false }), 401);
     if (!isPaidMember(account)) return htmlResponse(gatePage({ signedIn: true }), 403);
-    return htmlResponse(decodeGuide(), 200);
+    const guide = decodeGuide()
+      .replace('href="/css/site-nav.css"', 'href="/css/site-nav.css?v=20261022-profile-inbox-pair"')
+      .replace('<script src="/js/ui/site-nav.js"></script>', '<script src="/js/ui/site-nav.js?v=20261022-profile-inbox-pair"></script>');
+    return htmlResponse(guide, 200);
   } catch (error) {
     console.error('Securing Product access check failed:', error);
     return htmlResponse(gatePage({ error: 'membership_check_failed' }), 503);
