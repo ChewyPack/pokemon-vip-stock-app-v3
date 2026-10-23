@@ -93,7 +93,7 @@ ${errorMessage}<p>${message}</p>
 </div>
 <p class="fine">You’ll return to Securing Product after signing in. Your access is checked securely against your account membership.</p>
 </section></main>
-<script src="/js/ui/site-nav.js?v=20261022-header-fix2"></script>
+<script src="/js/ui/site-nav.js?v=20261022-header-fix3"></script>
 </body>
 </html>`;
 }
@@ -112,7 +112,7 @@ export async function onRequestGet({ request, env }) {
     if (!isPaidMember(account)) return htmlResponse(gatePage({ signedIn: true }), 403);
     const guide = decodeGuide()
       .replace('href="/css/site-nav.css"', 'href="/css/site-nav.css?v=20261022-header-fix2"')
-      .replace('<script src="/js/ui/site-nav.js"></script>', '<script src="/js/ui/site-nav.js?v=20261022-header-fix2"></script>');
+      .replace('<script src="/js/ui/site-nav.js"></script>', '<script src="/js/ui/site-nav.js?v=20261022-header-fix3"></script>');
     return htmlResponse(guide, 200);
   } catch (error) {
     console.error('Securing Product access check failed:', error);
