@@ -128,7 +128,7 @@ export async function onRequestGet({ request, env }) {
         "g.name AS set_name, g.abbreviation AS set_abbreviation, " +
         "p.market_price, p.market_price_subtype, p.last_seen_sync AS price_sync " +
         "FROM (SELECT p.* FROM tcgcsv_products p " +
-        "WHERE p.category_id = 3 AND p.last_seen_sync IN (\${timestampPlaceholders}) " +
+        "WHERE p.category_id = 3 AND p.last_seen_sync IN (" + timestampPlaceholders + ") " +
         "AND " + matchClause + " " + typeClause + " " + setClause + " " +
         "ORDER BY CASE WHEN lower(p.name) = lower(?) THEN 0 " +
         "WHEN instr(lower(p.name), lower(?)) = 1 THEN 1 ELSE 2 END, " +
