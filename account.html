@@ -164,6 +164,12 @@
     <strong>Administrator access is enabled.</strong>
     Your administrator privileges do not require a paid subscription. Your existing Stripe billing plan and any scheduled plan change are unchanged.
   </div>
+  <div id="push-onboarding-prompt" role="region" aria-labelledby="push-onboarding-title" hidden style="margin:0 0 20px;padding:17px 18px;border:2px solid #b9c9e6;border-radius:12px;background:#f2f7ff;color:#0b2a6b">
+    <p class="dashboard-eyebrow" style="margin:0 0 4px">Stay in the loop</p>
+    <h2 id="push-onboarding-title" style="margin:0 0 7px">Turn on browser alerts</h2>
+    <p id="push-onboarding-copy" style="margin:0 0 12px;line-height:1.55">Get notified about new collector messages, offers, and community activity even when you are away from PokePrizePool. You choose whether to allow notifications.</p>
+    <div class="dashboard-actions"><button id="push-onboarding-enable" class="btn btn--primary" type="button">Enable browser alerts</button><button id="push-onboarding-dismiss" class="btn" type="button">Maybe later</button></div>
+  </div>
   <div class="dashboard-grid">
     <article class="dashboard-card">
       <p class="dashboard-eyebrow">Profile</p>
@@ -746,6 +752,22 @@
     const subscribed=!!p.browser_push_enabled&&('Notification'in window)&&Notification.permission==='granted';
     $('settings-alert-push').textContent=subscribed?'Disable browser alerts':'Enable browser alerts';
     $('settings-push-status').textContent=subscribed?'Browser push notifications are enabled on this device.':'Browser push notifications are not enabled on this device.';
+    const prompt=$('push-onboarding-prompt');
+    const enable=$('push-onboarding-enable');
+    const copy=$('push-onboarding-copy');
+    let dismissed=false;
+    try{dismissed=sessionStorage.getItem('ppp-push-onboarding-dismissed')==='1';}catch(_){}
+    const supported=('serviceWorker'in navigator)&&('PushManager'in window)&&('Notification'in window);
+    if(prompt){
+     prompt.hidden=subscribed||dismissed||!supported||!alertState.vapid_public_key;
+     if(Notification.permission==='denied'){
+      copy.textContent='Your browser is currently blocking notifications for PokePrizePool. Allow notifications in your browser’s site settings, then return here to enable alerts.';
+      enable.disabled=true;enable.textContent='Blocked by browser settings';
+     }else{
+      copy.textContent='Get notified about new collector messages, offers, and community activity even when you are away from PokePrizePool. You choose whether to allow notifications.';
+      enable.disabled=false;enable.textContent='Enable browser alerts';
+     }
+    }
    }
    async function loadAlertSettings(){
     try{alertState=await alertApi();renderAlertSettings();$('settings-alert-status').textContent='Alert preferences loaded.';}
@@ -783,7 +805,15 @@
       $('settings-push-status').textContent='Browser alerts enabled on this device.';
      }
      await loadAlertSettings();
-    }catch(error){$('settings-push-status').textContent=error.message;}finally{button.disabled=false;}
+    }catch(error){$('settings-push-status').textContent=error.message;renderAlertSettings();}finally{button.disabled=false;}
+   });
+   $('push-onboarding-enable').addEventListener('click',()=>{
+    // Keep the browser permission request attached to a direct user click by reusing the existing push setup flow.
+    $('settings-alert-push').click();
+   });
+   $('push-onboarding-dismiss').addEventListener('click',()=>{
+    try{sessionStorage.setItem('ppp-push-onboarding-dismissed','1');}catch(_){}
+    $('push-onboarding-prompt').hidden=true;
    });
    loadAlertSettings();
   })();
