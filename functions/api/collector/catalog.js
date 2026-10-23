@@ -82,7 +82,7 @@ export async function onRequestGet({ request, env }) {
       });
     }
 
-    const query = (url.searchParams.get('q') || '').trim().slice(0, 80);
+    const query = (url.searchParams.get('q') || '').trim().slice(0, 80).replace(/[%_]/g, '');
     if (query.length < 2) return json({ ok: true, products: [], source_timestamp: state?.source_timestamp || null });
 
     if (!state?.last_success_at && !activeTimestamps.length) {
@@ -109,44 +109,48 @@ export async function onRequestGet({ request, env }) {
     }
     binds.push(limit);
 
-    const rows = await env.DB.prepare(`
-      SELECT
-        p.product_id, p.name, p.clean_name, p.image_url, p.product_url,
-        p.product_type, p.card_number, p.rarity, p.group_id,
-        g.name AS set_name, g.abbreviation AS set_abbreviation,
-        p.market_price, p.market_price_subtype, p.last_seen_sync AS price_sync
-      FROM (
-        SELECT p.*
-        FROM tcgcsv_products p
-        WHERE p.category_id = 3
-          AND p.last_seen_sync IN (${timestampPlaceholders})
-          AND (
-            instr(lower(p.name), lower(?)) > 0
-            OR instr(lower(COALESCE(p.clean_name, '')), lower(?)) > 0
-            OR instr(lower(COALESCE(p.card_number, '')), lower(?)) > 0
-            OR lower(p.name) LIKE lower(?)
-          )
-          ${typeClause}
-          ${setClause}
-        ORDER BY
-          CASE WHEN lower(p.name) = lower(?) THEN 0
-               WHEN instr(lower(p.name), lower(?)) = 1 THEN 1
-               ELSE 2 END,
-          p.name COLLATE NOCASE
-        LIMIT ?
-      ) p
-      LEFT JOIN tcgcsv_groups g ON g.group_id = p.group_id
-      ORDER BY p.name COLLATE NOCASE
-    `).bind(
-      ...activeTimestamps,
-      ...binds.slice(0, 3),
-      likeQuery,
-      ...(requestedType !== 'all' ? [requestedType] : []),
-      ...(groupId !== null ? [groupId] : []),
-      query,
-      query,
-      limit
-    ).all();
+    const searchPattern = query + '%';
+    const runCatalogSearch = async (substringMode) => {
+      const matchClause = substringMode
+        ? "(instr(lower(p.name), lower(?)) > 0 " +
+          "OR instr(lower(COALESCE(p.clean_name, '')), lower(?)) > 0 " +
+          "OR instr(lower(COALESCE(p.card_number, '')), lower(?)) > 0 " +
+          "OR lower(p.name) LIKE lower(?))"
+        : "(p.name LIKE ? OR p.card_number LIKE ?)";
+
+      const matchBinds = substringMode
+        ? [query, query, query, likeQuery]
+        : [searchPattern, searchPattern];
+
+      return env.DB.prepare(
+        "SELECT p.product_id, p.name, p.clean_name, p.image_url, p.product_url, " +
+        "p.product_type, p.card_number, p.rarity, p.group_id, " +
+        "g.name AS set_name, g.abbreviation AS set_abbreviation, " +
+        "p.market_price, p.market_price_subtype, p.last_seen_sync AS price_sync " +
+        "FROM (SELECT p.* FROM tcgcsv_products p " +
+        "WHERE p.category_id = 3 AND p.last_seen_sync IN (\${timestampPlaceholders}) " +
+        "AND " + matchClause + " " + typeClause + " " + setClause + " " +
+        "ORDER BY CASE WHEN lower(p.name) = lower(?) THEN 0 " +
+        "WHEN instr(lower(p.name), lower(?)) = 1 THEN 1 ELSE 2 END, " +
+        "p.name COLLATE NOCASE LIMIT ?) p " +
+        "LEFT JOIN tcgcsv_groups g ON g.group_id = p.group_id " +
+        "ORDER BY p.name COLLATE NOCASE"
+      ).bind(
+        ...activeTimestamps,
+        ...matchBinds,
+        ...(requestedType !== 'all' ? [requestedType] : []),
+        ...(groupId !== null ? [groupId] : []),
+        query,
+        query,
+        limit
+      ).all();
+    };
+
+    let rows = await runCatalogSearch(false);
+    // Preserve substring convenience without paying for a full scan on every normal query.
+    if (!(rows.results || []).length && query.length >= 4) {
+      rows = await runCatalogSearch(true);
+    }
 
     const byId = new Map();
     for (const row of rows.results || []) {
