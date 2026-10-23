@@ -291,7 +291,7 @@ async function load(){
 }
 function eventShareUrl(){
  var slug=String(record&&record.slug||'').trim();
- return slug?new URL('/'+slug,location.origin).href:new URL('/event.html?id='+encodeURIComponent(record.id),location.origin).href;
+ return slug&&record.status==='published'&&!previewActive?new URL('/'+slug,location.origin).href:new URL('/event.html?id='+encodeURIComponent(record.id),location.origin).href;
 }
 function renderEventShareActions(){
  var container=$('event-share-actions');if(!container||!record)return;
