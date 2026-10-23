@@ -97,7 +97,7 @@ function clearCampaign(){
 function buildFromInquiry(id){
  const item=inquiries.find(value=>Number(value.id)===id);if(!item)return;
  clearCampaign();$('campaign-inquiry-id').value=String(item.id);$('campaign-advertiser').value=item.company_name||'';$('campaign-headline').value=item.company_name||'';
- $('campaign-body').value=item.campaign_message||'';$('campaign-slot').value=item.desired_slot||'home-top';$('campaign-destination').value=item.destination_url||item.website_url||'';$('campaign-image').value=item.creative_url||'';
+ $('campaign-body').value=item.campaign_message||'';$('campaign-slot').value=item.desired_slot||'home-top';$('campaign-destination').value=item.destination_url||item.website_url||'';$('campaign-image').value=item.creative_url||'';$('campaign-image-preview').src=item.creative_url||'';$('campaign-image-preview').hidden=!item.creative_url;
  const today=new Date(),start=item.start_date?new Date(item.start_date+'T00:00:00Z'):today,end=item.end_date?new Date(item.end_date+'T23:59:00Z'):new Date(Date.now()+7*86400000);
  $('campaign-starts').value=start.toISOString().slice(0,16);$('campaign-ends').value=end.toISOString().slice(0,16);
  $('campaign-form-title').textContent='Create campaign from inquiry #'+item.id;$('campaign-editor').scrollIntoView({behavior:'smooth',block:'start'});
