@@ -619,7 +619,7 @@ async function searchCollectors(query){
    const payload={username:profile.username,bio:profile.bio||'',avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1,buddy_pokemon:$('buddy-pokemon-select').value};
    const response=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await response.json();
    if(!response.ok||!data.ok)throw new Error(data.error==='invalid_buddy_pokemon'?'Choose one of the available Buddy Pokémon.':'Could not save your Buddy Pokémon. Please try again.');
-   profile={...profile,...data.profile};showProfile(profile,profile.display_name||profile.username);setStatus('buddy-pokemon-status',profile.buddy_name+' is now your Buddy Pokémon.','success');
+   const currentDisplayName=$('display-name').textContent;profile={...profile,...data.profile};showProfile(profile,currentDisplayName);setStatus('buddy-pokemon-status',profile.buddy_name+' is now your Buddy Pokémon.','success');
   }catch(error){setStatus('buddy-pokemon-status',error.message||'Could not save your Buddy Pokémon.');}
   finally{button.disabled=false;}
  });
