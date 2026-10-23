@@ -39,9 +39,9 @@ var css=`
 @media(min-width:1280px){
  .ppp-ad-slot--rail{display:flex}
  body[data-view="home"] .wrap{max-width:min(1180px,calc(100% - 480px))}
- body .chat-wrap{width:min(1260px,calc(100% - 440px))}
- body .events-main{width:min(1180px,calc(100% - 440px))}
- body[data-page="giveaways"] .wrap{max-width:min(1180px,calc(100% - 440px))}
+ body .chat-wrap{width:min(1260px,calc(100% - 480px))}
+ body .events-main{width:min(1180px,calc(100% - 480px))}
+ body[data-page="giveaways"] .wrap{max-width:min(1180px,calc(100% - 480px))}
 }
 @media(max-width:1279px){.ppp-ad-slot--rail{display:none!important}}
 @media(max-width:600px){.ppp-ad-slot--inline{min-height:64px;margin:8px auto 12px}.ppp-ad-slot--inline .ppp-ad-inner{gap:8px;padding:9px 8px}.ppp-ad-slot--top{min-height:70px;margin:12px auto 18px}.ppp-ad-slot--top .ppp-ad-inner{gap:9px;padding:21px 9px 8px}.ppp-ad-slot--top .ppp-ad-art-wrap{width:70px;max-width:24%}.ppp-ad-slot--top .ppp-ad-art{max-height:46px}.ppp-ad-slot--top .ppp-ad-headline{font-size:14px}.ppp-ad-slot--top .ppp-ad-description{font-size:10px}.ppp-ad-slot--top .ppp-ad-cta{min-height:30px;padding:6px 7px;font-size:10px}.ppp-ad-slot--top .ppp-ad-label{font-size:8px}}
