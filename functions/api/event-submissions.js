@@ -51,7 +51,20 @@ async function requireAdmin(request, env) {
   return { account };
 }
 async function ensureTables(env) {
-  await env.DB.prepare('CREATE TABLE IF NOT EXISTS poke_report_events (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT NOT NULL DEFAULT \'\', event_type TEXT NOT NULL DEFAULT \'show\', event_date TEXT NOT NULL, start_time TEXT NOT NULL DEFAULT \'\', end_time TEXT NOT NULL DEFAULT \'\', venue TEXT NOT NULL DEFAULT \'\', address TEXT NOT NULL DEFAULT \'\', city TEXT NOT NULL DEFAULT \'\', state TEXT NOT NULL DEFAULT \'\', state_name TEXT NOT NULL DEFAULT \'\', zip TEXT NOT NULL DEFAULT \'\', url TEXT NOT NULL DEFAULT \'\', price TEXT NOT NULL DEFAULT \'\', image_url TEXT NOT NULL DEFAULT \'\', badge TEXT NOT NULL DEFAULT \'\', status TEXT NOT NULL DEFAULT \'draft\' CHECK(status IN (\'draft\',\'published\')), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)').run();
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS poke_report_events (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT NOT NULL DEFAULT \'\', event_type TEXT NOT NULL DEFAULT \'show\', event_date TEXT NOT NULL, start_time TEXT NOT NULL DEFAULT \'\', end_time TEXT NOT NULL DEFAULT \'\', venue TEXT NOT NULL DEFAULT \'\', address TEXT NOT NULL DEFAULT \'\', city TEXT NOT NULL DEFAULT \'\', state TEXT NOT NULL DEFAULT \'\', state_name TEXT NOT NULL DEFAULT \'\', zip TEXT NOT NULL DEFAULT \'\', url TEXT NOT NULL DEFAULT \'\', price TEXT NOT NULL DEFAULT \'\', image_url TEXT NOT NULL DEFAULT \'\', badge TEXT NOT NULL DEFAULT \'\', status TEXT NOT NULL DEFAULT \'draft\' CHECK(status IN (\'draft\',\'published\')), details TEXT NOT NULL DEFAULT \'\', media_json TEXT NOT NULL DEFAULT \'[]\', owner_account_id INTEGER, source_submission_id INTEGER, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)').run();
+  const eventColumns = await env.DB.prepare('PRAGMA table_info(poke_report_events)').all();
+  const eventNames = new Set((eventColumns.results || []).map(column => column.name));
+  for (const [name, sql] of [
+    ['details', "ALTER TABLE poke_report_events ADD COLUMN details TEXT NOT NULL DEFAULT ''"],
+    ['media_json', "ALTER TABLE poke_report_events ADD COLUMN media_json TEXT NOT NULL DEFAULT '[]'"],
+    ['owner_account_id', 'ALTER TABLE poke_report_events ADD COLUMN owner_account_id INTEGER'],
+    ['source_submission_id', 'ALTER TABLE poke_report_events ADD COLUMN source_submission_id INTEGER']
+  ]) {
+    if (!eventNames.has(name)) {
+      try { await env.DB.prepare(sql).run(); }
+      catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+    }
+  }
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_report_events_public_date ON poke_report_events(status, event_date)').run();
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS poke_prize_event_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, submitted_by_account_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT NOT NULL DEFAULT \'\', event_type TEXT NOT NULL DEFAULT \'show\', event_date TEXT NOT NULL, start_time TEXT NOT NULL DEFAULT \'\', end_time TEXT NOT NULL DEFAULT \'\', venue TEXT NOT NULL DEFAULT \'\', address TEXT NOT NULL DEFAULT \'\', city TEXT NOT NULL DEFAULT \'\', state TEXT NOT NULL DEFAULT \'\', state_name TEXT NOT NULL DEFAULT \'\', zip TEXT NOT NULL DEFAULT \'\', url TEXT NOT NULL DEFAULT \'\', price TEXT NOT NULL DEFAULT \'\', recurrence_frequency TEXT NOT NULL DEFAULT \'once\', recurrence_until TEXT NOT NULL DEFAULT \'\', status TEXT NOT NULL DEFAULT \'pending\' CHECK(status IN (\'pending\',\'approved\',\'rejected\')), review_note TEXT NOT NULL DEFAULT \'\', approved_event_id INTEGER, reviewed_by_account_id INTEGER, reviewed_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)').run();
   const submissionColumns = await env.DB.prepare('PRAGMA table_info(poke_prize_event_submissions)').all();
@@ -64,6 +77,7 @@ async function ensureTables(env) {
     try { await env.DB.prepare("ALTER TABLE poke_prize_event_submissions ADD COLUMN recurrence_until TEXT NOT NULL DEFAULT ''").run(); }
     catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
   }
+  await env.DB.prepare("UPDATE poke_report_events SET owner_account_id = (SELECT submitted_by_account_id FROM poke_prize_event_submissions WHERE approved_event_id = poke_report_events.id LIMIT 1), source_submission_id = (SELECT id FROM poke_prize_event_submissions WHERE approved_event_id = poke_report_events.id LIMIT 1) WHERE owner_account_id IS NULL AND EXISTS (SELECT 1 FROM poke_prize_event_submissions WHERE approved_event_id = poke_report_events.id)").run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_event_submissions_status ON poke_prize_event_submissions(status, created_at DESC)').run();
 }
 const TYPES = new Set(['show', 'trade', 'tournament', 'store', 'restock', 'release']);
@@ -164,8 +178,8 @@ export async function onRequestPost({ request, env }) {
       if (!dates) return json({ ok: false, error: 'recurrence_limit_exceeded', message: 'This recurring event exceeds the allowed number of dates. Ask the submitter to shorten the series.' }, 409);
       const statements = dates.map((eventDate, index) => {
         const badge = frequency === 'once' ? 'Community submission' : (frequency.charAt(0).toUpperCase() + frequency.slice(1)) + ' series ' + (index + 1) + '/' + dates.length;
-        return env.DB.prepare("INSERT INTO poke_report_events (title,description,event_type,event_date,start_time,end_time,venue,address,city,state,state_name,zip,url,price,image_url,badge,status) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'published' WHERE EXISTS (SELECT 1 FROM poke_prize_event_submissions WHERE id = ? AND status = 'pending')")
-          .bind(submission.title,submission.description,submission.event_type,eventDate,submission.start_time,submission.end_time,submission.venue,submission.address,submission.city,submission.state,submission.state_name,submission.zip,submission.url,submission.price,'',badge,id);
+        return env.DB.prepare("INSERT INTO poke_report_events (title,description,event_type,event_date,start_time,end_time,venue,address,city,state,state_name,zip,url,price,image_url,badge,status,details,media_json,owner_account_id,source_submission_id) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'published',?,'[]',?,? WHERE EXISTS (SELECT 1 FROM poke_prize_event_submissions WHERE id = ? AND status = 'pending')")
+          .bind(submission.title,submission.description,submission.event_type,eventDate,submission.start_time,submission.end_time,submission.venue,submission.address,submission.city,submission.state,submission.state_name,submission.zip,submission.url,submission.price,'',badge,'',submission.submitted_by_account_id,id,id);
       });
       const firstBadge = frequency === 'once' ? 'Community submission' : (frequency.charAt(0).toUpperCase() + frequency.slice(1)) + ' series 1/' + dates.length;
       statements.push(env.DB.prepare("UPDATE poke_prize_event_submissions SET status = 'approved', approved_event_id = (SELECT id FROM poke_report_events WHERE title = ? AND event_date = ? AND badge = ? AND status = 'published' ORDER BY id DESC LIMIT 1), reviewed_by_account_id = ?, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'")
