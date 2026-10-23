@@ -216,7 +216,6 @@ export async function onRequestPost({ request, env }) {
       try {
         providerStream = await streamApi(env, "POST", "/live_inputs", {
           meta: { name: title, app: "PokePrizePool Ripz", product_name: productName, account_id: String(account.id) },
-          preferLowLatency: true,
           recording: { mode: "off", requireSignedURLs: false }
         });
       } catch (_) {
