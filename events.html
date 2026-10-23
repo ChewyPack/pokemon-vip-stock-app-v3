@@ -797,22 +797,27 @@
 
         card.appendChild(details);
 
-        if (event.url) {
-          var footer = make('div', {
-            class: 'event-card-footer'
-          });
+        var footer = make('div', {
+          class: 'event-card-footer'
+        });
 
+        var detailLink = make('a', {
+          href: '/event.html?id=' + encodeURIComponent(event.id)
+        });
+        detailLink.textContent = 'View event details, photos & videos →';
+        footer.appendChild(detailLink);
+
+        if (event.url) {
           var anchor = make('a', {
             href: event.url,
             target: '_blank',
             rel: 'noopener noreferrer'
           });
-
           anchor.textContent = 'Organizer / official details ↗';
           footer.appendChild(anchor);
-          card.appendChild(footer);
         }
 
+        card.appendChild(footer);
         return card;
       }
 
