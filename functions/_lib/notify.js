@@ -54,7 +54,8 @@ export async function notifyReport(env, report) {
         [
           formatPrice(report.shelfPrice) ? 'Shelf price: ' + formatPrice(report.shelfPrice) : '',
           formatPrice(report.msrp) ? 'MSRP: ' + formatPrice(report.msrp) : ''
-        ].filter(Boolean).join(' · ')
+        ].filter(Boolean).join(' · '),
+        attribution
       ].filter(Boolean).join(' | ');
   const url = '/notifications.html';
   let inAppCreated = 0, pushAttempted = 0, pushDelivered = 0, pushFailed = 0;
