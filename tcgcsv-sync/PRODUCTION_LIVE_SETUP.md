@@ -4,32 +4,35 @@ This runbook deploys the TCGCSV importer directly against the **production D1 da
 
 ## Before running the full import
 
-Cloudflare Workers Free limits D1 to 100,000 rows written per day. A full catalog import can exceed that. Upgrade this Cloudflare account to **Workers Paid** first if you need the import to finish without waiting for daily resets. Cloudflare currently includes 50 million D1 row writes per month on Workers Paid; writes above that are $1 per million, and usage is billable. The plan has a $5/month minimum. Check current usage in Cloudflare Billing before starting.
+The Workers Free plan allows 100,000 D1 rows written per UTC day across the account. This compact importer writes one product row with a single preferred market price, avoids duplicate staging-table copies and price-history snapshots, and pauses at 50,000 measured importer row writes for the day to reserve headroom for the live site. It resumes automatically after midnight UTC. The initial import may take multiple days. This is a safety budget, not a guarantee against unusually high write activity from the website or another Worker; pause the old staging sync first. Workers Paid is optional if you later decide you need the import completed faster.
 
-## 1. Apply the required production schema patch
+## 1. Pause the old staging importer
+
+In Cloudflare Dashboard, open **Workers & Pages → pokeprizepool-tcgcsv-sync-staging → Settings → Triggers** and disable/remove its every-minute Cron Trigger while the live import runs. Its old full importer can otherwise consume the same account-wide Free D1 write allowance. Do not delete the staging database or its saved progress.
+
+## 2. Apply the required production schema patch
 
 From the repository root, with Wrangler authenticated:
 
-```powershell
+```cmd
 npx wrangler login
-npx wrangler d1 execute pokemon-vip-members --remote --file=production-migrations/007_tcgcsv_price_history_market_price.sql
+npx wrangler d1 execute pokemon-vip-members --remote --file=production-migrations/008_compact_tcgcsv_catalog.sql
 ```
 
-This adds the market-price field to price history that the current production baseline schema is missing. Do not run this command against the staging database.
+This adds compact current-price fields to products and daily resume-budget fields to the progress cursor. It does not import products or delete catalog data. Run it only against the production database name shown in the command.
 
-## 2. Create the production Worker configuration
+## 3. Create the production Worker configuration
 
 In the repository root:
 
-```powershell
+```cmd
 npx wrangler d1 list
 copy tcgcsv-sync\wrangler.production.example.toml tcgcsv-sync\wrangler.production.toml
-notepad tcgcsv-sync\wrangler.production.toml
 ```
 
-In Notepad, replace `REPLACE_WITH_PRODUCTION_D1_ID_FROM_WRANGLER_D1_LIST` with the ID beside the exact database name `pokemon-vip-members`. Keep `database_name = "pokemon-vip-members"`. Do not use the ID for `pokemon-vip-members-staging`. Save the file.
+The template is prefilled with the production D1 ID you verified: `4427e96c-d1f1-4f42-b863-94e303a4b7d9`. It names `pokemon-vip-members` explicitly. Do not replace it with the staging database ID. The real deployment config is ignored by Git so its settings are not accidentally committed.
 
-## 3. Deploy the production Worker and set its secret
+## 4. Deploy the production Worker and set its secret
 
 ```powershell
 cd tcgcsv-sync
@@ -39,22 +42,24 @@ npx wrangler secret put SYNC_SECRET --config wrangler.production.toml
 
 When prompted, enter a new long random secret and save it somewhere secure. Do not commit it or send it in chat. Keep this production secret separate from the staging Worker's secret.
 
-## 4. Start the first live sync immediately
+## 5. Start the first live sync immediately
 
-The deploy output provides the production Worker URL. In PowerShell, use that exact URL and the secret you just saved:
+The deploy output provides the production Worker URL. If the window is Command Prompt, type `powershell` and press Enter first. Then paste these commands, using the exact Worker URL from deploy output:
 
 ```powershell
-$workerUrl = Read-Host "Paste the production Worker URL from deploy output"
-$workerUrl = $workerUrl.TrimEnd("/")
-$syncSecret = Read-Host "Enter the saved production SYNC_SECRET"
+$workerUrl = (Read-Host "Paste the production Worker URL").TrimEnd("/")
+$secureSecret = Read-Host "Enter the saved production SYNC_SECRET" -AsSecureString
+$secretPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
+$syncSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($secretPtr)
 $headers = @{ Authorization = "Bearer $syncSecret" }
 Invoke-RestMethod -Method Post -Uri "$workerUrl/sync" -Headers $headers
 Invoke-RestMethod -Method Get -Uri "$workerUrl/health"
-Remove-Variable syncSecret, headers
+[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($secretPtr)
+Remove-Variable secureSecret, secretPtr, syncSecret, headers
 ```
 
 The POST should return an accepted/started sync (or report that the source is already up to date). The health endpoint reports progress. Cloudflare's per-minute trigger resumes a saved import in the background, even after your PC sleeps or shuts down. The daily source-marker check happens at 21:00 UTC and does not re-fetch the marker every minute.
 
 ## What becomes live
 
-The production catalog API already reads `tcgcsv_groups`, `tcgcsv_products`, `tcgcsv_prices`, and `tcgcsv_price_history` from the production `DB` binding. Once the Worker successfully publishes the first catalog, collector card/sealed catalog search, TCGplayer market-price estimates, and saved price history can return data. Market Intelligence's prewritten mover rankings are a separate page and do not become live automatically from this sync.
+The production catalog API reads the current product name, card number, set, product type and single preferred market price from `tcgcsv_products`. The Worker chooses the first available market price by preference: Normal, Holofoil, Reverse Holofoil, then other variants. Historical price snapshots are intentionally skipped to keep the initial import small. Once the Worker reports `status: "success"`, collector catalog searches and current market-price estimates can return data. Market Intelligence's prewritten mover rankings are a separate page and do not become live automatically from this sync.
