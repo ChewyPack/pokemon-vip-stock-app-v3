@@ -13,14 +13,15 @@ export async function getActiveSubscriberCount(env) {
 
 export async function activateGoalGiveaways(env) {
   const activeSubscribers = await getActiveSubscriberCount(env);
+  const activatedAt = new Date().toISOString();
   await env.DB.prepare(
     "UPDATE poke_prize_giveaways " +
-    "SET goal_started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP " +
+    "SET goal_started_at = ?, updated_at = CURRENT_TIMESTAMP " +
     "WHERE status = 'published' " +
     "AND lower(COALESCE(start_mode, 'date')) = 'goal' " +
     "AND start_goal IS NOT NULL " +
     "AND CAST(start_goal AS INTEGER) <= ? " +
     "AND goal_started_at IS NULL"
-  ).bind(activeSubscribers).run();
+  ).bind(activatedAt, activeSubscribers).run();
   return activeSubscribers;
 }
