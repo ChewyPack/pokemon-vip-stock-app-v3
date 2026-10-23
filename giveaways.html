@@ -109,6 +109,40 @@ dialog[open]{animation:pop .25s ease}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media(max-width:820px){.hero .wrap,.feat,.vip-g,.m-grid{grid-template-columns:1fr}.stage{max-width:300px}.feat .img,.m-img{min-height:220px}.ben{grid-template-columns:1fr}.stat{border-right:0;border-bottom:1px solid var(--line)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Community subscriber-to-prize meter */
+.gmeter{padding:28px 0 0}
+.gmeter-card{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(270px,.92fr);gap:26px;padding:clamp(20px,3.5vw,32px);border:1px solid rgba(45,168,255,.3);border-radius:20px;background:radial-gradient(650px 280px at 0 0,rgba(45,168,255,.12),transparent 70%),radial-gradient(650px 280px at 100% 0,rgba(155,92,255,.13),transparent 70%),var(--bg2);box-shadow:0 18px 50px rgba(0,0,0,.16)}
+.gmeter h2{margin:7px 0 10px;font-size:clamp(1.9rem,4vw,2.7rem)}
+.gmeter-lead{max-width:62ch;color:var(--mut);line-height:1.6}
+.gmeter-count-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:15px;align-items:center;margin:20px 0 16px}
+.gmeter-count{display:grid;gap:2px;padding:13px;border:1px solid rgba(45,168,255,.3);border-radius:12px;background:rgba(0,0,0,.18)}
+.gmeter-count strong{font:400 2.4rem var(--disp);color:var(--tx);line-height:1.1}
+.gmeter-count span,.gmeter-kicker{color:var(--mut);font-size:.7rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+.gmeter-next{display:grid;gap:4px;min-width:0}
+.gmeter-next strong{font-size:1.08rem;line-height:1.3;overflow-wrap:anywhere}
+.gmeter-next small{color:var(--mut);line-height:1.4}
+.gmeter-track{height:14px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;border:1px solid var(--line)}
+.gmeter-fill{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--blue),var(--pur),var(--gold));transition:width .7s ease}
+.gmeter-progress-row{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-size:.78rem;color:var(--mut);flex-wrap:wrap}
+.gmeter-progress-row strong{color:var(--tx)}
+.gmeter-status{min-height:1.4em;margin-top:12px;font-size:.78rem;color:var(--mut);line-height:1.45}
+.gmeter-tiers{display:grid;grid-template-columns:1fr;gap:9px;align-content:center}
+.gmeter-tier{display:grid;grid-template-columns:68px minmax(0,1fr);gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:13px;background:rgba(0,0,0,.15);min-width:0}
+.gmeter-tier-count{display:grid;place-items:center;align-content:center;min-height:58px;border-radius:10px;background:rgba(255,255,255,.05);color:var(--tx);font:400 1.6rem/1 var(--disp);text-align:center}
+.gmeter-tier-copy{display:grid;gap:4px;min-width:0}
+.gmeter-tier-copy strong{font-size:.9rem;line-height:1.3}
+.gmeter-tier-copy small{font-size:.74rem;color:var(--mut);line-height:1.35}
+.gmeter-tier-status{font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;font-weight:900;color:var(--mut)}
+.gmeter-tier.is-unlocked{border-color:rgba(61,220,151,.4);background:rgba(61,220,151,.06)}
+.gmeter-tier.is-unlocked .gmeter-tier-status{color:var(--ok)}
+.gmeter-tier.is-next{border-color:rgba(232,184,74,.62);box-shadow:inset 3px 0 0 var(--gold);background:rgba(232,184,74,.07)}
+.gmeter-tier.is-next .gmeter-tier-status{color:var(--gold)}
+.gmeter-footnote{grid-column:1/-1;border-top:1px solid var(--line);padding-top:13px;color:var(--mut);font-size:.76rem;line-height:1.5}
+@media(max-width:820px){.gmeter-card{grid-template-columns:1fr}.gmeter-tiers{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}.gmeter-tier{grid-template-columns:1fr;align-content:start;gap:8px}.gmeter-tier-count{min-height:48px}.gmeter-footnote{grid-column:1/-1}}
+@media(max-width:520px){.gmeter{padding-top:18px}.gmeter-count-row{grid-template-columns:1fr}.gmeter-count{grid-template-columns:auto 1fr;align-items:center;gap:10px}.gmeter-tiers{grid-template-columns:1fr}.gmeter-tier{grid-template-columns:68px minmax(0,1fr)}.gmeter-tier-count{min-height:58px}.gmeter-progress-row{font-size:.74rem}}
+@media(prefers-reduced-motion:reduce){.gmeter-fill{transition:none}}
+
 </style>
   <link rel="stylesheet" href="/css/styles.css">
 <link rel="stylesheet" href="/css/ad-placements.css">
@@ -134,6 +168,43 @@ dialog[open]{animation:pop .25s ease}
     <div class="stage" aria-hidden="true"><div class="slab" id="heroSlab"><div class="ph">Featured prize</div></div></div>
   </div>
 </header>
+
+
+<section class="gmeter" id="giveaway-meter" aria-labelledby="gmeter-title">
+  <div class="wrap">
+    <div class="gmeter-card">
+      <div>
+        <p class="eyebrow">Community Goal</p>
+        <h2 id="gmeter-title">The next giveaway grows with us</h2>
+        <p class="gmeter-lead">The more active VIP subscribers in our community, the bigger we can make the next giveaway. Watch the meter move toward the next prize milestone.</p>
+        <div class="gmeter-count-row">
+          <div class="gmeter-count"><strong id="gmeter-subs">—</strong><span>Active VIP subs</span></div>
+          <div class="gmeter-next"><span class="gmeter-kicker">Next unlock</span><strong id="gmeter-next-title">Checking the community total…</strong><small id="gmeter-next-copy">Milestone progress is loading.</small></div>
+        </div>
+        <div class="gmeter-track" id="gmeter-track" role="progressbar" aria-label="Progress toward the next giveaway milestone" aria-valuemin="0" aria-valuemax="50" aria-valuenow="0" aria-valuetext="Loading subscriber progress">
+          <span class="gmeter-fill" id="gmeter-fill"></span>
+        </div>
+        <div class="gmeter-progress-row"><span id="gmeter-progress-copy">Loading progress…</span><strong id="gmeter-percent">—</strong></div>
+        <p class="gmeter-status" id="gmeter-status" role="status" aria-live="polite">Subscriber total refreshes periodically.</p>
+      </div>
+      <div class="gmeter-tiers" id="gmeter-tiers" aria-label="Giveaway prize milestones">
+        <article class="gmeter-tier" data-milestone="50">
+          <span class="gmeter-tier-count">50</span>
+          <div class="gmeter-tier-copy"><span class="gmeter-tier-status">Milestone</span><strong>30th Anniversary ETB Giveaway</strong><small>First community prize milestone</small></div>
+        </article>
+        <article class="gmeter-tier" data-milestone="100">
+          <span class="gmeter-tier-count">100</span>
+          <div class="gmeter-tier-copy"><span class="gmeter-tier-status">Milestone</span><strong>ETB + bonus collector prizes</strong><small>A bigger prize mix for the community</small></div>
+        </article>
+        <article class="gmeter-tier" data-milestone="500">
+          <span class="gmeter-tier-count">500</span>
+          <div class="gmeter-tier-copy"><span class="gmeter-tier-status">Milestone</span><strong>$1,500 cash + prizes</strong><small>The major community unlock</small></div>
+        </article>
+      </div>
+      <p class="gmeter-footnote">Subscriber milestones determine the announced prize tier, not anyone’s odds of winning. Each giveaway’s eligibility, entry methods, and official rules are listed separately.</p>
+    </div>
+  </div>
+</section>
 
 <div class="strip" id="strip" hidden><div class="wrap" id="stats"></div></div>
 
@@ -259,6 +330,65 @@ window.GIVEAWAY_CONFIG = {
 const C = window.GIVEAWAY_CONFIG;
 const $ = (s, el = document) => el.querySelector(s);
 const state = { all: [], enteredIds: new Set(), filter: 'all', q: '', sort: 'end', opener: null, timer: null };
+
+
+const GIVEAWAY_MILESTONES = [
+  { count: 50, title: '30th Anniversary ETB Giveaway' },
+  { count: 100, title: 'ETB + bonus collector prizes' },
+  { count: 500, title: '$1,500 cash + prizes' }
+];
+
+async function loadGiveawayMeter() {
+  const meter = $('#giveaway-meter');
+  if (!meter) return;
+  const status = $('#gmeter-status');
+  try {
+    const data = await getJSON('/api/giveaway-meter');
+    const countValue = Number(data.active_subscribers);
+    if (!data.ok || !Number.isFinite(countValue) || countValue < 0) throw new Error('Invalid meter response.');
+    const count = Math.floor(countValue);
+    $('#gmeter-subs').textContent = count.toLocaleString();
+    const next = GIVEAWAY_MILESTONES.find(item => count < item.count) || null;
+    const previous = GIVEAWAY_MILESTONES.filter(item => count >= item.count).slice(-1)[0] || null;
+    const target = next ? next.count : GIVEAWAY_MILESTONES[GIVEAWAY_MILESTONES.length - 1].count;
+    const percent = next ? Math.min(100, Math.round((count / target) * 100)) : 100;
+    const track = $('#gmeter-track');
+    track.setAttribute('aria-valuemax', String(target));
+    track.setAttribute('aria-valuenow', String(Math.min(count, target)));
+    track.setAttribute('aria-valuetext', next
+      ? count.toLocaleString() + ' of ' + target.toLocaleString() + ' active VIP subscribers toward ' + next.title
+      : 'All announced giveaway milestones unlocked');
+    $('#gmeter-fill').style.width = percent + '%';
+    $('#gmeter-percent').textContent = percent + '%';
+    if (next) {
+      const remaining = Math.max(0, next.count - count);
+      $('#gmeter-next-title').textContent = next.title;
+      $('#gmeter-next-copy').textContent = 'Unlocks at ' + next.count.toLocaleString() + ' active VIP subscribers.';
+      $('#gmeter-progress-copy').textContent = count.toLocaleString() + ' / ' + next.count.toLocaleString() + ' active subs · ' + remaining.toLocaleString() + ' to go';
+    } else {
+      $('#gmeter-next-title').textContent = 'All announced milestones unlocked!';
+      $('#gmeter-next-copy').textContent = 'The community has reached the current top tier.';
+      $('#gmeter-progress-copy').textContent = count.toLocaleString() + ' active subs · top tier reached';
+    }
+    document.querySelectorAll('[data-milestone]').forEach(card => {
+      const milestone = Number(card.dataset.milestone);
+      const unlocked = count >= milestone;
+      const isNext = !!next && next.count === milestone;
+      card.classList.toggle('is-unlocked', unlocked);
+      card.classList.toggle('is-next', isNext);
+      const label = card.querySelector('.gmeter-tier-status');
+      label.textContent = unlocked ? 'Unlocked' : isNext ? 'Next goal' : 'Coming up';
+    });
+    status.textContent = 'Active monthly/yearly VIP subscriptions · count refreshes about once per minute.';
+  } catch (error) {
+    $('#gmeter-subs').textContent = '—';
+    $('#gmeter-next-title').textContent = 'Community milestone meter';
+    $('#gmeter-next-copy').textContent = 'The current subscriber count is temporarily unavailable.';
+    $('#gmeter-progress-copy').textContent = 'Progress will appear once the count loads.';
+    $('#gmeter-percent').textContent = '—';
+    status.textContent = 'Could not load the subscriber total. Refresh this page to try again.';
+  }
+}
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeUrl = u => /^(https?:\/\/|\/)/i.test(u || '') ? u : '';
@@ -463,6 +593,8 @@ $('#sort').onchange = e => { state.sort = e.target.value; renderGrid(); };
 
 setInterval(tickCountdowns, 1000);
 load();
+loadGiveawayMeter();
+setInterval(loadGiveawayMeter, 60000);
 </script>
 <script src="/js/ui/site-nav.js?v=20261022-inbox-dropdown-counts"></script>
 <aside class="ppp-ad-slot ppp-ad-slot--rail ppp-ad-slot--left" data-ad-slot="giveaways-left" aria-label="Advertisement placement: giveaways left">Ad placement · giveaways · left</aside>
