@@ -68,11 +68,16 @@ export async function ensureEventSlugSchema(env) {
   }
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_poke_report_events_slug ON poke_report_events(slug)").run();
 
-  const rows = await env.DB.prepare("SELECT id, title, slug FROM poke_report_events ORDER BY id ASC").all();
-  const allRows = rows.results || [];
-  const used = new Set(allRows.map(row => normalizeEventSlug(row.slug)).filter(Boolean));
-  for (const row of allRows) {
-    if (normalizeEventSlug(row.slug)) continue;
+  const pending = await env.DB.prepare(
+    "SELECT id, title, slug FROM poke_report_events WHERE slug IS NULL OR slug = '' ORDER BY id ASC"
+  ).all();
+  const pendingRows = pending.results || [];
+  if (!pendingRows.length) return true;
+  const populated = await env.DB.prepare(
+    "SELECT slug FROM poke_report_events WHERE slug IS NOT NULL AND slug <> ''"
+  ).all();
+  const used = new Set((populated.results || []).map(row => normalizeEventSlug(row.slug)).filter(Boolean));
+  for (const row of pendingRows) {
     const base = eventSlugFromTitle(row.title) || "event" + String(row.id);
     const slug = await availableSlug(env, base, Number(row.id), used);
     await env.DB.prepare(
