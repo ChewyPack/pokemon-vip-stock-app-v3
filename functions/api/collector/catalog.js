@@ -144,7 +144,7 @@ export async function onRequestGet({ request, env }) {
       ...(requestedType !== 'all' ? [requestedType] : []),
       ...(groupId !== null ? [groupId] : []),
       query,
-      likeQuery,
+      query,
       limit
     ).all();
 
@@ -172,28 +172,7 @@ export async function onRequestGet({ request, env }) {
         };
         byId.set(row.product_id, product);
       }
-      if (row.subtype_name) {
-        const price = {
-          subtype_name: row.subtype_name,
-          low_price: row.low_price === null ? null : Number(row.low_price),
-          mid_price: row.mid_price === null ? null : Number(row.mid_price),
-          high_price: row.high_price === null ? null : Number(row.high_price),
-          market_price: row.market_price === null ? null : Number(row.market_price),
-          direct_low_price: row.direct_low_price === null ? null : Number(row.direct_low_price),
-          price_updated_at: row.price_sync || null
-        };
-        product.prices.push(price);
-        const preferred = String(row.subtype_name).toLowerCase() === 'normal' ? 0 :
-          String(row.subtype_name).toLowerCase() === 'holofoil' ? 1 : 2;
-        const current = product.market_price_subtype === null ? 99 :
-          String(product.market_price_subtype).toLowerCase() === 'normal' ? 0 :
-          String(product.market_price_subtype).toLowerCase() === 'holofoil' ? 1 : 2;
-        if (price.market_price !== null && (product.market_price === null || preferred < current)) {
-          product.market_price = price.market_price;
-          product.market_price_subtype = price.subtype_name;
-          product.price_updated_at = price.price_updated_at;
-        }
-      }
+
     }
 
     return json({
