@@ -117,7 +117,7 @@ export async function onRequestPost({request,env}){
   }else if(!isAdmin){return json({ok:false,error:'admin_required_to_create_events'},403);}
   const data={};
   for(const f of FIELDS){
-   const limit=f==='description'?4000:f==='details'?12000:f==='media_json'?24000:f==='title'?180:(f==='url'||f==='image_url'?1200:f==='address'?300:f==='badge'?80:160);
+   const limit=f==='description'?4000:f==='details'?12000:f==='media_json'?60000:f==='title'?180:(f==='url'||f==='image_url'?1200:f==='address'?300:f==='badge'?80:160);
    data[f]=Object.prototype.hasOwnProperty.call(d,f)?clean(d[f],limit):(old&&old[f]!=null?String(old[f]):'');
   }
   data.status=isAdmin?(data.status==='published'?'published':'draft'):'published';
