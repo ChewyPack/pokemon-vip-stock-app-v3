@@ -655,6 +655,57 @@
 
       var navigation = buildNavigation();
 
+      // Self-hosted GLB viewer: no third-party iframe UI or hover overlays.
+      function initPokeBallViewer() {
+        var host = document.getElementById('ppp-pokeball-viewer');
+        if (!host || host.dataset.initialized === 'true') return;
+        host.dataset.initialized = 'true';
+        var moduleScript = document.createElement('script');
+        moduleScript.type = 'module';
+        moduleScript.textContent = [
+          "import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';",
+          "import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js';",
+          "const host = document.getElementById('ppp-pokeball-viewer');",
+          "if (host) {",
+          "  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;",
+          "  const scene = new THREE.Scene();",
+          "  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);",
+          "  camera.position.set(0, 0, 4.1);",
+          "  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });",
+          "  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));",
+          "  renderer.setSize(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight));",
+          "  renderer.outputColorSpace = THREE.SRGBColorSpace;",
+          "  renderer.setClearColor(0x000000, 0);",
+          "  host.replaceChildren(renderer.domElement);",
+          "  const ambient = new THREE.HemisphereLight(0xffffff, 0x526080, 2.0);",
+          "  scene.add(ambient);",
+          "  const key = new THREE.DirectionalLight(0xffffff, 2.8); key.position.set(3, 4, 5); scene.add(key);",
+          "  const fill = new THREE.DirectionalLight(0xffffff, 1.2); fill.position.set(-4, 1, -3); scene.add(fill);",
+          "  let ball = null;",
+          "  const loader = new GLTFLoader();",
+          "  loader.load('/assets/poke-ball.glb', (gltf) => {",
+          "    ball = gltf.scene;",
+          "    const box = new THREE.Box3().setFromObject(ball);",
+          "    const size = box.getSize(new THREE.Vector3());",
+          "    const center = box.getCenter(new THREE.Vector3());",
+          "    ball.position.sub(center);",
+          "    const maxDim = Math.max(size.x, size.y, size.z) || 1;",
+          "    ball.scale.setScalar(2.15 / maxDim);",
+          "    scene.add(ball);",
+          "    const loading = host.querySelector('.cubone-hero__loading'); if (loading) loading.remove();",
+          "  }, undefined, (error) => {",
+          "    console.error('PokePrizePool 3D model failed to load:', error);",
+          "    host.innerHTML = '<p class="cubone-hero__error">3D model is temporarily unavailable.</p>';",
+          "  });",
+          "  const resize = () => { const w = Math.max(1, host.clientWidth); const h = Math.max(1, host.clientHeight); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h); };",
+          "  const observer = new ResizeObserver(resize); observer.observe(host);",
+          "  const clock = new THREE.Clock();",
+          "  renderer.setAnimationLoop(() => { if (ball && !reduceMotion) ball.rotation.y += Math.min(clock.getDelta(), 0.05) * 0.42; else clock.getDelta(); renderer.render(scene, camera); });",
+          "}"
+        ].join('\\n');
+        document.body.appendChild(moduleScript);
+      }
+
       /* Original hero — preserved. */
       var hero = h(
         'header',
@@ -670,16 +721,29 @@
           ),
           h(
             'figure',
-            { class: 'poster poster--logo cubone-hero', 'aria-label': 'Interactive 3D Cubone model' },
-            h('iframe', {
+            { class: 'poster poster--logo cubone-hero', 'aria-label': 'Rotating 3D Poké Ball model' },
+            h('div', {
               class: 'cubone-hero__viewer',
-              title: 'Interactive Cubone 3D model',
-              src: 'https://sketchfab.com/models/6d2e23474e3c47d091cc9f2983d7e75a/embed?autostart=1&animation_autoplay=1&autospin=0.25&transparent=1&ui_hint=0&ui_controls=0&ui_infos=0&ui_inspector=0&ui_settings=0&ui_help=0&ui_vr=0&ui_fullscreen=0',
-              allow: 'autoplay; fullscreen; xr-spatial-tracking',
-              allowfullscreen: true,
-              loading: 'eager',
-              referrerpolicy: 'strict-origin-when-cross-origin'
-            })
+              id: 'ppp-pokeball-viewer',
+              role: 'img',
+              'aria-label': 'A Poké Ball rotating in 3D'
+            },
+              h('div', { class: 'cubone-hero__loading', 'aria-hidden': 'true' }, 'Loading 3D model…')
+            ),
+            h('figcaption', { class: 'cubone-hero__credit' },
+              '3D model: ',
+              h('a', {
+                href: 'https://sketchfab.com/3d-models/poke-ball-pokemon-pokeball-c266163bd310411bac727783e4c79c4a',
+                target: '_blank',
+                rel: 'noopener noreferrer'
+              }, 'Poké Ball by Jesús Orgaz'),
+              ' · ',
+              h('a', {
+                href: 'https://creativecommons.org/licenses/by/4.0/',
+                target: '_blank',
+                rel: 'noopener noreferrer'
+              }, 'CC BY 4.0')
+            )
           ),
           h(
             'div',
