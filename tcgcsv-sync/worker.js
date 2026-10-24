@@ -86,6 +86,11 @@ async function setError(db, error) {
 
 async function beginSync(db) {
   await ensureProgressTable(db);
+  await ensurePriceProgressTable(db);
+  const activeCatalog = await db.prepare('SELECT run_token, source_timestamp FROM tcgcsv_sync_progress WHERE id=1').first();
+  if (activeCatalog?.run_token) return { skipped: true, reason: 'catalog_sync_already_running', source_timestamp: activeCatalog.source_timestamp };
+  const activePrice = await db.prepare('SELECT run_token FROM tcgcsv_price_sync_progress WHERE id=1').first();
+  if (activePrice?.run_token) throw new Error('A price-only sync is already active; refusing to start a catalog import concurrently.');
   const sourceTimestamp = await getText('https://tcgcsv.com/last-updated.txt');
   if (!sourceTimestamp) throw new Error('TCGCSV last-updated.txt was empty.');
   const state = await db.prepare('SELECT source_timestamp, last_success_at FROM tcgcsv_sync_state WHERE id = 1').first();
