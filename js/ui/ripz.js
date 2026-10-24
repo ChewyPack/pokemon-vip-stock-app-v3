@@ -346,10 +346,20 @@
   }
 
   async function loadRecordingStatus(streamId) {
-    if (state.recordingBusy || !state.myStream || state.myStream.id !== streamId || state.myStream.status !== "ended") return;
+    if (!state.myStream || state.myStream.id !== streamId || state.myStream.status !== "ended") return;
+    if (state.recordingBusy) {
+      setStatus("ripz-recording-status", "A recording check is already running. This page will update when it finishes.", false);
+      return;
+    }
     if (state.recordingTimer) clearTimeout(state.recordingTimer);
     state.recordingTimer = null;
     state.recordingBusy = true;
+    var refreshButton = $("ripz-recording-refresh");
+    if (refreshButton) {
+      refreshButton.disabled = true;
+      refreshButton.textContent = "Checking…";
+    }
+    setStatus("ripz-recording-status", "Checking Cloudflare for your recording and MP4 download…", false);
     try {
       var result = await api("POST", { action: "recording", stream_id: streamId });
       if (state.myStream && state.myStream.id === streamId && state.myStream.status === "ended") {
@@ -366,6 +376,11 @@
       }
     } finally {
       state.recordingBusy = false;
+      var currentButton = $("ripz-recording-refresh");
+      if (currentButton) {
+        currentButton.disabled = false;
+        currentButton.textContent = "Check recording status";
+      }
     }
   }
 
