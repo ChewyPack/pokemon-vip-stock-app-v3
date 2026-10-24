@@ -23,7 +23,7 @@ VALUES
   (
     'luffychu-hoodie',
     'LuffyChu',
-    'PokePrizePool hoodie featuring the LuffyChu design. Gildan 18500 Heavy Blend hoodie available in eight sizes. Coming soon — checkout will open after Printify verification is complete.',
+    'PokePrizePool hoodie featuring the LuffyChu design. Gildan 18500 Heavy Blend hoodie available in eight sizes. Coming soon — available for purchase on PokePrizePool when checkout opens.',
     'PPP-APPAREL-LUFFYCHU',
     'merch',
     'Hoodie',
