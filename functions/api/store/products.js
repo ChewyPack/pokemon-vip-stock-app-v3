@@ -16,7 +16,7 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   if (cat === 'preorder') where.push('preorder = 1');
   else if (cat) { where.push('category = ?'); args.push(cat); }
   const av = u.searchParams.get('availability');
-  if (av === 'in') where.push('inventory > 0 AND preorder = 0');
+  if (av === 'in') where.push('(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != \'\')) AND preorder = 0');
   if (av === 'pre') where.push('preorder = 1');
   const min = parseInt(u.searchParams.get('min') || '', 10), max = parseInt(u.searchParams.get('max') || '', 10);
   if (Number.isInteger(min)) { where.push('price_cents >= ?'); args.push(min); }
