@@ -42,25 +42,15 @@ npx wrangler secret put SYNC_SECRET --config wrangler.production.toml
 
 When prompted, enter a new long random secret and save it somewhere secure. Do not commit it or send it in chat. Keep this production secret separate from the staging Worker's secret.
 
-## 5. Check the existing sync before starting anything new
+## 5. Verify the live catalog and use the price-only sync
 
-The live catalog endpoint has already reported a partial import with 220 set groups registered and products/prices available, so the production sync has saved in-progress work. **For this existing partial run, deploy the Worker to restore its Cron Triggers, then check `/health`; do not POST to `/sync`.** The `/sync` endpoint begins a new run and can reset a saved cursor. The every-minute Cron Trigger resumes saved work automatically after the triggers are restored.
+The current production database check showed 220 registered groups and 32,881 product rows, with 30,663 rows containing a market price. The Worker health endpoint reports `status: "success"` and no error, with no saved import cursor. These values are consistent with the initial import having completed, though they do not independently prove the upstream catalog has no additional products.
 
-Only if `/health` confirms there is no saved run and this is a genuinely new import should you use the manual start procedure below. The deploy output provides the production Worker URL. If the window is Command Prompt, type `powershell` and press Enter first. Then paste these commands, using the exact Worker URL from deploy output:
+Deploy the latest `tcgcsv-sync/worker.js` from `main` before relying on the new sync behavior. In this version, **POST `/sync` starts a resumable price-only refresh**: it fetches each existing group's prices and updates only `market_price` and `market_price_subtype` on existing product rows. It does not re-import product names, card metadata, images, or sets. The scheduled daily source check also starts this price-only refresh when TCGCSV's source marker changes.
 
-```powershell
-$workerUrl = (Read-Host "Paste the production Worker URL").TrimEnd("/")
-$secureSecret = Read-Host "Enter the saved production SYNC_SECRET" -AsSecureString
-$secretPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
-$syncSecret = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($secretPtr)
-$headers = @{ Authorization = "Bearer $syncSecret" }
-Invoke-RestMethod -Method Post -Uri "$workerUrl/sync" -Headers $headers
-Invoke-RestMethod -Method Get -Uri "$workerUrl/health"
-[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($secretPtr)
-Remove-Variable secureSecret, secretPtr, syncSecret, headers
-```
+Use `/catalog-sync` only when you intentionally want a full catalog import/reconciliation. It is a maintenance endpoint and should not be used for routine price updates. Both POST endpoints require the production `SYNC_SECRET` as a bearer token.
 
-The health endpoint reports progress. Cloudflare's per-minute Cron Trigger resumes saved work in the background, even after your PC sleeps or shuts down. The daily source-marker check happens at 21:00 UTC and does not re-fetch the marker every minute. Cron Trigger changes can take several minutes to propagate.
+After deploying, check `/health`. During a price refresh, look for the `price_progress` object and the log message `Refreshing TCGCSV prices for group`. The per-minute Cron Trigger resumes saved work; the daily source-marker check runs at 21:00 UTC.
 
 ## What becomes live
 
