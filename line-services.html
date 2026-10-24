@@ -71,14 +71,15 @@ footer{text-align:center;padding:50px 0 70px}
 
 
 
-/* Frameless Meowth viewer with the lower player controls cropped away. */
+
+/* Larger, inward-set Meowth viewer; mask its blue Sketchfab backdrop. */
 .line-meowth-rail {
   position: fixed;
   z-index: 3;
   top: 8vh;
-  right: clamp(90px, 7vw, 150px);
-  width: clamp(330px, 27vw, 440px);
-  height: clamp(230px, 22vw, 300px);
+  right: clamp(64px, 5vw, 105px);
+  width: clamp(450px, 39vw, 620px);
+  height: clamp(360px, 34vw, 500px);
   overflow: hidden;
   pointer-events: none;
   will-change: top;
@@ -88,14 +89,14 @@ footer{text-align:center;padding:50px 0 70px}
 .line-meowth-rail iframe {
   display: block;
   position: absolute;
-  top: -4px;
-  left: -8px;
-  width: calc(100% + 16px);
-  height: calc(100% + 44px);
+  top: -24px;
+  left: -14px;
+  width: calc(100% + 28px);
+  height: calc(100% + 78px);
   border: 0 !important;
   outline: 0 !important;
   background: transparent !important;
-  filter: url(#line-meowth-chromakey);
+  filter: url(#line-meowth-chromakey) brightness(1.12) saturate(1.08);
 }
 .line-meowth-credit {
   margin: 12px auto 0;
@@ -108,7 +109,7 @@ footer{text-align:center;padding:50px 0 70px}
   .line-services-page main > .hero .wrap,
   .line-services-page main > section .wrap,
   .line-services-page main > footer .wrap {
-    width: min(1080px, calc(100vw - 500px));
+    width: min(1080px, calc(100vw - 670px));
     max-width: 1080px;
     margin-left: max(18px, calc((100vw - 1280px) / 2));
     margin-right: 0;
@@ -126,15 +127,15 @@ footer{text-align:center;padding:50px 0 70px}
 }
 </style>
 </head>
-<body class="line-services-page">
-
-<svg class="line-meowth-filter-defs" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg">
+<<svg class="line-meowth-filter-defs" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg">
   <filter id="line-meowth-chromakey" color-interpolation-filters="sRGB">
     <feColorMatrix type="matrix" values="
       1 0 0 0 0
       0 1 0 0 0
       0 0 1 0 0
-      4 2 -3 0 0" />
+      3.8 2.0 -3.5 0 -0.12" />
+  </filter>
+</svg> 4 2 -3 0 0" />
   </filter>
 </svg>
 
@@ -429,10 +430,10 @@ calc();fmode();
             cameraBase = {
               target: t,
               angle: Math.atan2(dx, dz),
-              horizontalRadius: Math.sqrt(dx * dx + dz * dz) * 2.25,
+              horizontalRadius: Math.sqrt(dx * dx + dz * dz) * 1.28,
               verticalOffset: dy * 1.35
             };
-            api.setFov(42, function () {
+            api.setFov(38, function () {
               updateRailPosition();
             });
           });
