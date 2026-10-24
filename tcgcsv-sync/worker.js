@@ -2,6 +2,14 @@ const SOURCE = 'https://tcgcsv.com/tcgplayer';
 const POKEMON_CATEGORY_ID = 3;
 const USER_AGENT = 'PokePrizePoolMarket/1.0.0';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const DEFAULT_IMPORT_WRITE_BUDGET = 50000;
+const MAX_IMPORT_WRITE_BUDGET = 1000000;
+
+function importWriteBudget(env) {
+  const requested = Number(env?.IMPORT_WRITE_BUDGET);
+  if (!Number.isFinite(requested) || requested < 1) return DEFAULT_IMPORT_WRITE_BUDGET;
+  return Math.min(MAX_IMPORT_WRITE_BUDGET, Math.floor(requested));
+}
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -140,7 +148,7 @@ async function publishCatalog(db, token) {
   return { complete: true, source_timestamp: sourceTimestamp, completed_at: commitAt };
 }
 
-async function processOneGroup(db, token) {
+async function processOneGroup(db, token, dailyWriteBudget = DEFAULT_IMPORT_WRITE_BUDGET) {
   const progress = await db.prepare("SELECT run_token, source_timestamp, group_ids_json, next_group_index, " +
     "current_group_offset, sync_day, rows_written_today FROM tcgcsv_sync_progress WHERE id=1").first();
   if (!progress || progress.run_token !== token) return { ignored: true, reason: 'run_token_mismatch' };
@@ -153,12 +161,11 @@ async function processOneGroup(db, token) {
   const today = new Date().toISOString().slice(0, 10);
   let rowsWrittenToday = progress.sync_day === today ? Number(progress.rows_written_today || 0) : 0;
   let offset = Number(progress.current_group_offset || 0);
-  const DAILY_IMPORT_WRITE_BUDGET = 50000;
   if (progress.sync_day !== today) {
     await db.prepare("UPDATE tcgcsv_sync_progress SET sync_day=?, rows_written_today=0 WHERE id=1 AND run_token=?")
       .bind(today, token).run();
   }
-  if (rowsWrittenToday >= DAILY_IMPORT_WRITE_BUDGET) {
+  if (rowsWrittenToday >= dailyWriteBudget) {
     return { paused_for_daily_write_budget: true, rows_written_today: rowsWrittenToday, resumes_after_utc_midnight: true };
   }
 
@@ -216,7 +223,7 @@ async function processOneGroup(db, token) {
     });
 
     while (offset < productStatements.length) {
-      if (rowsWrittenToday >= DAILY_IMPORT_WRITE_BUDGET) {
+      if (rowsWrittenToday >= dailyWriteBudget) {
         await db.prepare("UPDATE tcgcsv_sync_progress SET current_group_offset=?, rows_written_today=?, sync_day=? WHERE id=1 AND run_token=?")
           .bind(offset, rowsWrittenToday, today, token).run();
         return { paused_for_daily_write_budget: true, rows_written_today: rowsWrittenToday,
@@ -237,7 +244,7 @@ async function processOneGroup(db, token) {
       rowsWrittenToday += measuredWrites + 2;
       await db.prepare("UPDATE tcgcsv_sync_progress SET current_group_offset=?, rows_written_today=?, sync_day=? WHERE id=1 AND run_token=?")
         .bind(offset, rowsWrittenToday, today, token).run();
-      if (rowsWrittenToday >= DAILY_IMPORT_WRITE_BUDGET && offset < productStatements.length) {
+      if (rowsWrittenToday >= dailyWriteBudget && offset < productStatements.length) {
         return { paused_for_daily_write_budget: true, rows_written_today: rowsWrittenToday,
           current_group: groupId, products_in_group: productStatements.length,
           products_processed_in_group: offset, resumes_after_utc_midnight: true };
@@ -296,7 +303,7 @@ export default {
           ).run();
         }
         console.log('Processing saved TCGCSV group batch', Math.min(nextIndex + 1, groupCount), 'of', groupCount);
-        await processOneGroup(env.DB, progress.run_token).catch(error => {
+        await processOneGroup(env.DB, progress.run_token, importWriteBudget(env)).catch(error => {
           console.error('TCGCSV group batch failed:', error);
           return setError(env.DB, error);
         });
@@ -340,7 +347,7 @@ export default {
           products_processed_in_current_group: Number(progress.current_group_offset || 0),
           sync_day_utc: progress.sync_day || null,
           importer_rows_written_today: Number(progress.rows_written_today || 0),
-          importer_daily_write_budget: 50000
+          importer_daily_write_budget: importWriteBudget(env)
         };
       }
       return json({ ok: true, service: 'PokePrizePool TCGCSV sync', state: state || null, progress: progressInfo });
