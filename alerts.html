@@ -33,6 +33,19 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
 .alert-empty,.alert-notice{border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:20px;background:rgba(5,15,40,.68);color:#d3def2;line-height:1.65}
 .alert-notice{margin-top:16px;font-size:.9rem}
 .alert-search-hint{color:#b9c9e8;font-size:.9rem;margin:-5px 0 18px}
+.alerts-quick-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:18px 0 22px;padding:16px;border:1px solid rgba(255,255,255,.2);border-radius:14px;background:rgba(5,15,40,.72)}
+.alerts-quick-actions__copy{display:grid;gap:4px;min-width:220px}
+.alerts-quick-actions__copy strong{color:#fff;font-size:1.02rem}
+.alerts-quick-actions__copy span{color:#c1d0e9;font-size:.9rem;line-height:1.5}
+.alerts-quick-actions__buttons{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.alerts-quick-actions__buttons .alerts-btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 14px;text-decoration:none;text-align:center;font-weight:900}
+.alerts-btn--subscribe{background:#ffd21f;border-color:#ffd21f;color:#06174a}
+.alerts-btn--subscribe:hover{background:#ffe36c}
+.alerts-btn--push{background:#173b76;color:#fff}
+.alerts-btn--push:disabled{opacity:.7;cursor:default}
+.alerts-push-status{flex-basis:100%;margin:0;color:#c1d0e9;font-size:.85rem;line-height:1.45}
+@media(max-width:760px){.alerts-quick-actions{align-items:stretch;flex-direction:column}.alerts-quick-actions__buttons>*{flex:1 1 220px}}
+
 @media(max-width:700px){.alerts-grid{grid-template-columns:1fr}.alerts-summary{width:100%;margin-left:0}.alerts-content{padding-top:28px}.alert-card-head{gap:8px}}
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
@@ -44,6 +57,17 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
 <main class="alerts-content">
   <h1 id="page-title">Live Stock</h1>
   <p class="alerts-intro">Paid members can view active stock sightings immediately. Free accounts can see only alerts an administrator has explicitly made public. Community reports are time-sensitive and do not guarantee that products are still on the shelf.</p>
+  <section class="alerts-quick-actions" aria-label="Subscription and browser notifications">
+    <div class="alerts-quick-actions__copy">
+      <strong>Want immediate stock access?</strong>
+      <span>Collector+ unlocks active stock alerts as they arrive.</span>
+    </div>
+    <div class="alerts-quick-actions__buttons">
+      <a class="alerts-btn alerts-btn--subscribe" href="/account.html#settings-membership">Subscribe to Collector+</a>
+      <button class="alerts-btn alerts-btn--push" id="enable-browser-notifications" type="button" disabled>Checking Notifications…</button>
+    </div>
+    <p class="alerts-push-status" id="browser-push-status" role="status" aria-live="polite">Checking browser notification availability…</p>
+  </section>
   <div class="alerts-controls">
     <label>Search report history<input id="search" type="search" maxlength="120" placeholder="Product, store, town, state, notes…"></label>
     <label>Retailer<select id="retailer"><option value="">All retailers</option><option value="target">Target</option><option value="walmart">Walmart</option><option value="bestbuy">BestBuy</option><option value="gamestop">GameStop</option><option value="costco">Costco</option></select></label>
@@ -84,7 +108,117 @@ body{min-height:100vh;margin:0;color:#fff;background-color:#07142e;background-im
  hint.textContent=search.value.trim()?'Searching reports visible to your account.':'Free accounts see only reports explicitly made public by an administrator.';
  document.getElementById('page-title').textContent=search.value.trim()?'Search Stock Reports':'Live Stock';
  try{const response=await fetch('/api/alerts?'+q.toString(),{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(response.status===401){feed.innerHTML='<div class="alert-empty">Please <a href="/account.html">sign in to your PokePrizePool account</a> to view the live stock feed.</div>';summary.textContent='Sign-in required';return;}if(!response.ok||!data.ok)throw new Error(data.error||'Could not load stock reports');render(data.reports||[]);summary.textContent=(data.count||0)+' report'+((data.count||0)===1?'':'s')+' · Updated '+new Date(data.refreshedAt).toLocaleTimeString();}catch(e){feed.innerHTML='<div class="alert-empty">We couldn’t load the stock feed. Please refresh and try again.</div>';summary.textContent='Unable to load';}finally{refresh.disabled=false;}}
+ const pushButton=document.getElementById('enable-browser-notifications');
+ const pushStatus=document.getElementById('browser-push-status');
+ let pushSettings=null;
+ let pushAccountState='checking';
+ function base64UrlToUint8Array(value){
+  const padding='='.repeat((4-value.length%4)%4);
+  const raw=atob((value+padding).replace(/-/g,'+').replace(/_/g,'/'));
+  const bytes=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+  return bytes;
+ }
+ function setPushStatus(message){pushStatus.textContent=message;}
+ function setPushButton(label,disabled){pushButton.textContent=label;pushButton.disabled=disabled;}
+ async function loadPushSetup(){
+  if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window)){
+   pushAccountState='unsupported';
+   setPushButton('Browser Push Not Supported',true);
+   setPushStatus('This browser does not support web push here. Try a supported browser, or on iPhone/iPad use PokePrizePool from your Home Screen.');
+   return;
+  }
+  try{
+   const response=await fetch('/api/notifications',{credentials:'same-origin',cache:'no-store'});
+   const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+   if(response.status===401||data.error==='unauthorized'){
+    pushAccountState='signed_out';
+    setPushButton('Sign In for Notifications',false);
+    setPushStatus('Sign in to your PokePrizePool account to enable browser notifications on this device.');
+    return;
+   }
+   if(!response.ok||!data.ok)throw new Error(data.message||data.error||'Could not check notification settings.');
+   pushSettings=data;
+   pushAccountState='ready';
+   if(!data.vapid_public_key){
+    pushAccountState='unavailable';
+    setPushButton('Notifications Unavailable',true);
+    setPushStatus('Browser push is not configured on this site yet.');
+    return;
+   }
+   if(Notification.permission==='denied'){
+    setPushButton('Notifications Blocked',true);
+    setPushStatus('Your browser is blocking notifications for this site. Allow notifications in your browser site settings, then refresh this page.');
+    return;
+   }
+   const registration=await navigator.serviceWorker.getRegistration(window.location.origin+'/');
+   const subscription=registration?await registration.pushManager.getSubscription():null;
+   if(subscription&&data.preferences&&data.preferences.browser_push_enabled){
+    setPushButton('Notifications Enabled',true);
+    setPushStatus('Browser notifications are enabled on this device. Your saved notification preferences still apply.');
+    return;
+   }
+   setPushButton('Enable Browser Notifications',false);
+   setPushStatus('Enable browser push for eligible PokePrizePool updates on this device. Saved preferences and membership access still apply.');
+  }catch(error){
+   pushAccountState='unknown';
+   setPushButton('Enable Browser Notifications',false);
+   setPushStatus('Could not check notification setup. Refresh this page and try again.');
+   console.warn('Could not load browser push setup:',error);
+  }
+ }
+ pushButton.addEventListener('click',async function(){
+  if(pushAccountState==='signed_out'){
+   window.location.href='/account.html';
+   return;
+  }
+  if(pushAccountState!=='ready'||!pushSettings||!pushSettings.vapid_public_key){
+   setPushStatus('Notification setup is not ready. Refresh this page and try again.');
+   return;
+  }
+  if(Notification.permission==='denied'){
+   setPushButton('Notifications Blocked',true);
+   setPushStatus('Your browser is blocking notifications for this site. Allow notifications in your browser site settings, then refresh this page.');
+   return;
+  }
+  setPushButton('Enabling Notifications…',true);
+  try{
+   let permission=Notification.permission;
+   if(permission!=='granted')permission=await Notification.requestPermission();
+   if(permission!=='granted')throw new Error('Browser permission was not granted. Allow notifications for this site and try again.');
+   const registration=await navigator.serviceWorker.register('/service-worker.js',{scope:'/'});
+   await navigator.serviceWorker.ready;
+   let subscription=await registration.pushManager.getSubscription();
+   if(!subscription){
+    subscription=await registration.pushManager.subscribe({
+     userVisibleOnly:true,
+     applicationServerKey:base64UrlToUint8Array(pushSettings.vapid_public_key)
+    });
+   }
+   const response=await fetch('/api/notifications',{
+    method:'POST',
+    credentials:'same-origin',
+    cache:'no-store',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'subscribe',subscription:subscription.toJSON()})
+   });
+   const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+   if(response.status===401||data.error==='unauthorized'){
+    pushAccountState='signed_out';
+    throw new Error('Your session expired. Sign in again, then enable notifications.');
+   }
+   if(!response.ok||!data.ok)throw new Error(data.message||data.error||'Could not enable browser notifications.');
+   pushSettings.preferences=data.preferences||pushSettings.preferences;
+   setPushButton('Notifications Enabled',true);
+   setPushStatus('Browser notifications are enabled on this device. Your saved notification preferences still apply.');
+  }catch(error){
+   const denied=('Notification'in window)&&Notification.permission==='denied';
+   setPushButton(pushAccountState==='signed_out'?'Sign In for Notifications':(denied?'Notifications Blocked':'Enable Browser Notifications'),denied);
+   setPushStatus(error.message||'Could not enable browser notifications. Please try again.');
+  }
+ });
  let debounce;search.addEventListener('input',function(){clearTimeout(debounce);debounce=setTimeout(load,300);});refresh.addEventListener('click',load);retailer.addEventListener('change',load);state.addEventListener('change',load);load();
+ loadPushSetup();
 })();
 </script>
 </body></html>
