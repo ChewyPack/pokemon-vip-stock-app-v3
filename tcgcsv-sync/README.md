@@ -42,7 +42,7 @@ The Worker checks `https://tcgcsv.com/last-updated.txt` at 21:00 UTC once per da
 
 ## Resumable import
 
-Each Worker invocation processes one Pokémon group/set and then schedules the next invocation. Progress and an in-group product cursor are saved in `tcgcsv_sync_progress`. The importer pauses after 50,000 measured D1 rows written in a UTC day and resumes after midnight, preserving headroom under the Free-plan daily cap. The active source marker is published only when all groups complete successfully.
+Each Worker invocation processes one Pokémon group/set and saves its cursor in `tcgcsv_sync_progress`. The staging config retains a 50,000-row daily importer budget. The production config uses a 500,000-row daily budget on Workers Paid, a maximum of about 15 million importer rows over 30 days, leaving room within the included 50 million monthly D1 row-write allowance for normal application use. This is an importer safety budget, not a Cloudflare platform limit; review account-level D1 usage before raising it further. The importer pauses at its configured daily budget and resumes after UTC midnight. The active source marker is published only when all groups complete successfully.
 
 Start a sync with a POST to `/sync` using the Authorization bearer secret. Check progress at `/health`. Never expose the secret in browser code.
 
