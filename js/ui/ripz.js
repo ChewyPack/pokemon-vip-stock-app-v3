@@ -14,6 +14,8 @@
     playbackStreamId: "",
     isPublishing: false,
     hostBusy: false,
+    recordingTimer: null,
+    recordingBusy: false,
     chatTimer: null,
     listTimer: null
   };
@@ -63,6 +65,42 @@
       host.innerHTML = '<div class="ripz-host-card"><h3>Sign in to host</h3><p>Sign in to check your member access and launch a live rip.</p><a class="ripz-button" href="/account.html">Sign in</a></div>';
       return;
     }
+    if (state.myStream && state.myStream.status === "ended") {
+      var recordingStatus = String(state.myStream.recording_status || "");
+      var downloadStatus = String(state.myStream.download_status || "");
+      var downloadUrl = state.myStream.download_url || "";
+      var terminalRecording = ["failed", "unavailable"].includes(recordingStatus) || ["failed", "unavailable"].includes(downloadStatus);
+      var recordingText = downloadStatus === "ready" && downloadUrl
+        ? "Your MP4 is ready to download."
+        : (terminalRecording
+          ? (state.myStream.recording_message || "A download is not available for this stream.")
+          : (state.myStream.recording_message || "Your recording is being prepared. This can take about a minute after the stream ends."));
+      host.innerHTML = '<div class="ripz-host-content">' +
+        '<div class="ripz-host-card ripz-host-span"><div class="ripz-live-badge">Stream ended</div><h3 style="margin-top:10px">' + esc(state.myStream.title) + '</h3><p>' + esc(state.myStream.product_name || "") + '</p>' +
+        '<p id="ripz-recording-status" class="ripz-host-status" role="status" aria-live="polite" style="margin-top:10px">' + esc(recordingText) + '</p></div>' +
+        (downloadStatus === "ready" && downloadUrl
+          ? '<div class="ripz-camera-actions ripz-host-span"><a class="ripz-button" href="' + esc(downloadUrl) + '" target="_blank" rel="noopener">Download MP4</a></div>'
+          : (!terminalRecording
+            ? '<div class="ripz-camera-actions ripz-host-span"><button id="ripz-recording-refresh" class="ripz-button ripz-button--secondary" type="button">Check recording status</button></div>'
+            : '')) +
+        (state.canGoLive && state.streamingConfigured
+          ? '<div class="ripz-camera-actions ripz-host-span"><button id="ripz-new-rip" class="ripz-button" type="button">Start another rip</button></div>'
+          : '') +
+        '<p class="ripz-note ripz-host-span">Recordings are prepared after you end a stream. MP4 downloads are supported for live recordings under four hours.</p></div>';
+      var recordingRefresh = $("ripz-recording-refresh");
+      if (recordingRefresh) recordingRefresh.addEventListener("click", function () { loadRecordingStatus(state.myStream.id); });
+      var newRip = $("ripz-new-rip");
+      if (newRip) newRip.addEventListener("click", function () {
+        if (state.recordingTimer) clearTimeout(state.recordingTimer);
+        state.recordingTimer = null;
+        state.myStream = null;
+        renderHostPanel();
+      });
+      if (!terminalRecording && !(downloadStatus === "ready" && downloadUrl)) {
+        scheduleRecordingPoll(state.myStream.id, recordingStatus ? 8000 : 1000);
+      }
+      return;
+    }
     if (!state.canGoLive) {
       host.innerHTML = '<div class="ripz-host-content">' +
         '<div class="ripz-host-card"><h3>Collector+ exclusive</h3><p>Active Collector+ members can host live pack-opening sessions. You can watch and chat with other signed-in collectors here.</p></div>' +
@@ -97,7 +135,7 @@
       '<label for="ripz-product">What are you ripping?<input id="ripz-product" name="product_name" maxlength="120" required minlength="2" placeholder="e.g. Mega Evolution booster packs"></label>' +
       '<button id="ripz-start-button" class="ripz-button" type="submit">🎥 Start a live rip</button>' +
       '<p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite">Your browser will ask for camera and microphone access before the stream begins.</p>' +
-      '<p class="ripz-note">A camera and microphone are required. Your preview is muted locally to prevent echo. Streams are not recorded by Ripz.</p>' +
+      '<p class="ripz-note">A camera and microphone are required. Your preview is muted locally to prevent echo. Streams are recorded for replay, and the MP4 download becomes available after processing.</p>' +
       '</form>';
     $("ripz-start-form").addEventListener("submit", function (event) {
       event.preventDefault();
@@ -293,6 +331,44 @@
     }
   }
 
+  function scheduleRecordingPoll(streamId, delay) {
+    if (state.recordingTimer) clearTimeout(state.recordingTimer);
+    state.recordingTimer = null;
+    if (!state.myStream || state.myStream.id !== streamId || state.myStream.status !== "ended") return;
+    var terminal = ["failed", "unavailable"].includes(String(state.myStream.recording_status || "")) ||
+      ["failed", "unavailable"].includes(String(state.myStream.download_status || "")) ||
+      (state.myStream.download_status === "ready" && state.myStream.download_url);
+    if (terminal) return;
+    state.recordingTimer = window.setTimeout(function () {
+      state.recordingTimer = null;
+      loadRecordingStatus(streamId);
+    }, delay);
+  }
+
+  async function loadRecordingStatus(streamId) {
+    if (state.recordingBusy || !state.myStream || state.myStream.id !== streamId || state.myStream.status !== "ended") return;
+    if (state.recordingTimer) clearTimeout(state.recordingTimer);
+    state.recordingTimer = null;
+    state.recordingBusy = true;
+    try {
+      var result = await api("POST", { action: "recording", stream_id: streamId });
+      if (state.myStream && state.myStream.id === streamId && state.myStream.status === "ended") {
+        state.myStream.recording_status = result.recording_status || "processing";
+        state.myStream.download_status = result.download_status || "pending";
+        state.myStream.download_url = result.download_url || null;
+        state.myStream.recording_message = result.message || "";
+        renderHostPanel();
+      }
+    } catch (error) {
+      if (state.myStream && state.myStream.id === streamId && state.myStream.status === "ended") {
+        state.myStream.recording_message = error.message || "Could not check recording status.";
+        renderHostPanel();
+      }
+    } finally {
+      state.recordingBusy = false;
+    }
+  }
+
   async function connectExistingStream() {
     if (!state.myStream || state.isPublishing) return;
     var button = $("ripz-host-connect");
@@ -350,11 +426,18 @@
     } catch (error) {
       if (!silent) setStatus("ripz-host-status", "The camera stopped, but the site could not confirm the end of the stream. Please refresh and check your session.", true);
     }
-    state.myStream = null;
+    if (state.myStream && state.myStream.id === stream.id) {
+      state.myStream.status = "ended";
+      state.myStream.whip_url = "";
+      state.myStream.playback_url = "";
+    }
     if (!silent) {
       state.hostBusy = false;
       renderHostPanel();
       await refreshData();
+      if (state.myStream && state.myStream.id === stream.id && state.myStream.status === "ended") {
+        loadRecordingStatus(stream.id);
+      }
     }
   }
 
@@ -474,6 +557,7 @@
     }
     if (state.chatTimer) clearInterval(state.chatTimer);
     if (state.listTimer) clearInterval(state.listTimer);
+    if (state.recordingTimer) clearTimeout(state.recordingTimer);
   });
 
   refreshData().then(function () {
