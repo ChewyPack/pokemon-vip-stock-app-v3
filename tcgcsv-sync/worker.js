@@ -134,6 +134,147 @@ async function beginSync(db) {
   }
 }
 
+
+async function ensurePriceProgressTable(db) {
+  await db.prepare("CREATE TABLE IF NOT EXISTS tcgcsv_price_sync_progress (" +
+    "id INTEGER PRIMARY KEY CHECK (id = 1), run_token TEXT, source_timestamp TEXT, " +
+    "group_ids_json TEXT, next_group_index INTEGER NOT NULL DEFAULT 0, " +
+    "current_group_offset INTEGER NOT NULL DEFAULT 0, sync_day TEXT, rows_written_today INTEGER NOT NULL DEFAULT 0)").run();
+  await db.prepare("INSERT OR IGNORE INTO tcgcsv_price_sync_progress " +
+    "(id, next_group_index, current_group_offset, rows_written_today) VALUES (1, 0, 0, 0)").run();
+}
+
+async function beginPriceSync(db) {
+  await ensurePriceProgressTable(db);
+  const activeCatalog = await db.prepare('SELECT run_token FROM tcgcsv_sync_progress WHERE id=1').first().catch(() => null);
+  if (activeCatalog?.run_token) throw new Error('A catalog import is already active; refusing to start a price-only sync concurrently.');
+  const activePrice = await db.prepare('SELECT run_token, source_timestamp FROM tcgcsv_price_sync_progress WHERE id=1').first();
+  if (activePrice?.run_token) return { skipped: true, reason: 'price_sync_already_running', source_timestamp: activePrice.source_timestamp };
+  const sourceTimestamp = await getText('https://tcgcsv.com/last-updated.txt');
+  if (!sourceTimestamp) throw new Error('TCGCSV last-updated.txt was empty.');
+  const state = await db.prepare('SELECT source_timestamp, last_success_at FROM tcgcsv_sync_state WHERE id=1').first();
+  if (state?.source_timestamp === sourceTimestamp && state?.last_success_at) {
+    await db.prepare("UPDATE tcgcsv_sync_state SET status='up_to_date', last_error=NULL WHERE id=1").run();
+    return { skipped: true, reason: 'source_unchanged', source_timestamp: sourceTimestamp };
+  }
+  const groups = await db.prepare('SELECT group_id FROM tcgcsv_groups ORDER BY group_id').all();
+  const groupIds = (groups?.results || []).map(row => Number(row.group_id)).filter(Number.isFinite);
+  if (!groupIds.length) throw new Error('No existing TCGCSV groups found; refusing to run a price-only sync without a catalog.');
+  const token = crypto.randomUUID();
+  const syncDay = new Date().toISOString().slice(0, 10);
+  await db.batch([
+    db.prepare("UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1"),
+    db.prepare("UPDATE tcgcsv_price_sync_progress SET run_token=?, source_timestamp=?, group_ids_json=?, " +
+      "next_group_index=0, current_group_offset=0, sync_day=?, rows_written_today=0 WHERE id=1")
+      .bind(token, sourceTimestamp, JSON.stringify(groupIds), syncDay)
+  ]);
+  return { skipped: false, started: true, mode: 'price_only', source_timestamp: sourceTimestamp, groups_total: groupIds.length };
+}
+
+async function publishPrices(db, token) {
+  const progress = await db.prepare('SELECT run_token, source_timestamp, group_ids_json FROM tcgcsv_price_sync_progress WHERE id=1').first();
+  if (!progress || progress.run_token !== token) return { ignored: true, reason: 'run_token_mismatch' };
+  const groupCount = JSON.parse(progress.group_ids_json || '[]').length;
+  const commitAt = new Date().toISOString();
+  await db.batch([
+    db.prepare("UPDATE tcgcsv_sync_state SET source_timestamp=?, last_success_at=?, status='success', last_error=NULL WHERE id=1")
+      .bind(progress.source_timestamp, commitAt),
+    db.prepare("UPDATE tcgcsv_price_sync_progress SET run_token=NULL, source_timestamp=NULL, group_ids_json='[]', " +
+      "next_group_index=0, current_group_offset=0 WHERE id=1 AND run_token=?").bind(token)
+  ]);
+  return { complete: true, mode: 'price_only', groups_processed: groupCount,
+    source_timestamp: progress.source_timestamp, completed_at: commitAt };
+}
+
+async function processOnePriceGroup(db, token, dailyWriteBudget = DEFAULT_IMPORT_WRITE_BUDGET) {
+  const progress = await db.prepare("SELECT run_token, source_timestamp, group_ids_json, next_group_index, current_group_offset, sync_day, rows_written_today " +
+    "FROM tcgcsv_price_sync_progress WHERE id=1").first();
+  if (!progress || progress.run_token !== token) return { ignored: true, reason: 'run_token_mismatch' };
+  const state = await db.prepare('SELECT status FROM tcgcsv_sync_state WHERE id=1').first();
+  if (state?.status !== 'syncing') return { ignored: true, reason: 'sync_not_active' };
+  const groupIds = JSON.parse(progress.group_ids_json || '[]');
+  const index = Number(progress.next_group_index || 0);
+  if (index >= groupIds.length) return publishPrices(db, token);
+  const today = new Date().toISOString().slice(0, 10);
+  let rowsWrittenToday = progress.sync_day === today ? Number(progress.rows_written_today || 0) : 0;
+  let offset = Number(progress.current_group_offset || 0);
+  if (progress.sync_day !== today) {
+    await db.prepare("UPDATE tcgcsv_price_sync_progress SET sync_day=?, rows_written_today=0 WHERE id=1 AND run_token=?")
+      .bind(today, token).run();
+  }
+  if (rowsWrittenToday >= dailyWriteBudget) {
+    return { paused_for_daily_write_budget: true, rows_written_today: rowsWrittenToday, resumes_after_utc_midnight: true, mode: 'price_only' };
+  }
+
+  try {
+    const groupId = Number(groupIds[index]);
+    const group = await db.prepare('SELECT category_id FROM tcgcsv_groups WHERE group_id=?').bind(groupId).first();
+    if (!group) throw new Error('Production group row not found for price sync: ' + groupId);
+    const categoryId = Number(group.category_id || POKEMON_CATEGORY_ID);
+    console.log('Refreshing TCGCSV prices for group', index + 1, 'of', groupIds.length, 'groupId', groupId);
+    const pricePayload = await getJson(SOURCE + '/' + categoryId + '/' + groupId + '/prices');
+    if (pricePayload?.success === false || !Array.isArray(pricePayload?.results)) throw new Error('Invalid prices response for group ' + groupId + '.');
+    const pricesByProduct = new Map();
+    for (const price of pricePayload.results) {
+      const key = String(price.productId);
+      if (!pricesByProduct.has(key)) pricesByProduct.set(key, []);
+      pricesByProduct.get(key).push(price);
+    }
+    const existing = await db.prepare('SELECT product_id FROM tcgcsv_products WHERE group_id=? ORDER BY product_id').bind(groupId).all();
+    const productIds = (existing?.results || []).map(row => Number(row.product_id));
+    const priceFor = variants => {
+      const valid = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) && Number(value) >= 0;
+      const rank = value => {
+        const type = String(value || '').trim().toLowerCase();
+        if (type === 'normal') return 0;
+        if (type === 'holofoil') return 1;
+        if (type === 'reverse holofoil') return 2;
+        return 3;
+      };
+      const sorted = (variants || []).slice().sort((a, b) => {
+        if (valid(a.marketPrice) !== valid(b.marketPrice)) return valid(a.marketPrice) ? -1 : 1;
+        return rank(a.subTypeName) - rank(b.subTypeName);
+      });
+      const preferred = sorted[0];
+      const marketPrice = valid(preferred?.marketPrice) ? Number(preferred.marketPrice) : null;
+      return { marketPrice, subtype: marketPrice === null ? null : String(preferred?.subTypeName || 'Normal') };
+    };
+    while (offset < productIds.length) {
+      const remainingBudget = dailyWriteBudget - rowsWrittenToday;
+      if (remainingBudget < 1) {
+        await db.prepare("UPDATE tcgcsv_price_sync_progress SET current_group_offset=?, rows_written_today=?, sync_day=? WHERE id=1 AND run_token=?")
+          .bind(offset, rowsWrittenToday, today, token).run();
+        return { paused_for_daily_write_budget: true, mode: 'price_only', current_group: groupId,
+          products_processed_in_group: offset, products_in_group: productIds.length,
+          rows_written_today: rowsWrittenToday, resumes_after_utc_midnight: true };
+      }
+      const batchIds = productIds.slice(offset, offset + Math.min(40, remainingBudget));
+      const statements = batchIds.map(productId => {
+        const price = priceFor(pricesByProduct.get(String(productId)) || []);
+        return db.prepare('UPDATE tcgcsv_products SET market_price=?, market_price_subtype=? WHERE product_id=?')
+          .bind(price.marketPrice, price.subtype, productId);
+      });
+      await db.batch(statements);
+      offset += batchIds.length;
+      rowsWrittenToday += batchIds.length;
+      await db.prepare("UPDATE tcgcsv_price_sync_progress SET current_group_offset=?, rows_written_today=?, sync_day=? WHERE id=1 AND run_token=?")
+        .bind(offset, rowsWrittenToday, today, token).run();
+    }
+    const nextIndex = index + 1;
+    await db.prepare('UPDATE tcgcsv_price_sync_progress SET next_group_index=?, current_group_offset=0 WHERE id=1 AND run_token=?')
+      .bind(nextIndex, token).run();
+    if (nextIndex >= groupIds.length) {
+      const published = await publishPrices(db, token);
+      return { ...published, groups_processed: nextIndex, groups_total: groupIds.length, products_price_refreshed: productIds.length };
+    }
+    return { processed_group: groupId, groups_processed: nextIndex, groups_total: groupIds.length,
+      products_price_refreshed: productIds.length, rows_written_today: rowsWrittenToday, mode: 'price_only', continuing: true };
+  } catch (error) {
+    await setError(db, error);
+    throw error;
+  }
+}
+
 async function publishCatalog(db, token) {
   const progress = await db.prepare('SELECT run_token, source_timestamp FROM tcgcsv_sync_progress WHERE id=1').first();
   if (!progress || progress.run_token !== token) return { ignored: true, reason: 'run_token_mismatch' };
@@ -285,41 +426,61 @@ export default {
       try {
         const ids = JSON.parse(progress?.group_ids_json || '[]');
         if (Array.isArray(ids)) groupCount = ids.length;
-      } catch {
-        groupCount = 0;
-      }
+      } catch { groupCount = 0; }
       const nextIndex = Number(progress?.next_group_index || 0);
-      const hasSavedRun = Boolean(progress?.run_token && progress?.source_timestamp && groupCount > 0);
-      const needsResume = hasSavedRun && (
+      const hasSavedCatalogRun = Boolean(progress?.run_token && progress?.source_timestamp && groupCount > 0);
+      const needsCatalogResume = hasSavedCatalogRun && (
         nextIndex < groupCount ||
         (nextIndex >= groupCount && ['syncing', 'error'].includes(String(state?.status || '')))
       );
-
-      if (needsResume) {
+      if (needsCatalogResume) {
         if (state?.status !== 'syncing') {
-          console.log('Resuming saved TCGCSV batch progress; previous status:', state?.status);
-          await env.DB.prepare(
-            "UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1"
-          ).run();
+          console.log('Resuming saved TCGCSV catalog import; previous status:', state?.status);
+          await env.DB.prepare("UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1").run();
         }
-        console.log('Processing saved TCGCSV group batch', Math.min(nextIndex + 1, groupCount), 'of', groupCount);
+        console.log('Processing saved TCGCSV catalog batch', Math.min(nextIndex + 1, groupCount), 'of', groupCount);
         await processOneGroup(env.DB, progress.run_token, importWriteBudget(env)).catch(error => {
-          console.error('TCGCSV group batch failed:', error);
+          console.error('TCGCSV catalog batch failed:', error);
           return setError(env.DB, error);
         });
         return;
       }
 
-      // The minute trigger only advances a previously-started import. TCGCSV
-      // recommends checking its source marker once per day, not once per minute.
+      await ensurePriceProgressTable(env.DB);
+      const priceProgress = await env.DB.prepare(
+        'SELECT run_token, source_timestamp, group_ids_json, next_group_index, current_group_offset FROM tcgcsv_price_sync_progress WHERE id=1'
+      ).first().catch(() => null);
+      let priceGroupCount = 0;
+      try {
+        const ids = JSON.parse(priceProgress?.group_ids_json || '[]');
+        if (Array.isArray(ids)) priceGroupCount = ids.length;
+      } catch { priceGroupCount = 0; }
+      const priceNextIndex = Number(priceProgress?.next_group_index || 0);
+      const hasSavedPriceRun = Boolean(priceProgress?.run_token && priceProgress?.source_timestamp && priceGroupCount > 0);
+      const needsPriceResume = hasSavedPriceRun && (
+        priceNextIndex < priceGroupCount ||
+        (priceNextIndex >= priceGroupCount && ['syncing', 'error'].includes(String(state?.status || '')))
+      );
+      if (needsPriceResume) {
+        if (state?.status !== 'syncing') {
+          console.log('Resuming saved TCGCSV price refresh; previous status:', state?.status);
+          await env.DB.prepare("UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1").run();
+        }
+        console.log('Processing saved TCGCSV price group', Math.min(priceNextIndex + 1, priceGroupCount), 'of', priceGroupCount);
+        await processOnePriceGroup(env.DB, priceProgress.run_token, importWriteBudget(env)).catch(error => {
+          console.error('TCGCSV price refresh failed:', error);
+          return setError(env.DB, error);
+        });
+        return;
+      }
+
       if (!isDailySourceCheck) {
         console.log('No active TCGCSV import; skipping source check until the daily trigger.');
         return;
       }
-
-      console.log('Daily TCGCSV source check; starting sync only if the source changed.');
-      await beginSync(env.DB).catch(error => {
-        console.error('TCGCSV scheduled sync failed:', error);
+      console.log('Daily TCGCSV source check; starting a price-only refresh if the source changed.');
+      await beginPriceSync(env.DB).catch(error => {
+        console.error('TCGCSV scheduled price refresh failed:', error);
         return setError(env.DB, error);
       });
     })());
@@ -350,17 +511,35 @@ export default {
           importer_daily_write_budget: importWriteBudget(env)
         };
       }
-      return json({ ok: true, service: 'PokePrizePool TCGCSV sync', state: state || null, progress: progressInfo });
+      await ensurePriceProgressTable(env.DB);
+      const priceProgress = await env.DB.prepare(
+        'SELECT source_timestamp, next_group_index, group_ids_json, current_group_offset, sync_day, rows_written_today FROM tcgcsv_price_sync_progress WHERE id=1'
+      ).first().catch(() => null);
+      let priceProgressInfo = null;
+      if (priceProgress) {
+        let total = null;
+        try { total = JSON.parse(priceProgress.group_ids_json || '[]').length; } catch {}
+        priceProgressInfo = {
+          source_timestamp: priceProgress.source_timestamp,
+          groups_processed: Number(priceProgress.next_group_index || 0),
+          groups_total: total,
+          products_processed_in_current_group: Number(priceProgress.current_group_offset || 0),
+          sync_day_utc: priceProgress.sync_day || null,
+          rows_updated_today: Number(priceProgress.rows_written_today || 0),
+          daily_write_budget: importWriteBudget(env)
+        };
+      }
+      return json({ ok: true, service: 'PokePrizePool TCGCSV sync', state: state || null, progress: progressInfo, price_progress: priceProgressInfo });
     }
 
-    if (url.pathname === '/sync' && request.method === 'POST') {
+    if ((url.pathname === '/sync' || url.pathname === '/catalog-sync') && request.method === 'POST') {
       const expected = env.SYNC_SECRET;
       const auth = request.headers.get('Authorization') || '';
       if (!expected || auth !== 'Bearer ' + expected) return json({ ok: false, error: 'unauthorized' }, 401);
       if (!env.DB) return json({ ok: false, error: 'database_not_configured' }, 500);
       try {
-        const result = await beginSync(env.DB);
-        return json({ ok: true, result, note: result.skipped ? 'No import was needed.' : 'Import is running in resumable per-group batches. Check /health for progress.' }, result.skipped ? 200 : 202);
+        const result = url.pathname === '/catalog-sync' ? await beginSync(env.DB) : await beginPriceSync(env.DB);
+        return json({ ok: true, result, note: result.skipped ? 'No sync was needed.' : (result.mode === 'price_only' ? 'Price-only refresh is running in resumable per-group batches. Check /health for progress.' : 'Catalog import is running in resumable per-group batches. Check /health for progress.') }, result.skipped ? 200 : 202);
       } catch (error) {
         console.error('TCGCSV sync start failed:', error);
         return json({ ok: false, error: 'sync_start_failed', message: String(error?.message || error).slice(0, 500) }, 500);
