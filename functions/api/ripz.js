@@ -487,40 +487,61 @@ export async function onRequestPost({ request, env }) {
       }
 
       await env.DB.prepare("UPDATE ripz_recordings SET recording_status='ready', error_message='', updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(streamId).run();
+
+      // Checking for a previously-created download can return an error when there
+      // is no MP4 download yet. That must not prevent us from creating one.
       let downloads = null;
+      let downloadReadError = null;
       try {
         downloads = await streamApi(env, "GET", "/" + encodeURIComponent(videoUid) + "/downloads");
-        if (!downloads.default || !downloads.default.status) {
+      } catch (readError) {
+        downloadReadError = readError;
+        console.info("Ripz MP4 download does not exist yet or is not readable; trying create:", clean(readError?.message, 180));
+      }
+      if (!downloads?.default?.status) {
+        try {
           downloads = await streamApi(env, "POST", "/" + encodeURIComponent(videoUid) + "/downloads");
+        } catch (createError) {
+          const message = "Your recording is ready, but Cloudflare has not returned an MP4 download yet. Ripz will keep checking; try Check recording status again shortly.";
+          console.warn("Ripz MP4 download creation failed:", clean(createError?.message, 180), "after read:", clean(downloadReadError?.message, 180));
+          await env.DB.prepare("UPDATE ripz_recordings SET download_status='processing', error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(message, streamId).run();
+          return json({
+            ok: true, recording_status: "ready", download_status: "processing",
+            download_url: null, message
+          });
         }
-      } catch (downloadError) {
-        const message = "The recording is ready, but Cloudflare could not prepare an MP4 download yet. Please check again.";
-        console.warn("Ripz MP4 preparation failed:", clean(downloadError?.message, 180));
-        await env.DB.prepare("UPDATE ripz_recordings SET download_status='processing', error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(message, streamId).run();
+      }
+
+      const download = downloads?.default || null;
+      const downloadStatus = String(download?.status || "inprogress").toLowerCase();
+      const downloadUrl = clean(download?.url, 2000);
+      if (downloadStatus === "error") {
+        const statusMessage = "Cloudflare could not generate the MP4 download. Please try checking again; if the problem continues, contact support.";
+        await env.DB.prepare("UPDATE ripz_recordings SET download_status='failed', download_url='', error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(statusMessage, streamId).run();
         return json({
-          ok: true, recording_status: "ready", download_status: "processing",
-          message
+          ok: true, recording_status: "ready", download_status: "failed",
+          download_url: null, message: statusMessage
         });
       }
-      const download = downloads?.default || null;
-      const downloadStatus = String(download?.status || "processing").toLowerCase();
-      const downloadUrl = downloadStatus === "ready" ? clean(download?.url, 2000) : "";
-      const statusMessage = downloadStatus === "ready"
-        ? "Your MP4 is ready to download."
-        : (downloadStatus === "error"
-          ? "Cloudflare could not generate the MP4 download. Please try again later."
-          : "Your recording is ready. Cloudflare is preparing the MP4 download.");
-      await env.DB.prepare("UPDATE ripz_recordings SET download_status=?, download_url=?, error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(
-        ["ready", "processing", "error"].includes(downloadStatus) ? (downloadStatus === "error" ? "failed" : downloadStatus) : "processing",
-        downloadUrl,
-        downloadStatus === "error" ? statusMessage : "",
+      if (downloadStatus === "ready" && downloadUrl) {
+        await env.DB.prepare("UPDATE ripz_recordings SET download_status='ready', download_url=?, error_message='', updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(downloadUrl, streamId).run();
+        return json({
+          ok: true, recording_status: "ready", download_status: "ready",
+          download_url: downloadUrl, message: "Your MP4 is ready to download."
+        });
+      }
+
+      const statusMessage = downloadUrl
+        ? "Your recording is ready and Cloudflare is preparing the MP4 download."
+        : "Your recording is ready, but Cloudflare has not returned a download link yet. Ripz will keep checking.";
+      await env.DB.prepare("UPDATE ripz_recordings SET download_status='processing', download_url=?, error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(
+        downloadUrl || "",
+        statusMessage,
         streamId
       ).run();
       return json({
-        ok: true, recording_status: "ready",
-        download_status: downloadStatus === "ready" && downloadUrl ? "ready" : (downloadStatus === "error" ? "failed" : "processing"),
-        download_url: downloadUrl || null,
-        message: statusMessage
+        ok: true, recording_status: "ready", download_status: "processing",
+        download_url: null, message: statusMessage
       });
     }
 
