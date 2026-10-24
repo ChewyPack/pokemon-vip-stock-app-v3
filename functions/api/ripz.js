@@ -462,6 +462,20 @@ export async function onRequestPost({ request, env }) {
           states: recordings.slice(0, 5).map(item => clean(item?.status?.state || (item?.readyToStream ? "ready" : "processing"), 30))
         }));
         if (!videoUid) {
+          // If the input has no associated video yet, inspect its persisted Cloudflare
+          // settings so we can distinguish a recording-mode issue from processing delay.
+          try {
+            const inputInfo = await streamApi(env, "GET", "/live_inputs/" + encodeURIComponent(stream.cloudflare_input_uid));
+            console.error("Ripz live-input recording configuration:", JSON.stringify({
+              inputFound: Boolean(inputInfo.uid),
+              recordingMode: clean(inputInfo.recording?.mode, 30),
+              enabled: inputInfo.enabled !== false,
+              created: clean(inputInfo.created, 40),
+              metaName: clean(inputInfo.meta?.name, 100)
+            }));
+          } catch (inputInfoError) {
+            console.error("Ripz live-input configuration lookup failed:", clean(inputInfoError?.message, 180));
+          }
           const endedAt = Date.parse(String(stream.ended_at || "").replace(" ", "T") + "Z");
           const timedOut = Number.isFinite(endedAt) && Date.now() - endedAt > 10 * 60 * 1000;
           if (timedOut) {
