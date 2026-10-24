@@ -35,3 +35,11 @@ This branch integrates a direct-to-customer official store using Cloudflare Page
 - Store orders become paid only after a valid signed Stripe webhook.
 - Stock reservation/restock behavior must be tested against staging D1 and Stripe test mode before launch.
 - The backend has not yet been verified against Cloudflare or Stripe. Do not merge to main or activate production checkout until staging tests pass.
+
+
+
+## Printify apparel listings
+
+The official PokePrizePool storefront supports optional Printify-hosted product checkout links for merchandise. Add a product in `/store-admin.html`, paste the product's HTTPS `*.printify.me` URL, add its title, description, and mockup image URL, and publish it. The public store then shows “Shop on Printify” instead of putting the item in the PokePrizePool Stripe cart. Printify's hosted product page handles its own size/color selection, checkout, printing, and shipping; these links do not reserve local D1 inventory or create a PokePrizePool Stripe order.
+
+Before deploying code that uses the new `store_products.external_checkout_url` column, apply `production-migrations/010_store_external_checkout.sql` once to the production `pokemon-vip-members` D1 database. Do not execute the same ALTER migration twice. Only HTTPS links on a `printify.me` domain are accepted. See the [official Printify Pop-Up Store guide](https://help.printify.com/hc/en-us/articles/12051129478417-What-is-Printify-Pop-Up-Store) for store URL and fulfillment details.
