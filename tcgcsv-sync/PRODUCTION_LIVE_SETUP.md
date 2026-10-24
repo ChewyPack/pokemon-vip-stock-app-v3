@@ -4,7 +4,7 @@ This runbook deploys the TCGCSV importer directly against the **production D1 da
 
 ## Before running the full import
 
-The Workers Free plan allows 100,000 D1 rows written per UTC day across the account. This compact importer writes one product row with a single preferred market price, avoids duplicate staging-table copies and price-history snapshots, and pauses at 50,000 measured importer row writes for the day to reserve headroom for the live site. It resumes automatically after midnight UTC. The initial import may take multiple days. This is a safety budget, not a guarantee against unusually high write activity from the website or another Worker; pause the old staging sync first. Workers Paid is optional if you later decide you need the import completed faster.
+Workers Paid includes 50 million D1 rows written per month before usage-based overage. This compact importer writes one product row with one preferred market price and avoids duplicate catalog copies and historical snapshots. The production Worker config sets a 500,000-row daily importer budget (about 15 million over 30 days if continuously used), reserving the remaining included allowance for the live site and other D1 work. The staging Worker retains its 50,000-row daily budget. The importer pauses at its configured budget and resumes after UTC midnight. Review the account's D1 usage dashboard before raising the budget further; this guardrail is a deliberate spending control.
 
 ## 1. Pause the old staging importer
 
@@ -42,9 +42,11 @@ npx wrangler secret put SYNC_SECRET --config wrangler.production.toml
 
 When prompted, enter a new long random secret and save it somewhere secure. Do not commit it or send it in chat. Keep this production secret separate from the staging Worker's secret.
 
-## 5. Start the first live sync immediately
+## 5. Check the existing sync before starting anything new
 
-The deploy output provides the production Worker URL. If the window is Command Prompt, type `powershell` and press Enter first. Then paste these commands, using the exact Worker URL from deploy output:
+The live catalog endpoint has already reported a partial import with 220 set groups registered and products/prices available, so the production sync has saved in-progress work. **For this existing partial run, deploy the Worker to restore its Cron Triggers, then check `/health`; do not POST to `/sync`.** The `/sync` endpoint begins a new run and can reset a saved cursor. The every-minute Cron Trigger resumes saved work automatically after the triggers are restored.
+
+Only if `/health` confirms there is no saved run and this is a genuinely new import should you use the manual start procedure below. The deploy output provides the production Worker URL. If the window is Command Prompt, type `powershell` and press Enter first. Then paste these commands, using the exact Worker URL from deploy output:
 
 ```powershell
 $workerUrl = (Read-Host "Paste the production Worker URL").TrimEnd("/")
@@ -58,7 +60,7 @@ Invoke-RestMethod -Method Get -Uri "$workerUrl/health"
 Remove-Variable secureSecret, secretPtr, syncSecret, headers
 ```
 
-The POST should return an accepted/started sync (or report that the source is already up to date). The health endpoint reports progress. Cloudflare's per-minute trigger resumes a saved import in the background, even after your PC sleeps or shuts down. The daily source-marker check happens at 21:00 UTC and does not re-fetch the marker every minute.
+The health endpoint reports progress. Cloudflare's per-minute Cron Trigger resumes saved work in the background, even after your PC sleeps or shuts down. The daily source-marker check happens at 21:00 UTC and does not re-fetch the marker every minute. Cron Trigger changes can take several minutes to propagate.
 
 ## What becomes live
 

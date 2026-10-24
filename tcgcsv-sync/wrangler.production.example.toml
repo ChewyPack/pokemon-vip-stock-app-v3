@@ -5,6 +5,10 @@ name = "pokeprizepool-tcgcsv-sync"
 main = "worker.js"
 compatibility_date = "2026-10-19"
 
+[vars]
+# Workers Paid plan: higher one-time import throughput, with a conservative monthly safety budget.
+IMPORT_WRITE_BUDGET = "500000"
+
 [triggers]
 crons = ["*/1 * * * *", "0 21 * * *"]
 
