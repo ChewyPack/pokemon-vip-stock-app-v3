@@ -147,6 +147,28 @@ async function streamApi(env, method, path, body) {
       } catch (_) {
         console.error("Ripz API token verification: request_failed");
       }
+      try {
+        const scopeResponse = await fetch(
+          "https://api.cloudflare.com/client/v4/accounts/" +
+            encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID) + "/stream/live_inputs?per_page=1",
+          { method: "GET", headers: { "Authorization": "Bearer " + env.CLOUDFLARE_STREAM_API_TOKEN } }
+        );
+        let scopeData = {};
+        try { scopeData = await scopeResponse.json(); } catch (_) {}
+        const scopeCheck = {
+          httpStatus: scopeResponse.status,
+          success: scopeData.success === true,
+          errors: Array.isArray(scopeData.errors)
+            ? scopeData.errors.slice(0, 3).map(item => ({
+                code: typeof item?.code === "number" ? item.code : undefined,
+                message: clean(item?.message, 200)
+              })).filter(item => item.message || item.code !== undefined)
+            : []
+        };
+        console.error("Ripz Stream account access check:", JSON.stringify(scopeCheck));
+      } catch (_) {
+        console.error("Ripz Stream account access check: request_failed");
+      }
     }
     console.error("Ripz Stream API request failed:", method, path, response.status, JSON.stringify(providerErrors));
     throw new Error("stream_provider_error");
