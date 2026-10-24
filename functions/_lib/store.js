@@ -111,5 +111,6 @@ export const publicProduct = (r) => ({
   condition: r.condition, gradeCompany: r.grade_company, grade: r.grade,
   priceCents: r.price_cents, compareAtCents: r.compare_at_cents,
   available: r.inventory, preorder: !!r.preorder, releaseDate: r.release_date,
+  externalCheckoutUrl: r.external_checkout_url || null,
   images: JSON.parse(r.images || '[]'), createdAt: r.created_at,
 });
