@@ -136,6 +136,7 @@ async function streamApi(env, method, path, body) {
           httpStatus: verifyResponse.status,
           success: verifyData.success === true,
           tokenStatus: clean(verifyData.result?.status, 30),
+          tokenId: clean(verifyData.result?.id, 80),
           errors: Array.isArray(verifyData.errors)
             ? verifyData.errors.slice(0, 3).map(item => ({
                 code: typeof item?.code === "number" ? item.code : undefined,
@@ -158,6 +159,7 @@ async function streamApi(env, method, path, body) {
         const scopeCheck = {
           httpStatus: scopeResponse.status,
           success: scopeData.success === true,
+          configuredAccountId: clean(env.CLOUDFLARE_ACCOUNT_ID, 40),
           errors: Array.isArray(scopeData.errors)
             ? scopeData.errors.slice(0, 3).map(item => ({
                 code: typeof item?.code === "number" ? item.code : undefined,
