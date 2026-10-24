@@ -61,13 +61,26 @@ export async function onRequestGet({ request, env }) {
     const url = new URL(request.url);
     const mode = url.searchParams.get("view") || "members";
     if (mode === "alerts") {
-      const result = await env.DB.prepare(`
-        SELECT r.*, h.report_id AS hidden_report_id
-        FROM reports r
-        LEFT JOIN admin_hidden_reports h ON h.report_id = r.id
-        WHERE h.report_id IS NULL
-        ORDER BY datetime(r.created_at) DESC LIMIT 500
-      `).all();
+      const publicReleaseTable = await env.DB.prepare(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1"
+      ).bind("admin_public_reports").first().catch(() => null);
+      const publicReleaseEnabled = Boolean(publicReleaseTable);
+      const result = publicReleaseEnabled
+        ? await env.DB.prepare(`
+            SELECT r.*, h.report_id AS hidden_report_id, p.report_id AS public_report_id
+            FROM reports r
+            LEFT JOIN admin_hidden_reports h ON h.report_id = r.id
+            LEFT JOIN admin_public_reports p ON p.report_id = r.id
+            WHERE h.report_id IS NULL
+            ORDER BY datetime(r.created_at) DESC LIMIT 500
+          `).all()
+        : await env.DB.prepare(`
+            SELECT r.*, h.report_id AS hidden_report_id, NULL AS public_report_id
+            FROM reports r
+            LEFT JOIN admin_hidden_reports h ON h.report_id = r.id
+            WHERE h.report_id IS NULL
+            ORDER BY datetime(r.created_at) DESC LIMIT 500
+          `).all();
       const alerts = (result.results || []).filter(row => {
         const stillThere = String(row.still_there || "").trim().toLowerCase();
         return !row.still_there || ["yes", "true", "in stock"].includes(stillThere);
@@ -79,9 +92,11 @@ export async function onRequestGet({ request, env }) {
         product_name: row.product_name || row.product || "",
         state: row.state || "",
         quantity: row.quantity_text || row.quantity || "",
-        created_at: row.created_at || ""
+        created_at: row.created_at || "",
+        is_public: Boolean(row.public_report_id),
+        public_release_enabled: publicReleaseEnabled
       }));
-      return json({ ok: true, alerts });
+      return json({ ok: true, alerts, public_release_enabled: publicReleaseEnabled });
     }
     const search = String(url.searchParams.get("q") || "").trim().slice(0, 120);
     const offset = Math.max(0, Math.min(10000000, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0));
@@ -312,6 +327,45 @@ export async function onRequestPost({ request, env }) {
     if (!sender) return json({ ok: false, error: "admin_required" }, 403);
     const data = await request.json().catch(() => null);
     if (!data || typeof data !== "object") return json({ ok: false, error: "bad_request" }, 400);
+    if (String(data.action || "") === "set_alert_visibility") {
+      const reportId = Number(data.report_id);
+      if (!Number.isSafeInteger(reportId) || reportId < 1) {
+        return json({ ok: false, error: "invalid_report_id" }, 400);
+      }
+      if (typeof data.is_public !== "boolean") {
+        return json({ ok: false, error: "invalid_public_visibility" }, 400);
+      }
+
+      const publicReleaseTable = await env.DB.prepare(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1"
+      ).bind("admin_public_reports").first().catch(() => null);
+      if (!publicReleaseTable) {
+        return json({
+          ok: false,
+          error: "alert_public_release_not_configured",
+          message: "Alert publishing needs one database setup step. From your repository root, run: npx wrangler d1 execute pokemon-vip-members --remote --file=production-migrations/009_alert_public_release.sql"
+        }, 503);
+      }
+
+      const report = await env.DB.prepare("SELECT id FROM reports WHERE id = ? LIMIT 1")
+        .bind(reportId).first();
+      if (!report) return json({ ok: false, error: "report_not_found" }, 404);
+
+      if (data.is_public) {
+        await env.DB.prepare(`
+          INSERT INTO admin_public_reports (report_id, published_by_account_id, published_at)
+          VALUES (?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(report_id) DO UPDATE SET
+            published_by_account_id = excluded.published_by_account_id,
+            published_at = CURRENT_TIMESTAMP
+        `).bind(reportId, Number(sender.id)).run();
+      } else {
+        await env.DB.prepare("DELETE FROM admin_public_reports WHERE report_id = ?")
+          .bind(reportId).run();
+      }
+      return json({ ok: true, report_id: reportId, is_public: data.is_public });
+    }
+
     const text = String(data.message || "").trim().slice(0, 900);
     if (!text) return json({ ok: false, error: "message_required" }, 400);
     const targetType = String(data.target_type || "");
