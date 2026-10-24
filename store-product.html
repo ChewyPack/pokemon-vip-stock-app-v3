@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07194d">
+<title>Product | PokePrizePool Store</title>
+<meta name="description" content="View product details in the official PokePrizePool store.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+:root{--st-navy:#07194d;--st-blue:#174b9b;--st-yellow:#ffd21f;--st-muted:#62749a;--st-line:#d9e3f4}
+body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-serif}
+.product-wrap{width:min(1120px,calc(100% - 28px));margin:22px auto 70px}
+.product-back{display:inline-flex;margin:0 0 18px;color:var(--st-blue);font-weight:900;text-decoration:none}.product-back:hover{text-decoration:underline}
+.product-panel{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(22px,4vw,48px);padding:clamp(16px,3vw,34px);border:1px solid var(--st-line);border-radius:18px;background:#fff;box-shadow:0 8px 28px #07194d0b}
+.product-gallery{min-width:0}.product-main-image{min-height:360px;height:clamp(340px,45vw,540px);display:grid;place-items:center;padding:16px;border:1px solid #e5ebf7;border-radius:14px;background:radial-gradient(ellipse at center,#edf3ff,#fff 70%);cursor:zoom-in}
+.product-main-image img{display:block;width:100%;height:100%;max-height:500px;object-fit:contain}.product-thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.product-thumb{width:76px;height:76px;border:1px solid var(--st-line);border-radius:9px;background:#fff;padding:5px;cursor:pointer}.product-thumb[aria-pressed=true]{border:2px solid var(--st-blue)}.product-thumb img{width:100%;height:100%;object-fit:contain}
+.product-info{align-self:center}.product-kicker{margin:0 0 9px;color:var(--st-blue);font-size:.78rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.product-title{font:clamp(2.5rem,5vw,4rem)/1 Bangers,cursive;margin:0;color:var(--st-navy);overflow-wrap:anywhere}.product-price{font-size:1.8rem;font-weight:900;margin:16px 0 12px}.product-old-price{margin-left:8px;font-size:1rem;color:#8794ad;text-decoration:line-through}.product-status{display:inline-flex;padding:7px 11px;border-radius:999px;background:#fff3bc;color:#725400;font-size:.78rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.product-description{white-space:pre-wrap;line-height:1.75;color:#425678;margin:20px 0}.product-meta{display:grid;gap:9px;padding:16px 0;border-top:1px solid #edf1f8;border-bottom:1px solid #edf1f8;font-size:.9rem}.product-meta div{display:flex;gap:8px;flex-wrap:wrap}.product-meta strong{min-width:95px}
+.product-buy{width:100%;min-height:48px;margin-top:18px;border:2px solid var(--st-navy);border-radius:10px;background:#e6eaf2;color:#8791a6;font:900 .98rem Nunito,system-ui,sans-serif;cursor:not-allowed}.product-note{font-size:.8rem;color:var(--st-muted);line-height:1.6}.product-message{padding:28px;border:1px solid var(--st-line);border-radius:14px;background:#fff;text-align:center;line-height:1.65}.product-lightbox{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:24px;background:#071022eF;cursor:zoom-out}.product-lightbox.open{display:flex}.product-lightbox img{max-width:min(100%,1100px);max-height:90vh;object-fit:contain}.product-lightbox button{position:absolute;top:18px;right:18px;border:0;border-radius:50%;width:42px;height:42px;background:#fff;color:var(--st-navy);font-size:1.5rem;cursor:pointer}
+[hidden]{display:none!important}
+@media(max-width:760px){.product-panel{grid-template-columns:1fr}.product-main-image{height:clamp(280px,75vw,440px);min-height:280px}.product-info{align-self:auto}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="product-wrap">
+<a class="product-back" href="/store.html">← Back to the PokePrizePool Store</a>
+<div id="product-status" class="product-message" role="status" aria-live="polite">Loading product details…</div>
+<section id="product-panel" class="product-panel" hidden aria-labelledby="product-title">
+<div class="product-gallery">
+<button id="product-main-image" class="product-main-image" type="button" aria-label="Enlarge product image"></button>
+<div id="product-thumbs" class="product-thumbs" aria-label="More product images"></div>
+</div>
+<div class="product-info">
+<p class="product-kicker">Official PokePrizePool Store · Clothing & Collectibles</p>
+<h1 id="product-title" class="product-title"></h1>
+<div id="product-price" class="product-price"></div>
+<span id="product-badge" class="product-status">Coming soon</span>
+<p id="product-description" class="product-description"></p>
+<div id="product-meta" class="product-meta"></div>
+<button id="product-buy" class="product-buy" type="button" disabled>Coming Soon</button>
+<p id="product-note" class="product-note">This product is not available to purchase yet. When purchasing opens, checkout will be completed securely on PokePrizePool.</p>
+</div>
+</section>
+</main>
+<div id="product-lightbox" class="product-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged product image"><button id="product-lightbox-close" type="button" aria-label="Close enlarged image">×</button><img id="product-lightbox-image" alt=""></div>
+<script src="/js/ui/site-nav.js?v=20261023-ripz-nav"></script>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const safe=value=>String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const money=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);
+ const slug=new URLSearchParams(location.search).get('slug');
+ let images=[];
+ function showError(message){$('product-status').textContent=message;$('product-status').hidden=false;$('product-panel').hidden=true;}
+ function setImage(index){
+   const image=images[index];if(!image)return;
+   $('product-main-image').innerHTML='<img src="'+safe(image)+'" alt="'+safe($('product-title').textContent)+'" loading="eager">';
+   $('product-main-image').dataset.image=image;
+   $('product-lightbox-image').src=image;
+   $('product-lightbox-image').alt=$('product-title').textContent;
+   $('product-thumbs').querySelectorAll('button').forEach((button,i)=>button.setAttribute('aria-pressed',String(i===index)));
+ }
+ function openLightbox(){if(!$('product-main-image').dataset.image)return;$('product-lightbox').classList.add('open');}
+ $('product-main-image').addEventListener('click',openLightbox);
+ $('product-lightbox').addEventListener('click',event=>{if(event.target===$('product-lightbox'))$('product-lightbox').classList.remove('open');});
+ $('product-lightbox-close').addEventListener('click',()=>$('product-lightbox').classList.remove('open'));
+ document.addEventListener('keydown',event=>{if(event.key==='Escape')$('product-lightbox').classList.remove('open');});
+ async function load(){
+   if(!slug||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(slug)){showError('This product link is invalid. Return to the store to browse available products.');return;}
+   try{
+     const response=await fetch('/api/store/products?slug='+encodeURIComponent(slug),{credentials:'same-origin',cache:'no-store'});
+     const data=await response.json().catch(()=>({}));
+     if(!response.ok||!Array.isArray(data.products))throw new Error('We could not load this product right now. Please try again.');
+     const product=data.products.find(item=>item.slug===slug);
+     if(!product){showError('We couldn’t find that product. It may have been removed or is no longer available.');return;}
+     document.title=product.name+' | PokePrizePool Store';
+     const description=String(product.description||'').trim();
+     $('product-title').textContent=product.name||'Product';
+     $('product-price').innerHTML=money(product.priceCents)+(Number(product.compareAtCents)>Number(product.priceCents)?'<span class="product-old-price">'+money(product.compareAtCents)+'</span>':'');
+     $('product-badge').textContent=product.comingSoon?'Coming Soon':(product.preorder?'Available to Preorder':(Number(product.available)>0?'In Stock':'Currently Unavailable'));
+     $('product-description').textContent=description||'More details about this product will be available soon.';
+     const meta=[];
+     if(product.category)meta.push(['Category',product.category==='merch'?'Clothing':product.category.charAt(0).toUpperCase()+product.category.slice(1)]);
+     if(product.productType)meta.push(['Type',product.productType]);
+     if(product.set)meta.push(['Set',product.set]);
+     if(product.language)meta.push(['Language',product.language]);
+     if(product.condition)meta.push(['Condition',product.condition]);
+     if(product.gradeCompany)meta.push(['Grading company',product.gradeCompany]);
+     if(product.grade)meta.push(['Grade',product.grade]);
+     $('product-meta').innerHTML=meta.map(([label,value])=>'<div><strong>'+safe(label)+'</strong><span>'+safe(value)+'</span></div>').join('');
+     images=Array.isArray(product.images)?product.images.filter(url=>typeof url==='string'&&/^https:\/\//i.test(url)):[];
+     if(images.length){
+       $('product-thumbs').innerHTML=images.map((image,index)=>'<button class="product-thumb" type="button" data-image-index="'+index+'" aria-label="View product image '+(index+1)+'" aria-pressed="'+(index===0?'true':'false')+'"><img src="'+safe(image)+'" alt="" loading="lazy"></button>').join('');
+       setImage(0);
+     }else{
+       $('product-main-image').innerHTML='<span>No product image available yet</span>';
+       $('product-main-image').style.cursor='default';
+     }
+     $('product-thumbs').addEventListener('click',event=>{const button=event.target.closest('[data-image-index]');if(button)setImage(Number(button.dataset.imageIndex));});
+     if(product.comingSoon){$('product-buy').textContent='Coming Soon';$('product-note').textContent='This product is not available to purchase yet. When purchasing opens, it will be available through the PokePrizePool store checkout.';}
+     else if(Number(product.available)>0&&!product.externalCheckoutUrl){$('product-buy').textContent='Add to Cart';$('product-buy').disabled=false;$('product-note').textContent='Add this product from the store catalog. Checkout is completed securely on PokePrizePool.';$('product-buy').addEventListener('click',()=>{location.href='/store.html?add='+encodeURIComponent(String(product.id));});}
+     else{$('product-buy').textContent='Currently Unavailable';$('product-note').textContent='This product is not currently available to purchase.';}
+     $('product-panel').hidden=false;$('product-status').hidden=true;
+   }catch(error){showError(error.message||'We could not load this product right now.');}
+ }
+ load();
+})();
+</script>
+</body>
+</html>
