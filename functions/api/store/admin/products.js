@@ -21,17 +21,19 @@ function clean(b, partial) {
   set('active', () => (b.active ? 1 : 0));
   set('preorder', () => (b.preorder ? 1 : 0));
   set('images', () => { const a = Array.isArray(b.images) ? b.images.filter((x) => typeof x === 'string' && x.startsWith('https://')).slice(0, 10) : []; return JSON.stringify(a); });
-  set('externalUrl', () => {
+  if (!partial || b.externalUrl !== undefined) {
     const raw = String(b.externalUrl || '').trim();
-    if (!raw) return null;
-    let parsed;
-    try { parsed = new URL(raw); } catch { throw new HttpError(400, 'Enter a valid Printify product URL.'); }
-    const host = parsed.hostname.toLowerCase();
-    if (parsed.protocol !== 'https:' || !(host === 'printify.me' || host.endsWith('.printify.me'))) {
-      throw new HttpError(400, 'Printify checkout URLs must use HTTPS on a printify.me domain.');
+    o.external_checkout_url = null;
+    if (raw) {
+      let parsed;
+      try { parsed = new URL(raw); } catch { throw new HttpError(400, 'Enter a valid Printify product URL.'); }
+      const host = parsed.hostname.toLowerCase();
+      if (parsed.protocol !== 'https:' || !(host === 'printify.me' || host.endsWith('.printify.me'))) {
+        throw new HttpError(400, 'Printify checkout URLs must use HTTPS on a printify.me domain.');
+      }
+      o.external_checkout_url = parsed.href.slice(0, 2000);
     }
-    return parsed.href.slice(0, 2000);
-  });
+  }
   if (o.compare_at_cents != null && o.price_cents != null && o.compare_at_cents <= o.price_cents) throw new HttpError(400, 'Sale price must be below compare-at price');
   return o;
 }
