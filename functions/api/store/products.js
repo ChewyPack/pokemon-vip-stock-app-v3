@@ -19,9 +19,12 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   if (av === 'in') where.push('(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != \'\')) AND preorder = 0');
   if (av === 'pre') where.push('preorder = 1');
   const min = parseInt(u.searchParams.get('min') || '', 10), max = parseInt(u.searchParams.get('max') || '', 10);
-  if (Number.isInteger(min)) { where.push('price_cents >= ?'); args.push(min); }
-  if (Number.isInteger(max)) { where.push('price_cents <= ?'); args.push(max); }
-  const order = { lo: 'price_cents ASC', hi: 'price_cents DESC' }[u.searchParams.get('sort')] || 'created_at DESC, id DESC';
+  if (Number.isInteger(min)) { where.push('(external_checkout_url IS NULL OR external_checkout_url = \'\') AND price_cents >= ?'); args.push(min); }
+  if (Number.isInteger(max)) { where.push('(external_checkout_url IS NULL OR external_checkout_url = \'\') AND price_cents <= ?'); args.push(max); }
+  const order = {
+    lo: '(CASE WHEN external_checkout_url IS NULL OR external_checkout_url = \'\' THEN 0 ELSE 1 END) ASC, price_cents ASC',
+    hi: '(CASE WHEN external_checkout_url IS NULL OR external_checkout_url = \'\' THEN 0 ELSE 1 END) ASC, price_cents DESC'
+  }[u.searchParams.get('sort')] || 'created_at DESC, id DESC';
   const page = Math.max(1, parseInt(u.searchParams.get('page') || '1', 10) || 1), size = 24;
   const sql = `FROM store_products WHERE ${where.join(' AND ')}`;
   const total = await env.DB.prepare(`SELECT COUNT(*) n ${sql}`).bind(...args).first('n');
