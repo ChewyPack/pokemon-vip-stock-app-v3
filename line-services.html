@@ -69,16 +69,18 @@ details p{margin:0 0 14px;color:var(--mut)}
 [hidden]{display:none!important}
 footer{text-align:center;padding:50px 0 70px}
 
-/* Floating 3D Meowthinator companion — confined to the Line Services page. */
+
+/* Transparent 3D Meowthinator companion — scroll controls both position and rotation. */
 .line-meowth-rail {
   position: fixed;
   z-index: 3;
   top: 8vh;
-  right: 12px;
-  width: clamp(180px, 15vw, 270px);
-  height: clamp(250px, 29vw, 340px);
+  right: clamp(115px, 9.5vw, 185px);
+  width: clamp(180px, 14vw, 250px);
+  height: clamp(240px, 27vw, 320px);
   pointer-events: none;
   will-change: top;
+  background: transparent;
   filter: drop-shadow(0 18px 20px rgba(0,0,0,.42));
 }
 .line-meowth-rail iframe {
@@ -86,7 +88,7 @@ footer{text-align:center;padding:50px 0 70px}
   width: 100%;
   height: 100%;
   border: 0;
-  border-radius: 14px;
+  outline: 0;
   background: transparent;
 }
 .line-meowth-credit {
@@ -100,6 +102,8 @@ footer{text-align:center;padding:50px 0 70px}
   .line-services-page main > .hero .wrap,
   .line-services-page main > section .wrap,
   .line-services-page main > footer .wrap {
+    width: min(1080px, calc(100vw - 420px));
+    max-width: 1080px;
     margin-left: max(18px, calc((100vw - 1280px) / 2));
     margin-right: 0;
   }
@@ -114,7 +118,6 @@ footer{text-align:center;padding:50px 0 70px}
 @media (prefers-reduced-motion: reduce) {
   .line-meowth-rail { will-change: auto; }
 }
-
 </style>
 </head>
 <body class="line-services-page">
@@ -122,11 +125,12 @@ footer{text-align:center;padding:50px 0 70px}
 <main>
 <aside class="line-meowth-rail" id="line-meowth-rail" aria-label="Rotating 3D Team Rocket Meowth robot">
   <iframe
+    id="line-meowth-frame"
     title="Team Rocket Meowth Mecha-Meowthinator 3D model by Noah Finlay Klein"
-    src="https://sketchfab.com/models/87b16ce95cc14af983bbf67057b78b97/embed?autostart=1&amp;autospin=0.25&amp;transparent=1&amp;ui_controls=0&amp;ui_infos=0&amp;ui_help=0&amp;ui_settings=0&amp;ui_vr=0&amp;ui_annotations=0&amp;ui_stop=0&amp;ui_hint=0"
+    src=""
     allow="autoplay; fullscreen; xr-spatial-tracking"
     loading="eager"
-    aria-label="Spinning 3D Meowth robot"
+    aria-label="Transparent 3D Meowth model controlled by page scrolling"
   ></iframe>
 </aside>
 <header class="hero"><div class="cards" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -320,27 +324,102 @@ calc();fmode();
 })();
 </script>
 
+
+<script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
 <script>
 (function () {
   var rail = document.getElementById('line-meowth-rail');
-  if (!rail || rail.dataset.scrollMotion === 'ready') return;
-  rail.dataset.scrollMotion = 'ready';
+  var iframe = document.getElementById('line-meowth-frame');
+  if (!rail || !iframe || rail.dataset.scrollReady === 'true') return;
+  rail.dataset.scrollReady = 'true';
 
-  function updatePosition() {
+  var viewerApi = null;
+  var cameraBase = null;
+  var targetRotation = 0;
+  var updateQueued = false;
+
+  function updateRailPosition() {
     var doc = document.documentElement;
     var maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
     var progress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
     var topStart = Math.round(window.innerHeight * 0.08);
-    var topEnd = Math.max(topStart, window.innerHeight - rail.offsetHeight - 20);
+    var topEnd = Math.max(topStart, window.innerHeight - rail.offsetHeight - 18);
     rail.style.top = Math.round(topStart + (topEnd - topStart) * progress) + 'px';
+    /* Scroll position controls the model's orientation, so scrolling backward reverses the spin. */
+    targetRotation = window.scrollY * 0.005;
+    queueCameraUpdate();
   }
 
-  updatePosition();
-  window.addEventListener('scroll', updatePosition, { passive: true });
-  window.addEventListener('resize', updatePosition);
-  if ('ResizeObserver' in window) new ResizeObserver(updatePosition).observe(document.body);
+  function queueCameraUpdate() {
+    if (updateQueued || !viewerApi || !cameraBase) return;
+    updateQueued = true;
+    window.requestAnimationFrame(function () {
+      updateQueued = false;
+      var target = cameraBase.target;
+      var angle = cameraBase.angle + targetRotation;
+      var radius = cameraBase.horizontalRadius;
+      var position = [
+        target[0] + Math.sin(angle) * radius,
+        target[1] + cameraBase.verticalOffset,
+        target[2] + Math.cos(angle) * radius
+      ];
+      viewerApi.setCameraLookAt(position, target, 0);
+    });
+  }
+
+  updateRailPosition();
+  window.addEventListener('scroll', updateRailPosition, { passive: true });
+  window.addEventListener('resize', updateRailPosition);
+  if ('ResizeObserver' in window) new ResizeObserver(updateRailPosition).observe(document.body);
+
+  if (typeof window.Sketchfab !== 'function') {
+    console.error('Sketchfab Viewer API failed to load.');
+    return;
+  }
+
+  var client = new window.Sketchfab('1.12.1', iframe);
+  client.init('87b16ce95cc14af983bbf67057b78b97', {
+    autostart: 1,
+    autospin: 0,
+    transparent: 1,
+    camera: 0,
+    ui_controls: 0,
+    ui_general_controls: 0,
+    ui_infos: 0,
+    ui_help: 0,
+    ui_hint: 0,
+    ui_settings: 0,
+    ui_vr: 0,
+    ui_annotations: 0,
+    ui_stop: 0,
+    success: function (api) {
+      viewerApi = api;
+      api.start();
+      api.addEventListener('viewerready', function () {
+        api.setUserInteraction(false);
+        api.getCameraLookAt(function (err, camera) {
+          if (err || !camera || !camera.position || !camera.target) return;
+          var p = camera.position;
+          var t = camera.target;
+          var dx = p[0] - t[0];
+          var dy = p[1] - t[1];
+          var dz = p[2] - t[2];
+          cameraBase = {
+            target: t,
+            angle: Math.atan2(dx, dz),
+            horizontalRadius: Math.sqrt(dx * dx + dz * dz),
+            verticalOffset: dy
+          };
+          updateRailPosition();
+        });
+      });
+    },
+    error: function (err) {
+      console.error('Line Services 3D Meowth viewer failed:', err);
+    }
+  });
 })();
 </script>
+
 </body>
 </html>
-<!-- Trigger Cloudflare Pages deployment; no page behavior changed. -->
