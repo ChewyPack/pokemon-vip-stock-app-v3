@@ -68,11 +68,67 @@ details[open] summary::after{content:"–"}
 details p{margin:0 0 14px;color:var(--mut)}
 [hidden]{display:none!important}
 footer{text-align:center;padding:50px 0 70px}
+
+/* Floating 3D Meowthinator companion — confined to the Line Services page. */
+.line-meowth-rail {
+  position: fixed;
+  z-index: 3;
+  top: 8vh;
+  right: 12px;
+  width: clamp(180px, 15vw, 270px);
+  height: clamp(250px, 29vw, 340px);
+  pointer-events: none;
+  will-change: top;
+  filter: drop-shadow(0 18px 20px rgba(0,0,0,.42));
+}
+.line-meowth-rail iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+}
+.line-meowth-credit {
+  margin: 12px auto 0;
+  color: var(--mut);
+  font-size: .78rem;
+  text-align: center;
+}
+.line-meowth-credit a { color: #cfe0ff; }
+@media (min-width: 1320px) {
+  .line-services-page main > .hero .wrap,
+  .line-services-page main > section .wrap,
+  .line-services-page main > footer .wrap {
+    margin-left: max(18px, calc((100vw - 1280px) / 2));
+    margin-right: 0;
+  }
+  .line-services-page .hero .cards { display: none; }
+}
+@media (max-width: 1319px) {
+  .line-meowth-rail { display: none; }
+}
+@media (max-width: 560px) {
+  .line-meowth-credit { padding-inline: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .line-meowth-rail { will-change: auto; }
+}
+
 </style>
 </head>
 <body class="line-services-page">
 <div id="site-navigation"></div>
 <main>
+<aside class="line-meowth-rail" id="line-meowth-rail" aria-label="Rotating 3D Team Rocket Meowth robot">
+  <iframe
+    title="Team Rocket Meowth Mecha-Meowthinator 3D model by Noah Finlay Klein"
+    src="https://sketchfab.com/models/87b16ce95cc14af983bbf67057b78b97/embed?autostart=1&amp;autospin=0.25&amp;transparent=1&amp;ui_controls=0&amp;ui_infos=0&amp;ui_help=0&amp;ui_settings=0&amp;ui_vr=0&amp;ui_annotations=0&amp;ui_stop=0&amp;ui_hint=0"
+    allow="autoplay; fullscreen; xr-spatial-tracking"
+    loading="eager"
+    aria-label="Spinning 3D Meowth robot"
+  ></iframe>
+</aside>
 <header class="hero"><div class="cards" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="wrap in">
 <h1>You collect.<br>I'll handle the line.</h1>
@@ -174,7 +230,8 @@ footer{text-align:center;padding:50px 0 70px}
 <footer><div class="wrap"><h2>Your time matters. My time matters.</h2>
 <p class="lead" style="max-width:62ch;margin:0 auto 22px">The goal is simple: help fellow collectors secure the products they want without having to spend their own day standing in line. Every drop takes planning, effort, and commitment. If the service makes sense for your next release, let's talk.</p>
 <div class="row" style="justify-content:center"><a class="btn pri" href="#calculator">Calculate My Cost</a><a class="btn" href="#reserve">Request a Reservation</a></div>
-<p style="margin-top:28px"><b>PokePrizePool</b> · <a href="https://pokeprizepool.com">pokeprizepool.com</a></p></div></footer>
+<p style="margin-top:28px"><b>PokePrizePool</b> · <a href="https://pokeprizepool.com">pokeprizepool.com</a></p></div><p class="line-meowth-credit">3D model: <a href="https://sketchfab.com/3d-models/team-rocket-meowth-mecha-meowthinator-87b16ce95cc14af983bbf67057b78b97" target="_blank" rel="noopener noreferrer">Team Rocket Meowth Mecha-Meowthinator by Noah Finlay Klein on Sketchfab</a></p>
+</footer>
 </main>
 
 <script src="/js/ui/site-nav.js?v=20261023-ripz-nav"></script>
@@ -260,6 +317,28 @@ var FAQ=[
 ["What happens if I need more than 10 hours?","The 10-hour package isn't applied to longer bookings. Additional time requires confirmation."]];
 var f=$("faq");FAQ.forEach(function(q){var d=document.createElement("details");d.innerHTML="<summary>"+q[0]+"</summary><p>"+q[1]+"</p>";f.appendChild(d)});
 calc();fmode();
+})();
+</script>
+
+<script>
+(function () {
+  var rail = document.getElementById('line-meowth-rail');
+  if (!rail || rail.dataset.scrollMotion === 'ready') return;
+  rail.dataset.scrollMotion = 'ready';
+
+  function updatePosition() {
+    var doc = document.documentElement;
+    var maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
+    var progress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+    var topStart = Math.round(window.innerHeight * 0.08);
+    var topEnd = Math.max(topStart, window.innerHeight - rail.offsetHeight - 20);
+    rail.style.top = Math.round(topStart + (topEnd - topStart) * progress) + 'px';
+  }
+
+  updatePosition();
+  window.addEventListener('scroll', updatePosition, { passive: true });
+  window.addEventListener('resize', updatePosition);
+  if ('ResizeObserver' in window) new ResizeObserver(updatePosition).observe(document.body);
 })();
 </script>
 </body>
