@@ -16,3 +16,11 @@ crons = ["*/1 * * * *", "0 21 * * *"]
 binding = "DB"
 database_name = "pokemon-vip-members"
 database_id = "4427e96c-d1f1-4f42-b863-94e303a4b7d9"
+
+[observability]
+# Keep production Cron Trigger executions and console output available for diagnosis.
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+invocation_logs = true
