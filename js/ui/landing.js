@@ -428,7 +428,7 @@
     var wrap = document.createElement('div'); wrap.className = 'wrap';
     var intro = document.createElement('div'); intro.className = 'ppp-home-previews__intro';
     var heading = document.createElement('h2'); heading.className = 'section__title'; heading.id = 'ppp-home-previews-title'; heading.textContent = 'Explore PokePrizePool';
-    var subtitle = document.createElement('p'); subtitle.className = 'section__sub'; subtitle.textContent = 'The latest from the collector community — all in one place.';
+    var subtitle = document.createElement('p'); subtitle.className = 'section__sub'; subtitle.textContent = 'Browse published coverage, member research, community-reported stock sightings, and collector-powered features. Online retailer monitoring is a separate feature and is not yet live.';
     intro.append(heading,subtitle);
     var grid = document.createElement('div'); grid.className = 'ppp-home-previews__grid';
     wrap.append(intro,grid); section.appendChild(wrap);
@@ -469,12 +469,12 @@
       if(opts.copy)copy.appendChild(node('p','',shorten(opts.copy,140)));
       link.appendChild(copy);target.feed.appendChild(link);
     }
-    var news = panel('Latest News','/news.html','All news ↗','News stories will appear here when published.');
-    var markets = panel('Market Intelligence','/market-intelligence.html','Market info ↗','Market updates and analysis will appear here when published.');
-    var giveaways = panel('Giveaways','/giveaways.html#gallery','All giveaways ↗','New giveaways will appear here when published.');
-    var listings = panel('Collector Marketplace','/marketplace.html','Browse listings ↗','Member shop listings will appear here as members publish them.');
-    var social = panel('News Feed','/newsfeed','View feed ↗','No community posts yet. Be the first to share.','ppp-home-previews__panel--social');
-    var featuredEvents = panel('Featured Events','/events.html','All events ↗','Upcoming community events will be featured here when organizers boost them.');
+    var news = panel('Latest News','/news.html','All news ↗','No news stories to preview right now. Open the News page for published Pokémon TCG coverage.');
+    var markets = panel('Market Intelligence','/market-intelligence.html','Market info ↗','Member-only research with dated market snapshots, sourced price movers, and collector tools.');
+    var giveaways = panel('Giveaways','/giveaways.html#gallery','All giveaways ↗','Visit the giveaways page for published prize details, entry rules, and community milestone goals.');
+    var listings = panel('Collector Marketplace','/marketplace.html','Browse listings ↗','Member shops post listings as items become available. Browse the marketplace for current offers.');
+    var social = panel('News Feed','/newsfeed','View feed ↗','No community posts to preview yet. Open the feed to join the conversation.','ppp-home-previews__panel--social');
+    var featuredEvents = panel('Featured Events','/events.html','All events ↗','Featured events are boosted by organizers. Browse the calendar for upcoming shows, trade nights, and releases.');
 
     fetch('/api/collector/posts?feed=latest&limit=2',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('community feed unavailable');return r.json();}).then(function(data){
       var rows=Array.isArray(data.posts)?data.posts.slice(0,2):[];
