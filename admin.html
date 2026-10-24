@@ -19,7 +19,7 @@
 <div class="tablewrap"><table><thead><tr><th>Member</th><th>Presence</th><th>Current page</th><th>Last active</th><th>Tier</th><th>Status</th><th>Browser push</th><th>Subscriptions</th><th>Last push update</th><th>Created</th><th>Quick tag</th><th>Account actions</th></tr></thead><tbody id="memberRows"><tr><td colspan="12">Loading…</td></tr></tbody></table></div>
 <div class="row" id="memberPagination" style="margin-top:12px;align-items:center"><button id="membersPrev" disabled>Previous</button><span id="membersPageInfo" class="muted" style="text-align:center">Loading account count…</span><button id="membersNext" disabled>Next</button></div>
 </section>
-<section id="alerts" class="panel hidden"><h2>Visible stock alerts</h2><p>Hiding an alert removes it from the public stock feed. The original report is preserved. A push notification already delivered to a device cannot be recalled.</p><button class="primary" id="reloadAlerts">Refresh alerts</button><div class="tablewrap"><table><thead><tr><th>Alert</th><th>Location</th><th>Reported</th><th>Action</th></tr></thead><tbody id="alertRows"><tr><td colspan="4">Loading…</td></tr></tbody></table></div></section>
+<section id="alerts" class="panel hidden"><h2>Stock alerts</h2><p>Alerts are VIP-only by default, even after an hour. Use <strong>Make Public</strong> on an alert to let free accounts see it. You can lock it back to VIP-only at any time. Hiding an alert removes it from the feed while preserving the original report.</p><button class="primary" id="reloadAlerts">Refresh alerts</button><div class="tablewrap"><table><thead><tr><th>Alert</th><th>Location</th><th>Reported</th><th>Visibility</th><th>Actions</th></tr></thead><tbody id="alertRows"><tr><td colspan="5">Loading…</td></tr></tbody></table></div></section>
 <section id="announce" class="panel hidden"><h2>Tag members in community chat</h2><p>Posts a message in the General channel by default. Mentioned accounts receive an in-app notification and browser push if they enabled it.</p>
 <label for="targetType">Who are you tagging?</label><select id="targetType"><option value="group">Group</option><option value="username">One username</option></select>
 <div id="groupWrap"><label for="targetGroup">Member group</label><select id="targetGroup"><option value="everyone">Everyone</option><option value="collector+">Active Collector+</option><option value="vendor">Active Vendor+</option><option value="organizer">Active Organizer+</option><option value="active members">All active paid members</option><option value="free">Free / inactive accounts</option></select></div>
@@ -101,7 +101,48 @@ async function loadMembers(offset=membersOffset){
   renderMembers();
 }
 async function loadPresence(){try{const data=await api('/api/presence');const byId=new Map((data.collectors||[]).map(c=>[Number(c.id),c]));members=members.map(m=>({...m,...(byId.get(Number(m.id))||{online:false,in_chat:false,current_page:'',last_seen_at:null})}));$('online').textContent=Number(data.online_count||0);$('inChat').textContent=Number(data.in_chat_count||0);renderMembers()}catch(e){$('online').textContent='—';$('inChat').textContent='—';if(e.message==='presence_read_failed')status('Admin access confirmed, but presence tracking needs its database migration. Apply production-migrations/003_admin_presence.sql to the database bound to this deployment.');else status('Admin access confirmed, but presence is unavailable: '+e.message)}}
-async function loadAlerts(){const data=await api('/api/admin-tools?view=alerts');$('alertRows').innerHTML=(data.alerts||[]).map(a=>'<tr><td><strong>'+esc(a.product_name||a.product||'Pokémon product')+'</strong><br><span class="muted">'+esc(a.store||'Store')+'</span><br><span class="small muted">#'+esc(a.id)+'</span></td><td>'+esc(a.location||'—')+(a.state?' · '+esc(a.state):'')+'</td><td>'+fmt(a.created_at)+'</td><td><button class="danger hideAlert" data-id="'+esc(a.id)+'">Hide alert</button></td></tr>').join('')||'<tr><td colspan="4">No visible alerts found.</td></tr>';document.querySelectorAll('.hideAlert').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Hide this alert from the public stock feed? The report will be preserved.'))return;try{await api('/api/admin-tools',{method:'DELETE',body:JSON.stringify({report_id:Number(b.dataset.id)})});b.closest('tr').remove();status('Alert hidden from the public feed.')}catch(e){status('Could not hide alert: '+e.message)}}))}
+async function loadAlerts(){
+  const data=await api('/api/admin-tools?view=alerts');
+  $('alertRows').innerHTML=(data.alerts||[]).map(a=>{
+    const isPublic=Boolean(a.is_public);
+    return '<tr>'+
+      '<td><strong>'+esc(a.product_name||a.product||'Pokémon product')+'</strong><br><span class="muted">'+esc(a.store||'Store')+'</span><br><span class="small muted">#'+esc(a.id)+'</span></td>'+
+      '<td>'+esc(a.location||'—')+(a.state?' · '+esc(a.state):'')+'</td>'+
+      '<td>'+fmt(a.created_at)+'</td>'+
+      '<td><span class="pill '+(isPublic?'':'off')+'">'+(isPublic?'Public':'VIP-only')+'</span></td>'+
+      '<td><button class="'+(isPublic?'danger':'primary')+' toggleAlertVisibility" data-id="'+esc(a.id)+'" data-public="'+(isPublic?'1':'0')+'">'+(isPublic?'Lock to VIP':'Make Public')+'</button> <button class="danger hideAlert" data-id="'+esc(a.id)+'">Hide alert</button></td>'+
+    '</tr>';
+  }).join('')||'<tr><td colspan="5">No visible alerts found.</td></tr>';
+  if(data.public_release_enabled===false){
+    status('Free users are safely locked out. To enable Make Public, click the button once and follow the database setup message.');
+  }
+  document.querySelectorAll('.toggleAlertVisibility').forEach(b=>b.addEventListener('click',async()=>{
+    const wasPublic=b.dataset.public==='1';
+    const promptText=wasPublic?'Lock this alert to VIP members only?':'Make this alert public so free users can see it?';
+    if(!confirm(promptText))return;
+    b.disabled=true;
+    try{
+      await api('/api/admin-tools',{method:'POST',body:JSON.stringify({action:'set_alert_visibility',report_id:Number(b.dataset.id),is_public:!wasPublic})});
+      status(wasPublic?'Alert is locked to VIP members only.':'Alert is now public.');
+      await loadAlerts();
+    }catch(e){
+      status('Could not change alert visibility: '+e.message);
+      b.disabled=false;
+    }
+  }));
+  document.querySelectorAll('.hideAlert').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('Hide this alert from the stock feed? The original report will be preserved.'))return;
+    b.disabled=true;
+    try{
+      await api('/api/admin-tools',{method:'DELETE',body:JSON.stringify({report_id:Number(b.dataset.id)})});
+      status('Alert hidden from the stock feed.');
+      await loadAlerts();
+    }catch(e){
+      status('Could not hide alert: '+e.message);
+      b.disabled=false;
+    }
+  }));
+}
 
 async function loadLineRequests(){const data=await api('/api/line-service-requests');const rows=data.requests||[];$('lineRequestCount').textContent=rows.length+' requests';$('lineRequestRows').innerHTML=rows.map(r=>'<tr><td><strong>#'+esc(r.id)+' · '+esc(r.release)+'</strong><br><span class="small muted">'+esc(r.created_at)+'</span><br><details><summary>Full request</summary><pre style="white-space:pre-wrap;max-width:520px">'+esc(r.summary)+'</pre></details></td><td>'+esc(r.name)+'<br>'+esc(r.email)+'<br><span class="muted">'+esc(r.discord)+'</span></td><td>'+esc(r.store)+'<br>'+esc(r.address)+'<br>'+esc(r.request_date)+(r.opening_time?' · '+esc(r.opening_time):'')+'</td><td><span class="pill '+(r.email_status==='sent'?'':'off')+'">'+esc(r.email_status||'pending')+'</span>'+(r.email_error?'<br><span class="small muted">'+esc(r.email_error)+'</span>':'')+(r.email_sent_at?'<br><span class="small muted">'+esc(r.email_sent_at)+'</span>':'')+'</td><td><button class="retryLineEmail" data-id="'+esc(r.id)+'" '+(r.email_status==='sent'?'disabled':'')+'>Retry email</button></td></tr>').join('')||'<tr><td colspan="5">No line-service requests yet.</td></tr>';document.querySelectorAll('.retryLineEmail').forEach(b=>b.addEventListener('click',async()=>{b.disabled=true;try{const result=await api('/api/line-service-requests',{method:'POST',body:JSON.stringify({action:'resend_email',id:Number(b.dataset.id)})});status('Notification email sent for request #'+b.dataset.id+'.');await loadLineRequests()}catch(e){status('Email retry failed: '+e.message);b.disabled=false}}))}
 $('reloadLineRequests').addEventListener('click',()=>loadLineRequests().then(()=>status('Line-service requests refreshed.')).catch(e=>status('Could not load line-service requests: '+e.message)));
