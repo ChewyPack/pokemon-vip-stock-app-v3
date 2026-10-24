@@ -431,10 +431,9 @@ export async function onRequestPost({ request, env }) {
           recordings = Array.isArray(result) ? result : (Array.isArray(result.videos) ? result.videos : []);
         } catch (recordingLookupError) {
           console.warn("Ripz live recording lookup failed:", clean(recordingLookupError?.message, 180));
-          return json({
-            ok: true, recording_status: "unavailable", download_status: "unavailable",
-            message: "Ripz could not locate a recording for this stream. Only streams started after recording was enabled can be downloaded."
-          });
+          const message = "Ripz could not locate a recording for this stream. Only streams started after recording was enabled can be downloaded.";
+          await env.DB.prepare("UPDATE ripz_recordings SET recording_status='unavailable', download_status='unavailable', error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(message, streamId).run();
+          return json({ ok: true, recording_status: "unavailable", download_status: "unavailable", message });
         }
         video = recordings.find(item => String(item.liveInput || item.live_input || "") === String(stream.cloudflare_input_uid)) || recordings[0] || null;
         videoUid = clean(video?.uid, 100);
@@ -497,6 +496,7 @@ export async function onRequestPost({ request, env }) {
       } catch (downloadError) {
         const message = "The recording is ready, but Cloudflare could not prepare an MP4 download yet. Please check again.";
         console.warn("Ripz MP4 preparation failed:", clean(downloadError?.message, 180));
+        await env.DB.prepare("UPDATE ripz_recordings SET download_status='processing', error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(message, streamId).run();
         return json({
           ok: true, recording_status: "ready", download_status: "processing",
           message
