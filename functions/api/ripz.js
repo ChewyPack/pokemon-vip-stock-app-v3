@@ -71,6 +71,19 @@ async function ensureSchema(env) {
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_streams_status_created ON ripz_streams(status, live_at DESC, created_at DESC)").run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_streams_account_status ON ripz_streams(account_id, status)").run();
   await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS ripz_recordings (
+      stream_id TEXT PRIMARY KEY REFERENCES ripz_streams(id) ON DELETE CASCADE,
+      cloudflare_video_uid TEXT UNIQUE,
+      recording_status TEXT NOT NULL DEFAULT 'processing' CHECK(recording_status IN ('processing','ready','failed','unavailable')),
+      download_status TEXT NOT NULL DEFAULT 'pending' CHECK(download_status IN ('pending','processing','ready','failed','unavailable')),
+      download_url TEXT,
+      error_message TEXT NOT NULL DEFAULT '',
+      input_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS ripz_chat_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       stream_id TEXT NOT NULL REFERENCES ripz_streams(id) ON DELETE CASCADE,
@@ -98,7 +111,11 @@ function streamShape(row, includePublishUrl = false) {
     host: row.host || row.display_name || "Collector",
     created_at: row.created_at,
     live_at: row.live_at || null,
-    playback_url: row.playback_url
+    playback_url: row.playback_url,
+    recording_status: row.recording_status || null,
+    download_status: row.download_status || null,
+    download_url: row.download_url || null,
+    recording_message: row.recording_message || row.error_message || null
   };
   if (includePublishUrl) out.whip_url = row.whip_url;
   return out;
@@ -181,10 +198,17 @@ async function streamApi(env, method, path, body) {
 }
 async function findOwnedStream(env, streamId) {
   return env.DB.prepare(`
-    SELECT s.*, COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS host
+    SELECT s.*,
+           COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS host,
+           r.cloudflare_video_uid AS recording_uid,
+           r.recording_status,
+           r.download_status,
+           r.download_url,
+           r.error_message
     FROM ripz_streams s
     JOIN accounts a ON a.id = s.account_id
     LEFT JOIN collector_profiles p ON p.account_id = a.id
+    LEFT JOIN ripz_recordings r ON r.stream_id = s.id
     WHERE s.id = ? LIMIT 1
   `).bind(streamId).first();
 }
@@ -205,12 +229,17 @@ export async function onRequestGet({ request, env }) {
       LIMIT 40
     `).all();
     const myRow = await env.DB.prepare(`
-      SELECT s.*, COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS host
+      SELECT s.*,
+             COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS host,
+             r.recording_status, r.download_status, r.download_url, r.error_message
       FROM ripz_streams s
       JOIN accounts a ON a.id = s.account_id
       LEFT JOIN collector_profiles p ON p.account_id = a.id
-      WHERE s.account_id = ? AND s.status IN ('ready','live')
-      ORDER BY s.created_at DESC LIMIT 1
+      LEFT JOIN ripz_recordings r ON r.stream_id = s.id
+      WHERE s.account_id = ?
+      ORDER BY CASE WHEN s.status IN ('ready','live') THEN 0 ELSE 1 END,
+               COALESCE(s.ended_at, s.created_at) DESC
+      LIMIT 1
     `).bind(account.id).first();
     const url = new URL(request.url);
     const streamId = clean(url.searchParams.get("stream_id"), 80);
@@ -282,7 +311,7 @@ export async function onRequestPost({ request, env }) {
       try {
         providerStream = await streamApi(env, "POST", "/live_inputs", {
           meta: { name: title, app: "PokePrizePool Ripz", product_name: productName, account_id: String(account.id) },
-          recording: { mode: "off", requireSignedURLs: false }
+          recording: { mode: "automatic", requireSignedURLs: false, timeoutSeconds: 0 }
         });
       } catch (_) {
         return json({ ok: false, error: "stream_provider_error", message: "The live video service could not create a stream. Please try again later." }, 502);
@@ -302,6 +331,11 @@ export async function onRequestPost({ request, env }) {
       } catch (error) {
         streamApi(env, "DELETE", "/live_inputs/" + encodeURIComponent(uid)).catch(() => {});
         throw error;
+      }
+      try {
+        await env.DB.prepare("INSERT OR IGNORE INTO ripz_recordings (stream_id) VALUES (?)").bind(uid).run();
+      } catch (recordingError) {
+        console.warn("Ripz recording tracking initialization failed:", recordingError);
       }
       const row = await findOwnedStream(env, uid);
       return json({ ok: true, reused: false, stream: streamShape(row, true) }, 201);
@@ -358,6 +392,138 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true });
     }
 
+    if (action === "recording") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const stream = await findOwnedStream(env, streamId);
+      if (!stream) return json({ ok: false, error: "stream_not_found" }, 404);
+      if (Number(stream.account_id) !== Number(account.id) && !account.is_admin) {
+        return json({ ok: false, error: "not_stream_owner" }, 403);
+      }
+      if (stream.status !== "ended") return json({ ok: false, error: "stream_not_ended" }, 409);
+      const recording = await env.DB.prepare("SELECT * FROM ripz_recordings WHERE stream_id = ? LIMIT 1").bind(streamId).first();
+      if (!recording) {
+        return json({
+          ok: true, recording_status: "unavailable", download_status: "unavailable",
+          message: "This stream started before automatic recording was enabled. New streams can be downloaded after they end."
+        });
+      }
+      if (!cloudflareConfigured(env)) {
+        return json({ ok: false, error: "streaming_not_configured" }, 503);
+      }
+
+      let video = null;
+      let videoUid = clean(recording.cloudflare_video_uid, 100);
+      if (videoUid) {
+        try {
+          video = await streamApi(env, "GET", "/" + encodeURIComponent(videoUid));
+        } catch (videoError) {
+          console.warn("Ripz recording status lookup failed:", clean(videoError?.message, 180));
+          return json({
+            ok: true, recording_status: "processing", download_status: recording.download_status || "pending",
+            message: "Your recording is being prepared. Please check again shortly."
+          });
+        }
+      } else {
+        let recordings = [];
+        try {
+          const result = await streamApi(env, "GET", "/live_inputs/" + encodeURIComponent(stream.cloudflare_input_uid) + "/videos");
+          recordings = Array.isArray(result) ? result : (Array.isArray(result.videos) ? result.videos : []);
+        } catch (recordingLookupError) {
+          console.warn("Ripz live recording lookup failed:", clean(recordingLookupError?.message, 180));
+          return json({
+            ok: true, recording_status: "unavailable", download_status: "unavailable",
+            message: "Ripz could not locate a recording for this stream. Only streams started after recording was enabled can be downloaded."
+          });
+        }
+        video = recordings.find(item => String(item.liveInput || item.live_input || "") === String(stream.cloudflare_input_uid)) || recordings[0] || null;
+        videoUid = clean(video?.uid, 100);
+        if (!videoUid) {
+          const endedAt = Date.parse(String(stream.ended_at || "").replace(" ", "T") + "Z");
+          const timedOut = Number.isFinite(endedAt) && Date.now() - endedAt > 10 * 60 * 1000;
+          if (timedOut) {
+            const message = "No recording was found for this stream. It may have ended before recording was enabled.";
+            await env.DB.prepare("UPDATE ripz_recordings SET recording_status='unavailable', download_status='unavailable', error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(message, streamId).run();
+            return json({ ok: true, recording_status: "unavailable", download_status: "unavailable", message });
+          }
+          await env.DB.prepare("UPDATE ripz_recordings SET recording_status='processing', updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(streamId).run();
+          return json({
+            ok: true, recording_status: "processing", download_status: recording.download_status || "pending",
+            message: "Your recording is being prepared. This can take about a minute after the stream ends."
+          });
+        }
+        await env.DB.prepare("UPDATE ripz_recordings SET cloudflare_video_uid=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(videoUid, streamId).run();
+      }
+
+      const providerState = String(video?.status?.state || (video?.readyToStream ? "ready" : "processing")).toLowerCase();
+      if (providerState === "error" || providerState === "failed") {
+        const message = clean(video?.status?.errorReasonText || "Cloudflare could not finish processing this recording.", 240);
+        await env.DB.prepare("UPDATE ripz_recordings SET recording_status='failed', download_status='failed', error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(message, streamId).run();
+        return json({ ok: true, recording_status: "failed", download_status: "failed", message });
+      }
+
+      // Once Cloudflare has created the recording, the live input can be removed:
+      // Cloudflare retains existing recordings, and future polling uses the video UID.
+      const currentRecording = await env.DB.prepare("SELECT input_deleted FROM ripz_recordings WHERE stream_id=?").bind(streamId).first();
+      if (videoUid && Number(currentRecording?.input_deleted || 0) === 0) {
+        try {
+          await streamApi(env, "DELETE", "/live_inputs/" + encodeURIComponent(stream.cloudflare_input_uid));
+          await env.DB.prepare("UPDATE ripz_recordings SET input_deleted=1, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(streamId).run();
+        } catch (cleanupError) {
+          console.warn("Ripz ended live input cleanup failed:", clean(cleanupError?.message, 180));
+        }
+      }
+
+      if (providerState !== "ready" && video?.readyToStream !== true) {
+        await env.DB.prepare("UPDATE ripz_recordings SET recording_status='processing', updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(streamId).run();
+        return json({
+          ok: true, recording_status: "processing", download_status: recording.download_status || "pending",
+          message: "Your recording is processing. The download button will appear when the MP4 is ready."
+        });
+      }
+      if (Number(video?.duration || 0) >= 4 * 60 * 60) {
+        const message = "Cloudflare only provides MP4 downloads for live recordings under four hours. This recording may still be available to replay.";
+        await env.DB.prepare("UPDATE ripz_recordings SET recording_status='ready', download_status='unavailable', error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(message, streamId).run();
+        return json({ ok: true, recording_status: "ready", download_status: "unavailable", message });
+      }
+
+      await env.DB.prepare("UPDATE ripz_recordings SET recording_status='ready', error_message='', updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(streamId).run();
+      let downloads = null;
+      try {
+        downloads = await streamApi(env, "GET", "/" + encodeURIComponent(videoUid) + "/downloads");
+        if (!downloads.default || !downloads.default.status) {
+          downloads = await streamApi(env, "POST", "/" + encodeURIComponent(videoUid) + "/downloads");
+        }
+      } catch (downloadError) {
+        const message = "The recording is ready, but Cloudflare could not prepare an MP4 download yet. Please check again.";
+        console.warn("Ripz MP4 preparation failed:", clean(downloadError?.message, 180));
+        return json({
+          ok: true, recording_status: "ready", download_status: "processing",
+          message
+        });
+      }
+      const download = downloads?.default || null;
+      const downloadStatus = String(download?.status || "processing").toLowerCase();
+      const downloadUrl = downloadStatus === "ready" ? clean(download?.url, 2000) : "";
+      const statusMessage = downloadStatus === "ready"
+        ? "Your MP4 is ready to download."
+        : (downloadStatus === "error"
+          ? "Cloudflare could not generate the MP4 download. Please try again later."
+          : "Your recording is ready. Cloudflare is preparing the MP4 download.");
+      await env.DB.prepare("UPDATE ripz_recordings SET download_status=?, download_url=?, error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(
+        ["ready", "processing", "error"].includes(downloadStatus) ? (downloadStatus === "error" ? "failed" : downloadStatus) : "processing",
+        downloadUrl,
+        downloadStatus === "error" ? statusMessage : "",
+        streamId
+      ).run();
+      return json({
+        ok: true, recording_status: "ready",
+        download_status: downloadStatus === "ready" && downloadUrl ? "ready" : (downloadStatus === "error" ? "failed" : "processing"),
+        download_url: downloadUrl || null,
+        message: statusMessage
+      });
+    }
+
     if (action === "end") {
       const streamId = clean(data.stream_id, 100);
       if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
@@ -366,15 +532,9 @@ export async function onRequestPost({ request, env }) {
       if (Number(row.account_id) !== Number(account.id) && !account.is_admin) return json({ ok: false, error: "not_stream_owner" }, 403);
       if (row.status === "ended") return json({ ok: true, already_ended: true });
       await env.DB.prepare("UPDATE ripz_streams SET status='ended', ended_at=CURRENT_TIMESTAMP, whip_url='', playback_url='', updated_at=CURRENT_TIMESTAMP WHERE id=? AND status<>'ended'").bind(streamId).run();
-      let providerStopped = true;
-      if (cloudflareConfigured(env)) {
-        try {
-          await streamApi(env, "DELETE", "/live_inputs/" + encodeURIComponent(row.cloudflare_input_uid));
-        } catch (_) { providerStopped = false; }
-      } else {
-        providerStopped = false;
-      }
-      return json({ ok: true, provider_stopped: providerStopped, warning: providerStopped ? null : "stream_provider_stop_failed" });
+      // Keep the live input until its recording UID is discoverable. The recording
+      // endpoint cleans up the input only after Cloudflare has created a retained video.
+      return json({ ok: true, recording_status: "processing" });
     }
 
     if (action === "chat") {
