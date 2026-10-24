@@ -76,8 +76,8 @@ footer{text-align:center;padding:50px 0 70px}
   z-index: 3;
   top: 8vh;
   right: clamp(115px, 9vw, 170px);
-  width: clamp(180px, 14vw, 250px);
-  height: clamp(240px, 27vw, 320px);
+  width: clamp(330px, 27vw, 440px);
+  height: clamp(230px, 22vw, 300px);
   pointer-events: none;
   will-change: top;
   background: transparent;
@@ -102,7 +102,7 @@ footer{text-align:center;padding:50px 0 70px}
   .line-services-page main > .hero .wrap,
   .line-services-page main > section .wrap,
   .line-services-page main > footer .wrap {
-    width: min(1080px, calc(100vw - 420px));
+    width: min(1080px, calc(100vw - 500px));
     max-width: 1080px;
     margin-left: max(18px, calc((100vw - 1280px) / 2));
     margin-right: 0;
@@ -377,6 +377,7 @@ calc();fmode();
     return;
   }
 
+
   var client = new window.Sketchfab('1.12.1', iframe);
   client.init('87b16ce95cc14af983bbf67057b78b97', {
     autostart: 1,
@@ -397,21 +398,37 @@ calc();fmode();
       api.start();
       api.addEventListener('viewerready', function () {
         api.setUserInteraction(false);
-        api.getCameraLookAt(function (err, camera) {
-          if (err || !camera || !camera.position || !camera.target) return;
-          var p = camera.position;
-          var t = camera.target;
-          var dx = p[0] - t[0];
-          var dy = p[1] - t[1];
-          var dz = p[2] - t[2];
-          cameraBase = {
-            target: t,
-            angle: Math.atan2(dx, dz),
-            horizontalRadius: Math.sqrt(dx * dx + dz * dz) * 1.42,
-            verticalOffset: dy * 1.15
-          };
-          updateRailPosition();
-        });
+        /* Ask for transparent background explicitly as well as at initialization. */
+        try { api.setBackground({ transparent: true }, function () {}); } catch (e) {}
+        /* Center on all visible parts before defining the scroll orbit. */
+        function establishFraming() {
+          api.getCameraLookAt(function (err, camera) {
+            if (err || !camera || !camera.position || !camera.target) return;
+            var p = camera.position;
+            var t = camera.target;
+            var dx = p[0] - t[0];
+            var dy = p[1] - t[1];
+            var dz = p[2] - t[2];
+            cameraBase = {
+              target: t,
+              angle: Math.atan2(dx, dz),
+              horizontalRadius: Math.sqrt(dx * dx + dz * dz) * 2.25,
+              verticalOffset: dy * 1.35
+            };
+            api.setFov(42, function () {
+              updateRailPosition();
+            });
+          });
+        }
+        try {
+          api.setEnableCameraConstraints(false, { preventCameraConstraintsFocus: true }, function () {
+            api.recenterCamera(function () {
+              establishFraming();
+            });
+          });
+        } catch (e) {
+          establishFraming();
+        }
       });
     },
     error: function (err) {
