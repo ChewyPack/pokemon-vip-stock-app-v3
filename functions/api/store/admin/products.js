@@ -20,6 +20,7 @@ function clean(b, partial) {
   set('inventory', () => int(b.inventory));
   set('active', () => (b.active ? 1 : 0));
   set('preorder', () => (b.preorder ? 1 : 0));
+  if (!partial || b.comingSoon !== undefined) o.coming_soon = b.comingSoon ? 1 : 0;
   set('images', () => { const a = Array.isArray(b.images) ? b.images.filter((x) => typeof x === 'string' && x.startsWith('https://')).slice(0, 10) : []; return JSON.stringify(a); });
   if (!partial || b.externalUrl !== undefined) {
     const raw = String(b.externalUrl || '').trim();
