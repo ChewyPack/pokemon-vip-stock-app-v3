@@ -55,6 +55,13 @@ async function currentAccount(request, env) {
     return null;
   }
 }
+async function hasPublicReleaseTable(env) {
+  const result = await env.DB.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1"
+  ).bind("admin_public_reports").first().catch(() => null);
+  return Boolean(result);
+}
+
 function norm(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
 export async function onRequestGet({ request, env }) {
@@ -73,6 +80,12 @@ export async function onRequestGet({ request, env }) {
     const search = String(url.searchParams.get('search') || '').trim().slice(0, 120);
     const limit = Math.min(100, Math.max(10, Number(url.searchParams.get('limit') || 60)));
     const pattern = '%' + search + '%';
+    // Fail closed for free accounts if the optional publication table has not been
+    // installed yet. Paid members can still use the live feed during setup.
+    const publicReleaseEnabled = await hasPublicReleaseTable(env);
+    const visibilityFilter = publicReleaseEnabled
+      ? "AND (? = 1 OR EXISTS (SELECT 1 FROM admin_public_reports released WHERE released.report_id = reports.id))"
+      : "AND (? = 1)";
 
     // Adapt to both the legacy production reports table and newer staging schema.
     const columns = await env.DB.prepare('PRAGMA table_info(reports)').all();
@@ -89,7 +102,7 @@ export async function onRequestGet({ request, env }) {
       WHERE 1 = 1
         AND NOT EXISTS (SELECT 1 FROM admin_hidden_reports hidden WHERE hidden.report_id = reports.id)
         ${reportTypeFilter}
-        AND (? = 1 OR datetime(created_at) <= datetime('now', '-1 hour'))
+        ${visibilityFilter}
         AND LOWER(TRIM(COALESCE(still_there, ''))) IN ('yes', 'true', 'in stock')
         AND (
           (? = '' AND datetime(created_at) >= datetime('now', '-24 hours'))
