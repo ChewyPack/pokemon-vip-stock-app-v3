@@ -858,6 +858,11 @@
    finally{button.disabled=false;}
   });
   grid.dataset.settingsAccordionsBuilt='true';
+  // Allow the Live Stock Subscribe button to open the membership section directly.
+  if(window.location.hash==='#settings-membership'){
+   const membershipSection=document.getElementById('settings-membership');
+   if(membershipSection)membershipSection.open=true;
+  }
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',buildSettingsAccordions);else buildSettingsAccordions();
 })();
