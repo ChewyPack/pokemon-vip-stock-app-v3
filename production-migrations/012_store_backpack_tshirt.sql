@@ -32,7 +32,7 @@ VALUES
     0,
     1,
     0,
-    '[]',
+    '["https://images-api.printify.com/mockup/6adccf466ae28fd5270f5994/12100/102005/pokeprizepool.jpg?camera_label=front-2&revision=1792862417395&s=2048","https://images-api.printify.com/mockup/6adccf466ae28fd5270f5994/12100/102001/pokeprizepool.jpg?camera_label=folded&revision=1792862417395&s=400","https://images-api.printify.com/mockup/6adccf466ae28fd5270f5994/12100/127735/pokeprizepool.jpg?camera_label=folded-2&revision=1792862417395&s=400"]',
     NULL,
     1
   );
