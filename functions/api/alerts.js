@@ -21,40 +21,61 @@ async function sha256(value) {
   return b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
 }
 async function currentAccount(request, env) {
-  // Preserve access for existing paid VIP members stored in the production users table.
-  const vipToken = getCookie(request, VIP_COOKIE);
-  if (vipToken) {
-    const vipMember = await env.DB.prepare(
-      "SELECT id, session_expires_at, membership_status, membership_type FROM users WHERE session_token_hash = ? AND membership_status = 'active' LIMIT 1"
-    ).bind(await sha256(vipToken)).first();
-    if (vipMember && vipMember.session_expires_at && Number(vipMember.session_expires_at) > Date.now()) {
-      return {
-        id: vipMember.id,
-        session_expires_at: vipMember.session_expires_at,
-        is_admin: 0,
-        membership_tier: vipMember.membership_type || 'vip',
-        membership_entitlement_tier: vipMember.membership_type || 'vip',
-        membership_status: 'active',
-        legacyVip: true
-      };
+  // Prefer the account represented by the modern collector session when that
+  // cookie exists. Do not allow a leftover vip_session cookie from another
+  // account to override a signed-in free account.
+  const token = getCookie(request, COOKIE);
+  if (token) {
+    try {
+      const account = await env.DB.prepare(
+        'SELECT id, session_expires_at, is_admin, membership_tier, membership_entitlement_tier, membership_status FROM accounts WHERE session_token_hash = ? LIMIT 1'
+      ).bind(await sha256(token)).first();
+      if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) {
+        return null;
+      }
+      return account;
+    } catch (error) {
+      console.warn('Collector account lookup unavailable in this database:', error);
+      return null;
     }
   }
 
-  const token = getCookie(request, COOKIE);
-  if (!token) return null;
-  // The collector-account tables are not present in the legacy production schema.
-  // Treat their absence as no collector account, not as a failure for VIP sessions.
-  try {
-    const account = await env.DB.prepare(
-      'SELECT id, session_expires_at, is_admin, membership_tier, membership_entitlement_tier, membership_status FROM accounts WHERE session_token_hash = ? LIMIT 1'
-    ).bind(await sha256(token)).first();
-    if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) return null;
-    return account;
-  } catch (error) {
-    console.warn('Collector account lookup unavailable in this database:', error);
-    return null;
+  // Existing paid VIP members using the legacy users table remain supported
+  // when they do not have a collector-account session cookie.
+  const vipToken = getCookie(request, VIP_COOKIE);
+  if (!vipToken) return null;
+  const vipMember = await env.DB.prepare(
+    "SELECT id, session_expires_at, membership_status, membership_type FROM users WHERE session_token_hash = ? AND membership_status = 'active' LIMIT 1"
+  ).bind(await sha256(vipToken)).first();
+  if (vipMember && vipMember.session_expires_at && Number(vipMember.session_expires_at) > Date.now()) {
+    return {
+      id: vipMember.id,
+      session_expires_at: vipMember.session_expires_at,
+      is_admin: 0,
+      membership_tier: vipMember.membership_type || 'vip',
+      membership_entitlement_tier: vipMember.membership_type || 'vip',
+      membership_status: 'active',
+      legacyVip: true
+    };
   }
+  return null;
 }
+
+function isPaidAccount(account) {
+  if (account.legacyVip === true || Number(account.is_admin || 0) === 1) return true;
+
+  const status = String(account.membership_status || '').trim().toLowerCase();
+  const rawTier = String(account.membership_entitlement_tier || account.membership_tier || '');
+  const tier = rawTier.trim().toLowerCase().replace(/\+/g, '_plus').replace(/[\s-]+/g, '_');
+  // Fail closed: do not treat arbitrary account types or any future unknown tier
+  // as paid merely because membership_status happens to say "active".
+  const paidTiers = new Set([
+    'collector_plus', 'vendor', 'vendor_plus',
+    'organizer', 'organizer_plus', 'event_organizer', 'vip'
+  ]);
+  return ['active', 'trialing'].includes(status) && paidTiers.has(tier);
+}
+
 async function hasPublicReleaseTable(env) {
   const result = await env.DB.prepare(
     "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1"
@@ -69,10 +90,7 @@ export async function onRequestGet({ request, env }) {
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: false, error: 'unauthorized' }, 401);
 
-    const tier = String(account.membership_entitlement_tier || account.membership_tier || 'free').trim().toLowerCase();
-    const status = String(account.membership_status || '').trim().toLowerCase();
-    const paid = account.legacyVip === true || Number(account.is_admin || 0) === 1 ||
-      (status === 'active' && tier !== '' && tier !== 'free' && tier !== 'none');
+    const paid = isPaidAccount(account);
 
     const url = new URL(request.url);
     const retailer = norm(url.searchParams.get('retailer') || '');
