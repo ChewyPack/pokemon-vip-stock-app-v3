@@ -394,15 +394,31 @@ export async function onRequestPost({ request, env }) {
 
     if (action === "recording") {
       const streamId = clean(data.stream_id, 100);
+      console.error("Ripz recording check entered:", JSON.stringify({
+        accountId: Number(account.id),
+        hasStreamId: Boolean(streamId),
+        streamIdLength: streamId.length
+      }));
       if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
       const stream = await findOwnedStream(env, streamId);
-      if (!stream) return json({ ok: false, error: "stream_not_found" }, 404);
+      if (!stream) {
+        console.error("Ripz recording check: stream row not found");
+        return json({ ok: false, error: "stream_not_found" }, 404);
+      }
       if (Number(stream.account_id) !== Number(account.id) && !account.is_admin) {
         return json({ ok: false, error: "not_stream_owner" }, 403);
       }
       if (stream.status !== "ended") return json({ ok: false, error: "stream_not_ended" }, 409);
       const recording = await env.DB.prepare("SELECT * FROM ripz_recordings WHERE stream_id = ? LIMIT 1").bind(streamId).first();
+      console.error("Ripz recording check state:", JSON.stringify({
+        streamStatus: clean(stream.status, 20),
+        recordingRowExists: Boolean(recording),
+        storedVideoUidPresent: Boolean(recording?.cloudflare_video_uid),
+        inputDeleted: Number(recording?.input_deleted || 0),
+        endedAtPresent: Boolean(stream.ended_at)
+      }));
       if (!recording) {
+        console.error("Ripz recording check: recording tracking row missing for this stream");
         return json({
           ok: true, recording_status: "unavailable", download_status: "unavailable",
           message: "This stream started before automatic recording was enabled. New streams can be downloaded after they end."
@@ -436,8 +452,15 @@ export async function onRequestPost({ request, env }) {
           await env.DB.prepare("UPDATE ripz_recordings SET recording_status='processing', download_status='processing', error_message=?, updated_at=CURRENT_TIMESTAMP WHERE stream_id=?").bind(message, streamId).run();
           return json({ ok: true, recording_status: "processing", download_status: "processing", message });
         }
-        video = recordings.find(item => String(item.liveInput || item.live_input || "") === String(stream.cloudflare_input_uid)) || recordings[0] || null;
+        const inputMatches = recordings.filter(item => String(item.liveInput || item.live_input || "") === String(stream.cloudflare_input_uid));
+        video = inputMatches[0] || recordings[0] || null;
         videoUid = clean(video?.uid, 100);
+        console.error("Ripz live-input recording list result:", JSON.stringify({
+          count: recordings.length,
+          inputMatches: inputMatches.length,
+          selectedVideoFound: Boolean(videoUid),
+          states: recordings.slice(0, 5).map(item => clean(item?.status?.state || (item?.readyToStream ? "ready" : "processing"), 30))
+        }));
         if (!videoUid) {
           const endedAt = Date.parse(String(stream.ended_at || "").replace(" ", "T") + "Z");
           const timedOut = Number.isFinite(endedAt) && Date.now() - endedAt > 10 * 60 * 1000;
@@ -457,8 +480,7 @@ export async function onRequestPost({ request, env }) {
       }
 
       const providerState = String(video?.status?.state || (video?.readyToStream ? "ready" : "processing")).toLowerCase();
-      console.info("Ripz recording provider status:", JSON.stringify({
-        streamId,
+      console.error("Ripz recording provider status:", JSON.stringify({
         foundVideo: Boolean(videoUid),
         providerState,
         readyToStream: video?.readyToStream === true,
