@@ -1,3 +1,5 @@
+import { notifyCollector } from "../_lib/collector-notifications.js";
+
 const COOKIE = "collector_session";
 
 function json(body, status = 200) {
@@ -308,11 +310,51 @@ export async function onRequestPost({ request, env }) {
     if (action === "publish") {
       if (!account.can_go_live) return json({ ok: false, error: "collector_plus_required" }, 403);
       const streamId = clean(data.stream_id, 100);
-      const result = await env.DB.prepare(`
-        UPDATE ripz_streams SET status = 'live', live_at = COALESCE(live_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND account_id = ? AND status IN ('ready','live')
-      `).bind(streamId, account.id).run();
-      if (!result.meta || Number(result.meta.changes || 0) < 1) return json({ ok: false, error: "stream_not_found" }, 404);
+      if (!streamId) return json({ ok: false, error: "stream_not_found" }, 404);
+      const stream = await env.DB.prepare(`
+        SELECT s.id, s.title, s.product_name, s.status,
+               COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'A collector') AS host
+        FROM ripz_streams s
+        JOIN accounts a ON a.id = s.account_id
+        LEFT JOIN collector_profiles p ON p.account_id = a.id
+        WHERE s.id = ? AND s.account_id = ? AND s.status IN ('ready','live')
+        LIMIT 1
+      `).bind(streamId, account.id).first();
+      if (!stream) return json({ ok: false, error: "stream_not_found" }, 404);
+
+      let becameLive = false;
+      if (stream.status === "ready") {
+        const result = await env.DB.prepare(`
+          UPDATE ripz_streams
+          SET status = 'live', live_at = COALESCE(live_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP
+          WHERE id = ? AND account_id = ? AND status = 'ready'
+        `).bind(streamId, account.id).run();
+        becameLive = Number(result.meta?.changes || 0) > 0;
+      }
+
+      // Notify each distinct account that has browser push enabled and an active
+      // subscription. Notification delivery must never interrupt a successful go-live.
+      if (becameLive) {
+        try {
+          const { results: recipients = [] } = await env.DB.prepare(`
+            SELECT DISTINCT prefs.account_id
+            FROM notification_preferences prefs
+            JOIN push_subscriptions subs ON subs.account_id = prefs.account_id
+            WHERE prefs.browser_push_enabled = 1 AND prefs.account_id <> ?
+          `).bind(account.id).all();
+          const notification = {
+            type: "ripz_live",
+            title: String(stream.host || "A collector") + " is live on Ripz",
+            body: [String(stream.title || "A live rip"), String(stream.product_name || "").trim()].filter(Boolean).join(" — "),
+            url: "/ripz.html",
+            data: { stream_id: stream.id, host: String(stream.host || "A collector") }
+          };
+          await Promise.all(recipients.map(recipient => notifyCollector(env, recipient.account_id, notification)));
+          console.info("Ripz live notification fan-out completed:", recipients.length);
+        } catch (notificationError) {
+          console.warn("Ripz live notification fan-out failed:", notificationError);
+        }
+      }
       return json({ ok: true });
     }
 
