@@ -118,7 +118,13 @@ async function streamApi(env, method, path, body) {
   let data = {};
   try { data = await response.json(); } catch (_) {}
   if (!response.ok || data.success === false) {
-    console.error("Ripz Stream API request failed:", method, path, response.status);
+    const providerErrors = Array.isArray(data.errors)
+      ? data.errors.slice(0, 5).map(item => ({
+          code: typeof item?.code === "number" ? item.code : undefined,
+          message: clean(item?.message, 240)
+        })).filter(item => item.message || item.code !== undefined)
+      : [];
+    console.error("Ripz Stream API request failed:", method, path, response.status, JSON.stringify(providerErrors));
     throw new Error("stream_provider_error");
   }
   return data.result || {};
