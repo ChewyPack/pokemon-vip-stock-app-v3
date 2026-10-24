@@ -1,5 +1,5 @@
 -- Add an explicit coming-soon state for store products and seed the approved PokePrizePool hoodies.
--- Run once against the production pokemon-vip-members D1 database after deployment.
+-- Run once against the production pokemon-vip-members D1 database before deploying code that reads coming_soon.
 ALTER TABLE store_products ADD COLUMN coming_soon INTEGER NOT NULL DEFAULT 0;
 
 INSERT OR IGNORE INTO store_products
