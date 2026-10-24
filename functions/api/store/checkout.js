@@ -31,13 +31,14 @@ export const onRequestPost = wrap(async ({ request, env }) => {
 
   const ids = [...want.keys()];
   const { results: rows } = await env.DB.prepare(
-    `SELECT id, name, sku, price_cents, inventory, active, external_checkout_url FROM store_products WHERE id IN (${ids.map(() => '?').join(',')})`
+    `SELECT id, name, sku, price_cents, inventory, active, external_checkout_url, coming_soon FROM store_products WHERE id IN (${ids.map(() => '?').join(',')})`
   ).bind(...ids).all();
   const byId = new Map(rows.map((r) => [r.id, r]));
   let subtotal = 0; const lines = [];
   for (const [id, qty] of want) {
     const p = byId.get(id);
     if (!p || !p.active) throw new HttpError(409, 'An item in your cart is no longer available');
+    if (p.coming_soon) throw new HttpError(409, 'This product is coming soon and cannot be purchased yet');
     if (p.external_checkout_url) throw new HttpError(400, 'This apparel item checks out on Printify. Return to the product and choose “Shop on Printify.”');
     if (p.inventory < qty) throw new HttpError(409, `Only ${p.inventory} of "${p.name}" available`);
     lines.push({ p, qty }); subtotal += p.price_cents * qty;
