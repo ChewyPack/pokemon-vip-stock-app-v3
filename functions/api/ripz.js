@@ -124,6 +124,30 @@ async function streamApi(env, method, path, body) {
           message: clean(item?.message, 240)
         })).filter(item => item.message || item.code !== undefined)
       : [];
+    if (method === "POST" && path === "/live_inputs") {
+      try {
+        const verifyResponse = await fetch("https://api.cloudflare.com/client/v4/user/tokens/verify", {
+          method: "GET",
+          headers: { "Authorization": "Bearer " + env.CLOUDFLARE_STREAM_API_TOKEN }
+        });
+        let verifyData = {};
+        try { verifyData = await verifyResponse.json(); } catch (_) {}
+        const verification = {
+          httpStatus: verifyResponse.status,
+          success: verifyData.success === true,
+          tokenStatus: clean(verifyData.result?.status, 30),
+          errors: Array.isArray(verifyData.errors)
+            ? verifyData.errors.slice(0, 3).map(item => ({
+                code: typeof item?.code === "number" ? item.code : undefined,
+                message: clean(item?.message, 200)
+              })).filter(item => item.message || item.code !== undefined)
+            : []
+        };
+        console.error("Ripz API token verification:", JSON.stringify(verification));
+      } catch (_) {
+        console.error("Ripz API token verification: request_failed");
+      }
+    }
     console.error("Ripz Stream API request failed:", method, path, response.status, JSON.stringify(providerErrors));
     throw new Error("stream_provider_error");
   }
