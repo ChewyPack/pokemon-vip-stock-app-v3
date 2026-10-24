@@ -68,11 +68,78 @@ details[open] summary::after{content:"–"}
 details p{margin:0 0 14px;color:var(--mut)}
 [hidden]{display:none!important}
 footer{text-align:center;padding:50px 0 70px}
+
+
+
+
+/* Transparent local Three.js Meowth canvas; no Sketchfab chrome when the GLB asset is present. */
+.line-meowth-rail {
+  position: fixed;
+  z-index: 3;
+  top: 8vh;
+  right: clamp(34px, 3.6vw, 64px);
+  width: clamp(390px, 39vw, 570px);
+  height: clamp(440px, 44vw, 590px);
+  overflow: visible;
+  pointer-events: none;
+  will-change: top;
+  background: transparent !important;
+}
+#line-meowth-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent !important;
+}
+#line-meowth-fallback {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+.line-meowth-credit {
+  margin: 12px auto 0;
+  color: var(--mut);
+  font-size: .78rem;
+  text-align: center;
+}
+.line-meowth-credit a { color: #cfe0ff; }
+@media (min-width: 1200px) {
+  .line-services-page main > .hero .wrap,
+  .line-services-page main > section .wrap,
+  .line-services-page main > footer .wrap {
+    width: min(1080px, calc(100vw - 610px));
+    max-width: 1080px;
+    margin-left: max(18px, calc((100vw - 1280px) / 2));
+    margin-right: 0;
+  }
+  .line-services-page .hero .cards { display: none; }
+}
+@media (max-width: 1199px) {
+  .line-meowth-rail { display: none; }
+}
+@media (max-width: 560px) {
+  .line-meowth-credit { padding-inline: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .line-meowth-rail { will-change: auto; }
+}
 </style>
 </head>
 <body class="line-services-page">
+
 <div id="site-navigation"></div>
 <main>
+<aside class="line-meowth-rail" id="line-meowth-rail" aria-label="Rotating 3D Team Rocket Meowth robot">
+  <canvas id="line-meowth-canvas" aria-label="Team Rocket Meowth 3D model; rotation follows page scrolling"></canvas>
+  <iframe id="line-meowth-fallback" title="Team Rocket Meowth model fallback" allow="autoplay; fullscreen; xr-spatial-tracking" loading="eager"></iframe>
+</aside>
 <header class="hero"><div class="cards" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="wrap in">
 <h1>You collect.<br>I'll handle the line.</h1>
@@ -174,7 +241,8 @@ footer{text-align:center;padding:50px 0 70px}
 <footer><div class="wrap"><h2>Your time matters. My time matters.</h2>
 <p class="lead" style="max-width:62ch;margin:0 auto 22px">The goal is simple: help fellow collectors secure the products they want without having to spend their own day standing in line. Every drop takes planning, effort, and commitment. If the service makes sense for your next release, let's talk.</p>
 <div class="row" style="justify-content:center"><a class="btn pri" href="#calculator">Calculate My Cost</a><a class="btn" href="#reserve">Request a Reservation</a></div>
-<p style="margin-top:28px"><b>PokePrizePool</b> · <a href="https://pokeprizepool.com">pokeprizepool.com</a></p></div></footer>
+<p style="margin-top:28px"><b>PokePrizePool</b> · <a href="https://pokeprizepool.com">pokeprizepool.com</a></p></div><p class="line-meowth-credit">3D model: <a href="https://sketchfab.com/3d-models/team-rocket-meowth-mecha-meowthinator-87b16ce95cc14af983bbf67057b78b97" target="_blank" rel="noopener noreferrer">Team Rocket Meowth Mecha-Meowthinator by Noah Finlay Klein on Sketchfab</a></p>
+</footer>
 </main>
 
 <script src="/js/ui/site-nav.js?v=20261023-ripz-nav"></script>
@@ -262,6 +330,157 @@ var f=$("faq");FAQ.forEach(function(q){var d=document.createElement("details");d
 calc();fmode();
 })();
 </script>
+
+
+<script type="module">
+(async function () {
+  const rail = document.getElementById("line-meowth-rail");
+  const canvas = document.getElementById("line-meowth-canvas");
+  const fallback = document.getElementById("line-meowth-fallback");
+  if (!rail || !canvas || rail.dataset.viewerReady === "true") return;
+  rail.dataset.viewerReady = "true";
+
+  function updateRailPosition() {
+    const doc = document.documentElement;
+    const maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
+    const progress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+    const topStart = Math.round(window.innerHeight * 0.08);
+    const topEnd = Math.max(topStart, window.innerHeight - rail.offsetHeight - 18);
+    rail.style.top = Math.round(topStart + (topEnd - topStart) * progress) + "px";
+  }
+  window.addEventListener("scroll", updateRailPosition, { passive: true });
+  window.addEventListener("resize", updateRailPosition);
+  updateRailPosition();
+
+  function showFallback() {
+    canvas.style.display = "none";
+    fallback.style.display = "block";
+    fallback.src = "https://sketchfab.com/models/87b16ce95cc14af983bbf67057b78b97/embed?autostart=1&autospin=0&transparent=1&ui_controls=0&ui_infos=0&ui_help=0&ui_settings=0&ui_vr=0&ui_annotations=0&ui_stop=0&ui_hint=0";
+    const script = document.createElement("script");
+    script.src = "https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js";
+    script.onload = function () {
+      if (typeof window.Sketchfab !== "function") return;
+      const client = new window.Sketchfab("1.12.1", fallback);
+      client.init("87b16ce95cc14af983bbf67057b78b97", {
+        autostart: 1, autospin: 0, transparent: 1, camera: 0,
+        ui_controls: 0, ui_general_controls: 0, ui_infos: 0,
+        ui_help: 0, ui_hint: 0, ui_settings: 0, ui_vr: 0,
+        ui_annotations: 0, ui_stop: 0,
+        success: function (api) {
+          api.start();
+          api.addEventListener("viewerready", function () {
+            api.setUserInteraction(false);
+            try { api.setBackground({ transparent: true }, function () {}); } catch (e) {}
+            try { api.setEnableCameraConstraints(false, { preventCameraConstraintsFocus: true }, function () {
+              api.recenterCamera(function () {
+                api.getCameraLookAt(function (err, camera) {
+                  if (err || !camera || !camera.position || !camera.target) return;
+                  const p = camera.position, t = camera.target;
+                  const dx = p[0] - t[0], dy = p[1] - t[1], dz = p[2] - t[2];
+                  const baseAngle = Math.atan2(dx, dz);
+                  const radius = Math.sqrt(dx * dx + dz * dz) * 1.28;
+                  const vertical = dy * 1.35;
+                  function orbit() {
+                    const angle = window.scrollY * 0.0045 + baseAngle;
+                    api.setCameraLookAt([t[0] + Math.sin(angle) * radius, t[1] + vertical, t[2] + Math.cos(angle) * radius], t, 0);
+                  }
+                  window.addEventListener("scroll", orbit, { passive: true });
+                  orbit();
+                });
+              });
+            }); } catch (e) {}
+          });
+        }
+      });
+    };
+    document.head.appendChild(script);
+  }
+
+  try {
+    const glbResponse = await fetch("/assets/meowthinator-optimized.glb", { cache: "force-cache" });
+    if (!glbResponse.ok) throw new Error("The model file is not in assets yet.");
+    const modelBuffer = await glbResponse.arrayBuffer();
+
+    const [THREE, loaderModule] = await Promise.all([
+      import("https://esm.sh/three@0.169.0"),
+      import("https://esm.sh/three@0.169.0/examples/jsm/loaders/GLTFLoader.js")
+    ]);
+    const GLTFLoader = loaderModule.GLTFLoader;
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
+    renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+    const scene = new THREE.Scene();
+    scene.background = null;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x3b4157, 1.7));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    keyLight.position.set(4, 6, 5);
+    scene.add(keyLight);
+    const fillLight = new THREE.DirectionalLight(0xb8d7ff, 1.05);
+    fillLight.position.set(-4, 1, -3);
+    scene.add(fillLight);
+
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.01, 100);
+    const turntable = new THREE.Group();
+    scene.add(turntable);
+    let targetRotation = window.scrollY * 0.0045;
+    let loaded = false;
+    let fittedSize = new THREE.Vector3(1.8, 1.8, 1.8);
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      renderer.setSize(Math.max(1, Math.round(rect.width)), Math.max(1, Math.round(rect.height)), false);
+      camera.aspect = Math.max(0.1, rect.width / Math.max(1, rect.height));
+      camera.updateProjectionMatrix();
+    }
+    function fitCamera() {
+      const halfFov = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+      const byHeight = fittedSize.y / (2 * halfFov);
+      const byWidth = fittedSize.x / (2 * halfFov * Math.max(0.1, camera.aspect));
+      const distance = Math.max(byHeight, byWidth, fittedSize.z) * 1.22;
+      camera.position.set(0, fittedSize.y * 0.018, distance);
+      camera.near = Math.max(0.01, distance / 100);
+      camera.far = distance * 100;
+      camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", function () { resize(); fitCamera(); });
+    const loader = new GLTFLoader();
+    loader.parse(modelBuffer, "/", function (gltf) {
+      const model = gltf.scene;
+      const originalBox = new THREE.Box3().setFromObject(model);
+      const originalSize = originalBox.getSize(new THREE.Vector3());
+      const center = originalBox.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(originalSize.x, originalSize.y, originalSize.z) || 1;
+      const scale = 2.05 / maxDim;
+      const modelGroup = new THREE.Group();
+      modelGroup.add(model);
+      modelGroup.scale.setScalar(scale);
+      modelGroup.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+      turntable.add(modelGroup);
+      fittedSize = originalSize.multiplyScalar(scale);
+      resize();
+      fitCamera();
+      loaded = true;
+    }, function (error) {
+      console.error("Could not parse Meowth GLB:", error);
+      showFallback();
+    });
+
+    function render() {
+      requestAnimationFrame(render);
+      if (loaded) turntable.rotation.y += (targetRotation - turntable.rotation.y) * 0.12;
+      renderer.render(scene, camera);
+    }
+    window.addEventListener("scroll", function () { targetRotation = window.scrollY * 0.0045; }, { passive: true });
+    render();
+  } catch (error) {
+    console.warn("Transparent Meowth GLB unavailable; using fallback viewer.", error);
+    showFallback();
+  }
+})();
+</script>
+
 </body>
 </html>
-<!-- Trigger Cloudflare Pages deployment; no page behavior changed. -->
