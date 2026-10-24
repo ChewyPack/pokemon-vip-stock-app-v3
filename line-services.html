@@ -75,7 +75,7 @@ footer{text-align:center;padding:50px 0 70px}
   position: fixed;
   z-index: 3;
   top: 8vh;
-  right: clamp(115px, 9.5vw, 185px);
+  right: clamp(115px, 9vw, 170px);
   width: clamp(180px, 14vw, 250px);
   height: clamp(240px, 27vw, 320px);
   pointer-events: none;
@@ -98,7 +98,7 @@ footer{text-align:center;padding:50px 0 70px}
   text-align: center;
 }
 .line-meowth-credit a { color: #cfe0ff; }
-@media (min-width: 1320px) {
+@media (min-width: 1100px) {
   .line-services-page main > .hero .wrap,
   .line-services-page main > section .wrap,
   .line-services-page main > footer .wrap {
@@ -109,7 +109,7 @@ footer{text-align:center;padding:50px 0 70px}
   }
   .line-services-page .hero .cards { display: none; }
 }
-@media (max-width: 1319px) {
+@media (max-width: 1099px) {
   .line-meowth-rail { display: none; }
 }
 @media (max-width: 560px) {
@@ -407,8 +407,8 @@ calc();fmode();
           cameraBase = {
             target: t,
             angle: Math.atan2(dx, dz),
-            horizontalRadius: Math.sqrt(dx * dx + dz * dz),
-            verticalOffset: dy
+            horizontalRadius: Math.sqrt(dx * dx + dz * dz) * 1.42,
+            verticalOffset: dy * 1.15
           };
           updateRailPosition();
         });
