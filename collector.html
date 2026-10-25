@@ -197,6 +197,47 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-gym-region-empty{margin:0;padding:12px 14px;border:1px dashed #cbd8ed;border-radius:9px;background:#f7f9fd;color:#61749a;font-size:.88rem;line-height:1.45}
 @media(max-width:900px){.cp-gym-regions{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:640px){.cp-gym-regions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cp-gym-region-summary{min-height:136px;gap:6px;padding:10px 6px}.cp-gym-region-summary::before{width:50px;height:50px}.cp-gym-region-summary strong{font-size:.82rem}.cp-gym-region-meta{font-size:.67rem}.cp-gym-region[open]>.cp-gym-region-summary{min-height:54px;padding:8px 40px 8px 10px;gap:8px}.cp-gym-region[open]>.cp-gym-region-summary::before{width:32px;height:32px;flex-basis:32px}.cp-gym-region-body{padding:8px}.cp-gym-region .cp-gym-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Collector catalog finder refresh */
+.cp-type-field{margin:4px 0 12px!important}
+.cp-catalog{padding:16px;background:linear-gradient(145deg,#f7faff 0%,#edf4ff 100%);border:1px solid #c5d5ef;border-radius:16px;box-shadow:0 8px 22px #0b2a6b10}
+.cp-catalog-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.cp-catalog-heading .cp-catalog-title{font-size:1.05rem;letter-spacing:.01em;margin:0 0 3px;color:#07194d}
+.cp-catalog-help{margin:0;color:#52688e;font-size:.82rem;line-height:1.45}
+.cp-catalog-source{flex:0 0 auto;max-width:145px;border:1px solid #c9d8ef;border-radius:999px;padding:5px 8px;background:#fff;color:#31517f;font-size:.68rem;font-weight:900;text-align:center;line-height:1.25}
+.cp-catalog-controls{display:flex;gap:8px;align-items:center}
+.cp-catalog input#catalog-search{min-height:48px;padding:12px 14px;border:1px solid #9fb7df;border-radius:12px;background:#fff;box-shadow:0 2px 6px #07194d08;font-size:.95rem}
+.cp-catalog input#catalog-search:focus{outline:3px solid #ffd21f88;border-color:#2859a8}
+.cp-sealed-categories{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px}
+.cp-sealed-categories[hidden]{display:none!important}
+.cp-sealed-category{border:1px solid #bfd0eb;border-radius:999px;background:#fff;color:#244779;padding:8px 12px;font:800 .78rem/1.2 Nunito,system-ui,sans-serif;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.cp-sealed-category:hover{border-color:#6d91cb;background:#f4f8ff;transform:translateY(-1px)}
+.cp-sealed-category[aria-pressed=true]{background:#0b2a6b;border-color:#0b2a6b;color:#fff;box-shadow:0 3px 8px #0b2a6b25}
+.cp-sealed-category:focus-visible{outline:3px solid #ffd21f;outline-offset:2px}
+.cp-catalog-refine{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 0;padding-top:12px;border-top:1px solid #d8e3f4}
+.cp-catalog-refine label{display:grid;gap:5px;color:#52688e;font-size:.75rem;font-weight:900}
+.cp-catalog-refine select{width:100%;min-height:40px;padding:8px 10px;border:1px solid #b9c9e6;border-radius:9px;background:#fff;color:#07194d;font:800 .83rem Nunito,system-ui,sans-serif}
+.cp-catalog-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px;margin-top:10px;max-height:min(68vh,760px);overflow:auto;padding:2px}
+.cp-catalog-result-row{display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-width:0;padding:10px;border:1px solid #d4e0f2;border-radius:13px;background:#fff;box-shadow:0 3px 9px #07194d08;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.cp-catalog-result-row:hover{border-color:#9fb7df;box-shadow:0 7px 16px #07194d12;transform:translateY(-1px)}
+.cp-catalog-result{align-items:center;gap:10px;min-width:0;padding:3px;border:0;background:transparent}
+.cp-catalog-result:hover,.cp-catalog-result:focus{border:0;background:transparent}
+.cp-catalog-result img{width:62px;height:78px;flex:0 0 62px;object-fit:contain;border-radius:8px;background:#f3f7ff}
+.cp-catalog-result strong{font-size:.86rem;line-height:1.35;overflow-wrap:anywhere}
+.cp-catalog-result small{font-size:.73rem;line-height:1.4;overflow-wrap:anywhere}
+.cp-catalog-result-actions{display:grid;grid-template-columns:1fr;gap:6px;margin-top:auto}
+.cp-catalog-result-actions button{width:100%;min-width:0;min-height:36px;padding:8px 9px;border:1px solid #c2d2ed;border-radius:9px;background:#f4f8ff;color:#17386c;font:800 .75rem/1.2 Nunito,system-ui,sans-serif}
+.cp-catalog-result-actions button[data-list-target=wishlist]{background:#fff9e4;border-color:#ead78d;color:#6d5700}
+.cp-catalog-results.is-sealed{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.cp-catalog-results.is-sealed .cp-catalog-result-row{padding:11px;gap:11px}
+.cp-catalog-results.is-sealed .cp-catalog-result{display:flex;flex-direction:column;align-items:stretch;gap:9px;padding:0;cursor:default}
+.cp-catalog-results.is-sealed .cp-catalog-result img{display:block;width:100%;height:155px;flex:0 0 155px;max-width:none;object-fit:contain;padding:8px;box-sizing:border-box;background:radial-gradient(ellipse at center,#edf3ff 0%,#fff 72%);border:1px solid #edf1fa;border-radius:10px}
+.cp-catalog-results.is-sealed .cp-catalog-result span{width:100%;min-width:0}
+.cp-catalog-results.is-sealed .cp-catalog-result strong{font-size:.88rem}
+.cp-catalog-results.is-sealed .cp-catalog-result-actions{grid-template-columns:1fr 1fr}
+.cp-catalog-status{font-size:.79rem;color:#52688e;margin:10px 0 0;line-height:1.5;overflow-wrap:anywhere}
+@media(max-width:540px){.cp-catalog{padding:12px}.cp-catalog-heading{flex-direction:column;gap:8px}.cp-catalog-source{max-width:none}.cp-sealed-category{font-size:.74rem;padding:8px 10px}.cp-catalog-refine{grid-template-columns:1fr}.cp-catalog-results,.cp-catalog-results.is-sealed{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cp-catalog-results.is-sealed .cp-catalog-result img{height:125px;flex-basis:125px}.cp-catalog-results.is-sealed .cp-catalog-result-actions{grid-template-columns:1fr}.cp-catalog-result-actions button{font-size:.69rem;padding:7px 5px}}
+
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="mobile-web-app-capable" content="yes">
@@ -236,17 +277,40 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <form id="item-form">
 <input type="hidden" id="item-id" value="">
 <label class="cp-field">List<select id="list-type"><option value="collection">My Collection</option><option value="wishlist">My Wishlist</option></select></label>
+<label class="cp-field cp-type-field">What are you adding?
+<select id="product-type">
+<option value="card">Single card</option>
+<option value="graded">Graded card</option>
+<option value="sealed">Sealed product</option>
+</select>
+</label>
 <div class="cp-catalog">
-<p class="cp-catalog-title">Add a card or sealed product</p><p class="cp-catalog-status">Choose Single card / Graded card to search cards, or Sealed product to search booster boxes, ETBs, tins, bundles, and collections.</p>
-<div class="cp-catalog-controls">
-<input id="catalog-search" type="search" placeholder="Search card or sealed product (e.g. Charizard or ETB)" autocomplete="off" aria-label="Search Pokémon card or sealed product catalog">
-
-</div>
-<p id="catalog-status" class="cp-catalog-status" role="status" aria-live="polite">Loading set list…</p>
-<div id="catalog-results" class="cp-catalog-results"></div><div id="catalog-refine" class="cp-catalog-refine" hidden><label>Filter by set<select id="catalog-set" aria-label="Filter results by set"><option value="">All sets</option></select></label><label>Sort results<select id="catalog-sort"><option value="relevance">Best match</option><option value="name">Name A–Z</option><option value="set">Set A–Z</option></select></label></div>
+ <div class="cp-catalog-heading">
+  <div><p class="cp-catalog-title">Find a catalog product</p><p class="cp-catalog-help" id="catalog-description">Search by card name or set. Choose Sealed product above to browse booster boxes, ETBs, bundles, tins, and more.</p></div>
+  <span class="cp-catalog-source">TCGCSV + sealed catalog</span>
+ </div>
+ <div id="sealed-category-filters" class="cp-sealed-categories" aria-label="Sealed product categories" hidden>
+  <button type="button" class="cp-sealed-category" data-sealed-kind="ALL" aria-pressed="true">All sealed</button>
+  <button type="button" class="cp-sealed-category" data-sealed-kind="BOOSTER_BOX" aria-pressed="false">Booster boxes</button>
+  <button type="button" class="cp-sealed-category" data-sealed-kind="ETB" aria-pressed="false">Elite Trainer Boxes</button>
+  <button type="button" class="cp-sealed-category" data-sealed-kind="BOOSTER_BUNDLE" aria-pressed="false">Booster bundles</button>
+  <button type="button" class="cp-sealed-category" data-sealed-kind="TIN" aria-pressed="false">Tins</button>
+  <button type="button" class="cp-sealed-category" data-sealed-kind="COLLECTION" aria-pressed="false">Collections</button>
+  <button type="button" class="cp-sealed-category" data-sealed-kind="BOOSTER_PACK" aria-pressed="false">Booster packs</button>
+  <button type="button" class="cp-sealed-category" data-sealed-kind="PREMIUM_COLLECTION" aria-pressed="false">Premium collections</button>
+ </div>
+ <div class="cp-catalog-controls">
+  <input id="catalog-search" type="search" placeholder="Search cards (e.g. Charizard or Obsidian Flames)" autocomplete="off" aria-label="Search Pokémon card or sealed product catalog">
+ </div>
+ <div id="catalog-refine" class="cp-catalog-refine" hidden>
+  <label>Filter by set<select id="catalog-set" aria-label="Filter results by set"><option value="">All sets</option></select></label>
+  <label>Sort results<select id="catalog-sort"><option value="relevance">Best match</option><option value="name">Name A–Z</option><option value="set">Set A–Z</option></select></label>
+ </div>
+ <p id="catalog-status" class="cp-catalog-status" role="status" aria-live="polite">Loading set list…</p>
+ <div id="catalog-results" class="cp-catalog-results"></div>
 </div>
 <label class="cp-field">Product name *<input id="product-name" required maxlength="160" placeholder="e.g. Charizard ex"></label>
-<label class="cp-field">Product type<select id="product-type"><option value="card">Single card</option><option value="graded">Graded card</option><option value="sealed">Sealed product</option></select></label>
+
 <label class="cp-field">Set / product line<input id="set-name" maxlength="120" placeholder="e.g. Obsidian Flames"></label>
 <label class="cp-field">Card number (optional)<input id="card-number" maxlength="40" placeholder="e.g. 223/197"></label>
 <label class="cp-field">Condition / grade<input id="condition" maxlength="60" placeholder="e.g. Near Mint, PSA 10"></label>
@@ -329,7 +393,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 (function(){
  const $=id=>document.getElementById(id);
  let own=false,profile=null,items=[],buddyOptions=[],activeList='posts',viewUsername=new URLSearchParams(location.search).get('user')||'';
- let catalogSets=[],catalogTimer=null,catalogRequest=0,selectedCatalogProductId=null,selectedCatalogProductName='',followState={followers:0,following:0,isFollowing:false};
+ let catalogSets=[],catalogTimer=null,catalogRequest=0,selectedCatalogProductId=null,selectedCatalogProductName='',selectedSealedKind='ALL',followState={followers:0,following:0,isFollowing:false};
 
  const money=cents=>cents===null||cents===undefined?'Not set':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents)/100);
  const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -574,42 +638,131 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   }
   $('product-name').focus();
  }
- $('catalog-search').addEventListener('input',()=>{clearTimeout(catalogTimer);catalogTimer=setTimeout(()=>{$('product-type').value==='sealed'?searchSealedCatalog():searchCatalog();},350);});
- $('product-type').addEventListener('change',()=>{const type=$('product-type').value,sealed=type==='sealed';$('card-number').disabled=sealed;$('condition').placeholder=sealed?'e.g. Sealed / box condition':type==='graded'?'e.g. PSA 10, BGS 9.5':'e.g. Near Mint';$('catalog-search').placeholder=sealed?'Search sealed product (e.g. Prismatic Evolutions ETB)':'Search card name (e.g. Charizard)';$('catalog-results').innerHTML='';if($('catalog-search').value.trim().length>=2)(sealed?searchSealedCatalog():searchCatalog());});
- $('catalog-set').addEventListener('change',()=>{$('product-type').value==='sealed'?searchSealedCatalog():searchCatalog();});
- $('catalog-sort').addEventListener('change',()=>{const cards=window.__tcgcsvCatalogResults||[];renderCatalogResults(cards,catalogRequest);});
- $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-card-id]');if(button)selectCatalogCard(button.dataset.addCardId,button.dataset.listTarget);});
+ $('catalog-search').addEventListener('input',()=>{
+  clearTimeout(catalogTimer);
+  catalogTimer=setTimeout(()=>{
+   const sealed=$('product-type').value==='sealed',query=$('catalog-search').value.trim();
+   if(sealed)$('catalog-results').classList.add('is-sealed');
+   else $('catalog-results').classList.remove('is-sealed');
+   if(query.length<2 && (!sealed||selectedSealedKind==='ALL')){
+    $('catalog-results').innerHTML='';
+    setStatus('catalog-status',sealed?'Type at least 2 characters to search, or choose a sealed category above.':'Enter at least 2 letters to search the catalog.');
+    return;
+   }
+   sealed?searchSealedCatalog():searchCatalog();
+  },450);
+ });
+ $('product-type').addEventListener('change',()=>{
+  const type=$('product-type').value,sealed=type==='sealed',query=$('catalog-search').value.trim();
+  $('card-number').disabled=sealed;
+  $('condition').placeholder=sealed?'e.g. Sealed / box condition':type==='graded'?'e.g. PSA 10, BGS 9.5':'e.g. Near Mint';
+  $('catalog-search').placeholder=sealed?'Search product or set (e.g. Evolving Skies, ETB, Booster Box)':'Search card name or set (e.g. Charizard or Obsidian Flames)';
+  $('catalog-description').textContent=sealed?'Browse by product type or search by product name and set. Results show images and catalog details.':'Search by card name or set, then add the matching printing to your collection or wishlist.';
+  $('sealed-category-filters').hidden=!sealed;
+  $('catalog-results').classList.toggle('is-sealed',sealed);
+  $('catalog-results').innerHTML='';
+  $('catalog-refine').hidden=true;
+  document.querySelectorAll('[data-sealed-kind]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.sealedKind===selectedSealedKind)));
+  if(query.length>=2)(sealed?searchSealedCatalog():searchCatalog());
+  else if(sealed)setStatus('catalog-status','Choose a sealed category above, or search by product name or set.');
+ });
+ $('sealed-category-filters').addEventListener('click',event=>{
+  const button=event.target.closest('[data-sealed-kind]');
+  if(!button)return;
+  selectedSealedKind=button.dataset.sealedKind||'ALL';
+  document.querySelectorAll('[data-sealed-kind]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
+  $('catalog-results').classList.add('is-sealed');
+  searchSealedCatalog();
+ });
+ $('catalog-set').addEventListener('change',()=>{
+  $('product-type').value==='sealed'?searchSealedCatalog():searchCatalog();
+ });
+ $('catalog-sort').addEventListener('change',()=>{
+  if($('product-type').value==='sealed'){
+   const products=(window.__sealedResults||[]).slice(),sort=$('catalog-sort').value;
+   if(sort==='name')products.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+   if(sort==='set')products.sort((a,b)=>String(a.set_name||'').localeCompare(String(b.set_name||'')));
+   renderSealedProductResults(products);
+  }else{
+   const cards=window.__tcgcsvCatalogResults||[];
+   renderCatalogResults(cards,catalogRequest);
+  }
+ });
+ $('catalog-results').addEventListener('click',event=>{
+  const button=event.target.closest('[data-add-card-id]');
+  if(button)selectCatalogCard(button.dataset.addCardId,button.dataset.listTarget);
+ });
  loadCatalogSets();
+ function classifySealedKind(product){
+  const raw=String(product?.kind||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'');
+  const known=['BOOSTER_BOX','ETB','BOOSTER_BUNDLE','BOOSTER_PACK','TIN','BLISTER','COLLECTION','PREMIUM_COLLECTION','BUILD_AND_BATTLE','STARTER_DECK','SLEEVED_BOOSTER'];
+  if(known.includes(raw))return raw;
+  const name=String(product?.name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  if(/ultra premium collection|\bupc\b/.test(name))return 'PREMIUM_COLLECTION';
+  if(/elite trainer box|\betb\b/.test(name))return 'ETB';
+  if(/booster box/.test(name))return 'BOOSTER_BOX';
+  if(/booster bundle/.test(name))return 'BOOSTER_BUNDLE';
+  if(/booster pack|sleeved booster/.test(name))return 'BOOSTER_PACK';
+  if(/build and battle/.test(name))return 'BUILD_AND_BATTLE';
+  if(/\btin\b/.test(name))return 'TIN';
+  if(/\bblister\b/.test(name))return 'BLISTER';
+  if(/\bstarter deck\b/.test(name))return 'STARTER_DECK';
+  if(/\bcollection\b/.test(name))return 'COLLECTION';
+  return null;
+ }
+ function sealedKindLabel(value){
+  const labels={ETB:'Elite Trainer Box',BOOSTER_BOX:'Booster Box',BOOSTER_BUNDLE:'Booster Bundle',BOOSTER_PACK:'Booster Pack',TIN:'Tin',BLISTER:'Blister',COLLECTION:'Collection',PREMIUM_COLLECTION:'Premium Collection',BUILD_AND_BATTLE:'Build & Battle',STARTER_DECK:'Starter Deck',SLEEVED_BOOSTER:'Sleeved Booster'};
+  const raw=String(value||'').toUpperCase();
+  return labels[raw]||String(value||'Sealed product').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+ }
+ function renderSealedProductResults(products){
+  window.__sealedResults=products.slice();
+  $('catalog-results').classList.add('is-sealed');
+  $('catalog-results').innerHTML=products.map(product=>{
+   const label=sealedKindLabel(product.kind);
+   const metadata=[product.set_name||'Set not listed',label,Array.isArray(product.languages)&&product.languages.length?product.languages.join(', '):'',product.pack_count?Number(product.pack_count)+' packs':''].filter(Boolean).join(' · ');
+   return '<div class="cp-catalog-result-row"><div class="cp-catalog-result" data-sealed-id="'+safe(product.id)+'">'+(product.image_url?'<img loading="lazy" src="'+safe(product.image_url)+'" alt="'+safe(product.name||'Sealed product')+'">':'<span class="cp-sealed-no-image">Image unavailable</span>')+'<span><strong>'+safe(product.name||'Sealed product')+'</strong><small>'+safe(metadata)+'</small><small><strong>TCGplayer market: '+safe(priceText(product.market_price))+'</strong>'+(product.market_price_subtype?' · '+safe(product.market_price_subtype):'')+'</small></span></div><div class="cp-catalog-result-actions"><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="collection">Add to Collection</button><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="wishlist">Add to Wishlist</button></div></div>';
+  }).join('');
+ }
  async function searchSealedCatalog(){
   const query=$('catalog-search').value.trim(),setId=$('catalog-set').value,requestId=++catalogRequest;
   $('catalog-results').innerHTML='';
-  if(query.length<2){setStatus('catalog-status','Enter at least 2 letters to search sealed products.');return;}
-  setStatus('catalog-status','Searching the TCGCSV and expanded sealed-product catalogs…');
+  $('catalog-results').classList.add('is-sealed');
+  if(query.length<2&&selectedSealedKind==='ALL'&&!setId){
+   $('catalog-refine').hidden=true;
+   setStatus('catalog-status','Choose a sealed category above, or enter at least 2 letters to search.');
+   return;
+  }
+  setStatus('catalog-status','Searching sealed products…');
   try{
-   const tcgParams=new URLSearchParams({q:query,type:'sealed',limit:'50'});
+   const tcgParams=new URLSearchParams({type:'sealed',limit:'50'});
+   if(query.length>=2)tcgParams.set('q',query);
    if(setId)tcgParams.set('set_id',setId);
-   // Send the collector's original query. The endpoint expands generic product
-   // terms (ETB, booster box, etc.) and handles alternate names server-side.
-   const providerParams=new URLSearchParams({q:query});
+   const providerParams=new URLSearchParams();
+   if(query)providerParams.set('q',query);
+   if(selectedSealedKind!=='ALL')providerParams.set('kind',selectedSealedKind);
+   else if(query.length<2)providerParams.set('kind','ALL');
    const getJson=async url=>{
     const response=await fetch(url,{credentials:'same-origin',cache:'no-store'});
     const data=await response.json().catch(()=>({ok:false,error:'invalid_json'}));
     if(!response.ok||!data.ok)throw new Error(data.error||('HTTP '+response.status));
     return data;
    };
+   const tcgPromise=query.length>=2?getJson('/api/collector/catalog?'+tcgParams.toString()):Promise.resolve({ok:true,products:[]});
    const sourceResults=await Promise.allSettled([
-    getJson('/api/collector/catalog?'+tcgParams.toString()),
+    tcgPromise,
     getJson('/api/collector/sealed-search?'+providerParams.toString())
    ]);
    if(requestId!==catalogRequest)return;
    const tcgResult=sourceResults[0].status==='fulfilled'?sourceResults[0].value:null;
    const expandedResult=sourceResults[1].status==='fulfilled'?sourceResults[1].value:null;
    if(!tcgResult&&!expandedResult){
-    const providerError=sourceResults[1].reason?.message||'expanded sealed catalog unavailable';
     const tcgError=sourceResults[0].reason?.message||'TCGCSV catalog unavailable';
-    throw new Error('Could not search either sealed catalog ('+tcgError+'; '+providerError+').');
+    const providerError=sourceResults[1].reason?.message||'expanded sealed catalog unavailable';
+    throw new Error('Could not search either catalog ('+tcgError+'; '+providerError+').');
    }
-   const tcgProducts=(tcgResult?.products||[]).map(product=>({...product,id:String(product.id),sku:String(product.id),kind:'Sealed product'}));
+   let tcgProducts=(tcgResult?.products||[]).map(product=>({...product,id:String(product.id),sku:String(product.id),kind:'Sealed product'}));
+   if(selectedSealedKind!=='ALL')tcgProducts=tcgProducts.filter(product=>classifySealedKind(product)===selectedSealedKind);
    const normalizeText=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
    const normalizedTcgNames=new Set(tcgProducts.map(product=>normalizeText(product.name)).filter(Boolean));
    const seen=new Set(tcgProducts.map(product=>normalizeText(product.name)+'|'+normalizeText(product.set_name)));
@@ -617,12 +770,12 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
     ...product,
     id:String(product.id||product.sku||''),
     sku:String(product.sku||product.id||''),
-    kind:product.kind||'Sealed product',
     product_type:'sealed',
     market_price:null,
     market_price_subtype:null,
     tcgcsv_product_id:null
    })).filter(product=>product.id&&product.name);
+   if(selectedSealedKind!=='ALL')expandedProducts=expandedProducts.filter(product=>classifySealedKind(product)===selectedSealedKind);
    if(setId){
     const selectedSetName=(catalogSets.find(set=>String(set.id)===String(setId))||{}).name||'';
     const setKey=normalizeText(selectedSetName);
@@ -640,34 +793,28 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    let products=tcgProducts;
    if(!products.length){
     $('catalog-refine').hidden=true;
-    setStatus('catalog-status','No sealed products matched. Try a shorter search or clear the set filter.');
+    setStatus('catalog-status','No sealed products matched this search. Try a different keyword, clear the set filter, or choose another category.');
     return;
    }
    $('catalog-refine').hidden=false;
    const sort=$('catalog-sort').value;
    if(sort==='name')products.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
    if(sort==='set')products.sort((a,b)=>String(a.set_name||'').localeCompare(String(b.set_name||'')));
-   window.__sealedResults=products;
+   renderSealedProductResults(products);
    const priceAvailable=products.filter(product=>product.market_price!==null&&product.market_price!==undefined&&product.market_price!=='').length;
-   $('catalog-results').innerHTML=products.map(product=>{
-    const kind=product.kind&&product.kind!=='Sealed product'?String(product.kind).replace(/_/g,' '):'Sealed product';
-    const metadata=[product.set_name||'Set not listed',kind,Array.isArray(product.languages)&&product.languages.length?product.languages.join(', '):''].filter(Boolean).join(' · ');
-    return '<div class="cp-catalog-result-row"><div class="cp-catalog-result" data-sealed-id="'+safe(product.id)+'">'+(product.image_url?'<img loading="lazy" src="'+safe(product.image_url)+'" alt="">':'<span aria-hidden="true">Product</span>')+'<span><strong>'+safe(product.name||'Sealed product')+'</strong><small>'+safe(metadata)+'</small><small><strong>TCGplayer market: '+safe(priceText(product.market_price))+'</strong>'+(product.market_price_subtype?' · '+safe(product.market_price_subtype):'')+'</small></span></div><div class="cp-catalog-result-actions"><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="collection">Use for My Collection</button><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="wishlist">Use for My Wishlist</button></div></div>';
-   }).join('');
-   const importNotice=tcgResult?.partial?' The TCGCSV import is still running.':'';
    const expandedCount=(expandedResult?.products||[]).length;
-   const providerError=sourceResults[1].status==='rejected'?String(sourceResults[1].reason?.message||''): '';
+   const providerError=sourceResults[1].status==='rejected'?String(sourceResults[1].reason?.message||''):'';
    const providerNotices={
-    sealed_api_key_missing:'The expanded catalog is not configured in this production deployment (missing POKEMON_TCG_API_KEY).',
+    sealed_api_key_missing:'The expanded catalog is not configured in production (missing POKEMON_TCG_API_KEY).',
     sealed_api_key_invalid:'The expanded catalog API key is invalid in production.',
     sealed_catalog_quota_exceeded:'The expanded catalog API quota has been reached.',
     sealed_catalog_unavailable:'The expanded catalog could not be reached.'
    };
-   const sourceNotice=expandedResult?(expandedCount?'Expanded catalog added '+expandedCount+' products.':'Expanded catalog returned no matches.'):(providerNotices[providerError]||'The expanded catalog is unavailable; showing TCGCSV matches only.');
-   setStatus('catalog-status','Showing '+products.length+' sealed matches. '+priceAvailable+' have TCGplayer market prices; other products may need a manual value. '+sourceNotice+importNotice);
+   const sourceNotice=expandedResult?(expandedCount?'Expanded catalog returned '+expandedCount+' products before filters.':'Expanded catalog returned no matches.'):(providerNotices[providerError]||'Showing TCGCSV matches only because the expanded catalog is unavailable.');
+   const importNotice=tcgResult?.partial?' The TCGCSV catalog is still updating.':'';
+   setStatus('catalog-status','Showing '+products.length+' products · '+priceAvailable+' have TCGplayer market prices. '+sourceNotice+importNotice);
   }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'Could not search sealed products.');}
- }
- $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.addSealedId));if(product){$('list-type').value=button.dataset.listTarget;selectSealedProduct(product);setStatus('catalog-status','Selected for '+(button.dataset.listTarget==='wishlist'?'My Wishlist':'My Collection')+'. Review the details and press Add item to save.');}}});
+ } $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.addSealedId));if(product){$('list-type').value=button.dataset.listTarget;selectSealedProduct(product);setStatus('catalog-status','Selected for '+(button.dataset.listTarget==='wishlist'?'My Wishlist':'My Collection')+'. Review the details and press Add item to save.');}}});
  function selectSealedProduct(product){
   $('product-name').value=product.name||'';
   selectedCatalogProductId=Number(product.tcgcsv_product_id||product.id)||null;selectedCatalogProductName=String(product.name||'');
