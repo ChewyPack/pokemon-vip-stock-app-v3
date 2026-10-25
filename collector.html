@@ -192,6 +192,8 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-gym-region[open]>.cp-gym-region-summary::after{top:50%;right:10px;transform:translateY(-50%)}
 .cp-gym-region[open]>.cp-gym-region-summary{padding-right:43px}
 .cp-gym-region-body{padding:12px}
+.cp-gym-subheading{margin:16px 0 9px;font-size:.9rem;font-weight:1000;color:var(--navy)}
+.cp-gym-artwork{background:#f7f9fd;border-color:#d2deef}
 .cp-gym-region-empty{margin:0;padding:12px 14px;border:1px dashed #cbd8ed;border-radius:9px;background:#f7f9fd;color:#61749a;font-size:.88rem;line-height:1.45}
 @media(max-width:900px){.cp-gym-regions{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:640px){.cp-gym-regions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cp-gym-region-summary{min-height:136px;gap:6px;padding:10px 6px}.cp-gym-region-summary::before{width:50px;height:50px}.cp-gym-region-summary strong{font-size:.82rem}.cp-gym-region-meta{font-size:.67rem}.cp-gym-region[open]>.cp-gym-region-summary{min-height:54px;padding:8px 40px 8px 10px;gap:8px}.cp-gym-region[open]>.cp-gym-region-summary::before{width:32px;height:32px;flex-basis:32px}.cp-gym-region-body{padding:8px}.cp-gym-region .cp-gym-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -409,58 +411,77 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   buddyOptions.forEach(item=>{const option=document.createElement('option');option.value=item.key;option.textContent=item.name;selector.appendChild(option);});
   selector.value=p?.buddy_pokemon||'pikachu';
   const earned=Array.isArray(p?.achievements)?p.achievements:[];
+  const basics=Array.isArray(p?.basic_achievements)?p.basic_achievements:[];
   const progress=p?.achievement_progress||{};
+  const basicProgress=p?.basic_achievement_progress||{};
   const badgePanel=$('profile-badges');
-  if(!earned.length){badgePanel.hidden=true;badgePanel.replaceChildren();}
+  if(!earned.length&&!basics.length){badgePanel.hidden=true;badgePanel.replaceChildren();}
   else{
    badgePanel.hidden=false;badgePanel.replaceChildren();
    const header=document.createElement('div');header.className='cp-gym-header';
-   const heading=document.createElement('h2');heading.textContent='Gym Badge Collection';header.appendChild(heading);
-   const count=document.createElement('span');count.className='cp-gym-progress';count.textContent=Number(progress.earned_count||earned.filter(x=>x.earned).length)+' / '+Number(progress.total_badges||earned.length)+' badges earned';header.appendChild(count);badgePanel.appendChild(header);
+   const heading=document.createElement('h2');heading.textContent='Gym Badge & Collector Achievements';header.appendChild(heading);
+   const count=document.createElement('span');count.className='cp-gym-progress';
+   count.textContent='Basics '+Number(basicProgress.earned_count||basics.filter(x=>x.earned).length)+' / '+Number(basicProgress.total_basics||basics.length)+' · Gym badges '+Number(progress.earned_count||earned.filter(x=>x.earned).length)+' / '+Number(progress.total_badges||earned.length);
+   header.appendChild(count);badgePanel.appendChild(header);
    const badgeImagePaths={boulder:'/assets/badges/boulder.png',cascade:'/assets/badges/cascade.png',thunder:'/assets/badges/thunder.png',rainbow:'/assets/badges/rainbow.png',soul:'/assets/badges/soul.png',marsh:'/assets/badges/marsh.png',volcano:'/assets/badges/volcano.png',earth:'/assets/badges/earth.png'};
    const regions=[
-    {id:'kanto',name:'Kanto',badges:earned},
-    {id:'johto',name:'Johto',badges:[]},
-    {id:'hoenn',name:'Hoenn',badges:[]},
-    {id:'sinnoh',name:'Sinnoh',badges:[]},
-    {id:'unova',name:'Unova',badges:[]},
-    {id:'kalos',name:'Kalos',badges:[]},
-    {id:'alola',name:'Alola',badges:[]},
-    {id:'galar',name:'Galar',badges:[]},
-    {id:'paldea',name:'Paldea',badges:[]}
+    {id:'kanto',name:'Kanto',kind:'basics'},
+    {id:'johto',name:'Johto',kind:'gym'},
+    {id:'hoenn',name:'Hoenn',kind:'future'},
+    {id:'sinnoh',name:'Sinnoh',kind:'future'},
+    {id:'unova',name:'Unova',kind:'future'},
+    {id:'kalos',name:'Kalos',kind:'future'},
+    {id:'alola',name:'Alola',kind:'future'},
+    {id:'galar',name:'Galar',kind:'future'},
+    {id:'paldea',name:'Paldea',kind:'future'}
    ];
    const regionList=document.createElement('div');regionList.className='cp-gym-regions';
+   const makeGrid=()=>{const grid=document.createElement('div');grid.className='cp-gym-grid';return grid;};
+   const makeAchievementTile=(achievement,showArtwork=false)=>{
+    const tile=document.createElement('article');
+    tile.className='cp-gym-badge'+(showArtwork?' cp-gym-artwork':' '+(achievement.earned?'is-earned':'is-locked'));
+    tile.title=achievement.description||achievement.name;
+    tile.style.setProperty('--badge-color',achievement.color||'#9aa9bf');
+    const imagePath=showArtwork?badgeImagePaths[achievement.id]:null;
+    if(imagePath){
+     const image=document.createElement('img');image.className='cp-gym-badge-image';image.src=imagePath;image.alt=achievement.name+' artwork';image.width=82;image.height=82;image.loading='lazy';image.decoding='async';
+     image.onerror=()=>{const fallback=document.createElement('span');fallback.className='cp-gym-badge-token';fallback.textContent=achievement.icon||'★';image.replaceWith(fallback);};
+     tile.appendChild(image);
+    }else{
+     const token=document.createElement('span');token.className='cp-gym-badge-token';token.textContent=achievement.earned?(achievement.icon||'★'):'?';tile.appendChild(token);
+    }
+    const name=document.createElement('strong');name.textContent=achievement.name;tile.appendChild(name);
+    if(!showArtwork){
+     const detail=document.createElement('small');detail.textContent=achievement.earned?'Earned '+(achievement.earned_at?new Date(achievement.earned_at.replace(' ','T')+'Z').toLocaleDateString():''):(achievement.description||'Keep working to unlock');tile.appendChild(detail);
+    }
+    return tile;
+   };
    regions.forEach(region=>{
     const section=document.createElement('details');section.className='cp-gym-region cp-gym-region--'+region.id;section.open=false;
     const summary=document.createElement('summary');summary.className='cp-gym-region-summary';
     const regionName=document.createElement('strong');regionName.textContent=region.name;summary.appendChild(regionName);
     const regionMeta=document.createElement('span');regionMeta.className='cp-gym-region-meta';
-    if(region.badges.length){
-     const earnedCount=region.badges.filter(b=>b.earned).length;
-     regionMeta.textContent=earnedCount+' / '+region.badges.length+' badges earned';
+    if(region.kind==='basics'){
+     const earnedCount=basics.filter(b=>b.earned).length;
+     regionMeta.textContent=earnedCount+' / '+basics.length+' basics complete';
+    }else if(region.kind==='gym'){
+     const earnedCount=earned.filter(b=>b.earned).length;
+     regionMeta.textContent=earnedCount+' / '+earned.length+' gym badges earned';
     }else{
      regionMeta.textContent='Coming soon';
     }
     summary.appendChild(regionMeta);section.appendChild(summary);
     const body=document.createElement('div');body.className='cp-gym-region-body';
-    if(region.badges.length){
-     const grid=document.createElement('div');grid.className='cp-gym-grid';
-     region.badges.forEach(badge=>{
-      const tile=document.createElement('article');tile.className='cp-gym-badge '+(badge.earned?'is-earned':'is-locked');tile.title=badge.description||badge.name;tile.style.setProperty('--badge-color',badge.color||'#9aa9bf');
-      const imagePath=badgeImagePaths[badge.id];
-      if(imagePath){
-       const image=document.createElement('img');image.className='cp-gym-badge-image';image.src=imagePath;image.alt=badge.name+' artwork';image.width=82;image.height=82;image.loading='lazy';image.decoding='async';
-       image.onerror=()=>{const fallback=document.createElement('span');fallback.className='cp-gym-badge-token';fallback.textContent=badge.earned?(badge.icon||'★'):'?';image.replaceWith(fallback);};
-       tile.appendChild(image);
-      }else{
-       const token=document.createElement('span');token.className='cp-gym-badge-token';token.textContent=badge.earned?badge.icon:'?';tile.appendChild(token);
-      }
-      const name=document.createElement('strong');name.textContent=badge.name;tile.appendChild(name);
-      const detail=document.createElement('small');detail.textContent=badge.earned?'Earned '+(badge.earned_at?new Date(badge.earned_at.replace(' ','T')+'Z').toLocaleDateString():''):(badge.description||'Keep collecting to unlock');tile.appendChild(detail);grid.appendChild(tile);
-     });
+    if(region.kind==='basics'){
+     const grid=makeGrid();
+     basics.forEach(badge=>grid.appendChild(makeAchievementTile(badge,false)));
      body.appendChild(grid);
+     const artworkHeading=document.createElement('h3');artworkHeading.className='cp-gym-subheading';artworkHeading.textContent='Kanto Gym Badge Artwork';body.appendChild(artworkHeading);
+     const artworkGrid=makeGrid();earned.forEach(badge=>artworkGrid.appendChild(makeAchievementTile(badge,true)));body.appendChild(artworkGrid);
+    }else if(region.kind==='gym'){
+     const grid=makeGrid();earned.forEach(badge=>grid.appendChild(makeAchievementTile(badge,false)));body.appendChild(grid);
     }else{
-     const empty=document.createElement('p');empty.className='cp-gym-region-empty';empty.textContent=region.name+' region badges will appear here when this badge set is added.';body.appendChild(empty);
+     const empty=document.createElement('p');empty.className='cp-gym-region-empty';empty.textContent=region.name+' region achievements will be added here later.';body.appendChild(empty);
     }
     section.appendChild(body);regionList.appendChild(section);
    });

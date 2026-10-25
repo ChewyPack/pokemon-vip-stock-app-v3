@@ -26,6 +26,7 @@
 import formConfig from '../../js/shared/form-config.js';
 import validate from '../../js/shared/validate.js';
 import { notifyReport } from '../_lib/notify.js';
+import { awardCollectorBasicAchievement } from '../_lib/collector-rewards.js';
 
 
 const ACCOUNT_COOKIE = 'collector_session';
@@ -206,7 +207,7 @@ function makeStoreDetails(report) {
   };
 }
 
-async function handleLineReport(data, env, form) {
+async function handleLineReport(data, env, form, access) {
   // Line-report columns are only available after the dedicated schema migration.
   // Fail clearly before uploading photos or attempting an INSERT against legacy production D1.
   try {
@@ -360,6 +361,11 @@ async function handleLineReport(data, env, form) {
     return json({ ok: false, error: 'database_error' }, 500);
   }
 
+  if (access?.account?.id && !access.legacyVip) {
+    try { await awardCollectorBasicAchievement(env, Number(access.account.id), 'basic_make_report'); }
+    catch (error) { console.warn('Could not record report achievement:', error); }
+  }
+
   try {
     const delivery = await notifyReport(env, report);
     return json({ ok: true, alerted: delivery.inAppCreated > 0 || delivery.pushDelivered > 0, delivery });
@@ -459,7 +465,7 @@ export async function onRequestPost({ request, env }) {
 
   if (data.reportType === 'line') {
     if (submittedByUsername) data.submittedByUsername = submittedByUsername;
-    return handleLineReport(data, env, form);
+    return handleLineReport(data, env, form, access);
   }
 
   const result = validate.validateAll(
@@ -632,6 +638,11 @@ export async function onRequestPost({ request, env }) {
       ok: false,
       error: 'database_error'
     }, 500);
+  }
+
+  if (access?.account?.id && !access.legacyVip) {
+    try { await awardCollectorBasicAchievement(env, Number(access.account.id), 'basic_make_report'); }
+    catch (error) { console.warn('Could not record report achievement:', error); }
   }
 
   /*
