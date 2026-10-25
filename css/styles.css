@@ -1473,6 +1473,93 @@ img {
   }
 }
 
+/* ---------- Clearer homepage conversion hero ---------- */
+.hero { padding: clamp(24px, 4vw, 48px) 0 0; }
+.hero__grid {
+  width: min(1180px, calc(100% - 36px));
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, .95fr);
+  grid-template-areas: 'message poster' 'copy poster';
+  align-items: center;
+  gap: 12px clamp(24px, 4vw, 54px);
+}
+.hero__message { grid-area: message; min-width: 0; }
+.hero__eyebrow {
+  margin: 0 0 12px;
+  color: #ffd21f;
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.hero__headline {
+  max-width: 14ch;
+  margin: 0;
+  color: #fff;
+  font: 400 clamp(2.45rem, 4.3vw, 4.25rem)/.98 var(--font-display);
+  letter-spacing: .01em;
+  text-wrap: balance;
+  text-shadow: 3px 4px 0 #06174a;
+}
+.hero__supporting {
+  max-width: 48ch;
+  margin: 18px 0 0;
+  color: #e2edff;
+  font-size: clamp(1rem, 1.3vw, 1.15rem);
+  font-weight: 700;
+  line-height: 1.6;
+}
+.hero__benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.hero__benefits span {
+  padding: 6px 10px;
+  border: 1px solid rgba(190, 216, 255, .3);
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  color: #f5f8ff;
+  font-size: .78rem;
+  font-weight: 900;
+}
+.hero__conversion { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 24px; }
+.hero__signup { border-color: #ffd21f; border-radius: 10px; box-shadow: 0 4px 0 #b58b00; }
+.hero__login-link { color: #fff; font-size: .9rem; font-weight: 900; text-underline-offset: 4px; }
+.hero__login-link:hover { color: #ffd21f; }
+.hero__free-note { margin: 13px 0 0; color: #bcd1f4; font-size: .82rem; font-weight: 700; }
+.hero__copy { text-align: left; justify-items: start; padding: 4px 0 0; }
+.hero__copy .hero__lead { max-width: 48ch; font-size: .95rem; color: #bcd1f4; }
+.hero__copy .hero__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; justify-items: start; }
+.hero__copy .hero__actions .btn { min-height: 42px; }
+.cubone-hero { align-self: center; }
+@media (min-width: 960px) {
+  .hero__grid { grid-template-areas: 'message poster' 'copy poster'; }
+  .hero__copy { grid-column: 1; }
+}
+@media (max-width: 959px) {
+  .hero__grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'message' 'poster' 'copy';
+    gap: 22px;
+  }
+  .hero__message { text-align: center; }
+  .hero__headline, .hero__supporting { margin-left: auto; margin-right: auto; }
+  .hero__benefits, .hero__conversion { justify-content: center; }
+  .hero__copy { text-align: center; justify-items: center; }
+  .hero__copy .hero__actions { justify-content: center; }
+  .cubone-hero { width: min(100%, 420px); min-height: 260px; margin: 0 auto; }
+  .cubone-hero__viewer { min-height: 260px; }
+}
+@media (max-width: 560px) {
+  .hero__headline { font-size: clamp(2.35rem, 11vw, 3.35rem); }
+  .hero__conversion { flex-direction: column; gap: 12px; }
+  .hero__signup { width: 100%; max-width: 360px; }
+  .hero__benefits { gap: 6px; }
+  .hero__benefits span { font-size: .72rem; }
+}
+
 /* ---------- VIP plans ---------- */
 
 .vip-plans {
@@ -1556,10 +1643,10 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  min-height: 72px;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  gap: 12px;
+  min-height: 68px;
+  padding-top: 9px;
+  padding-bottom: 9px;
 }
 
 .site-nav-header a {
@@ -1580,7 +1667,7 @@ img {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 3px;
 }
 
 .site-nav__link,
@@ -2002,7 +2089,8 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 /* Keep the profile/login control paired with the Inbox icon, even when nav links wrap. */
 .site-nav__account-actions{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:0 0 auto;white-space:nowrap}
 .site-nav__account-actions>.account-nav-link,
-.site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link{flex:0 0 auto;padding:12px 16px;border:1px solid #ffd21f;border-radius:10px;background:#ffd21f;color:#06174a;font-weight:900}
+.site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link,
+.site-nav>.account-nav-link{flex:0 0 auto;padding:10px 13px;border:1px solid #ffd21f;border-radius:10px;background:#ffd21f;color:#06174a;font-weight:900}
 .site-nav__account-actions>.account-nav-link:hover,
 .site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link:hover{background:#fff;border-color:#fff;color:#06174a;transform:translateY(-1px)}
 .site-nav__account-actions .site-nav__inbox-wrap{flex:0 0 auto}
@@ -2097,4 +2185,41 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
   color: #ffffff;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+
+/* Simplified top-level menu and signup action */
+.site-nav-header__inner > .site-nav > .site-nav__link:first-child {
+  color: #ffd21f;
+  font-family: "Bangers", Impact, sans-serif;
+  font-size: 1.45rem;
+  letter-spacing: .35px;
+}
+.site-nav > .site-nav__link:last-child:not(.site-nav__inbox-link) { background: transparent; }
+.site-nav > .account-nav-link { background: #ffd21f !important; color: #06174a !important; }
+.site-nav > .site-nav__login-link { padding-inline: 10px; }
+.site-nav__dropdown > .site-nav__toggle { white-space: nowrap; padding-inline: 10px; }
+.site-nav__menu { max-height: min(72vh, 560px); overflow-y: auto; }
+.site-nav__dropdown:nth-of-type(5) .site-nav__menu,
+.site-nav__dropdown:last-of-type .site-nav__menu { left: auto; right: 0; }
+.site-nav__profile-wrap { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+.site-nav__profile-menu { position: absolute; z-index: 1000; right: 0; top: calc(100% + 6px); min-width: 140px; padding: 5px; background: #fff; border: 1px solid #d5e0f2; border-radius: 9px; box-shadow: 0 8px 22px #07194d22; }
+.site-nav__profile-menu[hidden] { display: none !important; }
+.site-nav__profile-menu button,.site-nav__profile-menu-settings { box-sizing: border-box; display: block; width: 100%; padding: 10px; border: 0; border-radius: 6px; background: #fff; color: #17386c; text-align: left; text-decoration: none; font: 900 .9rem Nunito,system-ui,sans-serif; cursor: pointer; }
+.site-nav__profile-menu button { color: #a32222; }
+@media (max-width: 900px) {
+  .site-nav-header__inner { gap: 8px; }
+  .site-nav { gap: 3px; }
+  .site-nav__link,.site-nav__toggle { padding: 8px 9px; font-size: .82rem; }
+}
+@media (max-width: 560px) {
+  .site-nav-header__inner { padding: 10px 0; }
+  .site-nav { display: flex; flex-wrap: wrap; width: 100%; gap: 5px; }
+  .site-nav > .site-nav__link,
+  .site-nav > .site-nav__dropdown > .site-nav__toggle { width: auto; min-height: 40px; padding: 8px 9px; font-size: .8rem; }
+  .site-nav > .site-nav__account-actions { display: flex; flex-basis: 100%; justify-content: center; gap: 8px; }
+  .site-nav > .site-nav__link.account-nav-link { flex: 0 0 auto; }
+  .site-nav__menu { position: absolute; top: calc(100% + 5px); left: 0; width: min(86vw, 300px); max-width: 86vw; transform: none; }
+  .site-nav__dropdown:nth-of-type(5) .site-nav__menu,
+  .site-nav__dropdown:last-of-type .site-nav__menu { left: auto; right: 0; }
 }
