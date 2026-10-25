@@ -431,7 +431,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    ];
    const regionList=document.createElement('div');regionList.className='cp-gym-regions';
    regions.forEach(region=>{
-    const section=document.createElement('details');section.className='cp-gym-region cp-gym-region--'+region.id;section.open=region.id==='kanto';
+    const section=document.createElement('details');section.className='cp-gym-region cp-gym-region--'+region.id;section.open=false;
     const summary=document.createElement('summary');summary.className='cp-gym-region-summary';
     const regionName=document.createElement('strong');regionName.textContent=region.name;summary.appendChild(regionName);
     const regionMeta=document.createElement('span');regionMeta.className='cp-gym-region-meta';
