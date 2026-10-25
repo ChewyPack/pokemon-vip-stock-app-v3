@@ -711,10 +711,21 @@
           'div',
           { class: 'wrap hero__grid' },
           h(
-            'h1',
-            { class: 'wordmark' },
-            h('span', { class: 'wordmark__top' }, 'PokePrize'),
-            h('span', { class: 'wordmark__bottom' }, 'Pool')
+            'div',
+            { class: 'hero__message' },
+            h('p', { class: 'hero__eyebrow' }, 'THE COLLECTOR HUB FOR POKÉMON TCG'),
+            h('h1', { class: 'hero__headline' }, 'Find the cards. Follow the market. Build your collector community.'),
+            h('p', { class: 'hero__supporting' }, 'Community-reported restock sightings, market insights, giveaways, live streams, and a marketplace—all in one place.'),
+            h('div', { class: 'hero__benefits', 'aria-label': 'What you can do' },
+              h('span', null, 'Restock reports'),
+              h('span', null, 'Market insights'),
+              h('span', null, 'Collector community')
+            ),
+            h('div', { class: 'hero__conversion' },
+              h('a', { class: 'btn btn--lg hero__signup', href: '/account.html?mode=register' }, 'Create your free account'),
+              h('a', { class: 'hero__login-link', href: '/account.html?mode=login' }, 'Already a member? Log in')
+            ),
+            h('p', { class: 'hero__free-note' }, 'Free to join. Create your collector profile in minutes.')
           ),
           h(
             'figure',
@@ -746,18 +757,10 @@
           h(
             'div',
             { class: 'hero__copy' },
-            h('p', { class: 'hero__lead' }, cfg.brand.lead),
-            h(
-              'div',
-              { class: 'hero__actions' },
-              h('a', {
-                class: 'btn btn--lg',
-                href: '#report'
-              }, 'Report a sighting'),
-              h('a', {
-                class: 'text-link',
-                href: '#how'
-              }, 'See how it works')
+            h('p', { class: 'hero__lead' }, 'Already out hunting? Share a sighting with the community and help other collectors know what’s on shelves.'),
+            h('div', { class: 'hero__actions' },
+              h('a', { class: 'btn btn--sm', href: '#report' }, 'Report a sighting'),
+              h('a', { class: 'text-link', href: '#how' }, 'How it works')
             )
           )
         ),
