@@ -576,7 +576,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  }
  $('catalog-search').addEventListener('input',()=>{clearTimeout(catalogTimer);catalogTimer=setTimeout(()=>{$('product-type').value==='sealed'?searchSealedCatalog():searchCatalog();},350);});
  $('product-type').addEventListener('change',()=>{const type=$('product-type').value,sealed=type==='sealed';$('card-number').disabled=sealed;$('condition').placeholder=sealed?'e.g. Sealed / box condition':type==='graded'?'e.g. PSA 10, BGS 9.5':'e.g. Near Mint';$('catalog-search').placeholder=sealed?'Search sealed product (e.g. Prismatic Evolutions ETB)':'Search card name (e.g. Charizard)';$('catalog-results').innerHTML='';if($('catalog-search').value.trim().length>=2)(sealed?searchSealedCatalog():searchCatalog());});
- $('catalog-set').addEventListener('change',()=>{if($('product-type').value!=='sealed')searchCatalog();});
+ $('catalog-set').addEventListener('change',()=>{$('product-type').value==='sealed'?searchSealedCatalog():searchCatalog();});
  $('catalog-sort').addEventListener('change',()=>{const cards=window.__tcgcsvCatalogResults||[];renderCatalogResults(cards,catalogRequest);});
  $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-card-id]');if(button)selectCatalogCard(button.dataset.addCardId,button.dataset.listTarget);});
  loadCatalogSets();
@@ -584,24 +584,82 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   const query=$('catalog-search').value.trim(),setId=$('catalog-set').value,requestId=++catalogRequest;
   $('catalog-results').innerHTML='';
   if(query.length<2){setStatus('catalog-status','Enter at least 2 letters to search sealed products.');return;}
-  setStatus('catalog-status','Searching the saved TCGCSV sealed-product catalog and market prices…');
+  setStatus('catalog-status','Searching the TCGCSV and expanded sealed-product catalogs…');
   try{
-   const params=new URLSearchParams({q:query,type:'sealed',limit:'30'});
-   if(setId)params.set('set_id',setId);
-   const response=await fetch('/api/collector/catalog?'+params.toString(),{credentials:'same-origin',cache:'no-store'});
-   const data=await response.json();
+   const tcgParams=new URLSearchParams({q:query,type:'sealed',limit:'50'});
+   if(setId)tcgParams.set('set_id',setId);
+   const providerQuery=query
+    .replace(/\betb\b/ig,'Elite Trainer Box')
+    .replace(/\bupc\b/ig,'Ultra Premium Collection')
+    .replace(/\bbb\b/ig,'Booster Box');
+   const providerParams=new URLSearchParams({q:providerQuery});
+   const getJson=async url=>{
+    const response=await fetch(url,{credentials:'same-origin',cache:'no-store'});
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_json'}));
+    if(!response.ok||!data.ok)throw new Error(data.error||('HTTP '+response.status));
+    return data;
+   };
+   const sourceResults=await Promise.allSettled([
+    getJson('/api/collector/catalog?'+tcgParams.toString()),
+    getJson('/api/collector/sealed-search?'+providerParams.toString())
+   ]);
    if(requestId!==catalogRequest)return;
-   if(!response.ok||!data.ok)throw new Error('TCGCSV sealed catalog is not ready yet. The first catalog import may still be running.');
-   const products=data.products||[];
-   window.__sealedResults=products.map(product=>({...product,sku:product.id,kind:'Sealed product'}));
-   if(!products.length){setStatus('catalog-status','No sealed products matched. Try a shorter search or another set.');return;}
+   const tcgResult=sourceResults[0].status==='fulfilled'?sourceResults[0].value:null;
+   const expandedResult=sourceResults[1].status==='fulfilled'?sourceResults[1].value:null;
+   if(!tcgResult&&!expandedResult){
+    const providerError=sourceResults[1].reason?.message||'expanded sealed catalog unavailable';
+    const tcgError=sourceResults[0].reason?.message||'TCGCSV catalog unavailable';
+    throw new Error('Could not search either sealed catalog ('+tcgError+'; '+providerError+').');
+   }
+   const tcgProducts=(tcgResult?.products||[]).map(product=>({...product,id:String(product.id),sku:String(product.id),kind:'Sealed product'}));
+   const normalizeText=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+   const normalizedTcgNames=new Set(tcgProducts.map(product=>normalizeText(product.name)).filter(Boolean));
+   const seen=new Set(tcgProducts.map(product=>normalizeText(product.name)+'|'+normalizeText(product.set_name)));
+   let expandedProducts=(expandedResult?.products||[]).map(product=>({
+    ...product,
+    id:String(product.id||product.sku||''),
+    sku:String(product.sku||product.id||''),
+    kind:product.kind||'Sealed product',
+    product_type:'sealed',
+    market_price:null,
+    market_price_subtype:null,
+    tcgcsv_product_id:null
+   })).filter(product=>product.id&&product.name);
+   if(setId){
+    const selectedSetName=(catalogSets.find(set=>String(set.id)===String(setId))||{}).name||'';
+    const setKey=normalizeText(selectedSetName);
+    if(setKey)expandedProducts=expandedProducts.filter(product=>{
+     const productSet=normalizeText(product.set_name);
+     return productSet&&(productSet.includes(setKey)||setKey.includes(productSet));
+    });
+   }
+   for(const product of expandedProducts){
+    const nameKey=normalizeText(product.name),key=nameKey+'|'+normalizeText(product.set_name);
+    if(seen.has(key)||normalizedTcgNames.has(nameKey))continue;
+    seen.add(key);
+    tcgProducts.push(product);
+   }
+   let products=tcgProducts;
+   if(!products.length){
+    $('catalog-refine').hidden=true;
+    setStatus('catalog-status','No sealed products matched. Try a shorter search or clear the set filter.');
+    return;
+   }
    $('catalog-refine').hidden=false;
    const sort=$('catalog-sort').value;
    if(sort==='name')products.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
    if(sort==='set')products.sort((a,b)=>String(a.set_name||'').localeCompare(String(b.set_name||'')));
-   $('catalog-results').innerHTML=products.map(product=>'<div class="cp-catalog-result-row"><div class="cp-catalog-result" data-sealed-id="'+safe(product.id)+'">'+(product.image_url?'<img loading="lazy" src="'+safe(product.image_url)+'" alt="">':'<span aria-hidden="true">Product</span>')+'<span><strong>'+safe(product.name||'Sealed product')+'</strong><small>'+safe(product.set_name||'Set not listed')+'</small><small><strong>TCGplayer market: '+safe(priceText(product.market_price))+'</strong>'+(product.market_price_subtype?' · '+safe(product.market_price_subtype):'')+'</small></span></div><div class="cp-catalog-result-actions"><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="collection">Use for My Collection</button><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="wishlist">Use for My Wishlist</button></div></div>').join('');
-    setStatus('catalog-status',(data.partial?'Initial catalog import is still running. ':'Showing ')+products.length+' sealed TCGCSV matches. Prices are from the last successful sync when available.');
-  }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'Could not search TCGCSV sealed products.');}
+   window.__sealedResults=products;
+   const priceAvailable=products.filter(product=>product.market_price!==null&&product.market_price!==undefined&&product.market_price!=='').length;
+   $('catalog-results').innerHTML=products.map(product=>{
+    const kind=product.kind&&product.kind!=='Sealed product'?String(product.kind).replace(/_/g,' '):'Sealed product';
+    const metadata=[product.set_name||'Set not listed',kind,Array.isArray(product.languages)&&product.languages.length?product.languages.join(', '):''].filter(Boolean).join(' · ');
+    return '<div class="cp-catalog-result-row"><div class="cp-catalog-result" data-sealed-id="'+safe(product.id)+'">'+(product.image_url?'<img loading="lazy" src="'+safe(product.image_url)+'" alt="">':'<span aria-hidden="true">Product</span>')+'<span><strong>'+safe(product.name||'Sealed product')+'</strong><small>'+safe(metadata)+'</small><small><strong>TCGplayer market: '+safe(priceText(product.market_price))+'</strong>'+(product.market_price_subtype?' · '+safe(product.market_price_subtype):'')+'</small></span></div><div class="cp-catalog-result-actions"><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="collection">Use for My Collection</button><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="wishlist">Use for My Wishlist</button></div></div>';
+   }).join('');
+   const importNotice=tcgResult?.partial?' The TCGCSV import is still running.':'';
+   const sourceNotice=expandedResult?'Both catalogs searched.':'The expanded catalog is unavailable; showing TCGCSV matches only.';
+   setStatus('catalog-status','Showing '+products.length+' sealed matches. '+priceAvailable+' have TCGplayer market prices; unmatched catalog products will need a manual value. '+sourceNotice+importNotice);
+  }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'Could not search sealed products.');}
  }
  $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.addSealedId));if(product){$('list-type').value=button.dataset.listTarget;selectSealedProduct(product);setStatus('catalog-status','Selected for '+(button.dataset.listTarget==='wishlist'?'My Wishlist':'My Collection')+'. Review the details and press Add item to save.');}}});
  function selectSealedProduct(product){
