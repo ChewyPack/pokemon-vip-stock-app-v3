@@ -2090,7 +2090,8 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 .site-nav__account-actions{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:0 0 auto;white-space:nowrap}
 .site-nav__account-actions>.account-nav-link,
 .site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link,
-.site-nav>.account-nav-link{flex:0 0 auto;padding:10px 13px;border:1px solid #ffd21f;border-radius:10px;background:#ffd21f;color:#06174a;font-weight:900}
+.site-nav>.account-nav-link,
+.site-nav>.site-nav__profile-wrap>.account-nav-link{flex:0 0 auto;padding:10px 13px;border:1px solid #ffd21f;border-radius:10px;background:#ffd21f;color:#06174a;font-weight:900}
 .site-nav__account-actions>.account-nav-link:hover,
 .site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link:hover{background:#fff;border-color:#fff;color:#06174a;transform:translateY(-1px)}
 .site-nav__account-actions .site-nav__inbox-wrap{flex:0 0 auto}
