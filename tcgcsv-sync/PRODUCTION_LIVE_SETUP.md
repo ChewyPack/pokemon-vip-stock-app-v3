@@ -6,6 +6,8 @@ This runbook deploys the TCGCSV importer directly against the **production D1 da
 
 Workers Paid includes 50 million D1 rows written per month before usage-based overage. This compact importer writes one product row with one preferred market price and avoids duplicate catalog copies and historical snapshots. The production Worker config sets a 500,000-row daily importer budget (about 15 million over 30 days if continuously used), reserving the remaining included allowance for the live site and other D1 work. The staging Worker retains its 50,000-row daily budget. The importer pauses at its configured budget and resumes after UTC midnight. Review the account's D1 usage dashboard before raising the budget further; this guardrail is a deliberate spending control.
 
+The production config includes a minute trigger to resume saved work and two daily UTC triggers (21:00 and 22:00). The Worker checks the scheduled time in America/New_York and only runs the daily TCGCSV source check at 5:00 PM Eastern. Using both UTC triggers accounts for daylight-saving time changes. Deploy the production config to restore these triggers if they were deleted in the Cloudflare dashboard.
+
 ## 1. Pause the old staging importer
 
 In Cloudflare Dashboard, open **Workers & Pages → pokeprizepool-tcgcsv-sync-staging → Settings → Triggers** and disable/remove its every-minute Cron Trigger while the live import runs. Its old full importer can otherwise consume the same account-wide Free D1 write allowance. Do not delete the staging database or its saved progress.
@@ -48,9 +50,11 @@ The current production database check showed 220 registered groups and 32,881 pr
 
 Deploy the latest `tcgcsv-sync/worker.js` from `main` before relying on the new sync behavior. In this version, **POST `/sync` starts a resumable price-only refresh**: it fetches each existing group's prices and updates only `market_price` and `market_price_subtype` on existing product rows. It does not re-import product names, card metadata, images, or sets. The scheduled daily source check also starts this price-only refresh when TCGCSV's source marker changes.
 
-Use `/catalog-sync` only when you intentionally want a full catalog import/reconciliation. It is a maintenance endpoint and should not be used for routine price updates. Both POST endpoints require the production `SYNC_SECRET` as a bearer token.
+Use `/catalog-sync` once when new products must be discovered, including sealed products. It reads each group's product list and prices, inserts newly available products, and upserts the existing product metadata and prices. This is more work than the routine price-only refresh.
 
-After deploying, check `/health`. During a price refresh, look for the `price_progress` object and the log message `Refreshing TCGCSV prices for group`. The per-minute Cron Trigger resumes saved work; the daily source-marker check runs at 21:00 UTC.
+Use `/sync` for routine market-price refreshes. It updates market price, preferred price subtype, and the freshness marker on existing products; it does not rewrite card names, card numbers, images, rarity, or product type. Both POST endpoints require the production `SYNC_SECRET` as a bearer token.
+
+After deploying, check `/health`. During a catalog pass, watch `progress`; during a price refresh, watch `price_progress` and the log message `Refreshing TCGCSV prices for group`. The minute Cron Trigger resumes saved work, and the daily source check runs at 5:00 PM America/New_York (using the matching 21:00 or 22:00 UTC trigger).
 
 ## What becomes live
 
