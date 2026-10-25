@@ -5,12 +5,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PokePrizePool Recovery Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site-nav.css?v=20261025-unified-header">
   <style>
     body {
+      margin: 0;
+      padding: 0;
+      font: 16px/1.5 system-ui, sans-serif;
+    }
+    .recovery-wrap {
       max-width: 640px;
       margin: 40px auto;
       padding: 0 18px;
-      font: 16px/1.5 system-ui, sans-serif;
     }
     label {
       display: block;
@@ -44,6 +52,8 @@
   </style>
 </head>
 <body>
+  <div id="site-navigation"></div>
+  <main class="recovery-wrap">
   <h1>VIP Recovery Links</h1>
 
   <p class="warning">
@@ -75,6 +85,7 @@
   </form>
 
   <div id="result" role="status" aria-live="polite"></div>
+  </main>
 
   <script>
     const form = document.getElementById("recoveryForm");
@@ -151,5 +162,6 @@
       }
     });
   </script>
+<script src="/js/ui/site-nav.js?v=20261025-unified-header"></script>
 </body>
 </html>

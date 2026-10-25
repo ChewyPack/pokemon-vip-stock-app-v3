@@ -70,19 +70,19 @@
  document.addEventListener('keydown',function(event){if(event.key==='Escape'){inboxMenu.hidden=true;inbox.setAttribute('aria-expanded','false');}});
  var alertsItems=[
   {title:'Live Stock',description:'Community-reported in-store sightings',href:'/alerts.html'},
-  {title:'Target',description:'Target stock alerts',href:'/alerts.html?retailer=target'},
-  {title:'Walmart',description:'Walmart stock alerts',href:'/alerts.html?retailer=walmart'},
-  {title:'BestBuy',description:'Best Buy stock alerts',href:'/alerts.html?retailer=bestbuy'}
+  {title:'Target',href:'/alerts.html?retailer=target'},
+  {title:'Walmart',href:'/alerts.html?retailer=walmart'},
+  {title:'Best Buy',href:'/alerts.html?retailer=bestbuy'}
  ];
  var isCollectorProfile=!!document.getElementById('item-form')||/collector(?:\.html)?/.test(window.location.pathname);
  if(isCollectorProfile)alertsItems=alertsItems.filter(function(item){return item.title!=='Collector Notifications';});
  var nav=el('nav',{class:'site-nav','aria-label':'Main navigation'},[
   link('PokePrizePool','/'),
   dropdown('Explore',[
-   {title:'News & Updates',description:'Pokémon news, hobby coverage, and site announcements',href:'/news.html'},
+   {title:'News & Updates',description:'Pokémon news, hobby coverage, and announcements',href:'/news.html'},
    {title:'Market Intelligence',description:'Market trends and product insights',href:'/market-intelligence.html'},
    {title:'Events',description:'Shows, trade nights, and releases',href:'/events.html'},
-   {title:'Submit an Event',description:'Send an event to PokePrizePool for review',href:'/submit-event.html'},
+   {title:'Submit an Event',href:'/submit-event.html'},
    {title:'Instant Cashout',description:'Explore collection cash-out options',href:'/instant-buyout.html'},
    {title:'Giveaways',description:'See current prizes and ways to enter',href:'/giveaways.html'}
   ]),
@@ -90,12 +90,12 @@
   dropdown('Marketplace',[
    {title:'PokePrizePool Store',description:'Official cards, sealed products, and merchandise',href:'/store.html'},
    {title:'Collector Marketplace',description:'Browse listings from member shops',href:'/marketplace.html'},
-   {title:'Manage My Shop',description:'Create or edit your member shop and listings',href:'/collector.html#shop'},
+   {title:'Manage My Shop',description:'Create or edit your member shop',href:'/collector.html#shop'},
    {title:'Line Services',description:'Get help securing products in person',href:'/line-services.html'}
   ]),
   dropdown('Community',[
    {title:'Collector Chat',description:'Talk with other collectors',href:'/chat.html'},
-   {title:'News Feed',description:'See posts and updates from the community',href:'/newsfeed'},
+   {title:'News Feed',description:'See posts and updates from collectors',href:'/newsfeed'},
    {title:'Ripz',description:'Watch and share live collector streams',href:'/ripz.html'}
   ]),
   dropdown('Resources',[
