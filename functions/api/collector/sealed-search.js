@@ -21,7 +21,7 @@ function inferKind(query){
  ];
  for(const [kind,pattern] of patterns){
   const match=String(query||'').match(pattern);
-  if(match)return {kind,query:String(query).replace(pattern,' ').replace(/\s+/g,' ').trim()};
+  if(match)return {kind,query:String(query).replace(pattern,' ').replace(/\s+/g,' ').replace(/^\s*pok[eé]mon(?:\s+tcg)?\b[\s:–-]*/i,'').trim()};
  }
  return {kind:'',query:String(query||'').trim()};
 }
