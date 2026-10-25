@@ -156,18 +156,45 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-gym-badge.is-locked{filter:grayscale(1);opacity:.55}.cp-gym-badge.is-earned{border-color:#9cb8e5;background:linear-gradient(145deg,#fff,#edf4ff)}.cp-gym-badge.is-earned .cp-gym-badge-token{box-shadow:0 0 0 3px #dce9ff,0 4px 8px #0b2a6b20}
 @media(max-width:640px){.cp-buddy-editor{grid-template-columns:1fr}.cp-gym-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-buddy-display img{width:60px;height:60px}}
 
-/* Expandable regional categories for Gym Badge Collection. */
-.cp-gym-regions{display:grid;gap:9px;margin-top:8px}
-.cp-gym-region{min-width:0;border:1px solid #cbd8ed;border-radius:12px;background:#fbfcff;overflow:clip}
-.cp-gym-region-summary{display:flex;align-items:center;gap:12px;justify-content:space-between;min-height:54px;padding:13px 15px;cursor:pointer;list-style:none;color:var(--navy);font-weight:900}
+/* Expandable regional categories styled like the individual badge tiles. */
+.cp-gym-regions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:8px;align-items:start}
+.cp-gym-region{--region-color:#9aa9bf;position:relative;min-width:0;border:1px solid #d2deef;border-radius:11px;background:#f7f9fd;text-align:center;overflow:clip;box-shadow:0 2px 4px #0b2a6b08}
+.cp-gym-region--kanto{--region-color:#d6b27a}
+.cp-gym-region--johto{--region-color:#67c8ff}
+.cp-gym-region--hoenn{--region-color:#90d67c}
+.cp-gym-region--sinnoh{--region-color:#bb9aff}
+.cp-gym-region--unova{--region-color:#9aa9bf}
+.cp-gym-region--kalos{--region-color:#67c8ff}
+.cp-gym-region--alola{--region-color:#ffe05b}
+.cp-gym-region--galar{--region-color:#e28cff}
+.cp-gym-region--paldea{--region-color:#fa8eb3}
+.cp-gym-region-summary{position:relative;display:grid;justify-items:center;align-content:start;gap:7px;min-height:146px;padding:12px 8px 11px;cursor:pointer;list-style:none;color:var(--navy);font-weight:900}
 .cp-gym-region-summary::-webkit-details-marker{display:none}
-.cp-gym-region-summary::before{content:"+";flex:0 0 24px;display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:#eaf1ff;color:#17386c;font-size:1.1rem;font-weight:900;order:2}
-.cp-gym-region[open]>.cp-gym-region-summary::before{content:"−";background:#ffd21f}
-.cp-gym-region-summary strong{font-size:1rem}
-.cp-gym-region-meta{margin-left:auto;color:#61749a;font-size:.78rem;font-weight:800;text-align:right}
-.cp-gym-region-body{padding:0 12px 13px}
+.cp-gym-region-summary::before{content:"";display:grid;place-items:center;width:56px;height:56px;border:3px solid var(--region-color);border-radius:50% 50% 42% 42%;background:linear-gradient(145deg,#fff,var(--region-color));color:#10244c;font-size:1.45rem;font-weight:1000;box-shadow:inset 0 0 0 3px #ffffff9c,0 2px 3px #0b2a6b20}
+.cp-gym-region--kanto>.cp-gym-region-summary::before{content:"K"}
+.cp-gym-region--johto>.cp-gym-region-summary::before{content:"J"}
+.cp-gym-region--hoenn>.cp-gym-region-summary::before{content:"H"}
+.cp-gym-region--sinnoh>.cp-gym-region-summary::before{content:"S"}
+.cp-gym-region--unova>.cp-gym-region-summary::before{content:"U"}
+.cp-gym-region--kalos>.cp-gym-region-summary::before{content:"K"}
+.cp-gym-region--alola>.cp-gym-region-summary::before{content:"A"}
+.cp-gym-region--galar>.cp-gym-region-summary::before{content:"G"}
+.cp-gym-region--paldea>.cp-gym-region-summary::before{content:"P"}
+.cp-gym-region-summary::after{content:"+";position:absolute;top:8px;right:8px;display:grid;place-items:center;width:23px;height:23px;border:1px solid #d2deef;border-radius:7px;background:#fff;color:#17386c;font-size:1rem;line-height:1;font-weight:900}
+.cp-gym-region[open]>.cp-gym-region-summary::after{content:"−";background:#ffd21f;border-color:#e2bd25}
+.cp-gym-region-summary strong{display:block;font-size:.86rem;line-height:1.25;color:var(--navy);overflow-wrap:anywhere}
+.cp-gym-region-meta{display:block;color:#61749a;font-size:.7rem;font-weight:800;line-height:1.3;text-align:center}
+.cp-gym-region[open]{grid-column:1/-1;background:#fff;border-color:#9cb8e5;box-shadow:0 3px 12px #07194d08}
+.cp-gym-region[open]>.cp-gym-region-summary{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-height:58px;padding:10px 14px;border-bottom:1px solid #dbe5f5;text-align:left}
+.cp-gym-region[open]>.cp-gym-region-summary::before{flex:0 0 36px;width:36px;height:36px;border-width:2px;font-size:1rem}
+.cp-gym-region[open]>.cp-gym-region-summary strong{font-size:1rem}
+.cp-gym-region[open]>.cp-gym-region-summary .cp-gym-region-meta{margin-left:auto;text-align:right}
+.cp-gym-region[open]>.cp-gym-region-summary::after{top:50%;right:10px;transform:translateY(-50%)}
+.cp-gym-region[open]>.cp-gym-region-summary{padding-right:43px}
+.cp-gym-region-body{padding:12px}
 .cp-gym-region-empty{margin:0;padding:12px 14px;border:1px dashed #cbd8ed;border-radius:9px;background:#f7f9fd;color:#61749a;font-size:.88rem;line-height:1.45}
-@media(max-width:640px){.cp-gym-region-summary{gap:8px;padding:11px 12px}.cp-gym-region-meta{font-size:.72rem}.cp-gym-region-body{padding:0 8px 9px}.cp-gym-region .cp-gym-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.cp-gym-regions{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:640px){.cp-gym-regions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cp-gym-region-summary{min-height:136px;gap:6px;padding:10px 6px}.cp-gym-region-summary::before{width:50px;height:50px}.cp-gym-region-summary strong{font-size:.82rem}.cp-gym-region-meta{font-size:.67rem}.cp-gym-region[open]>.cp-gym-region-summary{min-height:54px;padding:8px 40px 8px 10px;gap:8px}.cp-gym-region[open]>.cp-gym-region-summary::before{width:32px;height:32px;flex-basis:32px}.cp-gym-region-body{padding:8px}.cp-gym-region .cp-gym-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="mobile-web-app-capable" content="yes">
