@@ -359,10 +359,7 @@ async function processOneGroup(db, token, dailyWriteBudget = DEFAULT_IMPORT_WRIT
         "product_id, category_id, group_id, name, clean_name, image_url, product_url, product_type, " +
         "card_number, rarity, extended_data_json, last_seen_sync, market_price, market_price_subtype" +
         ") VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-        "ON CONFLICT(product_id) DO UPDATE SET category_id=excluded.category_id, group_id=excluded.group_id, " +
-        "name=excluded.name, clean_name=excluded.clean_name, image_url=excluded.image_url, product_url=excluded.product_url, " +
-        "product_type=excluded.product_type, card_number=excluded.card_number, rarity=excluded.rarity, " +
-        "extended_data_json=excluded.extended_data_json, last_seen_sync=excluded.last_seen_sync, " +
+        "ON CONFLICT(product_id) DO UPDATE SET last_seen_sync=excluded.last_seen_sync, " +
         "market_price=excluded.market_price, market_price_subtype=excluded.market_price_subtype"
       ).bind(
         Number(product.productId), Number(product.categoryId || categoryId), Number(product.groupId || groupId),
