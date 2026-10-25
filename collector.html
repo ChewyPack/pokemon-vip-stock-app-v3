@@ -279,9 +279,9 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <label class="cp-field">List<select id="list-type"><option value="collection">My Collection</option><option value="wishlist">My Wishlist</option></select></label>
 <label class="cp-field cp-type-field">What are you adding?
 <select id="product-type">
-<option value="card">Single card</option>
-<option value="graded">Graded card</option>
-<option value="sealed">Sealed product</option>
+<option value="card">Singles</option>
+<option value="graded">Slab</option>
+<option value="sealed">Sealed</option>
 </select>
 </label>
 <div class="cp-catalog">
@@ -747,7 +747,10 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
     if(!response.ok||!data.ok)throw new Error(data.error||('HTTP '+response.status));
     return data;
    };
-   const tcgPromise=query.length>=2?getJson('/api/collector/catalog?'+tcgParams.toString()):Promise.resolve({ok:true,products:[]});
+   const categorySearch={ETB:'Elite Trainer Box',BOOSTER_BOX:'Booster Box',BOOSTER_BUNDLE:'Booster Bundle',TIN:'Tin',COLLECTION:'Collection',BOOSTER_PACK:'Booster Pack',PREMIUM_COLLECTION:'Premium Collection',BLISTER:'Blister',BUILD_AND_BATTLE:'Build and Battle',STARTER_DECK:'Starter Deck',SLEEVED_BOOSTER:'Sleeved Booster'};
+   const catalogQuery=query.length>=2?query:(categorySearch[selectedSealedKind]||'');
+   if(catalogQuery)tcgParams.set('q',catalogQuery);
+   const tcgPromise=catalogQuery?getJson('/api/collector/catalog?'+tcgParams.toString()):Promise.resolve({ok:true,products:[]});
    const sourceResults=await Promise.allSettled([
     tcgPromise,
     getJson('/api/collector/sealed-search?'+providerParams.toString())
