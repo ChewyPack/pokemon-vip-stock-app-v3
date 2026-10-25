@@ -215,6 +215,10 @@ async function processOnePriceGroup(db, token, dailyWriteBudget = DEFAULT_IMPORT
     const groupId = Number(groupIds[index]);
     const group = await db.prepare('SELECT category_id FROM tcgcsv_groups WHERE group_id=?').bind(groupId).first();
     if (!group) throw new Error('Production group row not found for price sync: ' + groupId);
+    // Keep the catalog visibility marker aligned with the new price source timestamp.
+    // This updates only set freshness, not set names or other metadata.
+    await db.prepare('UPDATE tcgcsv_groups SET last_seen_sync=? WHERE group_id=?')
+      .bind(progress.source_timestamp, groupId).run();
     const categoryId = Number(group.category_id || POKEMON_CATEGORY_ID);
     console.log('Refreshing TCGCSV prices for group', index + 1, 'of', groupIds.length, 'groupId', groupId);
     const pricePayload = await getJson(SOURCE + '/' + categoryId + '/' + groupId + '/prices');
@@ -256,8 +260,8 @@ async function processOnePriceGroup(db, token, dailyWriteBudget = DEFAULT_IMPORT
       const batchIds = productIds.slice(offset, offset + Math.min(40, remainingBudget));
       const statements = batchIds.map(productId => {
         const price = priceFor(pricesByProduct.get(String(productId)) || []);
-        return db.prepare('UPDATE tcgcsv_products SET market_price=?, market_price_subtype=? WHERE product_id=?')
-          .bind(price.marketPrice, price.subtype, productId);
+        return db.prepare('UPDATE tcgcsv_products SET market_price=?, market_price_subtype=?, last_seen_sync=? WHERE product_id=?')
+          .bind(price.marketPrice, price.subtype, progress.source_timestamp, productId);
       });
       await db.batch(statements);
       offset += batchIds.length;
