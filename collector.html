@@ -747,10 +747,40 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
     if(!response.ok||!data.ok)throw new Error(data.error||('HTTP '+response.status));
     return data;
    };
-   const categorySearch={ETB:'Elite Trainer Box',BOOSTER_BOX:'Booster Box',BOOSTER_BUNDLE:'Booster Bundle',TIN:'Tin',COLLECTION:'Collection',BOOSTER_PACK:'Booster Pack',PREMIUM_COLLECTION:'Premium Collection',BLISTER:'Blister',BUILD_AND_BATTLE:'Build and Battle',STARTER_DECK:'Starter Deck',SLEEVED_BOOSTER:'Sleeved Booster'};
-   const catalogQuery=query.length>=2?query:(categorySearch[selectedSealedKind]||'');
-   if(catalogQuery)tcgParams.set('q',catalogQuery);
-   const tcgPromise=catalogQuery?getJson('/api/collector/catalog?'+tcgParams.toString()):Promise.resolve({ok:true,products:[]});
+   const categorySearchTerms={
+    ETB:['Elite Trainer Box','ETB','Pokemon Center Elite Trainer Box','Elite Trainer Box Case'],
+    BOOSTER_BOX:['Booster Box','Booster Display'],
+    BOOSTER_BUNDLE:['Booster Bundle'],
+    TIN:['Pokemon Tin','Tin'],
+    COLLECTION:['Pokemon Collection Box','Collection Box'],
+    BOOSTER_PACK:['Booster Pack','Sleeved Booster'],
+    PREMIUM_COLLECTION:['Premium Collection','Ultra Premium Collection','UPC'],
+    BLISTER:['Blister','Three Pack Blister','Checklane Blister'],
+    BUILD_AND_BATTLE:['Build and Battle'],
+    STARTER_DECK:['Starter Deck','Battle Deck'],
+    SLEEVED_BOOSTER:['Sleeved Booster']
+   };
+   const catalogQueries=query.length>=2?[query]:(categorySearchTerms[selectedSealedKind]||[]);
+   const tcgPromise=catalogQueries.length?Promise.allSettled(catalogQueries.map(term=>{
+    const params=new URLSearchParams(tcgParams);
+    params.set('q',term);
+    return getJson('/api/collector/catalog?'+params.toString());
+   })).then(results=>{
+    const merged=[],seenIds=new Set();
+    let partial=false,successes=0;
+    for(const result of results){
+     if(result.status!=='fulfilled')continue;
+     successes++;
+     partial=partial||Boolean(result.value.partial);
+     for(const product of result.value.products||[]){
+      const id=String(product.id);
+      if(seenIds.has(id))continue;
+      seenIds.add(id);merged.push(product);
+     }
+    }
+    if(!successes)throw new Error('TCGCSV catalog searches failed.');
+    return {ok:true,products:merged,partial};
+   }):Promise.resolve({ok:true,products:[]});
    const sourceResults=await Promise.allSettled([
     tcgPromise,
     getJson('/api/collector/sealed-search?'+providerParams.toString())
