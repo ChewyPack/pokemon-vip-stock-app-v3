@@ -8,7 +8,7 @@ function json(body,status=200){
 const ALLOWED_KINDS=new Set(['BOOSTER_BOX','ETB','BOOSTER_BUNDLE','BOOSTER_PACK','TIN','BLISTER','COLLECTION','PREMIUM_COLLECTION','BUILD_AND_BATTLE','STARTER_DECK','SLEEVED_BOOSTER']);
 function inferKind(query){
  const patterns=[
-  ['PREMIUM_COLLECTION',/\b(?:ultra\s+)?premium\s+collection(?:s)?\b|\bupc\b/i],
+  ['PREMIUM_COLLECTION',/\b(?:ultra\s+)?premium\s+collection(?:s)?\b|\bupcs?\b/i],
   ['ETB',/\belite\s+trainer\s+box(?:es)?\b|\betbs?\b/i],
   ['BOOSTER_BOX',/\bbooster\s+box(?:es)?\b|\bbb\b/i],
   ['BOOSTER_BUNDLE',/\bbooster\s+bundles?\b/i],
