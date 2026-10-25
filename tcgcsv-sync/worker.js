@@ -420,8 +420,17 @@ async function processOneGroup(db, token, dailyWriteBudget = DEFAULT_IMPORT_WRIT
 export default {
   async scheduled(event, env, ctx) {
     const cron = String(event?.cron || '');
-    const isDailySourceCheck = cron === '0 21 * * *';
-    console.log('TCGCSV scheduled trigger fired', { cron, isDailySourceCheck });
+    const scheduledTime = Number(event?.scheduledTime);
+    const scheduledAt = Number.isFinite(scheduledTime) && scheduledTime > 0
+      ? new Date(scheduledTime) : new Date();
+    const easternHour = Number(new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York', hour: '2-digit', hourCycle: 'h23'
+    }).format(scheduledAt));
+    // Cloudflare Cron uses UTC. Two daily cron entries cover EST/EDT;
+    // only the invocation that lands at 5 PM Eastern checks the source marker.
+    const isDailyCheckCron = cron === '0 21 * * *' || cron === '0 22 * * *';
+    const isDailySourceCheck = isDailyCheckCron && easternHour === 17;
+    console.log('TCGCSV scheduled trigger fired', { cron, isDailySourceCheck, easternHour });
 
     ctx.waitUntil((async () => {
       const state = await env.DB.prepare(
