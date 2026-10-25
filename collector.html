@@ -727,12 +727,8 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  async function searchSealedCatalog(){
   const query=$('catalog-search').value.trim(),setId=$('catalog-set').value,requestId=++catalogRequest;
   $('catalog-results').innerHTML='';
+  window.__sealedResults=[];
   $('catalog-results').classList.add('is-sealed');
-  if(query.length<2&&selectedSealedKind==='ALL'&&!setId){
-   $('catalog-refine').hidden=true;
-   setStatus('catalog-status','Choose a sealed category above, or enter at least 2 letters to search.');
-   return;
-  }
   setStatus('catalog-status','Searching sealed products…');
   try{
    const tcgParams=new URLSearchParams({type:'sealed',limit:'50'});
@@ -814,7 +810,8 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    const importNotice=tcgResult?.partial?' The TCGCSV catalog is still updating.':'';
    setStatus('catalog-status','Showing '+products.length+' products · '+priceAvailable+' have TCGplayer market prices. '+sourceNotice+importNotice);
   }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'Could not search sealed products.');}
- } $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.addSealedId));if(product){$('list-type').value=button.dataset.listTarget;selectSealedProduct(product);setStatus('catalog-status','Selected for '+(button.dataset.listTarget==='wishlist'?'My Wishlist':'My Collection')+'. Review the details and press Add item to save.');}}});
+ }
+  $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.addSealedId));if(product){$('list-type').value=button.dataset.listTarget;selectSealedProduct(product);setStatus('catalog-status','Selected for '+(button.dataset.listTarget==='wishlist'?'My Wishlist':'My Collection')+'. Review the details and press Add item to save.');}}});
  function selectSealedProduct(product){
   $('product-name').value=product.name||'';
   selectedCatalogProductId=Number(product.tcgcsv_product_id||product.id)||null;selectedCatalogProductName=String(product.name||'');
