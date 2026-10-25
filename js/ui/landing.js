@@ -282,9 +282,9 @@
     fetch('/api/account/me', { credentials: 'include', cache: 'no-store' })
       .then(function (response) { return response.ok ? response.json() : null; })
       .then(function (data) {
-        var accountLink = nav.querySelector('#account-nav-link');
-        if (!accountLink || !data || !data.ok || !data.authenticated) return;
         var loginLink = nav.querySelector('.site-nav__login-link');
+        var accountLink = nav.querySelector('.account-nav-link');
+        if (!accountLink || !data || !data.ok || !data.authenticated) return;
         if (loginLink) loginLink.hidden = true;
         accountLink.href = '/collector.html';
         accountLink.textContent = 'Profile';
