@@ -423,7 +423,16 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    const count=document.createElement('span');count.className='cp-gym-progress';
    count.textContent='Basics '+Number(basicProgress.earned_count||basics.filter(x=>x.earned).length)+' / '+Number(basicProgress.total_basics||basics.length)+' · Gym badges '+Number(progress.earned_count||earned.filter(x=>x.earned).length)+' / '+Number(progress.total_badges||earned.length);
    header.appendChild(count);badgePanel.appendChild(header);
-   const badgeImagePaths={boulder:'/assets/badges/boulder.png',cascade:'/assets/badges/cascade.png',thunder:'/assets/badges/thunder.png',rainbow:'/assets/badges/rainbow.png',soul:'/assets/badges/soul.png',marsh:'/assets/badges/marsh.png',volcano:'/assets/badges/volcano.png',earth:'/assets/badges/earth.png'};
+   const basicBadgeArtwork=[
+    '/assets/badges/boulder.png',
+    '/assets/badges/cascade.png',
+    '/assets/badges/thunder.png',
+    '/assets/badges/rainbow.png',
+    '/assets/badges/soul.png',
+    '/assets/badges/marsh.png',
+    '/assets/badges/volcano.png',
+    '/assets/badges/earth.png'
+   ];
    const regions=[
     {id:'kanto',name:'Kanto',kind:'basics'},
     {id:'johto',name:'Johto',kind:'gym'},
@@ -437,23 +446,20 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    ];
    const regionList=document.createElement('div');regionList.className='cp-gym-regions';
    const makeGrid=()=>{const grid=document.createElement('div');grid.className='cp-gym-grid';return grid;};
-   const makeAchievementTile=(achievement,showArtwork=false)=>{
+   const makeAchievementTile=(achievement,artworkPath=null)=>{
     const tile=document.createElement('article');
-    tile.className='cp-gym-badge'+(showArtwork?' cp-gym-artwork':' '+(achievement.earned?'is-earned':'is-locked'));
+    tile.className='cp-gym-badge '+(achievement.earned?'is-earned':'is-locked')+(artworkPath?' cp-gym-artwork':'');
     tile.title=achievement.description||achievement.name;
     tile.style.setProperty('--badge-color',achievement.color||'#9aa9bf');
-    const imagePath=showArtwork?badgeImagePaths[achievement.id]:null;
-    if(imagePath){
-     const image=document.createElement('img');image.className='cp-gym-badge-image';image.src=imagePath;image.alt=achievement.name+' artwork';image.width=82;image.height=82;image.loading='lazy';image.decoding='async';
-     image.onerror=()=>{const fallback=document.createElement('span');fallback.className='cp-gym-badge-token';fallback.textContent=achievement.icon||'★';image.replaceWith(fallback);};
+    if(artworkPath){
+     const image=document.createElement('img');image.className='cp-gym-badge-image';image.src=artworkPath;image.alt=achievement.name+' badge artwork';image.width=82;image.height=82;image.loading='lazy';image.decoding='async';
+     image.onerror=()=>{image.hidden=true;};
      tile.appendChild(image);
     }else{
      const token=document.createElement('span');token.className='cp-gym-badge-token';token.textContent=achievement.earned?(achievement.icon||'★'):'?';tile.appendChild(token);
     }
     const name=document.createElement('strong');name.textContent=achievement.name;tile.appendChild(name);
-    if(!showArtwork){
-     const detail=document.createElement('small');detail.textContent=achievement.earned?'Earned '+(achievement.earned_at?new Date(achievement.earned_at.replace(' ','T')+'Z').toLocaleDateString():''):(achievement.description||'Keep working to unlock');tile.appendChild(detail);
-    }
+    const detail=document.createElement('small');detail.textContent=achievement.earned?'Earned '+(achievement.earned_at?new Date(achievement.earned_at.replace(' ','T')+'Z').toLocaleDateString():''):(achievement.description||'Keep working to unlock');tile.appendChild(detail);
     return tile;
    };
    regions.forEach(region=>{
@@ -474,12 +480,10 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
     const body=document.createElement('div');body.className='cp-gym-region-body';
     if(region.kind==='basics'){
      const grid=makeGrid();
-     basics.forEach(badge=>grid.appendChild(makeAchievementTile(badge,false)));
+     basics.forEach((badge,index)=>grid.appendChild(makeAchievementTile(badge,basicBadgeArtwork[index]||null)));
      body.appendChild(grid);
-     const artworkHeading=document.createElement('h3');artworkHeading.className='cp-gym-subheading';artworkHeading.textContent='Kanto Gym Badge Artwork';body.appendChild(artworkHeading);
-     const artworkGrid=makeGrid();earned.forEach(badge=>artworkGrid.appendChild(makeAchievementTile(badge,true)));body.appendChild(artworkGrid);
     }else if(region.kind==='gym'){
-     const grid=makeGrid();earned.forEach(badge=>grid.appendChild(makeAchievementTile(badge,false)));body.appendChild(grid);
+     const grid=makeGrid();earned.forEach(badge=>grid.appendChild(makeAchievementTile(badge)));body.appendChild(grid);
     }else{
      const empty=document.createElement('p');empty.className='cp-gym-region-empty';empty.textContent=region.name+' region achievements will be added here later.';body.appendChild(empty);
     }
