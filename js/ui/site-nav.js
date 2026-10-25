@@ -77,44 +77,36 @@
  var isCollectorProfile=!!document.getElementById('item-form')||/collector(?:\.html)?/.test(window.location.pathname);
  if(isCollectorProfile)alertsItems=alertsItems.filter(function(item){return item.title!=='Collector Notifications';});
  var nav=el('nav',{class:'site-nav','aria-label':'Main navigation'},[
-  link('Home','/'),
-  dropdown('Poke Report',[
-   {title:'News',description:'Pokémon news and hobby coverage',href:'/news.html'},
-   {title:'Updates',description:'Platform updates and announcements',href:'/updates.html'},
+  link('PokePrizePool','/'),
+  dropdown('Explore',[
+   {title:'News & Updates',description:'Pokémon news, hobby coverage, and site announcements',href:'/news.html'},
    {title:'Market Intelligence',description:'Market trends and product insights',href:'/market-intelligence.html'},
    {title:'Events',description:'Shows, trade nights, and releases',href:'/events.html'},
    {title:'Submit an Event',description:'Send an event to PokePrizePool for review',href:'/submit-event.html'},
-   {title:'Instant Cashout',description:'Explore collection cash-out options',href:'/instant-buyout.html'}
+   {title:'Giveaways',description:'See current prizes and ways to enter',href:'/giveaways.html'},
+   {title:'Ripz',description:'Watch and share live collector streams',href:'/ripz.html'}
   ]),
   dropdown('Alerts',alertsItems),
-  link('Line Services','/line-services.html'),
-  dropdown('Shop',[
-   {title:'PokePrizePool Store',description:'Shop cards and merchandise sold directly by PokePrizePool',href:'/store.html'},
-   {title:'Cards',description:'Browse official PokePrizePool cards',children:[
-    {title:'Singles',href:'/store.html?category=Singles'},
-    {title:'Sealed',href:'/store.html?category=Sealed'},
-    {title:'Graded',href:'/store.html?category=Graded%20cards'}
-   ]},
-   {title:'Merch',description:'Shop official PokePrizePool merchandise',children:[
-    {title:'Clothing',href:'/store.html?category=Clothing'},
-    {title:'Plushies',href:'/store.html?category=Plushies'},
-    {title:'Accessories',href:'/store.html?category=Accessories'},
-    {title:'Other',href:'/store.html?category=Other'}
-   ]},
-   {title:'Collector Marketplace',description:'Browse listings posted by member shops',href:'/marketplace.html'},
-   {title:'Manage My Shop',description:'Create or edit your member shop profile and listings',href:'/collector.html#shop'}
+  dropdown('Marketplace',[
+   {title:'PokePrizePool Store',description:'Official cards, sealed products, and merchandise',href:'/store.html'},
+   {title:'Collector Marketplace',description:'Browse listings from member shops',href:'/marketplace.html'},
+   {title:'Manage My Shop',description:'Create or edit your member shop and listings',href:'/collector.html#shop'},
+   {title:'Instant Cashout',description:'Explore collection cash-out options',href:'/instant-buyout.html'},
+   {title:'Line Services',description:'Get help securing products in person',href:'/line-services.html'}
   ]),
-  link('Giveaways','/giveaways.html'),
-  link('Ripz','/ripz.html'),
-  link('Chat','/chat.html'),
-  link('Advertise','/advertise.html'),
+  dropdown('Community',[
+   {title:'Collector Chat',description:'Talk with other collectors',href:'/chat.html'},
+   {title:'News Feed',description:'See posts and updates from the community',href:'/newsfeed'}
+  ]),
   dropdown('Resources',[
    {title:'Securing Product',href:'/resources/securing-product.html'},
    {title:'Spotting Fakes',href:'/resources/spotting-fakes.html'},
-   {title:'Pricing Cards',href:'/resources/pricing-cards.html'}
+   {title:'Pricing Cards',href:'/resources/pricing-cards.html'},
+   {title:'Advertise with PokePrizePool',href:'/advertise.html'}
   ]),
   el('div',{class:'site-nav__account-actions'},[
-   link('Log In / Sign Up','/account.html','site-nav__link account-nav-link'),
+   link('Log in','/account.html?mode=login','site-nav__link site-nav__login-link'),
+   link('Create free account','/account.html?mode=register','site-nav__link account-nav-link'),
    inboxWrap
   ])
  ]);
@@ -170,7 +162,7 @@
   });
  }
  refreshInboxBadge();setInterval(refreshInboxBadge,60000);window.addEventListener('collector-offers-updated',refreshInboxBadge);
- fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){var a=root.querySelector('.account-nav-link');if(d&&d.ok&&d.authenticated){a.href='/collector.html';a.textContent='Profile';a.setAttribute('aria-label','Open your collector profile');var wrap=el('div',{class:'site-nav__profile-wrap'});var trigger=el('button',{class:'site-nav__profile-menu-trigger',type:'button','aria-label':'My Profile options','aria-expanded':'false',text:'▾'});var menu=el('div',{class:'site-nav__profile-menu',hidden:'hidden'});var settings=el('a',{class:'site-nav__profile-menu-settings',href:'/account.html#nearby-collector-settings',text:'Settings'});var newsFeed=el('a',{class:'site-nav__profile-menu-settings site-nav__profile-menu-newsfeed',href:'/newsfeed',text:'News Feed'});menu.appendChild(newsFeed);menu.appendChild(settings);var logout=el('button',{type:'button',text:'Log Out'});logout.addEventListener('click',function(){logout.disabled=true;logout.textContent='Logging out…';fetch('/api/account/logout',{method:'POST',credentials:'include'}).then(function(r){if(!r.ok)throw new Error('Logout failed');location.href='/account.html';}).catch(function(){logout.disabled=false;logout.textContent='Log Out';});});menu.appendChild(logout);trigger.addEventListener('click',function(){var open=menu.hidden;menu.hidden=!open;trigger.setAttribute('aria-expanded',String(open));});var accountParent=a.parentNode;accountParent.insertBefore(wrap,a);wrap.appendChild(a);wrap.appendChild(trigger);wrap.appendChild(menu);var st=el('style',{});st.textContent='.site-nav__profile-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}.site-nav__profile-menu-trigger{min-height:40px;border:1px solid #b9c9e6;border-radius:8px;background:#f3f7ff;color:#17386c;font:900 1rem Nunito,system-ui,sans-serif;cursor:pointer}.site-nav__profile-menu{position:absolute;z-index:1000;right:0;top:calc(100% + 6px);min-width:130px;padding:5px;background:#fff;border:1px solid #d5e0f2;border-radius:9px;box-shadow:0 8px 22px #07194d22}.site-nav__profile-menu[hidden]{display:none!important}.site-nav__profile-menu button,.site-nav__profile-menu-settings{box-sizing:border-box;display:block;width:100%;padding:10px;border:0;border-radius:6px;background:#fff;color:#17386c;text-align:left;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;cursor:pointer}.site-nav__profile-menu-settings{border-bottom:1px solid #e2e9f5;border-radius:6px 6px 0 0}.site-nav__profile-menu-settings:hover{background:#f3f7ff}.site-nav__profile-menu button{color:#a32222}.site-nav__profile-menu button:hover{background:#fff0ef}';root.prepend(st);}}).catch(function(){});
+ fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){var a=root.querySelector('.account-nav-link');if(d&&d.ok&&d.authenticated){var loginLink=root.querySelector('.site-nav__login-link');if(loginLink)loginLink.hidden=true;a.href='/collector.html';a.textContent='Profile';a.setAttribute('aria-label','Open your collector profile');var wrap=el('div',{class:'site-nav__profile-wrap'});var trigger=el('button',{class:'site-nav__profile-menu-trigger',type:'button','aria-label':'My Profile options','aria-expanded':'false',text:'▾'});var menu=el('div',{class:'site-nav__profile-menu',hidden:'hidden'});var settings=el('a',{class:'site-nav__profile-menu-settings',href:'/account.html#nearby-collector-settings',text:'Settings'});var newsFeed=el('a',{class:'site-nav__profile-menu-settings site-nav__profile-menu-newsfeed',href:'/newsfeed',text:'News Feed'});menu.appendChild(newsFeed);menu.appendChild(settings);var logout=el('button',{type:'button',text:'Log Out'});logout.addEventListener('click',function(){logout.disabled=true;logout.textContent='Logging out…';fetch('/api/account/logout',{method:'POST',credentials:'include'}).then(function(r){if(!r.ok)throw new Error('Logout failed');location.href='/account.html';}).catch(function(){logout.disabled=false;logout.textContent='Log Out';});});menu.appendChild(logout);trigger.addEventListener('click',function(){var open=menu.hidden;menu.hidden=!open;trigger.setAttribute('aria-expanded',String(open));});var accountParent=a.parentNode;accountParent.insertBefore(wrap,a);wrap.appendChild(a);wrap.appendChild(trigger);wrap.appendChild(menu);var st=el('style',{});st.textContent='.site-nav__profile-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}.site-nav__profile-menu-trigger{min-height:40px;border:1px solid #b9c9e6;border-radius:8px;background:#f3f7ff;color:#17386c;font:900 1rem Nunito,system-ui,sans-serif;cursor:pointer}.site-nav__profile-menu{position:absolute;z-index:1000;right:0;top:calc(100% + 6px);min-width:130px;padding:5px;background:#fff;border:1px solid #d5e0f2;border-radius:9px;box-shadow:0 8px 22px #07194d22}.site-nav__profile-menu[hidden]{display:none!important}.site-nav__profile-menu button,.site-nav__profile-menu-settings{box-sizing:border-box;display:block;width:100%;padding:10px;border:0;border-radius:6px;background:#fff;color:#17386c;text-align:left;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;cursor:pointer}.site-nav__profile-menu-settings{border-bottom:1px solid #e2e9f5;border-radius:6px 6px 0 0}.site-nav__profile-menu-settings:hover{background:#f3f7ff}.site-nav__profile-menu button{color:#a32222}.site-nav__profile-menu button:hover{background:#fff0ef}';root.prepend(st);}}).catch(function(){});
  document.addEventListener('click',function(e){if(!root.contains(e.target)){root.querySelectorAll('.site-nav__toggle').forEach(function(b){b.setAttribute('aria-expanded','false');});root.querySelectorAll('.site-nav__menu').forEach(function(m){m.hidden=true;});}});
  root.addEventListener('keydown',function(e){if(e.key==='Escape'){root.querySelectorAll('.site-nav__toggle').forEach(function(b){b.setAttribute('aria-expanded','false');});root.querySelectorAll('.site-nav__menu').forEach(function(m){m.hidden=true;});}});
 
