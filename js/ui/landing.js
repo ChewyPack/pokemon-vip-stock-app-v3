@@ -133,52 +133,47 @@
             class: 'site-nav',
             'aria-label': 'Main navigation'
           },
-          navLink('Home', '/'),
-          dropdown('Poke Report', [
-            { title: 'News', description: 'Pokémon news and hobby coverage', href: '/news.html' },
-            { title: 'Updates', description: 'Platform updates and announcements', href: '/updates.html' },
+          navLink('PokePrizePool', '/'),
+          dropdown('Explore', [
+            { title: 'News & Updates', description: 'Pokémon news, hobby coverage, and announcements', href: '/news.html' },
             { title: 'Market Intelligence', description: 'Market trends and product insights', href: '/market-intelligence.html' },
             { title: 'Events', description: 'Shows, trade nights, and releases', href: '/events.html' },
-            { title: 'Submit an Event', description: 'Send an event to PokePrizePool for review', href: '/submit-event.html' },
-            { title: 'Instant Cashout', description: 'Explore collection cash-out options', href: '/instant-buyout.html' }
+            { title: 'Submit an Event', href: '/submit-event.html' },
+            { title: 'Giveaways', description: 'See current prizes and ways to enter', href: '/giveaways.html' },
+            { title: 'Ripz', description: 'Watch and share live collector streams', href: '/ripz.html' }
           ]),
           dropdown('Alerts', [
-            { title: 'Live Stock', description: 'View live stock alerts', href: '/alerts.html' },
-            { title: 'Target', description: 'Target stock alerts', href: '/alerts.html?retailer=target' },
-            { title: 'Walmart', description: 'Walmart stock alerts', href: '/alerts.html?retailer=walmart' },
-            { title: 'BestBuy', description: 'Best Buy stock alerts', href: '/alerts.html?retailer=bestbuy' }
+            { title: 'Live Stock', description: 'Community-reported in-store sightings', href: '/alerts.html' },
+            { title: 'Target', href: '/alerts.html?retailer=target' },
+            { title: 'Walmart', href: '/alerts.html?retailer=walmart' },
+            { title: 'Best Buy', href: '/alerts.html?retailer=bestbuy' }
           ]),
-          navLink('Line Services', '/line-services.html'),
-          dropdown('Shop', [
-            { title: 'PokePrizePool Store', href: '/store.html', description: 'Shop cards and merchandise sold directly by PokePrizePool' },
-            { title: 'Cards', description: 'Browse official PokePrizePool cards', children: [
-              { title: 'Singles', href: '/store.html?category=Singles' },
-              { title: 'Sealed', href: '/store.html?category=Sealed' },
-              { title: 'Graded', href: '/store.html?category=Graded%20cards' }
-            ]},
-            { title: 'Merch', description: 'Shop official PokePrizePool merchandise', children: [
-              { title: 'Clothing', href: '/store.html?category=Clothing' },
-              { title: 'Plushies', href: '/store.html?category=Plushies' },
-              { title: 'Accessories', href: '/store.html?category=Accessories' },
-              { title: 'Other', href: '/store.html?category=Other' }
-            ]},
-            { title: 'Collector Marketplace', href: '/marketplace.html', description: 'Browse listings posted by member shops' },
-            { title: 'Manage My Shop', href: '/collector.html#shop', description: 'Create or edit your member shop profile and listings' }
+          dropdown('Marketplace', [
+            { title: 'PokePrizePool Store', description: 'Official cards, sealed products, and merchandise', href: '/store.html' },
+            { title: 'Collector Marketplace', description: 'Browse listings from member shops', href: '/marketplace.html' },
+            { title: 'Manage My Shop', description: 'Create or edit your member shop', href: '/collector.html#shop' },
+            { title: 'Instant Cashout', description: 'Explore collection cash-out options', href: '/instant-buyout.html' },
+            { title: 'Line Services', description: 'Get help securing products in person', href: '/line-services.html' }
           ]),
-          navLink('Giveaways', '/giveaways.html'),
-          navLink('Ripz', '/ripz.html'),
-          navLink('Chat', '/chat.html'),
-          navLink('Advertise', '/advertise.html'),
+          dropdown('Community', [
+            { title: 'Collector Chat', description: 'Talk with other collectors', href: '/chat.html' },
+            { title: 'News Feed', description: 'See posts and updates from collectors', href: '/newsfeed' }
+          ]),
           dropdown('Resources', [
             { title: 'Securing Product', href: '/resources/securing-product.html' },
             { title: 'Spotting Fakes', href: '/resources/spotting-fakes.html' },
-            { title: 'Pricing Cards', href: '/resources/pricing-cards.html' }
+            { title: 'Pricing Cards', href: '/resources/pricing-cards.html' },
+            { title: 'Advertise with PokePrizePool', href: '/advertise.html' }
           ]),
           h('a', {
-            class: 'site-nav__link account-nav-link',
-            href: '/account.html',
+            class: 'site-nav__link site-nav__login-link',
+            href: '/account.html?mode=login',
             id: 'account-nav-link'
-          }, 'Log In / Sign Up'),
+          }, 'Log in'),
+          h('a', {
+            class: 'site-nav__link account-nav-link',
+            href: '/account.html?mode=register'
+          }, 'Create free account'),
           h('div', { class: 'site-nav__inbox-wrap' },
             h('button', {
               class: 'site-nav__link site-nav__inbox-link',
@@ -266,15 +261,15 @@
 
     var inboxStyle = document.createElement('style');
     inboxStyle.textContent =
-      '.site-nav__inbox-link{position:relative;display:inline-flex;flex:0 0 108px;align-items:center;justify-content:center;gap:0;width:108px;min-width:108px;height:108px;min-height:108px;padding:0!important;margin:0 2px;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline-offset:3px;vertical-align:middle}' +
+      '.site-nav__inbox-link{position:relative;display:inline-flex;flex:0 0 48px;align-items:center;justify-content:center;gap:0;width:48px;min-width:48px;height:48px;min-height:48px;padding:0!important;margin:0 2px;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline-offset:3px;vertical-align:middle}' +
       '.site-nav__inbox-link:hover,.site-nav__inbox-link:focus-visible{border:0!important;background:transparent!important;box-shadow:none!important;transform:none!important}' +
-      '.site-nav__inbox-image{width:108px;height:108px;object-fit:contain;display:block;border:0!important;outline:0;box-shadow:none}' +
+      '.site-nav__inbox-image{width:48px;height:48px;object-fit:contain;display:block;border:0!important;outline:0;box-shadow:none}' +
       '.site-nav__inbox-badge:not([hidden]){position:absolute;top:auto;right:0;bottom:0;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#ef233c;color:#fff;font-size:.7rem;font-weight:700;line-height:1;box-shadow:0 0 0 2px #06174a;z-index:2}' +
       '.site-nav__inbox-badge[hidden]{display:none!important}' +
       '@media(max-width:560px){.site-nav__inbox-link{flex:0 0 96px;width:96px;min-width:96px;height:96px;min-height:96px}.site-nav__inbox-image{width:96px;height:96px}}';
     inboxStyle.textContent +=
       '.site-nav__inbox-wrap{position:relative;display:inline-flex;align-items:center;flex:0 0 auto}' +
-      '.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{font:inherit;color:inherit;cursor:pointer;flex:0 0 108px;width:108px;min-width:108px;height:108px;min-height:108px}' +
+      '.site-nav .site-nav__inbox-wrap .site-nav__inbox-link{font:inherit;color:inherit;cursor:pointer;flex:0 0 48px;width:48px;min-width:48px;height:48px;min-height:48px}' +
       '.site-nav__inbox-menu{position:absolute;z-index:1100;right:0;top:calc(100% + 6px);min-width:170px;padding:6px;background:#fff;border:1px solid #d5e0f2;border-radius:10px;box-shadow:0 8px 24px #07194d22}' +
       '.site-nav__inbox-menu[hidden]{display:none!important}' +
       '.site-nav__inbox-menu-link{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:10px;border-radius:7px;color:#17386c!important;text-decoration:none;font:900 .9rem Nunito,system-ui,sans-serif;white-space:nowrap}' +
@@ -289,6 +284,8 @@
       .then(function (data) {
         var accountLink = nav.querySelector('#account-nav-link');
         if (!accountLink || !data || !data.ok || !data.authenticated) return;
+        var loginLink = nav.querySelector('.site-nav__login-link');
+        if (loginLink) loginLink.hidden = true;
         accountLink.href = '/collector.html';
         accountLink.textContent = 'Profile';
         accountLink.setAttribute('aria-label', 'Open your collector profile');
