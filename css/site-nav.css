@@ -1,7 +1,4 @@
-/* ==========================================================================
-   POKEPRIZEPOOL NAVIGATION
-   ========================================================================== */
-
+/* Canonical shared navigation CSS. Loaded last by js/ui/site-nav.js on every page. */
 .site-nav-header {
   position: relative;
   z-index: 100;
@@ -21,10 +18,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  min-height: 72px;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  gap: 12px;
+  min-height: 68px;
+  padding-top: 9px;
+  padding-bottom: 9px;
 }
 
 .site-nav-header a {
@@ -45,7 +42,7 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 3px;
 }
 
 .site-nav__link,
@@ -235,7 +232,9 @@
   }
 }
 
-
+/* Match the font and button emphasis used by the landing page. */
+.site-nav-header, .site-nav-header * { font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif !important; }
+.site-nav__link, .site-nav__toggle { font-weight: 600 !important; letter-spacing: 0 !important; }
 
 /* Nested dropdowns for Shop > Cards/Merch. */
 .site-nav__nested-dropdown {
@@ -295,12 +294,71 @@
   }
 }
 
+/* ==========================================================================
+   MOBILE POLISH — stable backgrounds, consistent controls, better tap targets
+   Keep the home/report experience's dedicated speed-line background unchanged.
+   ========================================================================== */
 
 /* Keep the profile/login control paired with the Inbox icon, even when nav links wrap. */
 .site-nav__account-actions{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:0 0 auto;white-space:nowrap}
 .site-nav__account-actions>.account-nav-link,
-.site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link{flex:0 0 auto;padding:12px 16px;border:1px solid #ffd21f;border-radius:10px;background:#ffd21f;color:#06174a;font-weight:900}
+.site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link,
+.site-nav>.account-nav-link,
+.site-nav>.site-nav__profile-wrap>.account-nav-link{flex:0 0 auto;padding:10px 13px;border:1px solid #ffd21f;border-radius:10px;background:#ffd21f;color:#06174a;font-weight:900}
 .site-nav__account-actions>.account-nav-link:hover,
 .site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link:hover{background:#fff;border-color:#fff;color:#06174a;transform:translateY(-1px)}
 .site-nav__account-actions .site-nav__inbox-wrap{flex:0 0 auto}
 @media(max-width:560px){.site-nav__account-actions{grid-column:1/-1;justify-self:center;align-self:center}.site-nav__account-actions>.account-nav-link,.site-nav__account-actions>.site-nav__profile-wrap>.account-nav-link{padding:10px 12px;font-size:.82rem}}
+
+.site-nav-header__inner > .site-nav > .site-nav__link:first-child {
+  color: #ffd21f;
+  font-family: "Bangers", Impact, sans-serif;
+  font-size: 1.45rem;
+  letter-spacing: .35px;
+}
+.site-nav > .site-nav__link:last-child:not(.site-nav__inbox-link) { background: transparent; }
+.site-nav > .account-nav-link { background: #ffd21f !important; color: #06174a !important; }
+.site-nav > .site-nav__login-link { padding-inline: 10px; }
+.site-nav__dropdown > .site-nav__toggle { white-space: nowrap; padding-inline: 10px; }
+.site-nav__menu { max-height: min(72vh, 560px); overflow-y: auto; }
+.site-nav__dropdown:nth-of-type(5) .site-nav__menu,
+.site-nav__dropdown:last-of-type .site-nav__menu { left: auto; right: 0; }
+.site-nav__profile-wrap { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+.site-nav__profile-menu { position: absolute; z-index: 1000; right: 0; top: calc(100% + 6px); min-width: 140px; padding: 5px; background: #fff; border: 1px solid #d5e0f2; border-radius: 9px; box-shadow: 0 8px 22px #07194d22; }
+.site-nav__profile-menu[hidden] { display: none !important; }
+.site-nav__profile-menu button,.site-nav__profile-menu-settings { box-sizing: border-box; display: block; width: 100%; padding: 10px; border: 0; border-radius: 6px; background: #fff; color: #17386c; text-align: left; text-decoration: none; font: 900 .9rem Nunito,system-ui,sans-serif; cursor: pointer; }
+.site-nav__profile-menu button { color: #a32222; }
+@media (max-width: 900px) {
+  .site-nav-header__inner { gap: 8px; }
+  .site-nav { gap: 3px; }
+  .site-nav__link,.site-nav__toggle { padding: 8px 9px; font-size: .82rem; }
+}
+@media (max-width: 560px) {
+  .site-nav-header__inner { padding: 10px 0; }
+  .site-nav { display: flex; flex-wrap: wrap; width: 100%; gap: 5px; }
+  .site-nav > .site-nav__link,
+  .site-nav > .site-nav__dropdown > .site-nav__toggle { width: auto; min-height: 40px; padding: 8px 9px; font-size: .8rem; }
+  .site-nav > .site-nav__account-actions { display: flex; flex-basis: 100%; justify-content: center; gap: 8px; }
+  .site-nav > .site-nav__link.account-nav-link { flex: 0 0 auto; }
+  .site-nav__menu { position: absolute; top: calc(100% + 5px); left: 0; width: min(86vw, 300px); max-width: 86vw; transform: none; }
+  .site-nav__dropdown:nth-of-type(5) .site-nav__menu,
+  .site-nav__dropdown:last-of-type .site-nav__menu { left: auto; right: 0; }
+}
+
+/* Keep phone tap targets and mobile header behavior identical to the landing page. */
+@media (max-width: 760px) {
+  .site-nav__link,
+  .site-nav__toggle {
+    min-height: 44px !important;
+    max-width: 100%;
+    padding: 10px 14px !important;
+    border-radius: 10px !important;
+    font-size: 0.93rem !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    letter-spacing: 0 !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-shadow: 0 2px 0 rgba(11, 42, 107, 0.22) !important;
+  }
+}

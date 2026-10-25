@@ -155,6 +155,19 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-gym-badge strong{font-size:.79rem;line-height:1.3;color:var(--navy);overflow-wrap:anywhere}.cp-gym-badge small{font-size:.7rem;line-height:1.4;color:var(--muted)}
 .cp-gym-badge.is-locked{filter:grayscale(1);opacity:.55}.cp-gym-badge.is-earned{border-color:#9cb8e5;background:linear-gradient(145deg,#fff,#edf4ff)}.cp-gym-badge.is-earned .cp-gym-badge-token{box-shadow:0 0 0 3px #dce9ff,0 4px 8px #0b2a6b20}
 @media(max-width:640px){.cp-buddy-editor{grid-template-columns:1fr}.cp-gym-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-buddy-display img{width:60px;height:60px}}
+
+/* Expandable regional categories for Gym Badge Collection. */
+.cp-gym-regions{display:grid;gap:9px;margin-top:8px}
+.cp-gym-region{min-width:0;border:1px solid #cbd8ed;border-radius:12px;background:#fbfcff;overflow:clip}
+.cp-gym-region-summary{display:flex;align-items:center;gap:12px;justify-content:space-between;min-height:54px;padding:13px 15px;cursor:pointer;list-style:none;color:var(--navy);font-weight:900}
+.cp-gym-region-summary::-webkit-details-marker{display:none}
+.cp-gym-region-summary::before{content:"+";flex:0 0 24px;display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:#eaf1ff;color:#17386c;font-size:1.1rem;font-weight:900;order:2}
+.cp-gym-region[open]>.cp-gym-region-summary::before{content:"−";background:#ffd21f}
+.cp-gym-region-summary strong{font-size:1rem}
+.cp-gym-region-meta{margin-left:auto;color:#61749a;font-size:.78rem;font-weight:800;text-align:right}
+.cp-gym-region-body{padding:0 12px 13px}
+.cp-gym-region-empty{margin:0;padding:12px 14px;border:1px dashed #cbd8ed;border-radius:9px;background:#f7f9fd;color:#61749a;font-size:.88rem;line-height:1.45}
+@media(max-width:640px){.cp-gym-region-summary{gap:8px;padding:11px 12px}.cp-gym-region-meta{font-size:.72rem}.cp-gym-region-body{padding:0 8px 9px}.cp-gym-region .cp-gym-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="mobile-web-app-capable" content="yes">
@@ -377,21 +390,54 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    const header=document.createElement('div');header.className='cp-gym-header';
    const heading=document.createElement('h2');heading.textContent='Gym Badge Collection';header.appendChild(heading);
    const count=document.createElement('span');count.className='cp-gym-progress';count.textContent=Number(progress.earned_count||earned.filter(x=>x.earned).length)+' / '+Number(progress.total_badges||earned.length)+' badges earned';header.appendChild(count);badgePanel.appendChild(header);
-   const grid=document.createElement('div');grid.className='cp-gym-grid';
-   earned.forEach(badge=>{const tile=document.createElement('article');tile.className='cp-gym-badge '+(badge.earned?'is-earned':'is-locked');tile.title=badge.description||badge.name;tile.style.setProperty('--badge-color',badge.color||'#9aa9bf');
-    const badgeImagePaths={boulder:'/assets/badges/boulder.png',cascade:'/assets/badges/cascade.png',thunder:'/assets/badges/thunder.png',rainbow:'/assets/badges/rainbow.png',soul:'/assets/badges/soul.png',marsh:'/assets/badges/marsh.png',volcano:'/assets/badges/volcano.png',earth:'/assets/badges/earth.png'};
-    const imagePath=badgeImagePaths[badge.id];
-    if(imagePath){
-     const image=document.createElement('img');image.className='cp-gym-badge-image';image.src=imagePath;image.alt=badge.name+' artwork';image.width=82;image.height=82;image.loading='lazy';image.decoding='async';
-     image.onerror=()=>{const fallback=document.createElement('span');fallback.className='cp-gym-badge-token';fallback.textContent=badge.earned?(badge.icon||'★'):'?';image.replaceWith(fallback);};
-     tile.appendChild(image);
+   const badgeImagePaths={boulder:'/assets/badges/boulder.png',cascade:'/assets/badges/cascade.png',thunder:'/assets/badges/thunder.png',rainbow:'/assets/badges/rainbow.png',soul:'/assets/badges/soul.png',marsh:'/assets/badges/marsh.png',volcano:'/assets/badges/volcano.png',earth:'/assets/badges/earth.png'};
+   const regions=[
+    {id:'kanto',name:'Kanto',badges:earned},
+    {id:'johto',name:'Johto',badges:[]},
+    {id:'hoenn',name:'Hoenn',badges:[]},
+    {id:'sinnoh',name:'Sinnoh',badges:[]},
+    {id:'unova',name:'Unova',badges:[]},
+    {id:'kalos',name:'Kalos',badges:[]},
+    {id:'alola',name:'Alola',badges:[]},
+    {id:'galar',name:'Galar',badges:[]},
+    {id:'paldea',name:'Paldea',badges:[]}
+   ];
+   const regionList=document.createElement('div');regionList.className='cp-gym-regions';
+   regions.forEach(region=>{
+    const section=document.createElement('details');section.className='cp-gym-region cp-gym-region--'+region.id;section.open=region.id==='kanto';
+    const summary=document.createElement('summary');summary.className='cp-gym-region-summary';
+    const regionName=document.createElement('strong');regionName.textContent=region.name;summary.appendChild(regionName);
+    const regionMeta=document.createElement('span');regionMeta.className='cp-gym-region-meta';
+    if(region.badges.length){
+     const earnedCount=region.badges.filter(b=>b.earned).length;
+     regionMeta.textContent=earnedCount+' / '+region.badges.length+' badges earned';
     }else{
-     const token=document.createElement('span');token.className='cp-gym-badge-token';token.textContent=badge.earned?badge.icon:'?';tile.appendChild(token);
+     regionMeta.textContent='Coming soon';
     }
-    const name=document.createElement('strong');name.textContent=badge.name;tile.appendChild(name);
-    const detail=document.createElement('small');detail.textContent=badge.earned?'Earned '+(badge.earned_at?new Date(badge.earned_at.replace(' ','T')+'Z').toLocaleDateString():''):(badge.description||'Keep collecting to unlock');tile.appendChild(detail);grid.appendChild(tile);
+    summary.appendChild(regionMeta);section.appendChild(summary);
+    const body=document.createElement('div');body.className='cp-gym-region-body';
+    if(region.badges.length){
+     const grid=document.createElement('div');grid.className='cp-gym-grid';
+     region.badges.forEach(badge=>{
+      const tile=document.createElement('article');tile.className='cp-gym-badge '+(badge.earned?'is-earned':'is-locked');tile.title=badge.description||badge.name;tile.style.setProperty('--badge-color',badge.color||'#9aa9bf');
+      const imagePath=badgeImagePaths[badge.id];
+      if(imagePath){
+       const image=document.createElement('img');image.className='cp-gym-badge-image';image.src=imagePath;image.alt=badge.name+' artwork';image.width=82;image.height=82;image.loading='lazy';image.decoding='async';
+       image.onerror=()=>{const fallback=document.createElement('span');fallback.className='cp-gym-badge-token';fallback.textContent=badge.earned?(badge.icon||'★'):'?';image.replaceWith(fallback);};
+       tile.appendChild(image);
+      }else{
+       const token=document.createElement('span');token.className='cp-gym-badge-token';token.textContent=badge.earned?badge.icon:'?';tile.appendChild(token);
+      }
+      const name=document.createElement('strong');name.textContent=badge.name;tile.appendChild(name);
+      const detail=document.createElement('small');detail.textContent=badge.earned?'Earned '+(badge.earned_at?new Date(badge.earned_at.replace(' ','T')+'Z').toLocaleDateString():''):(badge.description||'Keep collecting to unlock');tile.appendChild(detail);grid.appendChild(tile);
+     });
+     body.appendChild(grid);
+    }else{
+     const empty=document.createElement('p');empty.className='cp-gym-region-empty';empty.textContent=region.name+' region badges will appear here when this badge set is added.';body.appendChild(empty);
+    }
+    section.appendChild(body);regionList.appendChild(section);
    });
-   badgePanel.appendChild(grid);
+   badgePanel.appendChild(regionList);
   }
  }
  function stats(){
@@ -800,5 +846,5 @@ $('collector-search-form').addEventListener('submit',event=>{
 })();
 </script>
 <script src="/js/ui/collector-social.js?v=20261022-comment-replies-2"></script>
-<script src="/js/ui/site-nav.js?v=20261023-ripz-nav"></script>
+<script src="/js/ui/site-nav.js?v=20261025-shared-header-v2"></script>
 </body></html>

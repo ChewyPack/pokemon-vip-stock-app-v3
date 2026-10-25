@@ -3,6 +3,12 @@
  'use strict';
  var root=document.getElementById('site-navigation');
  if(!root)return;
+ // Use one versioned stylesheet after page-level styles so every page renders the same header.
+ var headerStyles=document.querySelector('link[data-site-nav-styles]')||document.querySelector('link[rel="stylesheet"][href*="/css/site-nav.css"]');
+ if(!headerStyles){headerStyles=document.createElement('link');headerStyles.rel='stylesheet';document.head.appendChild(headerStyles);}
+ headerStyles.setAttribute('data-site-nav-styles','true');
+ headerStyles.href='/css/site-nav.css?v=20261025-shared-header-v2';
+ document.head.appendChild(headerStyles);
  function el(tag,attrs,children){var n=document.createElement(tag);Object.keys(attrs||{}).forEach(function(k){if(k==='text')n.textContent=attrs[k];else n.setAttribute(k,attrs[k]);});(children||[]).filter(Boolean).forEach(function(c){n.appendChild(c);});return n;}
  function link(label,href,cls){return el('a',{class:cls||'site-nav__link',href:href,text:label});}
  function dropdown(label,items){
