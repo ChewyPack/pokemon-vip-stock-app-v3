@@ -31,12 +31,19 @@ export async function onRequestGet({ request, env }) {
     const progress = await env.DB.prepare(
       'SELECT source_timestamp FROM tcgcsv_sync_progress WHERE id = 1'
     ).first().catch(() => null);
+    const priceProgress = await env.DB.prepare(
+      'SELECT source_timestamp FROM tcgcsv_price_sync_progress WHERE id = 1'
+    ).first().catch(() => null);
+    const syncInProgress = ['syncing', 'error'].includes(String(state?.status || '').toLowerCase());
     const activeTimestamps = Array.from(new Set([
       state?.source_timestamp,
-      ['syncing', 'error'].includes(String(state?.status || '').toLowerCase()) ? progress?.source_timestamp : null
+      syncInProgress ? progress?.source_timestamp : null,
+      syncInProgress ? priceProgress?.source_timestamp : null
     ].filter(Boolean)));
     const timestampPlaceholders = activeTimestamps.map(() => '?').join(',');
-    const importing = Boolean(progress?.source_timestamp && ['syncing', 'error'].includes(String(state?.status || '').toLowerCase()));
+    // Keep existing catalog rows visible while a price-only refresh moves each
+    // product's last_seen_sync marker to the new source timestamp.
+    const importing = Boolean(syncInProgress && (progress?.source_timestamp || priceProgress?.source_timestamp));
 
     if (mode === 'sets') {
       const sets = activeTimestamps.length
