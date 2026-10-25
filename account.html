@@ -640,7 +640,9 @@
  resetForm.addEventListener('submit',async event=>{event.preventDefault();resetMessage.hidden=true;const token=new URLSearchParams(window.location.search).get('reset')||'';const button=document.getElementById('reset-submit');button.disabled=true;button.textContent='Saving…';try{const response=await fetch('/api/account/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,password:resetPassword.value})});const data=await response.json();if(!response.ok||!data.ok){const errors={password_requirements:'Your password must be between 10 and 128 characters.',invalid_or_expired_reset_link:'This reset link has expired or has already been used. Request a new one.'};throw new Error(errors[data.error]||'Could not reset the password. Please request a new link.');}resetMessage.hidden=false;resetMessage.textContent='Password updated. You can now log in with your new password.';resetPassword.value='';window.history.replaceState({},'', '/account.html');}catch(error){resetMessage.hidden=false;resetMessage.textContent=error.message||'Could not reset the password.';}finally{button.disabled=false;button.textContent='Save new password';}});
  const resetToken=new URLSearchParams(window.location.search).get('reset');
  if(resetToken){showRecoveryPanel('reset');}
- setMode('login');checkSession();
+ const requestedMode=new URLSearchParams(window.location.search).get('mode');
+  setMode(requestedMode==='register'?'register':'login');
+  checkSession();
 })();
 </script>
 
