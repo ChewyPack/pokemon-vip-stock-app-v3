@@ -83,20 +83,20 @@
    {title:'Market Intelligence',description:'Market trends and product insights',href:'/market-intelligence.html'},
    {title:'Events',description:'Shows, trade nights, and releases',href:'/events.html'},
    {title:'Submit an Event',description:'Send an event to PokePrizePool for review',href:'/submit-event.html'},
-   {title:'Giveaways',description:'See current prizes and ways to enter',href:'/giveaways.html'},
-   {title:'Ripz',description:'Watch and share live collector streams',href:'/ripz.html'}
+   {title:'Instant Cashout',description:'Explore collection cash-out options',href:'/instant-buyout.html'},
+   {title:'Giveaways',description:'See current prizes and ways to enter',href:'/giveaways.html'}
   ]),
   dropdown('Alerts',alertsItems),
   dropdown('Marketplace',[
    {title:'PokePrizePool Store',description:'Official cards, sealed products, and merchandise',href:'/store.html'},
    {title:'Collector Marketplace',description:'Browse listings from member shops',href:'/marketplace.html'},
    {title:'Manage My Shop',description:'Create or edit your member shop and listings',href:'/collector.html#shop'},
-   {title:'Instant Cashout',description:'Explore collection cash-out options',href:'/instant-buyout.html'},
    {title:'Line Services',description:'Get help securing products in person',href:'/line-services.html'}
   ]),
   dropdown('Community',[
    {title:'Collector Chat',description:'Talk with other collectors',href:'/chat.html'},
-   {title:'News Feed',description:'See posts and updates from the community',href:'/newsfeed'}
+   {title:'News Feed',description:'See posts and updates from the community',href:'/newsfeed'},
+   {title:'Ripz',description:'Watch and share live collector streams',href:'/ripz.html'}
   ]),
   dropdown('Resources',[
    {title:'Securing Product',href:'/resources/securing-product.html'},
