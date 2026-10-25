@@ -49,7 +49,9 @@ export async function onRequestGet({request,env}){
  let kind=rawKind&&rawKind!=='ALL'?rawKind:(!rawKind?inferred.kind:'');
  let searchQuery=q;
  if(rawKind&&rawKind!=='ALL'){
-  if(inferred.kind===kind)searchQuery=inferred.query;
+  // The selected category wins; strip any product-type words from the query,
+  // even when the text previously named a different category.
+  if(inferred.kind)searchQuery=inferred.query;
  }else if(!rawKind){
   kind=inferred.kind;
   searchQuery=inferred.query;
