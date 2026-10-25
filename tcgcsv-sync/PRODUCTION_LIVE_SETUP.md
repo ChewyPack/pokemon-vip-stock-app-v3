@@ -50,7 +50,7 @@ The current production database check showed 220 registered groups and 32,881 pr
 
 Deploy the latest `tcgcsv-sync/worker.js` from `main` before relying on the new sync behavior. In this version, **POST `/sync` starts a resumable price-only refresh**: it fetches each existing group's prices and updates only `market_price` and `market_price_subtype` on existing product rows. It does not re-import product names, card metadata, images, or sets. The scheduled daily source check also starts this price-only refresh when TCGCSV's source marker changes.
 
-Use `/catalog-sync` once when new products must be discovered, including sealed products. It reads each group's product list and prices, inserts newly available products, and upserts the existing product metadata and prices. This is more work than the routine price-only refresh.
+Use `/catalog-sync` once when new products must be discovered, including sealed products. It reads each group's product list and prices, inserts newly available products with their metadata, and refreshes prices for existing products without rewriting their names, card numbers, images, rarity, or product type. This is more work than the routine price-only refresh.
 
 Use `/sync` for routine market-price refreshes. It updates market price, preferred price subtype, and the freshness marker on existing products; it does not rewrite card names, card numbers, images, rarity, or product type. Both POST endpoints require the production `SYNC_SECRET` as a bearer token.
 
