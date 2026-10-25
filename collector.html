@@ -588,11 +588,9 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   try{
    const tcgParams=new URLSearchParams({q:query,type:'sealed',limit:'50'});
    if(setId)tcgParams.set('set_id',setId);
-   const providerQuery=query
-    .replace(/\betb\b/ig,'Elite Trainer Box')
-    .replace(/\bupc\b/ig,'Ultra Premium Collection')
-    .replace(/\bbb\b/ig,'Booster Box');
-   const providerParams=new URLSearchParams({q:providerQuery});
+   // Send the collector's original query. The endpoint expands generic product
+   // terms (ETB, booster box, etc.) and handles alternate names server-side.
+   const providerParams=new URLSearchParams({q:query});
    const getJson=async url=>{
     const response=await fetch(url,{credentials:'same-origin',cache:'no-store'});
     const data=await response.json().catch(()=>({ok:false,error:'invalid_json'}));
@@ -657,8 +655,16 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
     return '<div class="cp-catalog-result-row"><div class="cp-catalog-result" data-sealed-id="'+safe(product.id)+'">'+(product.image_url?'<img loading="lazy" src="'+safe(product.image_url)+'" alt="">':'<span aria-hidden="true">Product</span>')+'<span><strong>'+safe(product.name||'Sealed product')+'</strong><small>'+safe(metadata)+'</small><small><strong>TCGplayer market: '+safe(priceText(product.market_price))+'</strong>'+(product.market_price_subtype?' · '+safe(product.market_price_subtype):'')+'</small></span></div><div class="cp-catalog-result-actions"><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="collection">Use for My Collection</button><button type="button" data-add-sealed-id="'+safe(product.id)+'" data-list-target="wishlist">Use for My Wishlist</button></div></div>';
    }).join('');
    const importNotice=tcgResult?.partial?' The TCGCSV import is still running.':'';
-   const sourceNotice=expandedResult?'Both catalogs searched.':'The expanded catalog is unavailable; showing TCGCSV matches only.';
-   setStatus('catalog-status','Showing '+products.length+' sealed matches. '+priceAvailable+' have TCGplayer market prices; unmatched catalog products will need a manual value. '+sourceNotice+importNotice);
+   const expandedCount=(expandedResult?.products||[]).length;
+   const providerError=sourceResults[1].status==='rejected'?String(sourceResults[1].reason?.message||''): '';
+   const providerNotices={
+    sealed_api_key_missing:'The expanded catalog is not configured in this production deployment (missing POKEMON_TCG_API_KEY).',
+    sealed_api_key_invalid:'The expanded catalog API key is invalid in production.',
+    sealed_catalog_quota_exceeded:'The expanded catalog API quota has been reached.',
+    sealed_catalog_unavailable:'The expanded catalog could not be reached.'
+   };
+   const sourceNotice=expandedResult?(expandedCount?'Expanded catalog added '+expandedCount+' products.':'Expanded catalog returned no matches.'):(providerNotices[providerError]||'The expanded catalog is unavailable; showing TCGCSV matches only.');
+   setStatus('catalog-status','Showing '+products.length+' sealed matches. '+priceAvailable+' have TCGplayer market prices; other products may need a manual value. '+sourceNotice+importNotice);
   }catch(error){if(requestId===catalogRequest)setStatus('catalog-status',error.message||'Could not search sealed products.');}
  }
  $('catalog-results').addEventListener('click',event=>{const button=event.target.closest('[data-add-sealed-id]');if(button){const product=(window.__sealedResults||[]).find(item=>String(item.id)===String(button.dataset.addSealedId));if(product){$('list-type').value=button.dataset.listTarget;selectSealedProduct(product);setStatus('catalog-status','Selected for '+(button.dataset.listTarget==='wishlist'?'My Wishlist':'My Collection')+'. Review the details and press Add item to save.');}}});
