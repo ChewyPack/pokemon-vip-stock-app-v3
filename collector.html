@@ -38,6 +38,16 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-field{display:grid;gap:5px;margin:10px 0;font-size:.88rem;font-weight:900}
 .cp-field input,.cp-field select,.cp-field textarea,.cp-search{width:100%;min-height:42px;padding:10px 11px;border:1px solid #b9c9e6;border-radius:9px;font:inherit;background:#fff;color:var(--navy)}
 .cp-field textarea{min-height:86px;resize:vertical}
+.cp-item-details{margin:10px 0;border:1px solid #dbe4f4;border-radius:10px;background:#f8faff;padding:10px 11px}
+.cp-item-details summary{cursor:pointer;font-size:.88rem;font-weight:900;color:#17386c}
+.cp-item-details .cp-catalog-status{margin:8px 0}
+.cp-item-details .cp-field{margin:9px 0}
+.cp-quantity-field{padding:10px 12px;border:1px solid #c9d7ef;border-radius:10px;background:#f7faff}
+.cp-quantity-field input{font-weight:900}
+.cp-collection-quantity{margin:8px 0 0!important;padding:7px 9px;border-radius:8px;background:#eef4ff;color:#17386c!important;font-size:.86rem!important;font-weight:900;border:1px solid #dbe7fb}
+.cp-item-bottom{justify-content:flex-start;gap:8px;flex-wrap:wrap}
+.cp-item-value{margin-left:auto;font-size:.95rem;color:#17386c}
+
 .cp-btn{border:0;border-radius:9px;padding:11px 15px;background:var(--yellow);color:var(--navy);font:inherit;font-weight:900;cursor:pointer}
 .cp-btn.secondary{background:#eaf1ff;border:1px solid #bfd0ee}
 .cp-btn.danger{background:#fff0f0;color:#8a2525}
@@ -312,15 +322,18 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  <p id="catalog-status" class="cp-catalog-status" role="status" aria-live="polite">Loading set list…</p>
  <div id="catalog-results" class="cp-catalog-results"></div>
 </div>
-<label class="cp-field">Product name *<input id="product-name" required maxlength="160" placeholder="e.g. Charizard ex"></label>
-
-<label class="cp-field">Set / product line<input id="set-name" maxlength="120" placeholder="e.g. Obsidian Flames"></label>
-<label class="cp-field">Card number (optional)<input id="card-number" maxlength="40" placeholder="e.g. 223/197"></label>
-<label class="cp-field">Condition / grade<input id="condition" maxlength="60" placeholder="e.g. Near Mint, PSA 10"></label>
-<label class="cp-field">Quantity<input id="quantity" type="number" min="1" max="9999" value="1" required></label>
-<label class="cp-field">Estimated value in USD (optional)<input id="estimated-value" type="number" min="0" max="1000000" step="0.01" placeholder="Leave blank if unknown"></label>
-<label class="cp-field">Image URL (optional)<input id="image-url" type="url" placeholder="https://…"></label>
-<label class="cp-field">Notes (optional)<textarea id="notes" maxlength="500" placeholder="Language, variant, target price, etc."></textarea></label>
+<label class="cp-field cp-quantity-field">Quantity to add<input id="quantity" type="number" min="1" max="9999" value="1" required></label>
+<details class="cp-item-details">
+ <summary>Product details and optional overrides</summary>
+ <p class="cp-catalog-status">Catalog selections fill these automatically. Open only if you need to correct details or add notes.</p>
+ <label class="cp-field">Product name *<input id="product-name" required maxlength="160" placeholder="e.g. Charizard ex"></label>
+ <label class="cp-field">Set / product line<input id="set-name" maxlength="120" placeholder="e.g. Obsidian Flames"></label>
+ <label class="cp-field">Card number (optional)<input id="card-number" maxlength="40" placeholder="e.g. 223/197"></label>
+ <label class="cp-field">Condition / grade<input id="condition" maxlength="60" placeholder="e.g. Near Mint, PSA 10"></label>
+ <label class="cp-field">Estimated value in USD (optional)<input id="estimated-value" type="number" min="0" max="1000000" step="0.01" placeholder="Leave blank if unknown"></label>
+ <label class="cp-field">Image URL (optional)<input id="image-url" type="url" placeholder="https://…"></label>
+ <label class="cp-field">Notes (optional)<textarea id="notes" maxlength="500" placeholder="Language, variant, target price, etc."></textarea></label>
+</details>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="item-save-button" class="cp-btn" type="submit">Add item</button><button id="item-cancel-edit" class="cp-btn secondary" type="button" hidden>Cancel edit</button></div>
 </form>
 <p class="cp-public-note">Catalog search uses PokePrizePool's daily-synced TCGCSV Pokémon catalog. Results show TCGplayer market prices by available printing or sealed-product variant. Selecting a result fills the matching catalog details and market-price estimate. Graded-slab values must be researched separately from raw-card prices.</p>
@@ -452,7 +465,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    const q=$('search').value.trim().toLowerCase(),type=$('type-filter').value;
    const filtered=items.filter(x=>x.list_type===activeList&&(!q||[x.product_name,x.set_name,x.card_number,x.condition,x.notes].join(' ').toLowerCase().includes(q))&&(type==='all'||x.product_type===type));
    $('list-heading').textContent=activeList==='collection'?'Collection showcase':'Wishlist';
-   $('items').innerHTML=filtered.length?filtered.map(x=>'<article class="cp-item"><div class="cp-item-image">'+(x.image_url?'<img loading="lazy" src="'+safe(x.image_url)+'" alt="'+safe(x.product_name)+'">':'Card')+'</div><div class="cp-item-body"><h3>'+safe(x.product_name)+'</h3><p>'+safe([x.set_name,x.card_number].filter(Boolean).join(' · ')||'Pokémon TCG')+'</p><p>'+safe(x.condition||'Condition not listed')+' · '+(x.product_type==='sealed'?'Sealed product':x.product_type==='graded'?'Graded card':'Single card')+'</p>'+(x.notes?'<p>'+safe(x.notes)+'</p>':'')+(x.tcgcsv_product_id?'<p><strong>TCGplayer market'+(x.product_type==='graded'?' (raw-card reference)':'')+': '+safe(x.tcgcsv_market_price===null||x.tcgcsv_market_price===undefined?'Price unavailable':priceText(x.tcgcsv_market_price))+'</strong>'+(x.tcgcsv_market_price_subtype?' · '+safe(x.tcgcsv_market_price_subtype):'')+'</p>':'')+'<div class="cp-item-bottom"><span>'+(activeList==='collection'?'Qty: '+Number(x.quantity||1):'On wishlist')+'</span><span>'+(activeList==='collection'?money(x.estimated_value_cents):'')+'</span></div>'+(own?'<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px"><button class="cp-btn secondary" data-edit-collector-item="'+Number(x.id)+'" type="button">Edit</button><button class="cp-btn danger" data-remove="'+Number(x.id)+'" type="button">Remove</button></div>':'')+'</div></article>').join(''):'<div class="cp-empty">'+(activeList==='collection'?'No collection items match yet. Add your first card or sealed product.':'This wishlist is empty. Add the cards you’re chasing.')+'</div>';
+   $('items').innerHTML=filtered.length?filtered.map(x=>'<article class="cp-item"><div class="cp-item-image">'+(x.image_url?'<img loading="lazy" src="'+safe(x.image_url)+'" alt="'+safe(x.product_name)+'">':'Card')+'</div><div class="cp-item-body"><h3>'+safe(x.product_name)+'</h3><p>'+safe([x.set_name,x.card_number].filter(Boolean).join(' · ')||'Pokémon TCG')+'</p><p>'+safe(x.condition||'Condition not listed')+' · '+(x.product_type==='sealed'?'Sealed product':x.product_type==='graded'?'Graded card':'Single card')+'</p>'+(activeList==='collection'?'<p class="cp-collection-quantity">Quantity: '+Number(x.quantity||1)+'</p>':'')+(x.notes?'<p>'+safe(x.notes)+'</p>':'')+(x.tcgcsv_product_id?'<p><strong>TCGplayer market'+(x.product_type==='graded'?' (raw-card reference)':'')+': '+safe(x.tcgcsv_market_price===null||x.tcgcsv_market_price===undefined?'Price unavailable':priceText(x.tcgcsv_market_price))+'</strong>'+(x.tcgcsv_market_price_subtype?' · '+safe(x.tcgcsv_market_price_subtype):'')+'</p>':'')+'<div class="cp-item-bottom">'+(activeList==='wishlist'?'<span>On wishlist</span>':'')+(activeList==='collection'?'<span class="cp-item-value">'+money(x.estimated_value_cents)+'</span>':'')+'</div>'+(own?'<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px"><button class="cp-btn secondary" data-edit-collector-item="'+Number(x.id)+'" type="button">Edit</button><button class="cp-btn danger" data-remove="'+Number(x.id)+'" type="button">Remove</button></div>':'')+'</div></article>').join(''):'<div class="cp-empty">'+(activeList==='collection'?'No collection items match yet. Add your first card or sealed product.':'This wishlist is empty. Add the cards you’re chasing.')+'</div>';
    $('items').querySelectorAll('[data-remove]').forEach(button=>button.addEventListener('click',()=>removeItem(button.dataset.remove)));
    $('items').querySelectorAll('[data-edit-collector-item]').forEach(button=>button.addEventListener('click',()=>startEditCollectorItem(button.dataset.editCollectorItem)));
   }
