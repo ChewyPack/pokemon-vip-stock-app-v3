@@ -7,6 +7,23 @@ const clean = (v, max = 500) => String(v ?? '').trim().replace(/[\u0000-\u001f\u
 const dollars = (cents) => '$' + (Number(cents || 0) / 100).toFixed(2);
 const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+async function enforceEmailRateLimit(db, request) {
+  const ip = clean(request.headers.get('CF-Connecting-IP') || 'unknown', 120);
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip));
+  const ipHash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - 3600;
+  await db.prepare('CREATE TABLE IF NOT EXISTS store_order_email_rate_limits (ip_hash TEXT PRIMARY KEY, window_started INTEGER NOT NULL, request_count INTEGER NOT NULL)').run();
+  await db.prepare(`INSERT INTO store_order_email_rate_limits (ip_hash, window_started, request_count) VALUES (?, ?, 1)
+    ON CONFLICT(ip_hash) DO UPDATE SET
+      request_count = CASE WHEN window_started <= ? THEN 1 ELSE request_count + 1 END,
+      window_started = CASE WHEN window_started <= ? THEN ? ELSE window_started END`)
+    .bind(ipHash, now, windowStart, windowStart, now).run();
+  const row = await db.prepare('SELECT request_count FROM store_order_email_rate_limits WHERE ip_hash = ?').bind(ipHash).first();
+  if (Number(row?.request_count || 0) > 5) throw new HttpError(429, 'Too many order requests were submitted from this connection. Please try again later.');
+  await db.prepare('DELETE FROM store_order_email_rate_limits WHERE window_started < ?').bind(now - 7 * 24 * 3600).run();
+}
+
 export const onRequestPost = wrap(async ({ request, env }) => {
   const origin = request.headers.get('origin');
   if (origin && origin !== new URL(request.url).origin) throw new HttpError(403, 'Use the PokePrizePool website to submit this request.');
@@ -84,6 +101,8 @@ export const onRequestPost = wrap(async ({ request, env }) => {
 
   const payload = { from, to: [DESTINATION], subject: 'PokePrizePool Store Order Request — ' + username, text: textBody, html };
   if (email) payload.reply_to = email;
+  await enforceEmailRateLimit(env.DB, request);
+
   let response;
   try {
     response = await fetch('https://api.resend.com/emails', {
