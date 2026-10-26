@@ -5,14 +5,7 @@ const PAYMENT_TAX_RATE_BPS = 700;
 const manualMode = (env) => String(env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual';
 const taxEnabled = (env) => String(env.STORE_RI_SALES_TAX_ENABLED || '').trim().toLowerCase() === 'true';
 const dollarsToCents = (value) => Number.isSafeInteger(value) && value >= 0;
-const clothingPattern = /\b(t-?shirts?|tees?|hoodies?|sweatshirts?|sweaters?|shirts?|beanies?|hats?|caps?|jackets?|coats?|pants|shorts|socks|leggings|dresses|skirts|uniforms?|scarves?|footwear|shoes?)\b/i;
 const clean = (value, max = 150) => String(value ?? '').trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max);
-
-function isClearlyExemptClothing(product) {
-  const category = String(product.category || '').toLowerCase();
-  if (category !== 'merch') return false;
-  return clothingPattern.test(String(product.name || '') + ' ' + String(product.product_type || ''));
-}
 
 export async function quoteStoreItems(db, env, rawItems, destinationState = 'RI', request = null) {
   await ensureCollectorPlusPriceColumn(db);
@@ -78,13 +71,7 @@ export async function quoteStoreItems(db, env, rawItems, destinationState = 'RI'
     if (!Number.isSafeInteger(lineTotalCents)) throw new HttpError(400, 'The cart total is too large.');
     subtotalCents += lineTotalCents;
 
-    if (state === 'RI') {
-      if (isClearlyExemptClothing(product)) {
-        taxableCents += Math.max(0, unitPriceCents - 25000) * item.quantity;
-      } else {
-        taxableCents += lineTotalCents;
-      }
-    }
+    if (state === 'RI') taxableCents += lineTotalCents;
     lines.push({
       productId: item.productId,
       variantId: isPrintify ? item.variantId : null,
@@ -122,8 +109,8 @@ export async function quoteStoreItems(db, env, rawItems, destinationState = 'RI'
     taxNotice: state !== 'RI'
       ? 'Rhode Island sales tax is not calculated for an out-of-state delivery. Other states’ tax is not calculated by this checkout.'
       : enabled
-        ? 'Rhode Island sales tax is enabled for this store. Shipping charges, when applicable, must be confirmed separately.'
-        : 'This is a tax estimate only. Do not represent or collect it as sales tax until PokePrizePool’s Rhode Island retail sales permit is active and STORE_RI_SALES_TAX_ENABLED is turned on.',
+        ? 'Rhode Island sales tax is calculated at 7% of the full product subtotal. Shipping charges, when applicable, must be confirmed separately.'
+        : 'This is an estimate calculated at 7% of the full product subtotal. Do not represent or collect it as sales tax until PokePrizePool’s Rhode Island retail sales permit is active and STORE_RI_SALES_TAX_ENABLED is turned on.',
     fulfillment
   };
 }
