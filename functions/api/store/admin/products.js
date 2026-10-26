@@ -55,7 +55,7 @@ const audit = (db, actor, action, detail) =>
 export const onRequestGet = wrap(async (ctx) => {
   await requireAdmin(ctx);
   const { results } = await ctx.env.DB.prepare('SELECT * FROM store_products ORDER BY id DESC LIMIT 500').all();
-  return json({ products: results, printifyCommerceReady: printifyCommerceReady(ctx.env) });
+  return json({ products: results, printifyCommerceReady: printifyCommerceReady(ctx.env), manualOrdersEnabled: String(ctx.env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual' });
 });
 
 export const onRequestPost = wrap(async (ctx) => {
@@ -84,8 +84,9 @@ export const onRequestPatch = wrap(async (ctx) => {
     `SELECT category, external_checkout_url${hasPrintifyColumn ? ', printify_product_id' : ''} FROM store_products WHERE id = ?`
   ).bind(id).first();
   if (!existing) throw new HttpError(404, 'Not found');
-  if (hasPrintifyColumn && existing.printify_product_id && o.active === 1 && !printifyCommerceReady(ctx.env)) {
-    throw new HttpError(409, 'Printify products cannot be published until the three production safety flags are enabled.');
+  const manualOrdersEnabled = String(ctx.env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual';
+  if (hasPrintifyColumn && existing.printify_product_id && o.active === 1 && !manualOrdersEnabled && !printifyCommerceReady(ctx.env)) {
+    throw new HttpError(409, 'Printify listing cannot be activated for automatic checkout until the production safety checks are complete. Manual order requests are controlled by STORE_PAYMENT_MODE=manual.');
   }
   const finalCategory = o.category || existing.category;
   const finalExternalUrl = o.external_checkout_url !== undefined ? o.external_checkout_url : existing.external_checkout_url;
