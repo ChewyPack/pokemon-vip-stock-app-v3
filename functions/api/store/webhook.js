@@ -1,5 +1,6 @@
 import { json, fail, verifyStripeSignature } from '../../_lib/store.js';
 import { releaseOrder } from './checkout.js';
+import { submitPaidPrintifyOrder } from '../../_lib/printify-orders.js';
 
 // POST /api/store/webhook  — register this as its OWN Stripe endpoint with its OWN signing secret
 // (STRIPE_STORE_WEBHOOK_SECRET). The membership webhook is untouched. Events without
@@ -20,7 +21,10 @@ export async function onRequestPost({ request, env }) {
     const orderId = Number(s.metadata?.ppp_store_order_id);
     if (s.object === 'checkout.session' && Number.isInteger(orderId)) {
       if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
-        if (s.payment_status === 'paid') await markPaid(db, orderId, s);
+        if (s.payment_status === 'paid') {
+          const result = await markPaid(db, orderId, s);
+          if (result.paid) await submitPaidPrintifyOrder(db, env, orderId);
+        }
       } else if (event.type === 'checkout.session.expired') {
         await releaseOrder(db, orderId, 'expired');
       } else if (event.type === 'checkout.session.async_payment_failed') {
@@ -36,17 +40,27 @@ export async function onRequestPost({ request, env }) {
 }
 
 async function markPaid(db, orderId, s) {
-  const order = await db.prepare('SELECT subtotal_cents, payment_status FROM store_orders WHERE id = ?').bind(orderId).first();
-  if (!order || order.payment_status === 'paid') return;
+  const order = await db.prepare(
+    'SELECT subtotal_cents, shipping_cents, payment_status, shipping_name, shipping_address FROM store_orders WHERE id = ?'
+  ).bind(orderId).first();
+  if (!order || order.payment_status === 'paid') return { paid: false };
   const ship = s.shipping_details || s.collected_information?.shipping_details || {};
-  const tax = s.total_details?.amount_tax || 0, shipping = s.total_details?.amount_shipping || 0;
-  // Stripe's subtotal must equal our server-side subtotal; otherwise flag for manual review.
-  const status = s.amount_subtotal === order.subtotal_cents && order.payment_status === 'pending' ? 'paid' : 'review'; // paid after expiry (stock already released) => manual review
+  const tax = s.total_details?.amount_tax || 0;
+  const stripeShipping = s.total_details?.amount_shipping || 0;
+  // Printify shipping is shown as a fixed checkout line item after a server quote;
+  // regular stocked orders continue using Stripe's built-in shipping options.
+  const expectedSubtotal = Number(order.subtotal_cents || 0) + Number(order.shipping_cents || 0);
+  const status = s.amount_subtotal === expectedSubtotal && order.payment_status === 'pending'
+    ? 'paid' : 'review';
+  const shippingName = ship.name || order.shipping_name || null;
+  const shippingAddress = ship.address ? JSON.stringify(ship.address) : (order.shipping_address || JSON.stringify({}));
+  const shippingCents = stripeShipping > 0 ? stripeShipping : Number(order.shipping_cents || 0);
   await db.prepare(
     `UPDATE store_orders SET payment_status = ?, fulfillment_status = CASE WHEN ? = 'paid' THEN 'processing' ELSE fulfillment_status END,
        email = COALESCE(?, email), shipping_name = ?, shipping_address = ?, shipping_cents = ?, tax_cents = ?, total_cents = ?,
        stripe_payment_intent = ?, updated_at = datetime('now')
      WHERE id = ? AND payment_status IN ('pending','expired')`
-  ).bind(status, status, s.customer_details?.email || null, ship.name || null, JSON.stringify(ship.address || {}),
-    shipping, tax, s.amount_total || 0, typeof s.payment_intent === 'string' ? s.payment_intent : null, orderId).run();
+  ).bind(status, status, s.customer_details?.email || null, shippingName, shippingAddress,
+    shippingCents, tax, s.amount_total || 0, typeof s.payment_intent === 'string' ? s.payment_intent : null, orderId).run();
+  return { paid: status === 'paid' };
 }
