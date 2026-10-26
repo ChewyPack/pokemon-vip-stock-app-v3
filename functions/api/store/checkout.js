@@ -1,5 +1,5 @@
 import { json, wrap, readJson, HttpError, stripe, randomId, orderNumber, assertStoreStripeMode } from '../../_lib/store.js';
-import { PRINTIFY_SHOP_ID, normalizePrintifyAddress, parseVariants, quotePrintifyShipping } from '../../_lib/printify.js';
+import { PRINTIFY_SHOP_ID, normalizePrintifyAddress, parseVariants, quotePrintifyShipping, printifyCommerceReady } from '../../_lib/printify.js';
 
 // POST /api/store/checkout body: { items:[{productId,variantId?,quantity}], email?, shippingAddress?, quotedShippingCents? }
 // All prices and variants are validated against D1. Printify item shipping is re-quoted server-side.
@@ -42,6 +42,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
     if (product.coming_soon) throw new HttpError(409, 'This product is coming soon and cannot be purchased yet');
 
     if (product.printify_product_id) {
+      if (!printifyCommerceReady(env)) throw new HttpError(503, 'PokePrizePool Printify checkout is paused until the live checkout, Printify order submission, and Manual approval safeguards are confirmed.');
       if (String(product.printify_shop_id || '') !== PRINTIFY_SHOP_ID) throw new HttpError(409, 'This Printify product is not connected to the selected shop.');
       if (item.variantId == null) throw new HttpError(400, 'Choose a size/color for each Printify product.');
       const variant = parseVariants(product.printify_variants).find((v) => Number(v.id) === item.variantId);
