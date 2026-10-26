@@ -91,6 +91,7 @@
     .news-article-image{display:block;width:100%;height:280px;max-height:480px;object-fit:cover;border-radius:10px;background:#eef2f8}
     .news-photo-count{font-size:.78rem!important;color:#9ec7ff!important;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
     .news-back-link{display:inline-block;margin:0 0 18px;color:#a8caff}
+    .news-share{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:18px 0 24px;padding:14px 0;border-top:1px solid #e1e6ef;border-bottom:1px solid #e1e6ef}.news-share__label{flex-basis:100%;margin:0;color:#5d687a;font-size:.78rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.news-share a,.news-share button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 13px;border:1px solid #cbd5e1;border-radius:8px;background:#f4f7fb;color:#17233b;font:700 .88rem/1.2 inherit;text-decoration:none;cursor:pointer}.news-share a:hover,.news-share button:hover{background:#e5edf8;border-color:#8da8d2}.news-share__status{flex-basis:100%;min-height:1.2em;margin:0;color:#526079;font-size:.82rem}
 \n    /* Keep the shared navigation above the page content. */
     #news-navigation {
       position: relative;
@@ -203,6 +204,27 @@
         var back=add('a','news-back-link','← All News');back.href='/news.html';container.appendChild(back);
         var panel=add('article','news-article-panel');
         panel.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
+        var share=add('div','news-share');share.setAttribute('aria-label','Share this story');
+        share.appendChild(add('p','news-share__label','Share this story'));
+        var shareUrl=location.origin+'/news.html?story='+encodeURIComponent(story.slug);
+        var shareTitle=String(story.title||'PokePrizePool news');
+        function shareLink(label,url){var a=add('a','',label);a.href=url;a.target='_blank';a.rel='noopener noreferrer';share.appendChild(a);}
+        shareLink('Facebook','https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(shareUrl));
+        shareLink('X','https://twitter.com/intent/tweet?url='+encodeURIComponent(shareUrl)+'&text='+encodeURIComponent(shareTitle));
+        shareLink('WhatsApp','https://wa.me/?text='+encodeURIComponent(shareTitle+' '+shareUrl));
+        var copyButton=add('button','','Copy link');copyButton.type='button';
+        var shareStatus=add('p','news-share__status','');shareStatus.setAttribute('aria-live','polite');
+        copyButton.addEventListener('click',function(){
+          if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(shareUrl).then(function(){shareStatus.textContent='Story link copied.';}).catch(function(){shareStatus.textContent='Copy was blocked by your browser. Copy the page address from your browser bar.';});}
+          else{shareStatus.textContent='Copy the story address from your browser bar.';}
+        });
+        share.appendChild(copyButton);
+        if(typeof navigator.share==='function'){
+          var nativeButton=add('button','','More sharing options');nativeButton.type='button';
+          nativeButton.addEventListener('click',function(){navigator.share({title:shareTitle,text:shareTitle,url:shareUrl}).catch(function(error){if(error&&error.name!=='AbortError')shareStatus.textContent='Could not open the share menu.';});});
+          share.appendChild(nativeButton);
+        }
+        panel.appendChild(share);
         var imageUrls=Array.isArray(story.image_urls)?story.image_urls.slice(0,3):(story.image_url?[story.image_url]:[]);
         if(imageUrls.length){
           var gallery=add('div','news-article-gallery');
