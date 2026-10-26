@@ -4,6 +4,9 @@ import { PRINTIFY_SHOP_ID, normalizePrintifyAddress, parseVariants, quotePrintif
 // POST /api/store/checkout body: { items:[{productId,variantId?,quantity}], email?, shippingAddress?, quotedShippingCents? }
 // All prices and variants are validated against D1. Printify item shipping is re-quoted server-side.
 export const onRequestPost = wrap(async ({ request, env }) => {
+  if (String(env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() !== 'stripe') {
+    throw new HttpError(503, 'Online Stripe checkout is disabled while PokePrizePool accepts manual store order requests. Please use the storefront order-request instructions.');
+  }
   assertStoreStripeMode(env);
   const origin = new URL(request.url).origin;
   const body = await readJson(request, 25000);
