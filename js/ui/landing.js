@@ -292,6 +292,29 @@
     return section;
   }
 
+  function buildCollectorTrialPromo() {
+    var styleId = 'ppp-collector-trial-promo-style';
+    if (!document.getElementById(styleId)) {
+      var style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = '.ppp-collector-trial-promo{padding:22px 0 28px}.ppp-collector-trial-promo__card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;padding:clamp(18px,3vw,28px);border:3px solid #07194d;border-radius:16px;background:#ffd21f;color:#07194d;box-shadow:6px 6px 0 #07194d}.ppp-collector-trial-promo__eyebrow{margin:0 0 6px;font-size:.75rem;font-weight:1000;letter-spacing:.12em;text-transform:uppercase}.ppp-collector-trial-promo__title{margin:0;font:400 clamp(1.9rem,4vw,2.7rem)/1 var(--font-display);letter-spacing:.02em}.ppp-collector-trial-promo__copy{max-width:70ch;margin:8px 0 0;font-size:.96rem;font-weight:800;line-height:1.55}.ppp-collector-trial-promo__fine{display:block;margin-top:6px;font-size:.78rem;font-weight:700;line-height:1.45}.ppp-collector-trial-promo__button{background:#07194d;color:#fff;border:2px solid #07194d;white-space:nowrap}.ppp-collector-trial-promo__button:hover{background:#174b9b;border-color:#174b9b}@media(max-width:700px){.ppp-collector-trial-promo{padding:16px 0 20px}.ppp-collector-trial-promo__card{grid-template-columns:1fr;gap:14px}.ppp-collector-trial-promo__button{width:100%;white-space:normal}}';
+      document.head.appendChild(style);
+    }
+    return h('section', { class: 'ppp-collector-trial-promo', 'aria-labelledby': 'ppp-collector-trial-title' },
+      h('div', { class: 'wrap' },
+        h('div', { class: 'ppp-collector-trial-promo__card' },
+          h('div', null,
+            h('p', { class: 'ppp-collector-trial-promo__eyebrow' }, 'Collector+ membership'),
+            h('h2', { class: 'ppp-collector-trial-promo__title', id: 'ppp-collector-trial-title' }, 'Get your first 7 days free'),
+            h('p', { class: 'ppp-collector-trial-promo__copy' }, 'Try Collector+ free for 7 days. A payment method is required at signup. After the trial, your selected plan renews at $5/month or $50/year unless canceled before the trial ends.'),
+            h('small', { class: 'ppp-collector-trial-promo__fine' }, 'For eligible first-time subscribers only. Accounts with prior subscription history do not qualify for another trial.')
+          ),
+          h('a', { class: 'btn btn--lg ppp-collector-trial-promo__button', href: '/account.html?mode=register&plan=collector' }, 'Start your 7-day free trial')
+        )
+      )
+    );
+  }
+
   VIP.landing = {
     render: function (root) {
       var cfg = VIP.siteConfig;
@@ -528,6 +551,7 @@
       }, 'Ad placement · home · top');
       root.appendChild(homeAdTop);
       root.appendChild(hero);
+      root.appendChild(buildCollectorTrialPromo());
       initPokeBallViewer();
       root.appendChild(buildHomeGiveawayMeter());
       root.appendChild(buildHomepagePreviews());
