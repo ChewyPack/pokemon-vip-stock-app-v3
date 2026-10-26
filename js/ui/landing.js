@@ -300,7 +300,7 @@
       style.textContent = '.ppp-collector-trial-promo{padding:22px 0 28px}.ppp-collector-trial-promo__card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;padding:clamp(18px,3vw,28px);border:3px solid #07194d;border-radius:16px;background:#ffd21f;color:#07194d;box-shadow:6px 6px 0 #07194d}.ppp-collector-trial-promo__eyebrow{margin:0 0 6px;font-size:.75rem;font-weight:1000;letter-spacing:.12em;text-transform:uppercase}.ppp-collector-trial-promo__title{margin:0;font:400 clamp(1.9rem,4vw,2.7rem)/1 var(--font-display);letter-spacing:.02em}.ppp-collector-trial-promo__copy{max-width:70ch;margin:8px 0 0;font-size:.96rem;font-weight:800;line-height:1.55}.ppp-collector-trial-promo__fine{display:block;margin-top:6px;font-size:.78rem;font-weight:700;line-height:1.45}.ppp-collector-trial-promo__button{background:#07194d;color:#fff;border:2px solid #07194d;white-space:nowrap}.ppp-collector-trial-promo__button:hover{background:#174b9b;border-color:#174b9b}@media(max-width:700px){.ppp-collector-trial-promo{padding:16px 0 20px}.ppp-collector-trial-promo__card{grid-template-columns:1fr;gap:14px}.ppp-collector-trial-promo__button{width:100%;white-space:normal}}';
       document.head.appendChild(style);
     }
-    return h('section', { class: 'ppp-collector-trial-promo', 'aria-labelledby': 'ppp-collector-trial-title' },
+    return h('section', { class: 'ppp-collector-trial-promo', id: 'ppp-collector-trial-promo', 'aria-labelledby': 'ppp-collector-trial-title' },
       h('div', { class: 'wrap' },
         h('div', { class: 'ppp-collector-trial-promo__card' },
           h('div', null,
@@ -309,7 +309,7 @@
             h('p', { class: 'ppp-collector-trial-promo__copy' }, 'Try Collector+ free for 3 dayss. A payment method is required at signup. After the trial, your selected plan renews at $5/month or $50/year unless canceled before the trial ends.'),
             h('small', { class: 'ppp-collector-trial-promo__fine' }, 'For eligible first-time subscribers only. Accounts with prior subscription history do not qualify for another trial.')
           ),
-          h('a', { class: 'btn btn--lg ppp-collector-trial-promo__button', href: '/account.html?mode=register&plan=collector' }, 'Start your 3-day free trial')
+          h('a', { class: 'btn btn--lg ppp-collector-trial-promo__button', id: 'ppp-collector-trial-cta', href: '/account.html?mode=register&plan=collector' }, 'Start your 3-day free trial')
         )
       )
     );
@@ -390,11 +390,11 @@
               h('span', null, 'Market insights'),
               h('span', null, 'Collector community')
             ),
-            h('div', { class: 'hero__conversion' },
+            h('div', { class: 'hero__conversion', id: 'hero-account-conversion' },
               h('a', { class: 'btn btn--lg hero__signup', href: '/account.html?mode=register' }, 'Create your free account'),
               h('a', { class: 'hero__login-link', href: '/account.html?mode=login' }, 'Already a member? Log in')
             ),
-            h('p', { class: 'hero__free-note' }, 'Free to join. Create your collector profile in minutes.')
+            h('p', { class: 'hero__free-note', id: 'hero-free-note' }, 'Free to join. Create your collector profile in minutes.')
           ),
           h(
             'figure',
@@ -551,7 +551,36 @@
       }, 'Ad placement · home · top');
       root.appendChild(homeAdTop);
       root.appendChild(hero);
-      root.appendChild(buildCollectorTrialPromo());
+      var trialPromo = buildCollectorTrialPromo();
+      root.appendChild(trialPromo);
+      // A signed-in subscriber should not see signup prompts. Signed-in non-subscribers get a membership CTA instead.
+      fetch('/api/account/me', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } })
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .then(function (data) {
+          if (!data || !data.ok || !data.authenticated) return;
+          var account = data.account || {};
+          var membership = data.membership || {};
+          var status = String(membership.status || '').toLowerCase();
+          var hasSubscription = !!account.is_admin || status === 'active' || status === 'trialing';
+          var conversion = root.querySelector('#hero-account-conversion');
+          var freeNote = root.querySelector('#hero-free-note');
+          if (conversion) conversion.hidden = true;
+          if (freeNote) freeNote.hidden = true;
+          if (hasSubscription) {
+            trialPromo.hidden = true;
+            return;
+          }
+          var button = trialPromo.querySelector('#ppp-collector-trial-cta');
+          var copy = trialPromo.querySelector('.ppp-collector-trial-promo__copy');
+          if (button) {
+            button.href = '/account.html#settings-membership';
+            button.textContent = data.trialEligible ? 'Start my 3-day free trial' : 'View membership options';
+          }
+          if (copy && !data.trialEligible) {
+            copy.textContent = 'Explore Collector+ membership at $5/month or $50/year. A payment method is required at checkout; eligible first-time subscribers receive 3 days free.';
+          }
+        })
+        .catch(function () {});
       initPokeBallViewer();
       root.appendChild(buildHomeGiveawayMeter());
       root.appendChild(buildHomepagePreviews());
