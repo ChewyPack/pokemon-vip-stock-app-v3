@@ -254,6 +254,7 @@
         '#home-giveaway-meter .ppp-home-gm__tier-copy small{font-size:.67rem;line-height:1.3;overflow-wrap:anywhere}' +
         '#home-giveaway-meter .ppp-home-gm__tier-state{font-size:.55rem;letter-spacing:.09em}' +
         '#home-giveaway-meter .ppp-home-gm__footnote{grid-column:1/-1;margin:0;padding-top:9px;font-size:.67rem;line-height:1.4}' +
+        '@media(min-width:651px) and (max-width:900px){.ppp-home-previews__feature-row{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}}' +
         '@media(max-width:540px){#home-giveaway-meter .ppp-home-gm__count-row{grid-template-columns:1fr!important}#home-giveaway-meter .ppp-home-gm__count{grid-template-columns:auto 1fr;align-items:center;gap:10px}#home-giveaway-meter .ppp-home-gm__tiers{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}#home-giveaway-meter .ppp-home-gm__tier{padding:7px!important;gap:5px!important}#home-giveaway-meter .ppp-home-gm__threshold{font-size:1rem!important;min-height:26px!important}#home-giveaway-meter .ppp-home-gm__tier-copy strong{font-size:.68rem}#home-giveaway-meter .ppp-home-gm__tier-copy small{font-size:.61rem}}' +
         '@media(prefers-reduced-motion:reduce){#home-giveaway-meter .ppp-home-gm__fill{transition:none}}';
       document.head.appendChild(compactStyle);
