@@ -1024,7 +1024,7 @@ export const COLLECTOR_BUDDY_POKEMON = [
   { key: "iron-crown", name: "Iron Crown", id: 1023 },
   { key: "terapagos", name: "Terapagos", id: 1024 },
   { key: "pecharunt", name: "Pecharunt", id: 1025 }
-];
+].sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
 
 export const COLLECTOR_CHAT_COLORS = [
   { value: "#ffd54a", label: "PokePrizePool Gold" },
