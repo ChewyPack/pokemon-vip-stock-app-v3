@@ -44,7 +44,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
 .checkout-primary{border:2px solid var(--co-navy);background:var(--co-yellow);color:var(--co-navy)}
 .checkout-primary:disabled{opacity:.5;cursor:not-allowed}
 .checkout-secondary{border:1px solid #b8c9e4;background:#fff;color:var(--co-navy)}
-.checkout-status{min-height:1.4em;margin:10px 0 0;color:#31517f;font-size:.85rem;line-height:1.5}
+.checkout-honeypot{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}.checkout-status{min-height:1.4em;margin:10px 0 0;color:#31517f;font-size:.85rem;line-height:1.5}
 .checkout-copy{width:100%;min-height:130px;box-sizing:border-box;margin-top:12px;padding:10px;border:1px solid #b9c9e6;border-radius:9px;background:#f9fbff;color:var(--co-navy);font: .82rem/1.5 ui-monospace,monospace}
 .checkout-empty{padding:24px 12px;text-align:center;border:1px dashed #bdcce5;border-radius:12px;color:var(--co-muted);line-height:1.6}
 .checkout-back{display:inline-block;color:var(--co-blue);font-weight:900;text-decoration:none;margin-top:18px}
@@ -103,6 +103,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
 <input id="checkout-email" type="email" maxlength="200" autocomplete="email" placeholder="you@example.com">
 </label>
 </div>
+<div class="checkout-honeypot" aria-hidden="true"><label for="checkout-website">Website<input id="checkout-website" type="text" tabindex="-1" autocomplete="off"></label></div>
 <div class="checkout-actions">
 <button id="checkout-email-order" class="checkout-primary" type="button" disabled>Email Order Request</button>
 <button id="checkout-copy-order" class="checkout-secondary" type="button" disabled>Copy order details</button>
@@ -178,7 +179,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
      const response=await fetch('/api/store/order-request',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({
        username,paymentMethod:method,email,
        items:cart.map(row=>({productId:Number(row.id),quantity:Number(row.quantity),...(row.variantId?{variantId:Number(row.variantId)}:{})})),
-       website:''
+       website:$('checkout-website').value
      })});
      const result=await response.json().catch(()=>({}));
      if(!response.ok||!result.ok||!result.email_sent)throw new Error(result.error||'We could not send your order request. Please try again or use Copy order details.');
