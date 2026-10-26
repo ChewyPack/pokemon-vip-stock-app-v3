@@ -62,6 +62,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   for (const item of wanted.values()) {
     const p = byId.get(item.productId);
     if (!p || Number(p.active) !== 1 || isBlockedPrintifyProductTitle(p.name)) throw new HttpError(409, 'An item is no longer available. Refresh the store and try again.');
+    if (Number(p.coming_soon) === 1) throw new HttpError(409, 'A product in your cart is coming soon and cannot be ordered yet.');
     const printify = Boolean(p.printify_shop_id && p.printify_product_id);
     let price, option = '';
     if (printify) {
@@ -71,7 +72,6 @@ export const onRequestPost = wrap(async ({ request, env }) => {
       price = Number(variant.priceCents); option = clean(variant.title || '', 100);
     } else {
       if (item.variantId != null) throw new HttpError(400, 'An item has an invalid option.');
-      if (Number(p.coming_soon) === 1) throw new HttpError(409, 'An item is marked coming soon.');
       if (Number(p.inventory) < item.quantity) throw new HttpError(409, 'Not enough listed stock for ' + clean(p.name, 100) + '.');
       price = Number(p.price_cents);
       if (!Number.isSafeInteger(price) || price < 0) throw new HttpError(409, 'An item price needs review.');
