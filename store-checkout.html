@@ -224,7 +224,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
    $('checkout-tax-note').textContent='Refreshing current product prices and tax estimate…';
    $('checkout-tax-note').dataset.mode='warning';
    try{
-     const response=await fetch('/api/store/order-quote',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({items:currentItems(),destinationState:state,website:$('checkout-website').value})});
+     const response=await fetch('/api/store/order-quote',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({items:currentItems(),destinationState:state})});
      const data=await response.json().catch(()=>({}));
      if(thisRequest!==quoteSequence)return;
      if(!response.ok||!data.ok)throw new Error(data.error||'Could not refresh the order total.');
@@ -281,7 +281,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
      const response=await fetch('/api/store/order-request',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({
        username,paymentMethod:method,email,destinationState:$('checkout-tax-state').value,
        items:currentItems(),
-       website:$('checkout-website').value
+       website:''
      })});
      const result=await response.json().catch(()=>({}));
      if(!response.ok||!result.ok||!result.email_sent)throw new Error(result.error||'Could not send the order request. Please try again or use Copy order details.');
