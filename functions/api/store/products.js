@@ -43,8 +43,13 @@ export const onRequestGet = wrap(async ({ request, env }) => {
       const product = publicProduct(row);
       // Manual order-request mode means published listings can be requested now.
       // Never surface stale Coming Soon flags from an earlier disabled-checkout sync.
-      if (manualOrdersEnabled) product.comingSoon = false;
-      else if (product.isPrintify && !printifyReady) product.comingSoon = true;
+      if (manualOrdersEnabled) {
+        product.comingSoon = false;
+        product.manualOrderRequest = true;
+        // An active product remains requestable even if its stored inventory count is zero.
+        // This is not an immediate sale; the owner confirms stock before collecting/finalizing payment.
+        if (!product.isPrintify) product.available = Math.max(1, Number(row.inventory) || 0);
+      } else if (product.isPrintify && !printifyReady) product.comingSoon = true;
       return product;
     }),
     total, page, pageSize: size
