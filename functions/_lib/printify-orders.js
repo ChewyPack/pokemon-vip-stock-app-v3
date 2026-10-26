@@ -119,7 +119,9 @@ export async function sendPrintifyOrderToProduction(db, env, orderId, actor = 'p
     throw new Error('This Printify order is not in a send-to-production state.');
   }
   const result = await printifyRequest(env, `shops/${PRINTIFY_SHOP_ID}/orders/${encodeURIComponent(order.printify_order_id)}/send_to_production.json`, { method: 'POST' });
-  const status = String(result?.status || 'sent-to-production').slice(0, 80);
+  const returnedStatus = String(result?.status || '').toLowerCase();
+  const status = ['in-production', 'sending-to-production', 'fulfilled'].includes(returnedStatus)
+    ? returnedStatus : 'sending-to-production';
   await db.batch([
     db.prepare(
       'UPDATE store_orders SET printify_status = ?, printify_error = NULL, updated_at = datetime(\'now\') WHERE id = ?'
