@@ -149,14 +149,19 @@ export const onRequestPost = wrap(async (ctx) => {
   const body = await readJson(ctx.request, 5000);
   if (body.action !== 'sync') throw new HttpError(400, 'Unsupported Printify action');
   if (!env.PRINTIFY_API_TOKEN) throw new HttpError(503, 'Printify API token is not configured for this environment');
+  let stage = 'checking the production database schema';
+  let activeProduct = '';
+  try {
   await assertSchema(env.DB);
 
+  stage = 'verifying the selected Printify shop';
   // Verify the selected shop still exists and is exactly the intended PokePrizePool shop.
   const shops = await printify(env, 'shops.json');
   if (!Array.isArray(shops) || !shops.some((s) => String(s.id) === PRINTIFY_SHOP_ID && String(s.title).trim() === 'PokePrizePool')) {
     throw new HttpError(409, 'The selected PokePrizePool Printify shop was not found. No products were changed.');
   }
 
+  stage = 'loading the product catalog from Printify';
   const all = await loadAllProducts(env);
   const normalized = all.map((p) => ({
     source: p,
@@ -173,6 +178,8 @@ export const onRequestPost = wrap(async (ctx) => {
 
   // If a previously imported product no longer has enabled variants, stop offering it.
   for (const p of unavailable) {
+    activeProduct = p.name;
+    stage = 'checking a product with no enabled variants';
     const existing = await db.prepare('SELECT id FROM store_products WHERE printify_shop_id = ? AND printify_product_id = ?')
       .bind(PRINTIFY_SHOP_ID, p.id).first();
     if (!existing) { skipped++; continue; }
@@ -184,6 +191,8 @@ export const onRequestPost = wrap(async (ctx) => {
   }
 
   for (const p of candidates) {
+    activeProduct = p.name;
+    stage = 'validating variant prices';
     const prices = p.variants.map((v) => v.priceCents).filter((n) => Number.isInteger(n) && n >= 0);
     if (!prices.length) { skipped++; continue; }
     const price = Math.min(...prices);
@@ -194,9 +203,11 @@ export const onRequestPost = wrap(async (ctx) => {
     const variantsJson = JSON.stringify(p.variants);
     const optionsJson = JSON.stringify(p.options);
     const imagesJson = JSON.stringify(p.images);
+    stage = 'looking up the existing catalog entry';
     const existing = await db.prepare('SELECT id, slug FROM store_products WHERE printify_shop_id = ? AND printify_product_id = ?')
       .bind(PRINTIFY_SHOP_ID, p.id).first();
     if (existing) {
+      stage = 'updating an unpublished draft';
       await db.prepare(`UPDATE store_products SET name=?, description=?, sku=?, category='merch', product_type='Printify merchandise',
         price_cents=?, inventory=0, images=?, printify_blueprint_id=?, printify_print_provider_id=?,
         printify_options=?, printify_variants=?, printify_synced_at=datetime('now'), updated_at=datetime('now')
@@ -204,6 +215,7 @@ export const onRequestPost = wrap(async (ctx) => {
         .bind(p.name, String(src.description || '').slice(0, 5000), productSku, price, imagesJson, blueprintId, providerId, optionsJson, variantsJson, existing.id).run();
       updated++;
     } else {
+      stage = 'creating an unpublished draft';
       let slug = slugify(p.name);
       const conflict = await db.prepare('SELECT id FROM store_products WHERE slug = ?').bind(slug).first();
       if (conflict) slug = `${slug.slice(0, 55)}-${p.id.replace(/[^a-z0-9]/gi, '').slice(-8).toLowerCase()}`.slice(0, 80);
@@ -216,8 +228,17 @@ export const onRequestPost = wrap(async (ctx) => {
     }
   }
 
+  stage = 'writing the sync audit record';
+  activeProduct = '';
   await db.prepare('INSERT INTO store_audit_log (actor, action, detail) VALUES (?,?,?)')
     .bind(actor, 'printify.catalog_sync', JSON.stringify({ shopId: PRINTIFY_SHOP_ID, totalFound: all.length, candidates: candidates.length, created, updated, skipped, deactivated })).run();
   return json({ ok: true, shopId: PRINTIFY_SHOP_ID, totalFound: all.length, imported: candidates.length, created, updated, skipped, deactivated, published: 0,
     message: 'Products are imported as unpublished drafts. They are not yet for sale; finish variant checkout, shipping, and fulfillment verification before publishing.' });
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    const reason = String(error?.message || error || 'Unknown error').replace(/[\\r\\n\\t]+/g, ' ').slice(0, 180);
+    console.error('Printify catalog sync failed', { stage, product: activeProduct || undefined, error: reason });
+    const productNote = activeProduct ? ' for "' + activeProduct.slice(0, 80) + '"' : '';
+    throw new HttpError(500, 'Printify sync failed while ' + stage + productNote + ': ' + reason + '. Products remain unpublished; some earlier items may already have been saved as drafts.');
+  }
 });
