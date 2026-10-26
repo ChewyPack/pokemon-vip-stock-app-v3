@@ -9,7 +9,9 @@ export function printifyCommerceReady(env) {
   const productionStoreKey = ['sk_live_', 'rk_live_'].some((prefix) => String(env.STRIPE_STORE_SECRET_KEY || '').startsWith(prefix));
   const storeWebhookReady = String(env.STRIPE_STORE_WEBHOOK_SECRET || '').startsWith('whsec_');
   const taxIsConfigured = ['stripe_automatic', 'none_confirmed'].includes(String(env.STORE_TAX_MODE || ''));
-  return String(env.STORE_ENV || '') === 'production' &&
+  // Manual customer-to-store payments are the default. Printify auto-checkout/automation is opt-in only.
+  return String(env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'stripe' &&
+    String(env.STORE_ENV || '') === 'production' &&
     productionStoreKey &&
     storeWebhookReady &&
     taxIsConfigured &&
