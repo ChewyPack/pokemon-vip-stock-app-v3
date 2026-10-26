@@ -67,6 +67,7 @@ textarea{min-height:100px;resize:vertical}
 #event-content .media-caption {
   color: #fff !important;
 }
+.event-vending-form{display:grid;gap:10px;margin-top:14px;max-width:760px}.event-vending-form label{display:grid;gap:5px}.event-vending-form textarea{min-height:90px}.event-vendor-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:16px}.event-vendor-card{border:1px solid var(--ev-line);background:#ffffff08;border-radius:12px;padding:14px;min-width:0}.event-vendor-card h3{margin:0 0 7px}.event-vendor-card p{white-space:pre-line;overflow-wrap:anywhere}.event-vending-access{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.event-vending-access .muted{margin:0}
 #event-links .btn,
 #event-links .btn.primary {
   color: #fff !important;
@@ -108,6 +109,17 @@ textarea{min-height:100px;resize:vertical}
 <div id="event-details" class="event-details-copy muted"></div>
 </div>
 <div class="actions" id="event-links"></div>
+</section>
+<section class="panel" id="event-vending-panel" hidden>
+<p class="eyebrow">Vendor+ tools</p><h2>Vendors at this event</h2><p class="muted">Vendor+ members can share booth/table location and preview the key items they are bringing.</p>
+<div id="event-vending-access" class="event-vending-access"></div>
+<form id="event-vending-form" class="event-vending-form" hidden>
+<label>Booth or table location *<input name="booth_location" maxlength="120" required placeholder="Table 24, Booth B-12, Row 3"></label>
+<label>Key items you’re bringing *<textarea name="key_items" maxlength="2000" required placeholder="List notable singles, sealed product, graded cards, or other highlights—one per line."></textarea></label>
+<label>Additional notes (optional)<textarea name="notes" maxlength="800" placeholder="Special inventory, trade interests, or details for attendees"></textarea></label>
+<div class="actions"><button class="btn primary" type="submit">Save vending details</button><button id="event-vending-withdraw" class="btn" type="button" hidden>Withdraw from vendor list</button></div><p id="event-vending-status" class="status" role="status" aria-live="polite"></p>
+</form>
+<div id="event-vending-list" class="event-vendor-list"></div><p id="event-vending-empty" class="muted" hidden>No vendors have added a booth listing yet.</p>
 </section>
 <section class="panel" id="event-share-panel">
 <p class="eyebrow">Share with your community</p>
@@ -214,6 +226,7 @@ function renderMediaTile(item,idx){
 }
 function renderPublic(){
  $('event-content').hidden=false;
+ $('event-vending-panel').hidden=previewActive||!['show','trade','tournament','store'].includes(String(record.event_type||''));
  $('event-title').textContent=record.title||'Event details';
  $('event-eyebrow').textContent=TYPE_LABELS[record.event_type]||'PokePrizePool Event';
  var pills=$('event-pills');pills.replaceChildren();
@@ -269,6 +282,9 @@ function renderMediaEditor(){
  });
 }
 async function api(url,options){var response=await fetch(url,Object.assign({credentials:'same-origin',cache:'no-store'},options||{}));var data=await response.json().catch(function(){return {};});if(!response.ok||!data.ok)throw new Error(data.message||data.error||'Request failed');return data;}
+async function loadEventVending(){var panel=$('event-vending-panel');if(!record||previewActive||panel.hidden)return;var access=$('event-vending-access'),form=$('event-vending-form'),list=$('event-vending-list');access.replaceChildren();list.replaceChildren();$('event-vending-status').textContent='';try{var data=await api('/api/event-vending?event_id='+encodeURIComponent(record.id));if(data.can_vend){var control=make('button','btn primary');control.type='button';control.textContent=data.my_registration?'Edit vending details':'I’m vending';control.addEventListener('click',function(){form.hidden=!form.hidden;if(!form.hidden)form.scrollIntoView({behavior:'smooth',block:'nearest'});});access.appendChild(control);$('event-vending-withdraw').hidden=!data.my_registration;if(data.my_registration){['booth_location','key_items','notes'].forEach(function(k){if(form.elements[k])form.elements[k].value=data.my_registration[k]||'';});}else form.reset();text(access,'p','muted','Vendor+ members can share booth location and featured items with attendees.');}else{form.hidden=true;text(access,'p','muted',data.reason==='login_required'?'Sign in and have Vendor+ membership to publish your booth and key items.':'An active Vendor+ membership is required to publish vending details.');var link=make('a','btn primary');link.href='/account.html';link.textContent=data.reason==='login_required'?'Sign in':'View membership';access.appendChild(link);}var regs=data.registrations||[];$('event-vending-empty').hidden=regs.length>0;regs.forEach(function(v){var card=make('article','event-vendor-card'),title=make('h3');title.textContent=v.vendor_name||'Vendor+ member';if(v.username){var a=make('a');a.href='/shop.html?user='+encodeURIComponent(v.username);a.textContent='View shop';a.style.marginLeft='8px';title.appendChild(a);}card.appendChild(title);text(card,'p','','Booth / table: '+(v.booth_location||'To be announced'));text(card,'p','','Key items:\n'+(v.key_items||'Items not listed'));if(v.notes)text(card,'p','muted',v.notes);list.appendChild(card);});}catch(error){form.hidden=true;text(access,'p','muted','Vendor listings could not load. Refresh and try again.');$('event-vending-empty').hidden=true;}}
+$('event-vending-form').addEventListener('submit',async function(e){e.preventDefault();var f=e.currentTarget,b=f.querySelector('button[type=submit]');b.disabled=true;say($('event-vending-status'),'Saving your vending details…');try{await api('/api/event-vending',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save',event_id:Number(record.id),booth_location:f.elements.booth_location.value,key_items:f.elements.key_items.value,notes:f.elements.notes.value})});say($('event-vending-status'),'Your vending listing is saved and visible on this event.','success');await loadEventVending();}catch(error){say($('event-vending-status'),error.message==='vendor_plus_required'?'An active Vendor+ membership is required.':(error.message||'Could not save vending details.'),'error');}finally{b.disabled=false;}});
+$('event-vending-withdraw').addEventListener('click',async function(){var b=this;if(!confirm('Withdraw your vending listing from this event?'))return;b.disabled=true;try{await api('/api/event-vending',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'withdraw',event_id:Number(record.id)})});say($('event-vending-status'),'Your vending listing has been withdrawn.','success');$('event-vending-form').reset();$('event-vending-form').hidden=true;await loadEventVending();}catch(error){say($('event-vending-status'),error.message||'Could not withdraw listing.','error');}finally{b.disabled=false;}});
 async function load(){
  var params=new URLSearchParams(location.search),id=params.get('id');
  var pathSegment=location.pathname.replace(/^\/+|\/+$/g,'');
@@ -283,6 +299,7 @@ async function load(){
    history.replaceState({},'', '/'+record.slug+(canonicalQuery?'?'+canonicalQuery:''));
   }
   renderPublic();
+  loadEventVending();
   var boostState=params.get('boost');
   if(boostState==='success')say($('event-boost-status'),'Checkout returned successfully. Your boost will activate after Stripe confirms the payment.','success');
   else if(boostState==='cancelled')say($('event-boost-status'),'Checkout was cancelled. No event boost payment was completed.');
