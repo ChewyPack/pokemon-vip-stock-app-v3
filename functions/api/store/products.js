@@ -36,5 +36,11 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   const sql = `FROM store_products WHERE ${where.join(' AND ')}`;
   const total = await env.DB.prepare(`SELECT COUNT(*) n ${sql}`).bind(...args).first('n');
   const { results } = await env.DB.prepare(`SELECT * ${sql} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(...args, size, (page - 1) * size).all();
-  return json({ products: results.map(publicProduct), total, page, pageSize: size });
+  return json({
+    products: results.map((row) => {
+      const product = publicProduct(row);
+      return product.isPrintify && !printifyReady ? { ...product, comingSoon: true } : product;
+    }),
+    total, page, pageSize: size
+  });
 });
