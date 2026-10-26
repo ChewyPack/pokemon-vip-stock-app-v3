@@ -236,7 +236,7 @@ export const onRequestPost = wrap(async (ctx) => {
     message: 'Products are imported as unpublished drafts. They are not yet for sale; finish variant checkout, shipping, and fulfillment verification before publishing.' });
   } catch (error) {
     if (error instanceof HttpError) throw error;
-    const reason = String(error?.message || error || 'Unknown error').replace(/[\\r\\n\\t]+/g, ' ').slice(0, 180);
+    const reason = String(error?.message || error || 'Unknown error').replace(/[\r\n\t]+/g, ' ').slice(0, 180);
     console.error('Printify catalog sync failed', { stage, product: activeProduct || undefined, error: reason });
     const productNote = activeProduct ? ' for "' + activeProduct.slice(0, 80) + '"' : '';
     throw new HttpError(500, 'Printify sync failed while ' + stage + productNote + ': ' + reason + '. Products remain unpublished; some earlier items may already have been saved as drafts.');
