@@ -34,7 +34,7 @@ export async function onRequest(context) {
     const image = publishedImage(story);
     if (!image) return response;
     const title = String(story.title || 'PokePrizePool News').trim().slice(0, 180);
-    const description = String(story.excerpt || '').replace(/\\s+/g, ' ').trim().slice(0, 400) || title;
+    const description = String(story.excerpt || '').replace(/\s+/g, ' ').trim().slice(0, 400) || title;
     const canonical = 'https://pokeprizepool.com/news?story=' + encodeURIComponent(story.slug);
     const meta = [
       '<meta property="og:type" content="article">',
@@ -50,16 +50,16 @@ export async function onRequest(context) {
       '<meta name="twitter:description" content="' + escaped(description) + '">',
       '<meta name="twitter:image" content="' + escaped(image) + '">',
       '<link rel="canonical" href="' + escaped(canonical) + '">'
-    ].join('\\n  ');
+    ].join('\n  ');
 
     let html = await response.text();
-    html = html.replace(/<title>[\\s\\S]*?<\\/title>/i, '<title>' + escaped(title) + ' | PokePrizePool</title>');
-    html = html.replace(/<meta\\b[^>]*\\bname=["']description["'][^>]*>/i,
+    html = html.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + escaped(title) + ' | PokePrizePool</title>');
+    html = html.replace(/<meta\b[^>]*\bname=["']description["'][^>]*>/i,
       '<meta name="description" content="' + escaped(description) + '">');
-    html = html.replace(/<meta\\b[^>]*\\bproperty=["']og:[^"']+["'][^>]*>/gi, '');
-    html = html.replace(/<meta\\b[^>]*\\bname=["']twitter:[^"']+["'][^>]*>/gi, '');
-    html = html.replace(/<link\\b[^>]*\\brel=["']canonical["'][^>]*>/gi, '');
-    html = html.replace(/<\\/head>/i, '  ' + meta + '\\n</head>');
+    html = html.replace(/<meta\b[^>]*\bproperty=["']og:[^"']+["'][^>]*>/gi, '');
+    html = html.replace(/<meta\b[^>]*\bname=["']twitter:[^"']+["'][^>]*>/gi, '');
+    html = html.replace(/<link\b[^>]*\brel=["']canonical["'][^>]*>/gi, '');
+    html = html.replace(/<\/head>/i, '  ' + meta + '\n</head>');
 
     const headers = new Headers(response.headers);
     headers.delete('content-length');
