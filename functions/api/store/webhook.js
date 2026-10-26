@@ -41,15 +41,15 @@ export async function onRequestPost({ request, env }) {
 
 async function markPaid(db, orderId, s) {
   const order = await db.prepare(
-    'SELECT subtotal_cents, shipping_cents, payment_status, shipping_name, shipping_address FROM store_orders WHERE id = ?'
+    'SELECT subtotal_cents, shipping_cents, tax_cents, payment_status, shipping_name, shipping_address FROM store_orders WHERE id = ?'
   ).bind(orderId).first();
   if (!order || order.payment_status === 'paid') return { paid: false };
   const ship = s.shipping_details || s.collected_information?.shipping_details || {};
-  const tax = s.total_details?.amount_tax || 0;
+  const tax = Number(order.tax_cents || 0) + Number(s.total_details?.amount_tax || 0);
   const stripeShipping = s.total_details?.amount_shipping || 0;
   // Printify shipping is shown as a fixed checkout line item after a server quote;
   // regular stocked orders continue using Stripe's built-in shipping options.
-  const expectedSubtotal = Number(order.subtotal_cents || 0) + Number(order.shipping_cents || 0);
+  const expectedSubtotal = Number(order.subtotal_cents || 0) + Number(order.tax_cents || 0) + (s.metadata?.ppp_printify_order === '1' ? Number(order.shipping_cents || 0) : 0);
   const status = s.amount_subtotal === expectedSubtotal && order.payment_status === 'pending'
     ? 'paid' : 'review';
   const shippingName = ship.name || order.shipping_name || null;
