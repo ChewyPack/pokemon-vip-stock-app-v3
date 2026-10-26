@@ -41,16 +41,19 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
  const categoryMap={'Singles':'singles','Sealed':'sealed','Graded cards':'slabs','Graded cards / slabs':'slabs','Accessories':'accessories','Clothing':'merch','Plushies':'merch','Other':'merch'};
  $('store-category').value=categories[oldCategory]?oldCategory:(categoryMap[oldCategory]||'');
  let cart=new Map(),products=[],page=1,total=0,requestId=0,searchTimer=null,loading=false,shippingQuote=null;
+ const blockedCartNames=new Set(['PokePrizePool Backpack','LuffyChu','Peek@chu Beanie','Ghost Chairs?','Line Looper','pokeprizepool','Peek@chu','Scalper HQ','PokePrizePool Beanie'].map(name=>name.toLowerCase().replace(/[^a-z0-9]/g,'')));
  let pendingAdd=params.get('add'),pendingVariant=params.get('variant'),pendingSlug=params.get('slug');
  const cartKey=(productId,variantId)=>variantId?String(Number(productId))+':'+String(Number(variantId)):String(Number(productId));
- try{const saved=JSON.parse(localStorage.getItem('ppp_store_cart_v1')||'[]');if(Array.isArray(saved))saved.forEach(row=>{if(row&&Number.isInteger(Number(row.id))&&Number(row.id)>0&&Number.isInteger(Number(row.quantity))&&Number(row.quantity)>0&&row.product&&typeof row.product.name==='string'){const variantId=row.variantId==null||row.variantId===''?null:String(row.variantId);cart.set(cartKey(row.id,variantId),{product:row.product,quantity:Math.min(20,Number(row.quantity)),variantId,variantTitle:row.variantTitle||'',priceCents:Number(row.priceCents??row.product.priceCents??0)});}});}catch(_){}
+ try{const saved=JSON.parse(localStorage.getItem('ppp_store_cart_v1')||'[]');if(Array.isArray(saved))saved.forEach(row=>{if(row&&Number.isInteger(Number(row.id))&&Number(row.id)>0&&Number.isInteger(Number(row.quantity))&&Number(row.quantity)>0&&row.product&&typeof row.product.name==='string'&&!blockedCartNames.has(row.product.name.toLowerCase().replace(/[^a-z0-9]/g,'')){const variantId=row.variantId==null||row.variantId===''?null:String(row.variantId);cart.set(cartKey(row.id,variantId),{product:row.product,quantity:Math.min(20,Number(row.quantity)),variantId,variantTitle:row.variantTitle||'',priceCents:Number(row.priceCents??row.product.priceCents??0)});}});}catch(_){}
  function saveCart(){try{localStorage.setItem('ppp_store_cart_v1',JSON.stringify(Array.from(cart.values()).map(row=>({id:Number(row.product.id),variantId:row.variantId||null,variantTitle:row.variantTitle||'',priceCents:Number(row.priceCents||0),product:row.product,quantity:row.quantity}))))}catch(_){}}
+ saveCart();
  function getShippingAddress(){return {fullName:$('store-shipping-name').value.trim(),address1:$('store-shipping-address1').value.trim(),address2:$('store-shipping-address2').value.trim(),city:$('store-shipping-city').value.trim(),region:$('store-shipping-region').value.trim(),zip:$('store-shipping-zip').value.trim(),country:$('store-shipping-country').value,phone:$('store-shipping-phone').value.trim()};}
  function getCartItems(){return Array.from(cart.values()).map(row=>({productId:Number(row.product.id),quantity:row.quantity,...(row.variantId?{variantId:Number(row.variantId)}:{})}));}
  function getQuoteFingerprint(){return JSON.stringify({items:getCartItems(),email:$('store-checkout-email').value.trim(),address:getShippingAddress()});}
  function hasPrintifyItems(){return Array.from(cart.values()).some(row=>row.product&&row.product.isPrintify);}
  function renderCart(){
   const root=$('store-cart-items'),count=Array.from(cart.values()).reduce((n,row)=>n+row.quantity,0);
+  $('store-manual-checkout').hidden=true;
   $('store-cart-count').textContent=String(count);$('store-checkout').disabled=count===0;
   $('store-shipping-address').hidden=true;$('store-shipping-row').hidden=true;$('store-email-required-note').textContent='';
   $('store-checkout').textContent='Checkout / See payment instructions';
@@ -128,7 +131,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
   const hasPickup=rows.some(row=>!row.product||((String(row.product.category||'').toLowerCase()!=='merch')&&!row.product.isPrintify));
   const fulfillment=hasMerch&&hasPickup?'Mixed cart — please confirm pickup/shipping separately':hasMerch?'Shipping requested for clothing/apparel':'Pickup requested';
   const contact=$('store-checkout-email').value.trim();
-  return {text:'PokePrizePool Store Order Request\\n\\nItems:\\n'+lines.join('\\n')+'\\n\\nEstimated listed-price subtotal (not final): '+money(subtotal)+'\\nRequested fulfillment: '+fulfillment+'\\n'+(contact?'Contact email: '+contact+'\\n':'')+'\\nFulfillment policy: Clothing and apparel are shipped sealed in packaging. Singles, sealed Pokémon products, graded cards, and accessories are pickup-only for now.\\n\\nPlease confirm item availability, the final total, pickup/shipping details, and payment instructions. I will wait for confirmation before sending payment.',fulfillment,hasMerch,hasPickup};
+  return {text:'PokePrizePool Store Order Request\n\nItems:\n'+lines.join('\n')+'\n\nEstimated listed-price subtotal (not final): '+money(subtotal)+'\nRequested fulfillment: '+fulfillment+'\n'+(contact?'Contact email: '+contact+'\n':'')+'\nFulfillment policy: Clothing and apparel are shipped sealed in packaging. Singles, sealed Pokémon products, graded cards, and accessories are pickup-only for now.\n\nPlease confirm item availability, the final total, pickup/shipping details, and payment instructions. I will wait for confirmation before sending payment.',fulfillment,hasMerch,hasPickup};
  }
  function showManualCheckout(){
   if(!cart.size)return;
@@ -143,7 +146,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
  $('store-email-order').addEventListener('click',()=>{
   if(!cart.size)return;
   const summary=buildManualOrderSummary();
-  const body=summary.text+'\\n\\nPlease reply to confirm availability, final price, pickup/shipping details, and available payment instructions.';
+  const body=summary.text+'\n\nPlease reply to confirm availability, final price, pickup/shipping details, and available payment instructions.';
   window.location.href='mailto:pokeprizepool@gmail.com?subject='+encodeURIComponent('PokePrizePool Store Order Request')+'&body='+encodeURIComponent(body);
   $('store-checkout-instructions').textContent='Your email app should open with your selected items and estimated subtotal. Review the message and send it to submit your request. Do not send payment until PokePrizePool confirms the final total and sends instructions.';
  });
