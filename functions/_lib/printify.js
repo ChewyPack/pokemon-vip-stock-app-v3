@@ -7,9 +7,11 @@ export const PRINTIFY_SHOP_ID = '29457813';
 export function printifyCommerceReady(env) {
   const yes = (value) => String(value || '').trim().toLowerCase() === 'true';
   const productionStoreKey = ['sk_live_', 'rk_live_'].some((prefix) => String(env.STRIPE_STORE_SECRET_KEY || '').startsWith(prefix));
+  const storeWebhookReady = String(env.STRIPE_STORE_WEBHOOK_SECRET || '').startsWith('whsec_');
   const taxIsConfigured = ['stripe_automatic', 'none_confirmed'].includes(String(env.STORE_TAX_MODE || ''));
   return String(env.STORE_ENV || '') === 'production' &&
     productionStoreKey &&
+    storeWebhookReady &&
     taxIsConfigured &&
     yes(env.PRINTIFY_LIVE_CHECKOUT_ENABLED) &&
     yes(env.PRINTIFY_ORDER_SUBMISSION_ENABLED) &&
