@@ -96,7 +96,6 @@
   dropdown('Marketplace',[
    {title:'PokePrizePool Store',description:'Official cards, sealed products, and merchandise',href:'/store.html'},
    {title:'Collector Marketplace',description:'Browse listings from member shops',href:'/marketplace.html'},
-   {title:'Manage My Shop',description:'Create or edit your member shop',href:'/collector.html#shop'},
    {title:'Line Services',description:'Get help securing products in person',href:'/line-services.html'}
   ]),
   dropdown('Community',[
