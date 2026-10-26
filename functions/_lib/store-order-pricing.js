@@ -82,7 +82,7 @@ export async function quoteStoreItems(db, env, rawItems, destinationState = 'RI'
     }
     lines.push({
       productId: item.productId,
-      variantId: item.variantId,
+      variantId: isPrintify ? item.variantId : null,
       name: clean(product.name, 150),
       variantTitle,
       quantity: item.quantity,
