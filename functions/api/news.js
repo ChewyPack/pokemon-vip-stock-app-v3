@@ -36,6 +36,7 @@ async function ensureTable(env) {
     content TEXT NOT NULL DEFAULT '',
     image_url TEXT NOT NULL DEFAULT '',
     image_urls_json TEXT NOT NULL DEFAULT '[]',
+    x_post_url TEXT NOT NULL DEFAULT '',
     category TEXT NOT NULL DEFAULT 'News',
     status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),
     published_at TEXT,
@@ -45,6 +46,10 @@ async function ensureTable(env) {
   const columns = await env.DB.prepare('PRAGMA table_info(poke_report_stories)').all();
   if (!(columns.results || []).some(column => column.name === 'image_urls_json')) {
     try { await env.DB.prepare("ALTER TABLE poke_report_stories ADD COLUMN image_urls_json TEXT NOT NULL DEFAULT '[]'").run(); }
+    catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+  }
+  if (!(columns.results || []).some(column => column.name === 'x_post_url')) {
+    try { await env.DB.prepare("ALTER TABLE poke_report_stories ADD COLUMN x_post_url TEXT NOT NULL DEFAULT ''").run(); }
     catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
   }
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_report_stories_status_date ON poke_report_stories(status, published_at DESC)').run();
@@ -59,10 +64,24 @@ function storyImages(story) {
   if (!images.length && story.image_url) images = [story.image_url];
   return images;
 }
+function normalizeXPostUrl(value) {
+  const raw = cleanText(value, 500);
+  if (!raw) return '';
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'https:' || !['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(url.hostname.toLowerCase())) return '';
+    const match = url.pathname.match(/^\/(?:([A-Za-z0-9_]{1,15})\/status\/(\d+)|i\/web\/status\/(\d+))\/?$/);
+    if (!match) return '';
+    const path = match[3] ? '/i/web/status/' + match[3] : '/' + match[1] + '/status/' + match[2];
+    return 'https://x.com' + path;
+  } catch (_) {
+    return '';
+  }
+}
 function shapeStory(story) {
   if (!story) return story;
   const images = storyImages(story);
-  return { ...story, image_urls: images, image_url: images[0] || story.image_url || '' };
+  return { ...story, image_urls: images, image_url: images[0] || story.image_url || '', x_post_url: normalizeXPostUrl(story.x_post_url || '') };
 }
 
 async function currentAccount(request, env) {
@@ -103,14 +122,14 @@ export async function onRequestGet({ request, env }) {
       const access = await requireAdmin(request, env);
       if (access.error) return access.error;
       const rows = await env.DB.prepare(
-        'SELECT id, slug, title, excerpt, content, image_url, image_urls_json, category, status, published_at, created_at, updated_at FROM poke_report_stories ORDER BY updated_at DESC, id DESC LIMIT 200'
+        'SELECT id, slug, title, excerpt, content, image_url, image_urls_json, x_post_url, category, status, published_at, created_at, updated_at FROM poke_report_stories ORDER BY updated_at DESC, id DESC LIMIT 200'
       ).all();
       return json({ ok: true, stories: (rows.results || []).map(shapeStory) });
     }
 
     if (storySlug) {
       const story = await env.DB.prepare(
-        'SELECT slug, title, excerpt, content, image_url, image_urls_json, category, published_at FROM poke_report_stories WHERE slug = ? AND status = \'published\' LIMIT 1'
+        'SELECT slug, title, excerpt, content, image_url, image_urls_json, x_post_url, category, published_at FROM poke_report_stories WHERE slug = ? AND status = \'published\' LIMIT 1'
       ).bind(storySlug).first();
       if (!story) return json({ ok: false, error: 'story_not_found' }, 404);
       return json({ ok: true, story: shapeStory(story) });
@@ -120,7 +139,7 @@ export async function onRequestGet({ request, env }) {
     let rows;
     if (['News', 'Updates', 'Market Intelligence', 'Events'].includes(categoryFilter)) {
       rows = await env.DB.prepare(
-        'SELECT slug, title, excerpt, image_url, image_urls_json, category, published_at FROM poke_report_stories WHERE status = \'published\' AND category = ? ORDER BY published_at DESC, id DESC LIMIT 100'
+        'SELECT slug, title, excerpt, image_url, image_urls_json, x_post_url, category, published_at FROM poke_report_stories WHERE status = \'published\' AND category = ? ORDER BY published_at DESC, id DESC LIMIT 100'
       ).bind(categoryFilter).all();
     } else {
       rows = await env.DB.prepare(
@@ -151,6 +170,9 @@ export async function onRequestPost({ request, env }) {
   const imageUrls = Array.from(new Set(rawImageUrls.map(value => cleanText(value, 1000)).filter(Boolean)));
   const imageUrl = imageUrls[0] || '';
   const imageUrlsJson = JSON.stringify(imageUrls);
+  const rawXPostUrl = cleanText(data.x_post_url || '', 500);
+  const xPostUrl = rawXPostUrl ? normalizeXPostUrl(rawXPostUrl) : '';
+  if (rawXPostUrl && !xPostUrl) return json({ ok: false, error: 'invalid_x_post_url', message: 'Enter a public X post URL, such as https://x.com/username/status/123456789.' }, 400);
   const status = data.status === 'published' ? 'published' : 'draft';
   let slug = makeSlug(data.slug || title);
 
@@ -169,15 +191,15 @@ export async function onRequestPost({ request, env }) {
     const publishedAt = status === 'published' ? (existing?.published_at || new Date().toISOString()) : null;
     if (existing) {
       await env.DB.prepare(
-        'UPDATE poke_report_stories SET slug=?, title=?, excerpt=?, content=?, image_url=?, image_urls_json=?, category=?, status=?, published_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'
-      ).bind(slug, title, excerpt, content, imageUrl, imageUrlsJson, category, status, publishedAt, id).run();
+        'UPDATE poke_report_stories SET slug=?, title=?, excerpt=?, content=?, image_url=?, image_urls_json=?, x_post_url=?, category=?, status=?, published_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'
+      ).bind(slug, title, excerpt, content, imageUrl, imageUrlsJson, xPostUrl, category, status, publishedAt, id).run();
     } else {
       await env.DB.prepare(
-        'INSERT INTO poke_report_stories (slug,title,excerpt,content,image_url,image_urls_json,category,status,published_at) VALUES (?,?,?,?,?,?,?,?,?)'
-      ).bind(slug, title, excerpt, content, imageUrl, imageUrlsJson, category, status, publishedAt).run();
+        'INSERT INTO poke_report_stories (slug,title,excerpt,content,image_url,image_urls_json,x_post_url,category,status,published_at) VALUES (?,?,?,?,?,?,?,?,?,?)'
+      ).bind(slug, title, excerpt, content, imageUrl, imageUrlsJson, xPostUrl, category, status, publishedAt).run();
     }
     const saved = await env.DB.prepare(
-      'SELECT id, slug, title, excerpt, content, image_url, image_urls_json, category, status, published_at, created_at, updated_at FROM poke_report_stories WHERE slug = ? LIMIT 1'
+      'SELECT id, slug, title, excerpt, content, image_url, image_urls_json, x_post_url, category, status, published_at, created_at, updated_at FROM poke_report_stories WHERE slug = ? LIMIT 1'
     ).bind(slug).first();
     return json({ ok: true, story: shapeStory(saved) });
   } catch (error) {
