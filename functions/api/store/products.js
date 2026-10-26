@@ -1,10 +1,10 @@
 import { json, wrap, publicProduct } from '../../_lib/store.js';
-import { printifyCommerceReady } from '../../_lib/printify.js';
+import { printifyCommerceReady, BLOCKED_PRINTIFY_PRODUCT_TITLES } from '../../_lib/printify.js';
 
 // GET /api/store/products?q=&category=&availability=in|pre&min=&max=&sort=new|lo|hi&page=1&slug=
 export const onRequestGet = wrap(async ({ request, env }) => {
   const u = new URL(request.url);
-  const where = ['active = 1']; const args = [];
+  const where = ['active = 1', `LOWER(name) NOT IN (${BLOCKED_PRINTIFY_PRODUCT_TITLES.map(() => '?').join(',')})`]; const args = BLOCKED_PRINTIFY_PRODUCT_TITLES.map((name) => name.toLowerCase());
   const slug = u.searchParams.get('slug');
   if (slug) { where.push('slug = ?'); args.push(slug); }
   const q = (u.searchParams.get('q') || '').trim().slice(0, 80);
