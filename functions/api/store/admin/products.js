@@ -18,6 +18,7 @@ function clean(b, partial) {
   }
   if (!partial || b.priceCents !== undefined) o.price_cents = int(b.priceCents);
   if (!partial || b.compareAtCents !== undefined) o.compare_at_cents = b.compareAtCents == null ? null : int(b.compareAtCents);
+  if (!partial || b.collectorPlusPriceCents !== undefined) o.collector_plus_price_cents = b.collectorPlusPriceCents == null ? null : int(b.collectorPlusPriceCents);
   set('inventory', () => int(b.inventory));
   set('active', () => (b.active ? 1 : 0));
   set('preorder', () => (b.preorder ? 1 : 0));
@@ -37,6 +38,7 @@ function clean(b, partial) {
     }
   }
   if (o.compare_at_cents != null && o.price_cents != null && o.compare_at_cents <= o.price_cents) throw new HttpError(400, 'Sale price must be below compare-at price');
+  if (o.collector_plus_price_cents != null && o.price_cents != null && o.collector_plus_price_cents > o.price_cents) throw new HttpError(400, 'Collector+ price must be equal to or below the regular price');
   return o;
 }
 
