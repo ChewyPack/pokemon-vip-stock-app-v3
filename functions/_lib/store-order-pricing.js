@@ -63,8 +63,8 @@ export async function quoteStoreItems(db, env, rawItems, destinationState = 'RI'
       unitPriceCents = Number(variant.priceCents);
       variantTitle = clean(variant.title || 'Selected option', 100);
     } else {
-      if (item.variantId !== null) throw new HttpError(400, 'A cart item contains an invalid product option.');
-      if (Number(product.inventory) < item.quantity) throw new HttpError(409, 'Not enough listed stock for "' + clean(product.name, 100) + '". Refresh the store and adjust your cart.');
+      // Manual order requests do not reserve inventory; availability is confirmed by PokePrizePool before fulfillment.
+      if (!manualMode(env) && Number(product.inventory) < item.quantity) throw new HttpError(409, 'Not enough listed stock for "' + clean(product.name, 100) + '". Refresh the store and adjust your cart.');
       unitPriceCents = Number(product.price_cents);
       if (!dollarsToCents(unitPriceCents)) throw new HttpError(409, 'A product price needs review before an order can be requested.');
     }
