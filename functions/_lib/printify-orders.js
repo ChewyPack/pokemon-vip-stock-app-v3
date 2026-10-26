@@ -3,16 +3,23 @@ import { PRINTIFY_SHOP_ID, printifyRequest, printifyCommerceReady } from './prin
 const shortError = (error) => String(error?.message || 'Printify request failed').slice(0, 500);
 
 async function findExistingOrder(env, shopId, externalId) {
-  let lastPage = 1;
+  // Printify exposes an API-created order's external_id as metadata.shop_order_id.
+  // Search recent pages before retrying a POST, so a lost response cannot create a duplicate.
+  let lastPage = 50;
   for (let page = 1; page <= Math.min(50, lastPage); page++) {
     const result = await printifyRequest(env, `shops/${shopId}/orders.json?page=${page}`);
     const data = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : [];
-    const found = data.find((item) => String(item.external_id || '') === externalId || String(item.label || '') === externalId);
+    const found = data.find((item) =>
+      String(item.external_id || '') === externalId ||
+      String(item.label || '') === externalId ||
+      String(item.metadata?.shop_order_id || '') === externalId ||
+      String(item.metadata?.shop_order_label || '') === externalId
+    );
     if (found) return found;
     const reported = Number(result?.last_page || 0);
     if (reported > 0) lastPage = Math.min(50, reported);
     else if (data.length < 10) break;
-    if (!data.length) break;
+    if (!data.length || page >= lastPage) break;
   }
   return null;
 }
