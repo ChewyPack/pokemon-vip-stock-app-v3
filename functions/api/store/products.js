@@ -46,6 +46,11 @@ export const onRequestGet = wrap(async ({ request, env }) => {
       if (manualOrdersEnabled) {
         product.comingSoon = false;
         product.manualOrderRequest = true;
+        // Remove retired "coming soon" copy that was saved in older product descriptions.
+        product.description = String(product.description || '')
+          .replace(/[^.!?\n]*\bcoming soon\b[^.!?\n]*(?:[.!?]|$)/gi, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
         // An active product remains requestable even if its stored inventory count is zero.
         // This is not an immediate sale; the owner confirms stock before collecting/finalizing payment.
         if (!product.isPrintify) product.available = Math.max(1, Number(row.inventory) || 0);
