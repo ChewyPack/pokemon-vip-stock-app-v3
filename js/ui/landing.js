@@ -589,15 +589,27 @@
         'data-ad-slot': 'home-top',
         'aria-label': 'Advertisement placement: home top'
       }, 'Ad placement · home · top');
+      // Keep acquisition prompts hidden until the session check resolves, avoiding a visible flash for signed-in members.
+      hero.hidden = true;
       root.appendChild(homeAdTop);
       root.appendChild(hero);
       var trialPromo = buildCollectorTrialPromo();
+      trialPromo.hidden = true;
       root.appendChild(trialPromo);
-      // A signed-in subscriber should not see signup prompts. Signed-in non-subscribers get a membership CTA instead.
+      // Signed-in subscribers hide both prompts; signed-in non-subscribers get an eligible-trial or membership CTA.
       fetch('/api/account/me', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } })
         .then(function (response) { return response.ok ? response.json() : null; })
         .then(function (data) {
-          if (!data || !data.ok || !data.authenticated) return;
+          if (!data || !data.ok) {
+            hero.hidden = false;
+            trialPromo.hidden = false;
+            return;
+          }
+          if (!data.authenticated) {
+            hero.hidden = false;
+            trialPromo.hidden = false;
+            return;
+          }
           // Signed-in members do not need the public acquisition hero.
           hero.hidden = true;
           var account = data.account || {};
@@ -627,7 +639,7 @@
             if (copy) copy.textContent = 'Explore Collector+ membership at $5/month or $50/year. A payment method is required at checkout. Because this account has prior subscription history, another free trial is not available.';
           }
         })
-        .catch(function () {});
+        .catch(function () { hero.hidden = false; trialPromo.hidden = false; });
       initPokeBallViewer();
       root.appendChild(buildHomeGiveawayMeter());
       root.appendChild(buildHomepagePreviews());
