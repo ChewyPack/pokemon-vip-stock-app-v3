@@ -1,4 +1,4 @@
-import { json, wrap, readJson, requireAdmin, HttpError } from '../../../_lib/store.js';
+import { json, wrap, readJson, requireAdmin, HttpError, ensureCollectorPlusPriceColumn } from '../../../_lib/store.js';
 import { printifyCommerceReady } from '../../../_lib/printify.js';
 
 const CATS = ['sealed', 'singles', 'slabs', 'accessories', 'merch'];
@@ -56,12 +56,14 @@ const audit = (db, actor, action, detail) =>
 
 export const onRequestGet = wrap(async (ctx) => {
   await requireAdmin(ctx);
+  await ensureCollectorPlusPriceColumn(ctx.env.DB);
   const { results } = await ctx.env.DB.prepare('SELECT * FROM store_products ORDER BY id DESC LIMIT 500').all();
   return json({ products: results, printifyCommerceReady: printifyCommerceReady(ctx.env), manualOrdersEnabled: String(ctx.env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual' });
 });
 
 export const onRequestPost = wrap(async (ctx) => {
   const actor = await requireAdmin(ctx);
+  await ensureCollectorPlusPriceColumn(ctx.env.DB);
   await ensureAuditTable(ctx.env.DB);
   const b = await readJson(ctx.request, 50000), o = clean(b, false);
   if (o.external_checkout_url && o.category !== 'merch') throw new HttpError(400, 'Printify checkout links are only allowed for merchandise products.');
@@ -77,15 +79,19 @@ export const onRequestPost = wrap(async (ctx) => {
 // PATCH /api/store/admin/products?id=123   (partial update; set inventory, price, active, etc.)
 export const onRequestPatch = wrap(async (ctx) => {
   const actor = await requireAdmin(ctx);
+  await ensureCollectorPlusPriceColumn(ctx.env.DB);
   await ensureAuditTable(ctx.env.DB);
   const id = int(new URL(ctx.request.url).searchParams.get('id'), 1);
   const o = clean(await readJson(ctx.request, 50000), true);
   const productColumns = await ctx.env.DB.prepare('PRAGMA table_info(store_products)').all();
   const hasPrintifyColumn = (productColumns.results || []).some((column) => column.name === 'printify_product_id');
   const existing = await ctx.env.DB.prepare(
-    `SELECT category, external_checkout_url${hasPrintifyColumn ? ', printify_product_id, printify_shop_id' : ''} FROM store_products WHERE id = ?`
+    `SELECT category, external_checkout_url, price_cents, collector_plus_price_cents${hasPrintifyColumn ? ', printify_product_id, printify_shop_id' : ''} FROM store_products WHERE id = ?`
   ).bind(id).first();
   if (!existing) throw new HttpError(404, 'Not found');
+  const finalRegularPrice = o.price_cents === undefined ? Number(existing.price_cents) : Number(o.price_cents);
+  const finalMemberPrice = o.collector_plus_price_cents === undefined ? existing.collector_plus_price_cents : o.collector_plus_price_cents;
+  if (finalMemberPrice != null && Number(finalMemberPrice) > finalRegularPrice) throw new HttpError(400, 'Collector+ price must be equal to or below the regular price');
   const manualOrdersEnabled = String(ctx.env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual';
   if (hasPrintifyColumn && existing.printify_product_id && o.active === 1 && !manualOrdersEnabled && !printifyCommerceReady(ctx.env)) {
     throw new HttpError(409, 'Printify listing cannot be activated for automatic checkout until the production safety checks are complete. Manual order requests are controlled by STORE_PAYMENT_MODE=manual.');
