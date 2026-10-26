@@ -3,7 +3,7 @@ import { isBlockedPrintifyProductTitle, parseVariants } from '../../_lib/printif
 
 const DESTINATION = 'pokeprizepool@gmail.com';
 const METHODS = new Set(['Venmo', 'PayPal', 'Zelle', 'Cash App']);
-const clean = (v, max = 500) => String(v ?? '').trim().replace(/[\\u0000-\\u001f\\u007f]/g, '').slice(0, max);
+const clean = (v, max = 500) => String(v ?? '').trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max);
 const dollars = (cents) => '$' + (Number(cents || 0) / 100).toFixed(2);
 const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
