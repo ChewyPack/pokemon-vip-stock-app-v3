@@ -69,7 +69,7 @@ export async function onRequestGet({ request, env }) {
     const stripe = accountStripeConfig(env);
     const webhookSecret = stripe ? (stripe.live ? env.STRIPE_EVENT_CONNECT_WEBHOOK_SECRET : env.STRIPE_EVENT_CONNECT_TEST_WEBHOOK_SECRET) : '';
     const webhookReady = !!webhookSecret;
-    const paymentConfigReason = !stripe ? 'stripe_account_configuration_missing' : (!webhookReady ? 'connect_webhook_secret_not_available_to_production_function' : '');
+    const paymentConfigReason = !stripe ? 'stripe_account_configuration_missing' : (!webhookReady ? (stripe.live ? 'connect_live_webhook_secret_not_available_to_production_function' : 'connect_test_mode_selected_requires_test_webhook_secret') : '');
     let orders = [];
     let connect = null;
     let summary = null;
