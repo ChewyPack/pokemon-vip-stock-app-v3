@@ -154,7 +154,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-buddy-display img{width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 3px 5px #0004)}
 .cp-buddy-display>div{display:grid;gap:3px}.cp-buddy-kicker{font-size:.67rem;font-weight:1000;letter-spacing:.12em;color:#ffd21f}.cp-buddy-display strong{font-size:1.06rem;color:#fff}.cp-buddy-display small{font-size:.78rem;color:#dbe8ff}
 .cp-buddy-editor{display:grid;grid-template-columns:minmax(150px,260px) auto;align-items:end;gap:9px;max-width:600px;margin:7px 0 15px;padding:12px;border:1px solid #ffffff3c;border-radius:12px;background:#07194d8c}
-.cp-buddy-editor label{display:grid;gap:5px;font-size:.82rem;font-weight:900;color:#fff}.cp-buddy-editor select,.cp-buddy-editor input{width:100%;min-height:40px;box-sizing:border-box;border-radius:8px;border:1px solid #b9c9e6;background:#fff;color:#0b2a6b;padding:8px;font:inherit}.cp-buddy-editor .cp-buddy-count{grid-column:1/-1;margin:0;color:#dbe8ff;font-size:.78rem}.cp-buddy-editor .cp-status{grid-column:1/-1;margin:0;color:#fff}
+.cp-buddy-editor label{display:grid;gap:5px;font-size:.82rem;font-weight:900;color:#fff}.cp-buddy-editor input{width:100%;min-height:40px;box-sizing:border-box;border-radius:8px;border:1px solid #b9c9e6;background:#fff;color:#0b2a6b;padding:8px;font:inherit}.cp-buddy-editor .cp-buddy-count,.cp-buddy-editor .cp-buddy-selection{grid-column:1/-1;margin:0;color:#dbe8ff;font-size:.78rem}.cp-buddy-editor .cp-buddy-selection{font-weight:900;color:#ffd54a}.cp-buddy-list{grid-column:1/-1;display:grid;gap:4px;max-height:300px;overflow-y:auto;overscroll-behavior:contain;padding:5px;border:1px solid #ffffff48;border-radius:10px;background:#06143b}.cp-buddy-option{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:36px;padding:7px 10px;border:1px solid transparent;border-radius:7px;background:#fff;color:#0b2a6b;text-align:left;font:700 .86rem Nunito,system-ui,sans-serif;cursor:pointer}.cp-buddy-option:hover{background:#edf3ff;border-color:#9ab8ee}.cp-buddy-option[aria-pressed=true]{background:#fff2af;border-color:#edc83d;color:#06143b}.cp-buddy-option span{font-size:.7rem;font-weight:1000}.cp-buddy-empty{padding:12px;color:#fff;font-size:.85rem}.cp-buddy-editor .cp-status{grid-column:1/-1;margin:0;color:#fff}
 .cp-gym-panel{margin:16px 0;padding:17px;border:1px solid #bfd0ee;border-radius:14px;background:#fff;box-shadow:0 3px 12px #07194d08;color:var(--navy)}
 .cp-gym-header{display:flex;align-items:end;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:13px}.cp-gym-header h2{margin:0;font:1.7rem Bangers,cursive;color:var(--navy)}.cp-gym-progress{font-size:.82rem;color:var(--muted);font-weight:900}
 .cp-gym-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -266,7 +266,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <button id="avatar" class="cp-avatar cp-avatar-edit" type="button" aria-label="Change profile photo" title="Click to change profile photo">Card</button><input id="profile-photo-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="Upload profile photo"><input id="profile-cover-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="Upload cover photo"><button id="change-cover" class="cp-cover-edit" type="button" hidden>Change cover photo</button>
 <div class="cp-hero-main"><p class="cp-handle" id="handle">@your-collector-name</p><h1 id="display-name">Collector Profile</h1><div class="cp-bio-row"><button id="bio-display" class="cp-bio-click" type="button" aria-label="Edit profile bio" title="Click to edit your bio">Your collection, your chase, your story.</button><button id="edit-bio" class="cp-bio-edit" type="button" hidden>Edit bio</button></div><form id="bio-editor" class="cp-bio-editor" hidden><textarea id="bio-input" maxlength="500" placeholder="Tell other collectors about yourself…"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cp-btn" type="submit">Save bio</button><button id="cancel-bio" class="cp-btn secondary" type="button">Cancel</button></div><p id="bio-status" class="cp-status" role="status" aria-live="polite"></p></form>
 <div id="buddy-pokemon-display" class="cp-buddy-display" hidden><img id="buddy-pokemon-image" alt=""><div><span class="cp-buddy-kicker">PARTNER POKÉMON</span><strong id="buddy-pokemon-name">Pikachu</strong><small id="buddy-pokemon-caption">Your profile companion</small></div></div>
-<form id="buddy-pokemon-editor" class="cp-buddy-editor" hidden><label for="buddy-pokemon-search">Search Pokémon<input id="buddy-pokemon-search" type="search" placeholder="Type a Pokémon name…" autocomplete="off"></label><label for="buddy-pokemon-select">Choose your Buddy Pokémon<select id="buddy-pokemon-select"></select></label><p id="buddy-pokemon-count" class="cp-buddy-count" aria-live="polite">Loading Pokémon…</p><button class="cp-btn" type="submit" id="buddy-pokemon-save">Save Buddy Pokémon</button><p id="buddy-pokemon-status" class="cp-status" role="status" aria-live="polite"></p></form>
+<form id="buddy-pokemon-editor" class="cp-buddy-editor" hidden><label for="buddy-pokemon-search">Search Buddy Pokémon<input id="buddy-pokemon-search" type="search" placeholder="Type to filter the Pokémon list…" autocomplete="off"></label><p id="buddy-pokemon-selection" class="cp-buddy-selection" aria-live="polite">Choose a Pokémon from the list below.</p><p id="buddy-pokemon-count" class="cp-buddy-count" aria-live="polite">Loading Pokémon…</p><div id="buddy-pokemon-list" class="cp-buddy-list" role="list" aria-label="Buddy Pokémon"></div><button class="cp-btn" type="submit" id="buddy-pokemon-save">Save Buddy Pokémon</button><p id="buddy-pokemon-status" class="cp-status" role="status" aria-live="polite"></p></form>
 <div class="cp-follow-row"><button class="cp-follow-count cp-follow-list-trigger" id="followers-trigger" type="button"><strong id="followers-count">0</strong> followers</button><button class="cp-follow-count cp-follow-list-trigger" id="following-trigger" type="button"><strong id="following-count">0</strong> following</button><button id="follow-button" class="cp-follow-btn" type="button" hidden>Follow</button><div id="profile-menu-wrap" class="cp-profile-menu-wrap" hidden><button id="profile-menu-trigger" class="cp-profile-menu-trigger" type="button" aria-label="More profile options" aria-haspopup="menu" aria-expanded="false">···</button><div id="profile-menu" class="cp-profile-menu" role="menu" hidden><button id="menu-unfollow" type="button" role="menuitem">Unfollow</button><button id="menu-block" class="danger" type="button" role="menuitem">Block</button></div></div></div></div>
 </section>
 </section>
@@ -414,23 +414,32 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  const money=cents=>cents===null||cents===undefined?'Not set':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents)/100);
  const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function setStatus(id,text){$(id).textContent=text||'';}
+ let selectedBuddyPokemonKey='pikachu';
  function buddySearchKey(value){
   return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase().replace(/[^a-z0-9]+/g,'');
  }
- function renderBuddyPokemonOptions(selectedKey, queryValue){
-  const selector=$('buddy-pokemon-select'),query=buddySearchKey(queryValue);
-  const sorted=buddyOptions.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base'}));
-  const matches=sorted.filter(item=>!query||buddySearchKey(item.name).includes(query)||buddySearchKey(item.key).includes(query));
-  selector.replaceChildren();
-  const placeholder=document.createElement('option');placeholder.value='';placeholder.disabled=true;
-  placeholder.textContent=matches.length?(query?'Choose a matching Pokémon…':'Choose your Buddy Pokémon'):'No Pokémon found';
-  selector.appendChild(placeholder);
-  matches.forEach(item=>{const option=document.createElement('option');option.value=item.key;option.textContent=item.name;selector.appendChild(option);});
-  selector.value=!query&&matches.some(item=>item.key===selectedKey)?selectedKey:'';
+ function renderBuddyPokemonOptions(queryValue){
+  const root=$('buddy-pokemon-list'),query=buddySearchKey(queryValue);
+  const matches=buddyOptions.filter(item=>!query||buddySearchKey(item.name).includes(query)||buddySearchKey(item.key).includes(query));
+  root.replaceChildren();
+  if(!matches.length){
+   const empty=document.createElement('div');empty.className='cp-buddy-empty';empty.textContent='No matching Pokémon. Try another name.';root.appendChild(empty);
+  }else{
+   matches.forEach(item=>{
+    const option=document.createElement('button');option.type='button';option.className='cp-buddy-option';
+    option.dataset.buddyKey=item.key;option.setAttribute('aria-pressed',String(item.key===selectedBuddyPokemonKey));
+    const name=document.createElement('span');name.textContent=item.name;option.appendChild(name);
+    if(item.key===selectedBuddyPokemonKey){const state=document.createElement('span');state.textContent='SELECTED ✓';option.appendChild(state);}
+    root.appendChild(option);
+   });
+  }
   const count=$('buddy-pokemon-count');
   if(count)count.textContent=query
-   ?('Showing '+matches.length.toLocaleString()+' matching Pokémon out of '+buddyOptions.length.toLocaleString()+'.')
-   :('Browse all '+buddyOptions.length.toLocaleString()+' Pokémon in alphabetical order. Type to search by name.');
+   ?('Showing '+matches.length.toLocaleString()+' matching Pokémon out of '+buddyOptions.length.toLocaleString()+'. Select one from this list.')
+   :(matches.length.toLocaleString()+' Pokémon, alphabetically A–Z. Type above to filter this same list.');
+  const selected=buddyOptions.find(item=>item.key===selectedBuddyPokemonKey);
+  const selection=$('buddy-pokemon-selection');
+  if(selection)selection.textContent=selected?'Selected: '+selected.name:'No Pokémon selected — choose one from the filtered list.';
  }
  async function loadWishlistMatchDashboard(){
    if(!own)return;
@@ -506,8 +515,9 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   $('buddy-pokemon-name').textContent=buddyName;
   $('buddy-pokemon-caption').textContent='Your profile companion';
   const buddyImg=$('buddy-pokemon-image');buddyImg.alt=buddyName+' partner Pokémon';if(buddyImage){buddyImg.src=buddyImage;buddyImg.hidden=false;}else{buddyImg.removeAttribute('src');buddyImg.hidden=true;}
+  selectedBuddyPokemonKey=p?.buddy_pokemon||'pikachu';
   $('buddy-pokemon-search').value='';
-  renderBuddyPokemonOptions(p?.buddy_pokemon||'pikachu','');
+  renderBuddyPokemonOptions('');
   const earned=Array.isArray(p?.achievements)?p.achievements:[];
   const basics=Array.isArray(p?.basic_achievements)?p.basic_achievements:[];
   const progress=p?.achievement_progress||{};
@@ -1008,12 +1018,20 @@ $('collector-search-form').addEventListener('submit',event=>{
  }
  function openBioEditor(){if(!own)return;$('bio-input').value=profile?.bio||'';$('bio-editor').hidden=false;$('bio-input').focus();}
  $('edit-bio').addEventListener('click',openBioEditor);$('bio-display').addEventListener('click',openBioEditor);
- $('buddy-pokemon-search').addEventListener('input',()=>renderBuddyPokemonOptions(profile?.buddy_pokemon||'pikachu',$('buddy-pokemon-search').value));
+ $('buddy-pokemon-search').addEventListener('input',()=>{
+  selectedBuddyPokemonKey='';
+  renderBuddyPokemonOptions($('buddy-pokemon-search').value);
+ });
+ $('buddy-pokemon-list').addEventListener('click',event=>{
+  const button=event.target.closest('[data-buddy-key]');if(!button)return;
+  selectedBuddyPokemonKey=button.dataset.buddyKey;
+  renderBuddyPokemonOptions($('buddy-pokemon-search').value);
+ });
  $('buddy-pokemon-editor').addEventListener('submit',async e=>{
   e.preventDefault();if(!own||!profile)return;
   const button=$('buddy-pokemon-save');button.disabled=true;setStatus('buddy-pokemon-status','Saving your Buddy Pokémon…');
   try{
-   const chosenBuddy=$('buddy-pokemon-select').value;if(!chosenBuddy){setStatus('buddy-pokemon-status','Search for a Pokémon and choose it from the list first.');return;}
+   const chosenBuddy=selectedBuddyPokemonKey;if(!chosenBuddy){setStatus('buddy-pokemon-status','Choose a Pokémon from the filtered list before saving.');return;}
    const payload={username:profile.username,bio:profile.bio||'',avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1,buddy_pokemon:chosenBuddy};
    const response=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await response.json();
    if(!response.ok||!data.ok)throw new Error(data.error==='invalid_buddy_pokemon'?'Choose one of the available Buddy Pokémon.':'Could not save your Buddy Pokémon. Please try again.');
