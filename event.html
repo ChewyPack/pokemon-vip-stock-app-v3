@@ -68,6 +68,8 @@ textarea{min-height:100px;resize:vertical}
   color: #fff !important;
 }
 .event-vending-form{display:grid;gap:10px;margin-top:14px;max-width:760px}.event-vending-form label{display:grid;gap:5px}.event-vending-form textarea{min-height:90px}.event-vendor-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:16px}.event-vendor-card{border:1px solid var(--ev-line);background:#ffffff08;border-radius:12px;padding:14px;min-width:0}.event-vendor-card h3{margin:0 0 7px}.event-vendor-card p{white-space:pre-line;overflow-wrap:anywhere}.event-vending-access{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.event-vending-access .muted{margin:0}
+.event-sale-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:12px;margin-top:14px}.event-sale-card{border:1px solid var(--ev-line);border-radius:12px;background:#ffffff08;padding:15px;display:flex;flex-direction:column;gap:8px;min-width:0}.event-sale-card h3{margin:0;font-size:1.1rem;overflow-wrap:anywhere}.event-sale-type{display:inline-flex;align-self:flex-start;border:1px solid var(--ev-line);border-radius:999px;padding:4px 8px;font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--ev-yellow)}.event-sale-price{font-weight:900;font-size:1.35rem;color:var(--ev-yellow)}.event-sale-card p{margin:0;white-space:pre-line;overflow-wrap:anywhere}.event-sale-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:auto;padding-top:8px}.event-sale-actions select{width:auto;min-width:75px;min-height:42px}.event-sales-manager{border-top:1px solid var(--ev-line);margin-top:24px;padding-top:22px}.event-sales-manager[hidden],.event-sales-panel[hidden]{display:none!important}.event-sale-form{display:grid;gap:10px;max-width:760px}.event-sale-form label{display:grid;gap:5px}.event-sale-form input[type=checkbox]{display:inline;width:auto;min-height:auto;margin-right:8px}.event-sale-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.event-sale-item-row,.event-sale-order-row{border:1px solid var(--ev-line);border-radius:10px;padding:12px;margin-top:9px;background:#ffffff07;overflow-wrap:anywhere}.event-sale-item-row strong{display:block;font-size:1rem}.event-sale-item-row p,.event-sale-order-row p{margin:5px 0}.event-sales-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}.event-sales-metric{border:1px solid var(--ev-line);border-radius:9px;padding:12px;background:#ffffff08}.event-sales-metric strong{display:block;color:var(--ev-yellow);font-size:1.2rem}.event-connect-note{border-left:4px solid var(--ev-yellow);background:#ffffff09;padding:12px 14px;border-radius:7px;line-height:1.6}.event-connect-note.ready{border-color:#49d49b}.event-connect-note.pending{border-color:#ffb65a}
+
 #event-links .btn,
 #event-links .btn.primary {
   color: #fff !important;
@@ -120,6 +122,39 @@ textarea{min-height:100px;resize:vertical}
 <div class="actions"><button class="btn primary" type="submit">Save vending details</button><button id="event-vending-withdraw" class="btn" type="button" hidden>Withdraw from vendor list</button></div><p id="event-vending-status" class="status" role="status" aria-live="polite"></p>
 </form>
 <div id="event-vending-list" class="event-vendor-list"></div><p id="event-vending-empty" class="muted" hidden>No vendors have added a booth listing yet.</p>
+</section>
+<section class="panel event-sales-panel" id="event-sales-panel" hidden>
+<p class="eyebrow">Tickets &amp; booth spaces</p>
+<h2>Admissions &amp; Booth Reservations</h2>
+<p class="muted">Purchase admission or reserve a booth/table directly from the event organizer. Payments are handled by the organizer’s connected Stripe account.</p>
+<p id="event-sales-status" class="status" role="status" aria-live="polite">Loading admissions and booth spaces…</p>
+<div id="event-sales-public-items" class="event-sale-grid"></div>
+<p id="event-sales-empty" class="muted" hidden>No admission tickets or booth/table spaces are listed for online reservation yet.</p>
+<div id="event-sales-manager" class="event-sales-manager" hidden>
+<h3>Organizer payment setup</h3>
+<p id="event-connect-note" class="event-connect-note pending">Checking Stripe Connect status…</p>
+<div class="actions"><button id="event-connect-button" class="btn primary" type="button">Connect Stripe to receive payments</button></div>
+<p id="event-connect-status" class="status" role="status" aria-live="polite"></p>
+<h3 style="margin-top:24px">Manage admission and booth listings</h3>
+<p class="muted">Each listing has its own price and optional quantity limit. Ticket and booth payments go straight to the connected organizer account. Quantity limits prevent more checkouts than the remaining inventory.</p>
+<form id="event-sale-item-form" class="event-sale-form">
+<input type="hidden" name="id">
+<div class="event-sale-form-row">
+<label>Listing type<select name="item_type"><option value="admission">Admission ticket</option><option value="booth">Booth space</option><option value="table">Table space</option></select></label>
+<label>Price (USD)<input name="price" type="number" min="0.50" max="1000000" step="0.01" required placeholder="e.g. 5.00"></label>
+</div>
+<label>Listing name<input name="title" maxlength="140" required placeholder="General admission, Vendor booth, 6-foot table…"></label>
+<label>Description (optional)<textarea name="description" maxlength="1000" placeholder="What is included, arrival/setup details, restrictions, etc."></textarea></label>
+<label>Quantity available (leave blank for no quantity limit)<input name="quantity_total" type="number" min="1" max="100000" step="1" placeholder="e.g. 100 tickets or 25 tables"></label>
+<label><input name="is_active" type="checkbox" checked> Make this listing available for reservation</label>
+<div class="actions"><button id="event-sale-save" class="btn primary" type="submit">Save listing</button><button id="event-sale-reset" class="btn" type="button">Clear form</button></div>
+<p id="event-sale-form-status" class="status" role="status" aria-live="polite"></p>
+</form>
+<div id="event-sale-manager-items"></div>
+<h3 style="margin-top:24px">Sales report for this event</h3>
+<div id="event-sales-metrics" class="event-sales-metrics"></div>
+<div id="event-sales-orders"></div>
+</div>
 </section>
 <section class="panel" id="event-share-panel">
 <p class="eyebrow">Share with your community</p>
@@ -227,6 +262,7 @@ function renderMediaTile(item,idx){
 function renderPublic(){
  $('event-content').hidden=false;
  $('event-vending-panel').hidden=previewActive||!['show','trade','tournament','store'].includes(String(record.event_type||''));
+ $('event-sales-panel').hidden=previewActive||record.status!=='published'||!['show','trade','tournament','store'].includes(String(record.event_type||''));
  $('event-title').textContent=record.title||'Event details';
  $('event-eyebrow').textContent=TYPE_LABELS[record.event_type]||'PokePrizePool Event';
  var pills=$('event-pills');pills.replaceChildren();
@@ -285,6 +321,125 @@ async function api(url,options){var response=await fetch(url,Object.assign({cred
 async function loadEventVending(){var panel=$('event-vending-panel');if(!record||previewActive||panel.hidden)return;var access=$('event-vending-access'),form=$('event-vending-form'),list=$('event-vending-list');access.replaceChildren();list.replaceChildren();$('event-vending-status').textContent='';try{var data=await api('/api/event-vending?event_id='+encodeURIComponent(record.id));if(data.can_vend){var control=make('button','btn primary');control.type='button';control.textContent=data.my_registration?'Edit vending details':'I’m vending';control.addEventListener('click',function(){form.hidden=!form.hidden;if(!form.hidden)form.scrollIntoView({behavior:'smooth',block:'nearest'});});access.appendChild(control);$('event-vending-withdraw').hidden=!data.my_registration;if(data.my_registration){['booth_location','key_items','notes'].forEach(function(k){if(form.elements[k])form.elements[k].value=data.my_registration[k]||'';});}else form.reset();text(access,'p','muted','Vendor+ members can share booth location and featured items with attendees.');}else{form.hidden=true;text(access,'p','muted',data.reason==='login_required'?'Sign in and have Vendor+ membership to publish your booth and key items.':'An active Vendor+ membership is required to publish vending details.');var link=make('a','btn primary');link.href='/account.html';link.textContent=data.reason==='login_required'?'Sign in':'View membership';access.appendChild(link);}var regs=data.registrations||[];$('event-vending-empty').hidden=regs.length>0;regs.forEach(function(v){var card=make('article','event-vendor-card'),title=make('h3');title.textContent=v.vendor_name||'Vendor+ member';if(v.username){var a=make('a');a.href='/shop.html?user='+encodeURIComponent(v.username);a.textContent='View shop';a.style.marginLeft='8px';title.appendChild(a);}card.appendChild(title);text(card,'p','','Booth / table: '+(v.booth_location||'To be announced'));text(card,'p','','Key items:\n'+(v.key_items||'Items not listed'));if(v.notes)text(card,'p','muted',v.notes);list.appendChild(card);});}catch(error){form.hidden=true;text(access,'p','muted','Vendor listings could not load. Refresh and try again.');$('event-vending-empty').hidden=true;}}
 $('event-vending-form').addEventListener('submit',async function(e){e.preventDefault();var f=e.currentTarget,b=f.querySelector('button[type=submit]');b.disabled=true;say($('event-vending-status'),'Saving your vending details…');try{await api('/api/event-vending',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save',event_id:Number(record.id),booth_location:f.elements.booth_location.value,key_items:f.elements.key_items.value,notes:f.elements.notes.value})});say($('event-vending-status'),'Your vending listing is saved and visible on this event.','success');await loadEventVending();}catch(error){say($('event-vending-status'),error.message==='vendor_plus_required'?'An active Vendor+ membership is required.':(error.message||'Could not save vending details.'),'error');}finally{b.disabled=false;}});
 $('event-vending-withdraw').addEventListener('click',async function(){var b=this;if(!confirm('Withdraw your vending listing from this event?'))return;b.disabled=true;try{await api('/api/event-vending',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'withdraw',event_id:Number(record.id)})});say($('event-vending-status'),'Your vending listing has been withdrawn.','success');$('event-vending-form').reset();$('event-vending-form').hidden=true;await loadEventVending();}catch(error){say($('event-vending-status'),error.message||'Could not withdraw listing.','error');}finally{b.disabled=false;}});
+
+function eventMoney(cents){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);}
+function eventSaleTypeLabel(type){return type==='admission'?'Admission ticket':(type==='booth'?'Booth space':'Table space');}
+function eventSalesMetric(container,label,value){var box=make('div','event-sales-metric');text(box,'span','',label);text(box,'strong','',value);container.appendChild(box);}
+function resetEventSaleForm(){var form=$('event-sale-item-form');form.reset();form.elements.id.value='';form.elements.is_active.checked=true;$('event-sale-form-status').textContent='';$('event-sale-save').textContent='Save listing';}
+function renderEventSalePublic(items,checkoutEnabled,disabledReason){
+ var container=$('event-sales-public-items');container.replaceChildren();
+ var active=(items||[]).filter(function(item){return item.is_active;});
+ $('event-sales-empty').hidden=active.length>0;
+ active.forEach(function(item){
+  var card=make('article','event-sale-card');text(card,'span','event-sale-type',eventSaleTypeLabel(item.item_type));text(card,'h3','',item.title);
+  if(item.description)text(card,'p','muted',item.description);
+  text(card,'div','event-sale-price',eventMoney(item.unit_price_cents));
+  if(item.available_quantity===null)text(card,'p','muted',Number(item.sold_count||0)+' sold · no quantity limit');
+  else text(card,'p','muted',item.available_quantity+' available'+(Number(item.reserved_count||0)?' · '+item.reserved_count+' checkout reservation(s)':''));
+  var actions=make('div','event-sale-actions');
+  var qty=make('select');qty.setAttribute('aria-label','Quantity for '+item.title);
+  var max=item.available_quantity===null?10:Math.min(10,Number(item.available_quantity));
+  for(var i=1;i<=Math.max(0,max);i++){var opt=make('option');opt.value=String(i);opt.textContent=String(i);qty.appendChild(opt);}
+  if(max>0)actions.appendChild(qty);
+  var buy=make('button','btn primary');buy.type='button';buy.textContent='Reserve / checkout';buy.disabled=!checkoutEnabled||max<1;
+  buy.addEventListener('click',async function(){
+   buy.disabled=true;buy.textContent='Opening secure checkout…';
+   try{var result=await api('/api/event-sale-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:item.id,quantity:Number(qty.value||1)})});if(!result.url)throw new Error('Stripe did not return a checkout link.');location.assign(result.url);}
+   catch(error){say($('event-sales-status'),error.message==='organizer_stripe_not_ready'?'The organizer still needs to finish Stripe onboarding.':(error.message||'Could not open checkout.'),'error');buy.disabled=false;buy.textContent='Reserve / checkout';}
+  });
+  actions.appendChild(buy);
+  if(!checkoutEnabled)text(card,'p','muted',disabledReason==='payment_tracking_setup_pending'?'Online checkout is temporarily disabled while PokePrizePool finishes payment tracking setup.':'Online reservations will open after the organizer finishes Stripe payment setup.');
+  if(max<1){buy.textContent='Sold out';buy.disabled=true;}
+  card.appendChild(actions);container.appendChild(card);
+ });
+}
+function renderEventSaleManagerItems(items){
+ var container=$('event-sale-manager-items');container.replaceChildren();
+ if(!items.length){text(container,'p','muted','No admission, booth, or table listings yet. Add your first listing above.');return;}
+ items.forEach(function(item){
+  var row=make('article','event-sale-item-row');text(row,'strong','',item.title+' · '+eventMoney(item.unit_price_cents));
+  text(row,'p','',eventSaleTypeLabel(item.item_type)+(item.is_active?' · Published':' · Hidden'));
+  text(row,'p','muted',(item.quantity_total===null?'No quantity limit':item.available_quantity+' available of '+item.quantity_total)+' · '+item.sold_count+' sold'+(item.reserved_count?' · '+item.reserved_count+' reserved':''));
+  if(item.description)text(row,'p','muted',item.description);
+  var actions=make('div','actions');var edit=make('button','btn');edit.type='button';edit.textContent='Edit';
+  edit.addEventListener('click',function(){var f=$('event-sale-item-form');f.elements.id.value=String(item.id);f.elements.item_type.value=item.item_type;f.elements.title.value=item.title;f.elements.description.value=item.description||'';f.elements.price.value=(Number(item.unit_price_cents)/100).toFixed(2);f.elements.quantity_total.value=item.quantity_total==null?'':String(item.quantity_total);f.elements.is_active.checked=!!item.is_active;$('event-sale-save').textContent='Update listing';$('event-sale-form-status').textContent='Editing '+item.title+'.';f.scrollIntoView({behavior:'smooth',block:'nearest'});});
+  actions.appendChild(edit);
+  if(item.is_active){var hide=make('button','btn');hide.type='button';hide.textContent='Stop selling';hide.addEventListener('click',async function(){if(!confirm('Stop new reservations for '+item.title+'? Existing completed orders will remain in your sales report.'))return;hide.disabled=true;try{await api('/api/event-sales',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deactivate_item',event_id:Number(record.id),item_id:item.id})});say($('event-sales-status'),'Listing is no longer available for new reservations.','success');await loadEventSales();}catch(error){say($('event-sales-status'),error.message||'Could not update listing.','error');hide.disabled=false;}});actions.appendChild(hide);}
+  row.appendChild(actions);container.appendChild(row);
+ });
+}
+function renderEventSaleOrders(orders,summary){
+ var metrics=$('event-sales-metrics');metrics.replaceChildren();
+ eventSalesMetric(metrics,'Gross paid',eventMoney(summary?.gross_paid_cents||0));
+ eventSalesMetric(metrics,'Refunds',eventMoney(summary?.refunded_cents||0));
+ eventSalesMetric(metrics,'Stripe processing fees',eventMoney(summary?.stripe_fees_cents||0));
+ eventSalesMetric(metrics,'Net after refunds',eventMoney(summary?.net_after_refunds_cents||0));
+ eventSalesMetric(metrics,'Orders',String(summary?.orders||0));
+ eventSalesMetric(metrics,'Pending checkouts',String(summary?.pending_orders||0));
+ var container=$('event-sales-orders');container.replaceChildren();
+ if(!orders||!orders.length){text(container,'p','muted','No reservations or payments have been recorded yet.');return;}
+ orders.forEach(function(order){
+  var row=make('article','event-sale-order-row');
+  text(row,'strong','',order.item_title+' · '+eventMoney(order.total_amount_cents));
+  text(row,'p','',eventSaleTypeLabel(order.item_type)+' · Qty '+order.quantity+' · '+String(order.status||'pending').replace(/_/g,' '));
+  text(row,'p','muted','Order #'+order.id+' · '+new Date(String(order.created_at||'').replace(' ','T')+'Z').toLocaleString());
+  if(order.buyer_email)text(row,'p','muted','Buyer: '+order.buyer_email);
+  if(order.stripe_fee_cents!=null)text(row,'p','muted','Stripe processing fees: '+eventMoney(order.stripe_fee_cents));
+  if(order.net_amount_cents!=null)text(row,'p','muted','Net after fees: '+eventMoney(order.net_amount_cents));
+  if(Number(order.amount_refunded_cents||0)>0){text(row,'p','muted','Refunded: '+eventMoney(order.amount_refunded_cents));if(order.net_amount_cents!=null)text(row,'p','muted','Net after fees and refunds: '+eventMoney(Number(order.net_amount_cents)-Number(order.amount_refunded_cents||0)));}
+  if(order.dispute_status)text(row,'p','muted','Dispute: '+order.dispute_status);
+  container.appendChild(row);
+ });
+}
+async function loadEventSales(){
+ var panel=$('event-sales-panel');if(!record||previewActive||panel.hidden)return;
+ $('event-sales-status').textContent='Loading event ticket and booth listings…';
+ try{
+  var connectData=null;
+  if(canEdit){connectData=await api('/api/event-connect?event_id='+encodeURIComponent(record.id)).catch(function(){return null;});}
+  var data=await api('/api/event-sales?event_id='+encodeURIComponent(record.id));
+  renderEventSalePublic(data.items||[],!!data.checkout_enabled,data.checkout_disabled_reason);
+  $('event-sales-manager').hidden=!data.can_manage;
+  if(data.can_manage){
+   if(connectData&&connectData.connected&&connectData.webhook_ready&&data.checkout_enabled){
+    $('event-connect-note').className='event-connect-note ready';$('event-connect-note').textContent='Stripe is connected and ready to accept payments. Admission and booth payments are charged directly on your connected Stripe account.';
+    $('event-connect-button').hidden=true;$('event-connect-button').disabled=true;
+   }else if(connectData&&connectData.connected&&!connectData.webhook_ready){
+    $('event-connect-note').className='event-connect-note pending';$('event-connect-note').textContent='Your Stripe account is connected. PokePrizePool must finish its payment-tracking setup before buyers can check out safely; online reservations remain disabled until then.';
+    $('event-connect-button').hidden=true;$('event-connect-button').disabled=true;
+   }else{
+    $('event-connect-note').className='event-connect-note pending';
+    $('event-connect-note').textContent='Connect Stripe so buyers can pay you directly. Online checkout stays disabled until Stripe confirms both payments and payouts are enabled.';
+    $('event-connect-button').hidden=false;$('event-connect-button').disabled=false;
+    $('event-connect-button').textContent=connectData&&connectData.details_submitted?'Continue Stripe setup':'Connect Stripe to receive payments';
+   }
+   renderEventSaleManagerItems(data.items||[]);
+   renderEventSaleOrders(data.orders||[],data.summary||{});
+   $('event-sale-form-status').textContent='';
+  }
+  if(data.can_manage&&!connectData)say($('event-connect-status'),'Stripe Connect status could not be refreshed. Try reloading the page.','error');
+  else if(data.can_manage&&connectData&&connectData.connected&&!connectData.webhook_ready)say($('event-connect-status'),'PokePrizePool payment tracking is not fully configured yet, so checkout remains disabled.');
+  else if(data.can_manage&&connectData&&!connectData.connected)say($('event-connect-status'),(connectData.currently_due&&connectData.currently_due.length?'Stripe still needs: '+connectData.currently_due.join(', ')+'. ':'')+'Finish the Stripe onboarding form before taking payments.');
+  else if(data.can_manage)say($('event-connect-status'),'Your connected account is ready.');
+  $('event-sales-status').textContent='';
+ }catch(error){say($('event-sales-status'),error.message||'Could not load event sales.','error');}
+}
+$('event-connect-button').addEventListener('click',async function(){
+ var button=this;button.disabled=true;say($('event-connect-status'),'Opening Stripe’s secure onboarding…');
+ try{var result=await api('/api/event-connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'start_onboarding',event_id:Number(record.id)})});if(!result.url)throw new Error('Stripe onboarding did not return a link.');location.assign(result.url);}
+ catch(error){say($('event-connect-status'),error.message||'Could not open Stripe onboarding.','error');button.disabled=false;}
+});
+$('event-sale-item-form').addEventListener('submit',async function(event){
+ event.preventDefault();var form=event.currentTarget,button=$('event-sale-save');button.disabled=true;button.textContent='Saving…';say($('event-sale-form-status'),'Saving listing…');
+ try{
+  var quantityText=form.elements.quantity_total.value.trim();
+  await api('/api/event-sales',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save_item',event_id:Number(record.id),id:Number(form.elements.id.value||0),item_type:form.elements.item_type.value,title:form.elements.title.value,description:form.elements.description.value,price:form.elements.price.value,quantity_total:quantityText,is_active:form.elements.is_active.checked})});
+  resetEventSaleForm();say($('event-sales-status'),'Ticket / booth listing saved.','success');await loadEventSales();
+ }catch(error){say($('event-sale-form-status'),error.message||'Could not save listing.','error');}
+ finally{button.disabled=false;button.textContent=form.elements.id.value?'Update listing':'Save listing';}
+});
+$('event-sale-reset').addEventListener('click',resetEventSaleForm);
+
 async function load(){
  var params=new URLSearchParams(location.search),id=params.get('id');
  var pathSegment=location.pathname.replace(/^\/+|\/+$/g,'');
@@ -300,6 +455,10 @@ async function load(){
   }
   renderPublic();
   loadEventVending();
+  loadEventSales();
+  var purchaseState=params.get('purchase');
+  if(purchaseState==='success')say($('event-sales-status'),'Payment was submitted. Your reservation will appear after Stripe confirms the payment.','success');
+  else if(purchaseState==='cancelled')say($('event-sales-status'),'Checkout was cancelled. No purchase was completed.');
   var boostState=params.get('boost');
   if(boostState==='success')say($('event-boost-status'),'Checkout returned successfully. Your boost will activate after Stripe confirms the payment.','success');
   else if(boostState==='cancelled')say($('event-boost-status'),'Checkout was cancelled. No event boost payment was completed.');

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06174A">
+<title>Event Sales &amp; Payouts | PokePrizePool Admin</title>
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+.sales-wrap{width:min(1280px,calc(100% - 28px));margin:28px auto 72px;color:#0b2a6b}.sales-hero,.sales-panel{background:#fff;border:2px solid #0b2a6b;border-radius:14px;padding:clamp(16px,3vw,28px);margin:18px 0;box-shadow:4px 4px 0 #000}.sales-hero h1{font:400 clamp(2rem,5vw,3.2rem)/1.1 var(--font-display);margin:0 0 10px}.sales-muted{color:#52648b;line-height:1.6}.sales-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0}.sales-metric{background:#f3f7ff;border:1px solid #d0def2;border-radius:10px;padding:14px;min-width:0}.sales-metric span{display:block;color:#52648b;font-size:.85rem}.sales-metric strong{display:block;margin-top:6px;font-size:1.4rem;overflow-wrap:anywhere}.sales-table-wrap{width:100%;overflow:auto;border:1px solid #d0def2;border-radius:10px}.sales-table{border-collapse:collapse;width:100%;min-width:900px;background:#fff}.sales-table th,.sales-table td{text-align:left;padding:11px 12px;border-bottom:1px solid #e3eaf6;vertical-align:top;font-size:.88rem}.sales-table th{background:#edf4ff;color:#0b2a6b;position:sticky;top:0}.sales-table td{overflow-wrap:anywhere}.sales-status{min-height:1.5em;color:#52648b;white-space:pre-line}.sales-status.error{color:#a32222}.sales-pill{display:inline-flex;border-radius:999px;padding:4px 8px;background:#edf4ff;color:#0b2a6b;font-size:.76rem;font-weight:900}.sales-empty{padding:22px;text-align:center;border:1px dashed #c9d7ec;border-radius:9px;color:#52648b}.sales-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}.sales-head h2{margin:0 0 8px}.sales-refresh{min-height:42px;padding:9px 13px;border:1px solid #0b2a6b;border-radius:8px;background:#fff;color:#0b2a6b;font:inherit;font-weight:800;cursor:pointer}
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="sales-wrap">
+<section class="sales-hero">
+<div class="sales-head"><div><p class="dashboard-eyebrow">PokePrizePool Admin</p><h1>Event Sales &amp; Payouts</h1><p class="sales-muted">Reports for admission tickets, booth spaces, and table reservations sold through organizers’ connected Stripe accounts. Sales and payout activity update from Stripe Connect webhooks.</p></div><button id="sales-refresh" class="sales-refresh" type="button">Refresh report</button></div>
+<p id="sales-status" class="sales-status" role="status" aria-live="polite">Loading event sales…</p>
+<div id="sales-metrics" class="sales-metrics"></div>
+</section>
+<section class="sales-panel">
+<h2>Organizer payments</h2>
+<p class="sales-muted">Each row represents a checkout order. Refunds and disputes are shown separately from the original sale amount; use the organizer’s Stripe account for detailed transaction and fee information.</p>
+<div id="sales-table-wrap" class="sales-table-wrap"><div class="sales-empty">Loading sales…</div></div>
+</section>
+<section class="sales-panel">
+<h2>Organizer payout activity</h2>
+<p class="sales-muted">Payout activity is recorded from Stripe Connect events when the webhook is configured. Payouts are separate from individual ticket or booth orders.</p>
+<div id="payout-table-wrap" class="sales-table-wrap"><div class="sales-empty">Loading payout activity…</div></div>
+</section>
+</main>
+<script src="/js/ui/site-nav.js?v=20261025-shared-header-v2"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+function money(cents){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);}
+function safeText(value){return String(value??'');}
+function el(tag,cls,value){const n=document.createElement(tag);if(cls)n.className=cls;if(value!==undefined)n.textContent=safeText(value);return n;}
+function cell(row,value){row.appendChild(el('td','',value));}
+function makeTable(headers,rows,emptyText){
+ const wrap=el('div');
+ if(!rows||!rows.length){wrap.appendChild(el('div','sales-empty',emptyText));return wrap;}
+ const table=el('table','sales-table'),thead=el('thead'),headRow=el('tr');
+ headers.forEach(h=>headRow.appendChild(el('th','',h)));thead.appendChild(headRow);table.appendChild(thead);
+ const tbody=el('tbody');
+ rows.forEach(record=>{const tr=el('tr');record.forEach((v,i)=>cell(tr,v));tbody.appendChild(tr);});
+ table.appendChild(tbody);wrap.appendChild(table);return wrap;
+}
+function statusLabel(value){return String(value||'pending').replace(/_/g,' ');}
+async function load(){
+ $('sales-status').textContent='Loading event sales and payout activity…';
+ $('sales-status').classList.remove('error');
+ try{
+  const response=await fetch('/api/event-sales?admin=1',{credentials:'include',cache:'no-store'});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.message||data.error||'Sales report could not be loaded.');
+  const summary=data.summary||{};
+  const metrics=$('sales-metrics');metrics.replaceChildren();
+  [['Gross paid',money(summary.gross_paid_cents)],['Refunded',money(summary.refunded_cents)],['Stripe fees',money(summary.stripe_fees_cents)],['Net after fees',money(summary.net_after_fees_cents)],['Net after refunds',money(summary.net_after_refunds_cents)],['Orders',summary.orders||0],['Successful orders',summary.successful_orders||0],['Pending checkouts',summary.pending_orders||0],['Disputed orders',summary.disputed_orders||0]].forEach(([label,value])=>{const box=el('div','sales-metric');box.appendChild(el('span','',label));box.appendChild(el('strong','',value));metrics.appendChild(box);});
+  const sales=(data.sales||[]).map(s=>[
+   '#'+s.id,s.event_title||'Event',s.item_title||'Listing',s.item_type||'',s.organizer_name+(s.organizer_email?'\n'+s.organizer_email:''),s.buyer_name||s.buyer_email||'Not provided',String(s.quantity),money(s.total_amount_cents),Number(s.amount_refunded_cents||0)?money(s.amount_refunded_cents):'—',s.stripe_fee_cents==null?'Pending':money(s.stripe_fee_cents),s.net_amount_cents==null?'Pending':money(s.net_amount_cents),s.net_amount_cents==null?'Pending':money(Number(s.net_amount_cents)-Number(s.amount_refunded_cents||0)),statusLabel(s.status)+(s.dispute_status?' · '+s.dispute_status:''),s.created_at||''
+  ]);
+  $('sales-table-wrap').replaceChildren(makeTable(['Order','Event','Listing','Type','Organizer','Buyer','Qty','Gross','Refunded','Stripe fee','Net after fees','Net after refunds','Status','Created'],sales,'No event sales have been recorded yet.'));
+  const payouts=(data.payouts||[]).map(p=>[
+   p.organizer_name+(p.organizer_email?'\n'+p.organizer_email:''),p.stripe_payout_id,p.amount_cents==null?'—':money(p.amount_cents),String(p.currency||'usd').toUpperCase(),statusLabel(p.status),p.arrival_date||'—',p.failure_code||'—',p.created_at||''
+  ]);
+  $('payout-table-wrap').replaceChildren(makeTable(['Organizer','Stripe payout ID','Amount','Currency','Status','Arrival date','Failure code','Recorded'],payouts,'No payout activity has been received yet.'));
+  $('sales-status').textContent='Report loaded. '+(data.sales||[]).length+' orders and '+(data.payouts||[]).length+' payout events returned.'+(data.webhook_ready?'':' PokePrizePool’s Connect webhook secret is not configured, so payment checkout must remain disabled.');
+ }catch(error){$('sales-status').textContent=error.message||'Could not load the event sales report.';$('sales-status').classList.add('error');}
+}
+$('sales-refresh').addEventListener('click',load);
+load();
+})();
+</script>
+</body>
+</html>
