@@ -63,7 +63,7 @@
     if (!document.getElementById(styleId)) {
       var style = document.createElement('style');
       style.id = styleId;
-      style.textContent = '.poster--logo{display:grid;place-items:center;aspect-ratio:1;max-width:470px;width:100%;margin-inline:auto;background:transparent;border:0;box-shadow:none;transform:none;overflow:visible}.poster--logo img{width:min(100%,430px);aspect-ratio:1;object-fit:contain;border-radius:0;filter:drop-shadow(0 16px 30px rgba(0,0,0,.28))}.poster--logo::after{display:none}.ppp-home-previews{padding:42px 0 56px;background:linear-gradient(180deg,rgba(3,10,29,.2),rgba(3,10,29,.58))}.ppp-home-previews__intro{margin-bottom:22px}.ppp-home-previews__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ppp-home-previews__panel{min-width:0;padding:18px;border:2px solid rgba(255,255,255,.15);border-radius:15px;background:rgba(6,18,48,.9);box-shadow:0 10px 30px rgba(0,0,0,.18)}.ppp-home-previews__panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.ppp-home-previews__panel h3{margin:0;color:#ffd21f;font-size:1.5rem;line-height:1.1}.ppp-home-previews__panel-head>a{font-size:.82rem;font-weight:900;white-space:nowrap}.ppp-home-previews__feed{display:grid;gap:10px}.ppp-home-previews__item{display:grid;grid-template-columns:76px minmax(0,1fr);gap:11px;align-items:center;padding:9px;border-radius:10px;color:#fff;text-decoration:none;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);min-width:0}.ppp-home-previews__item:hover{border-color:rgba(255,210,31,.6);background:rgba(255,255,255,.08)}.ppp-home-previews__thumb{display:block;width:76px;height:76px;object-fit:cover;border-radius:8px;background:#10244f}.ppp-home-previews__text{min-width:0}.ppp-home-previews__meta{display:block;color:#9fb5de;font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}.ppp-home-previews__item strong{display:block;font-size:.95rem;line-height:1.3;overflow-wrap:anywhere}.ppp-home-previews__item p{font-size:.82rem;color:#cedaf1;line-height:1.45;margin:4px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ppp-home-previews__empty{padding:18px 10px;color:#a9b9d8;font-size:.88rem;line-height:1.5;text-align:center}.ppp-home-previews__empty a{font-weight:900}.ppp-home-previews__panel--social{grid-column:1/-1}.ppp-home-previews__panel--social .ppp-home-previews__feed{grid-template-columns:repeat(2,minmax(0,1fr))}.ppp-home-previews__panel--social .ppp-home-previews__item{height:100%;align-content:start}.ppp-home-previews__panel--social .ppp-home-previews__item .ppp-home-previews__thumb{width:88px;height:88px}@media(max-width:650px){.ppp-home-previews{padding:28px 0 40px}.ppp-home-previews__grid{grid-template-columns:1fr}.ppp-home-previews__panel{padding:14px}.ppp-home-previews__item{grid-template-columns:64px minmax(0,1fr)}.ppp-home-previews__thumb{width:64px;height:64px}.ppp-home-previews__panel--social .ppp-home-previews__feed{grid-template-columns:1fr}.ppp-home-previews__panel--social .ppp-home-previews__item .ppp-home-previews__thumb{width:64px;height:64px}}';
+      style.textContent = '.poster--logo{display:grid;place-items:center;aspect-ratio:1;max-width:470px;width:100%;margin-inline:auto;background:transparent;border:0;box-shadow:none;transform:none;overflow:visible}.poster--logo img{width:min(100%,430px);aspect-ratio:1;object-fit:contain;border-radius:0;filter:drop-shadow(0 16px 30px rgba(0,0,0,.28))}.poster--logo::after{display:none}.ppp-home-previews{padding:42px 0 56px;background:linear-gradient(180deg,rgba(3,10,29,.2),rgba(3,10,29,.58))}.ppp-home-previews__intro{margin-bottom:22px}.ppp-home-previews__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ppp-home-previews__panel{min-width:0;padding:18px;border:2px solid rgba(255,255,255,.15);border-radius:15px;background:rgba(6,18,48,.9);box-shadow:0 10px 30px rgba(0,0,0,.18)}.ppp-home-previews__panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.ppp-home-previews__panel h3{margin:0;color:#ffd21f;font-size:1.5rem;line-height:1.1}.ppp-home-previews__panel-head>a{font-size:.82rem;font-weight:900;white-space:nowrap}.ppp-home-previews__feed{display:grid;gap:10px}.ppp-home-previews__item{display:grid;grid-template-columns:76px minmax(0,1fr);gap:11px;align-items:center;padding:9px;border-radius:10px;color:#fff;text-decoration:none;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);min-width:0}.ppp-home-previews__item:hover{border-color:rgba(255,210,31,.6);background:rgba(255,255,255,.08)}.ppp-home-previews__thumb{display:block;width:76px;height:76px;object-fit:cover;border-radius:8px;background:#10244f}.ppp-home-previews__text{min-width:0}.ppp-home-previews__meta{display:block;color:#9fb5de;font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}.ppp-home-previews__item strong{display:block;font-size:.95rem;line-height:1.3;overflow-wrap:anywhere}.ppp-home-previews__item p{font-size:.82rem;color:#cedaf1;line-height:1.45;margin:4px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ppp-home-previews__empty{padding:18px 10px;color:#a9b9d8;font-size:.88rem;line-height:1.5;text-align:center}.ppp-home-previews__empty a{font-weight:900}.ppp-home-previews__panel--store{grid-column:1/-1}.ppp-home-previews__panel--store .ppp-home-previews__feed{grid-template-columns:repeat(5,minmax(0,1fr))}.ppp-home-previews__panel--store .ppp-home-previews__item{display:flex;flex-direction:column;align-items:stretch;gap:9px;height:100%;align-content:start}.ppp-home-previews__panel--store .ppp-home-previews__thumb{width:100%;height:140px;object-fit:contain;background:#fff}.ppp-home-previews__panel--store .ppp-home-previews__text{width:100%}.ppp-home-previews__panel--store .ppp-home-previews__item p{font-size:.79rem}.ppp-home-previews__panel--store .ppp-home-previews__empty{height:100%;display:grid;place-items:center;border:1px dashed rgba(255,255,255,.2);border-radius:10px}.ppp-home-previews__panel--social{grid-column:1/-1}.ppp-home-previews__panel--social .ppp-home-previews__feed{grid-template-columns:repeat(2,minmax(0,1fr))}.ppp-home-previews__panel--store .ppp-home-previews__feed{grid-template-columns:repeat(2,minmax(0,1fr))}.ppp-home-previews__panel--store .ppp-home-previews__thumb{height:125px}.ppp-home-previews__panel--social .ppp-home-previews__item{height:100%;align-content:start}.ppp-home-previews__panel--social .ppp-home-previews__item .ppp-home-previews__thumb{width:88px;height:88px}@media(max-width:650px){.ppp-home-previews{padding:28px 0 40px}.ppp-home-previews__grid{grid-template-columns:1fr}.ppp-home-previews__panel{padding:14px}.ppp-home-previews__item{grid-template-columns:64px minmax(0,1fr)}.ppp-home-previews__thumb{width:64px;height:64px}.ppp-home-previews__panel--social .ppp-home-previews__feed{grid-template-columns:1fr}.ppp-home-previews__panel--social .ppp-home-previews__item .ppp-home-previews__thumb{width:64px;height:64px}}@media(max-width:420px){.ppp-home-previews__panel--store .ppp-home-previews__feed{grid-template-columns:1fr}}';
       document.head.appendChild(style);
     }
     var section = document.createElement('section');
@@ -111,7 +111,7 @@
       if(opts.meta)copy.appendChild(node('span','ppp-home-previews__meta',opts.meta));
       copy.appendChild(node('strong','',opts.title||'PokePrizePool update'));
       if(opts.copy)copy.appendChild(node('p','',shorten(opts.copy,140)));
-      link.appendChild(copy);target.feed.appendChild(link);
+      link.appendChild(copy);target.feed.appendChild(link);return link;
     }
     var news = panel('Latest News','/news.html','All news ↗','No news stories to preview right now. Open the News page for published Pokémon TCG coverage.');
     var markets = panel('Market Intelligence','/market-intelligence.html','Market info ↗','Member-only research with dated market snapshots, sourced price movers, and collector tools.');
@@ -119,6 +119,46 @@
     var listings = panel('Collector Marketplace','/marketplace.html','Browse listings ↗','Member shops post listings as items become available. Browse the marketplace for current offers.');
     var social = panel('News Feed','/newsfeed','View feed ↗','No community posts to preview yet. Open the feed to join the conversation.','ppp-home-previews__panel--social');
     var featuredEvents = panel('Featured Events','/events.html','All events ↗','Featured events are boosted by organizers. Browse the calendar for upcoming shows, trade nights, and releases.');
+    var storePanel = panel('Official Store','/store','Shop all products ↗','Browse singles, sealed Pokémon products, graded cards, accessories, and PokePrizePool merch.','ppp-home-previews__panel--store');
+    var storeCategories = [
+      { key:'singles', label:'Singles' },
+      { key:'sealed', label:'Sealed' },
+      { key:'slabs', label:'Graded cards / slabs' },
+      { key:'accessories', label:'Accessories' },
+      { key:'merch', label:'Clothing & merch' }
+    ];
+    storeCategories.forEach(function(category){
+      var browseHref='/store?category='+encodeURIComponent(category.key);
+      var tile=addItem(storePanel,{title:category.label,copy:'Loading listings…',meta:'Official Store',href:browseHref});
+      fetch('/api/store/products?category='+encodeURIComponent(category.key)+'&page=1&sort=new',{credentials:'same-origin',cache:'no-store'}).then(function(response){if(!response.ok)throw new Error('store category unavailable');return response.json();}).then(function(data){
+        var rows=Array.isArray(data.products)?data.products:[];
+        var product=rows.find(function(item){return item&&(!item.comingSoon||item.manualOrderRequest)&&Number(item.available)>0;});
+        var meta=tile.querySelector('.ppp-home-previews__meta'),title=tile.querySelector('strong'),copy=tile.querySelector('p');
+        if(meta)meta.textContent=category.label;
+        if(product){
+          tile.href='/store-product.html?slug='+encodeURIComponent(product.slug||'');
+          if(title)title.textContent=product.name||category.label;
+          var price=Number(product.priceCents);
+          var detail=Number.isFinite(price)?'$'+(price/100).toFixed(2):'View product details';
+          if(product.isPrintify)detail+=' · Choose size/color';
+          else if(product.manualOrderRequest)detail+=' · Available to request';
+          if(copy)copy.textContent=detail;
+          var imageUrl=Array.isArray(product.images)?product.images.find(function(value){return typeof value==='string'&&value.indexOf('https://')===0;}):'';
+          var thumb=tile.querySelector('.ppp-home-previews__thumb');
+          if(imageUrl&&thumb){var img=document.createElement('img');img.className='ppp-home-previews__thumb';img.src=imageUrl;img.alt='';img.loading='lazy';img.onerror=function(){img.remove();};thumb.replaceWith(img);}
+        }else{
+          tile.href=browseHref;
+          if(title)title.textContent='No listing published yet';
+          if(copy)copy.textContent='Browse '+category.label.toLowerCase()+' in the store.';
+        }
+      }).catch(function(){
+        var meta=tile.querySelector('.ppp-home-previews__meta'),title=tile.querySelector('strong'),copy=tile.querySelector('p');
+        if(meta)meta.textContent=category.label;
+        if(title)title.textContent='Browse '+category.label;
+        if(copy)copy.textContent='Open the store to check the latest listings.';
+        tile.href=browseHref;
+      });
+    });
 
     fetch('/api/collector/posts?feed=latest&limit=2',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('community feed unavailable');return r.json();}).then(function(data){
       var rows=Array.isArray(data.posts)?data.posts.slice(0,2):[];
