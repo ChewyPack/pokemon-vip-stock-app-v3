@@ -60,6 +60,8 @@ export async function onRequestPost({ request, env }) {
     const origin = stripe.origin || new URL(request.url).origin;
     const params = new URLSearchParams();
     params.set('mode', 'subscription');
+    // Collect payment details during Checkout, then automatically bill the selected Collector+ price after the 7-day trial.
+    params.set('payment_method_collection', 'always');
     params.set('line_items[0][price]', priceId);
     params.set('line_items[0][quantity]', '1');
     params.set('client_reference_id', String(account.id));
@@ -76,6 +78,8 @@ export async function onRequestPost({ request, env }) {
     params.set('subscription_data[metadata][membership_system]', 'pokeprizepool_accounts');
     params.set('subscription_data[metadata][membership_tier]', tier);
     params.set('subscription_data[metadata][billing_interval]', interval);
+    params.set('subscription_data[trial_period_days]', '7');
+    params.set('subscription_data[trial_settings][end_behavior][missing_payment_method]', 'cancel');
     const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + stripe.secretKey, 'Content-Type': 'application/x-www-form-urlencoded' },
