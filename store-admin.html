@@ -43,7 +43,7 @@
  function renderTcgcsvResults(){
   const root=$('sa-tcgcsv-results');
   if(!tcgcsvResults.length){root.innerHTML='';return;}
-  root.innerHTML=tcgcsvResults.map((p,index)=>'<article class="sa-product"><div class="sa-product-head"><h3>'+safe(p.name||'Unnamed product')+'</h3><span class="sa-badge">'+safe(p.set_name||'Pokémon TCG')+'</span></div><p>Sealed product · '+moneyDollars(p.market_price)+' market reference'+(p.tcgcsv_product_id?' · TCGCSV #'+safe(p.tcgcsv_product_id):'')+'</p><div class="sa-actions"><button type="button" class="sa-btn secondary" data-tcgcsv-use="'+index+'">Use this product</button></div></article>').join('');
+  root.innerHTML=tcgcsvResults.map((p,index)=>'<article class="sa-product"><div class="sa-product-head"><h3>'+safe(p.name||'Unnamed product')+'</h3><span class="sa-badge">'+safe(p.set_name||'Pokémon TCG')+'</span></div>'+(p.image_url?'<p><img src="'+safe(p.image_url)+'" alt="'+safe(p.name||'TCGCSV product image')+'" loading="lazy" style="width:96px;height:96px;object-fit:contain;border-radius:8px;background:#fff"></p>':'')+'<p>Sealed product · '+moneyDollars(p.market_price)+' market reference'+(p.tcgcsv_product_id?' · TCGCSV #'+safe(p.tcgcsv_product_id):'')+'</p><div class="sa-actions"><button type="button" class="sa-btn secondary" data-tcgcsv-use="'+index+'">Use this product</button></div></article>').join('');
  }
  async function searchTcgcsv(){
   const query=$('sa-tcgcsv-query').value.trim();
@@ -72,9 +72,15 @@
   form.elements.sku.value='';
   if(item.market_price!==null&&item.market_price!==undefined&&Number.isFinite(Number(item.market_price))&&Number(item.market_price)>=0)form.elements.price.value=Number(item.market_price).toFixed(2);
   form.elements.description.value='';
+  form.elements.imageFiles.value='';
+  currentImages=[];
+  if(typeof item.image_url==='string'&&/^https:\/\/[^\s"'<>]+$/i.test(item.image_url))currentImages=[item.image_url];
+  renderImagePreview();
   form.elements.comingSoon.checked=true;
   form.elements.active.checked=true;
-  $('sa-form-status').textContent='Catalog details filled in. Review the suggested market price, enter your actual stock quantity, upload your own product photo(s), and click Save product. The listing is marked Coming Soon by default until checkout is ready.';
+  $('sa-form-status').textContent=currentImages.length
+   ? 'Catalog details and the TCGCSV product image are filled in. The TCGCSV image will be saved automatically; upload your own photos only if you want to replace it. Review the suggested market price and enter your actual stock quantity. The listing is marked Coming Soon by default until checkout is ready.'
+   : 'Catalog details filled in, but TCGCSV has no usable image for this item. Upload your own product photo, review the suggested market price, and enter your actual stock quantity. The listing is marked Coming Soon by default until checkout is ready.';
   form.scrollIntoView({behavior:'smooth',block:'start'});
  });
  function renderImagePreview(){
