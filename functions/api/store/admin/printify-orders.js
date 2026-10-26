@@ -19,7 +19,7 @@ export const onRequestPost = wrap(async (ctx) => {
 
   if (body.action === 'send_to_production') {
     try {
-      const result = await sendPrintifyOrderToProduction(ctx.env.DB, ctx.env, orderId);
+      const result = await sendPrintifyOrderToProduction(ctx.env.DB, ctx.env, orderId, actor);
       return json(result);
     } catch (error) {
       throw new HttpError(409, String(error?.message || 'Could not send the Printify order to production').slice(0, 250));
