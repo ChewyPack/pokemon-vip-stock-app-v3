@@ -108,7 +108,7 @@ export async function submitPaidPrintifyOrder(db, env, orderId) {
   }
 }
 
-export async function sendPrintifyOrderToProduction(db, env, orderId) {
+export async function sendPrintifyOrderToProduction(db, env, orderId, actor = 'printify-admin') {
   const order = await db.prepare(
     'SELECT id, order_number, payment_status, printify_order_id, printify_status FROM store_orders WHERE id = ?'
   ).bind(orderId).first();
@@ -125,7 +125,7 @@ export async function sendPrintifyOrderToProduction(db, env, orderId) {
       'UPDATE store_orders SET printify_status = ?, printify_error = NULL, updated_at = datetime(\'now\') WHERE id = ?'
     ).bind(status, orderId),
     db.prepare('INSERT INTO store_audit_log (actor, action, detail) VALUES (?,?,?)')
-      .bind('printify-admin', 'printify.send_to_production', JSON.stringify({ orderId, orderNumber: order.order_number, printifyOrderId: order.printify_order_id, status })),
+      .bind(String(actor || 'printify-admin').slice(0, 120), 'printify.send_to_production', JSON.stringify({ orderId, orderNumber: order.order_number, printifyOrderId: order.printify_order_id, status })),
   ]);
   return { ok: true, status, printifyOrderId: order.printify_order_id };
 }
