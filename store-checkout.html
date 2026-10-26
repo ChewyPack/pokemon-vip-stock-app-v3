@@ -91,7 +91,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
 <p>Click <strong>Email Order Request</strong> below. The website will automatically send your items, quantities, variants, estimated subtotal, username, and preferred payment method to pokeprizepool@gmail.com. You do not need to open your own email app.</p>
 </article>
 </div>
-<div class="checkout-warning"><strong>Important:</strong> The page calculates an order subtotal, the Rhode Island 7% tax estimate on taxable products, and a total. Rhode Island clothing items priced at $250 or less per item are generally exempt; this store applies the exemption only to products identified as clothing. If the tax line says estimate only, PokePrizePool has not enabled tax collection in checkout yet, so confirm the amount before paying. Clothing/apparel is shipped sealed in packaging; singles, sealed Pokémon products, graded cards, and accessories are pickup-only for now. Mixed carts need separate fulfillment confirmation.</div>
+<div class="checkout-warning"><strong>Important:</strong> The page calculates the Rhode Island 7% tax estimate on the full product subtotal, then adds it to the subtotal. If the tax line says estimate only, PokePrizePool has not enabled tax collection in checkout yet, so confirm the amount before paying. Clothing/apparel is shipped sealed in packaging; singles, sealed Pokémon products, graded cards, and accessories are pickup-only for now. Mixed carts need separate fulfillment confirmation.</div>
 <div class="checkout-fields">
 <label for="checkout-username">PokePrizePool username *
 <input id="checkout-username" type="text" minlength="3" maxlength="24" autocomplete="username" placeholder="Your PokePrizePool username" required>
@@ -131,18 +131,11 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
  }catch(_){}
  const itemsRoot=$('checkout-items');
  let subtotalCents=0,taxCents=0,totalCents=0,taxableCents=0,taxCollectionEnabled=false;
- const clothingPattern=/\b(t-?shirts?|tees?|hoodies?|sweatshirts?|sweaters?|shirts?|beanies?|hats?|caps?|jackets?|coats?|pants|shorts|socks|leggings|dresses|skirts|uniforms?|scarves?|footwear|shoes?)\b/i;
- function moneyTaxBase(row){
-   const product=row.product||{},qty=Math.min(20,Number(row.quantity)||1);
-   const unit=Number(row.priceCents??product.priceCents??0);
-   const category=String(product.category||'').toLowerCase();
-   const clothing=category==='merch'&&clothingPattern.test(String(product.name||'')+' '+String(product.productType||''));
-   return clothing?Math.max(0,unit-25000)*qty:unit*qty;
- }
  function drawTotals(state){
    subtotalCents=cart.reduce((sum,row)=>sum+Number(row.priceCents??row.product?.priceCents??0)*Math.min(20,Number(row.quantity)||1),0);
-   taxableCents=state==='RI'?cart.reduce((sum,row)=>sum+moneyTaxBase(row),0):0;
-   taxCents=state==='RI'?Math.round(taxableCents*0.07):0;
+   // Rhode Island estimate is consistently 7% of the full product subtotal.
+   taxableCents=state==='RI'?subtotalCents:0;
+   taxCents=state==='RI'?Math.round(subtotalCents*0.07):0;
    totalCents=subtotalCents+taxCents;
    $('checkout-subtotal').textContent=money(subtotalCents);
    $('checkout-tax').textContent=money(taxCents);
@@ -151,7 +144,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
    $('checkout-total-label').textContent=state==='RI'?'Estimated total (subtotal + tax estimate)':'Estimated total (other-state tax not calculated)';
    $('checkout-tax-note').dataset.mode='warning';
    $('checkout-tax-note').textContent=state==='RI'
-     ?'This is an estimate until PokePrizePool has enabled sales-tax collection after its Rhode Island retail sales permit is active. Qualifying clothing priced at $250 or less per item is generally exempt.'
+     ?'Estimated Rhode Island sales tax is calculated as 7% of the full product subtotal. This remains an estimate until PokePrizePool has enabled sales-tax collection after its Rhode Island retail sales permit is active.'
      :'Rhode Island sales tax is not calculated for out-of-state delivery. Tax for other states is not calculated by this checkout; confirm any applicable tax before payment.';
  }
  function persistCart(){
