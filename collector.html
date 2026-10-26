@@ -415,7 +415,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function setStatus(id,text){$(id).textContent=text||'';}
  function buddySearchKey(value){
-  return String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLocaleLowerCase().replace(/[^a-z0-9]+/g,'');
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase().replace(/[^a-z0-9]+/g,'');
  }
  function renderBuddyPokemonOptions(selectedKey, queryValue){
   const selector=$('buddy-pokemon-select'),query=buddySearchKey(queryValue);
