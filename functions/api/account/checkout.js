@@ -44,7 +44,7 @@ export async function onRequestPost({ request, env }) {
   if (!token) return json({ ok: false, error: 'login_required' }, 401);
   try {
     const account = await env.DB.prepare(
-      'SELECT id, display_name, email, account_type, session_expires_at, membership_status FROM accounts WHERE session_token_hash = ? LIMIT 1'
+      'SELECT id, display_name, email, account_type, session_expires_at, membership_status, stripe_customer_id, stripe_subscription_id FROM accounts WHERE session_token_hash = ? LIMIT 1'
     ).bind(await sha256(token)).first();
     if (!account || !account.session_expires_at || Number(account.session_expires_at) <= Date.now()) {
       return json({ ok: false, error: 'login_required' }, 401);
@@ -55,6 +55,7 @@ export async function onRequestPost({ request, env }) {
     if (tier === 'vendor' && !['vendor', 'organizer'].includes(account.account_type)) return json({ ok: false, error: 'choose_vendor_account_type' }, 400);
     if (tier === 'organizer' && account.account_type !== 'organizer') return json({ ok: false, error: 'choose_organizer_account_type' }, 400);
     if (tier === 'collector_plus' && !['free', 'collector'].includes(account.account_type)) return json({ ok: false, error: 'choose_collector_account_type' }, 400);
+    const isFirstTimeSubscriber = !account.stripe_customer_id && !account.stripe_subscription_id;
     const priceId = PRICES[tier][interval];
   if (!priceId) return json({ ok: false, error: 'plan_not_configured' }, 503);
     const origin = stripe.origin || new URL(request.url).origin;
@@ -78,8 +79,10 @@ export async function onRequestPost({ request, env }) {
     params.set('subscription_data[metadata][membership_system]', 'pokeprizepool_accounts');
     params.set('subscription_data[metadata][membership_tier]', tier);
     params.set('subscription_data[metadata][billing_interval]', interval);
-    params.set('subscription_data[trial_period_days]', '7');
-    params.set('subscription_data[trial_settings][end_behavior][missing_payment_method]', 'cancel');
+    if (isFirstTimeSubscriber) {
+      params.set('subscription_data[trial_period_days]', '7');
+      params.set('subscription_data[trial_settings][end_behavior][missing_payment_method]', 'cancel');
+    }
     const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + stripe.secretKey, 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -90,7 +93,7 @@ export async function onRequestPost({ request, env }) {
       console.error('Account Stripe checkout creation failed:', response.status, result.error?.type || 'unknown');
       return json({ ok: false, error: 'stripe_checkout_failed' }, 502);
     }
-    return json({ ok: true, url: result.url });
+    return json({ ok: true, url: result.url, trialDays: isFirstTimeSubscriber ? 7 : 0 });
   } catch (error) {
     console.error('Account checkout failed:', error);
     return json({ ok: false, error: 'checkout_failed' }, 500);
