@@ -1,4 +1,5 @@
 import { json, wrap, publicProduct } from '../../_lib/store.js';
+import { printifyCommerceReady } from '../../_lib/printify.js';
 
 // GET /api/store/products?q=&category=&availability=in|pre&min=&max=&sort=new|lo|hi&page=1&slug=
 export const onRequestGet = wrap(async ({ request, env }) => {
@@ -19,9 +20,10 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   // Remain compatible with the store before the production Printify migration is applied.
   const productColumns = await env.DB.prepare('PRAGMA table_info(store_products)').all();
   const hasPrintifyColumn = (productColumns.results || []).some((c) => c.name === 'printify_product_id');
+  if (hasPrintifyColumn && !printifyCommerceReady(env)) where.push('printify_product_id IS NULL');
   if (av === 'in') where.push(hasPrintifyColumn
-    ? '(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != \'\') OR printify_product_id IS NOT NULL) AND preorder = 0'
-    : '(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != \'\')) AND preorder = 0');
+    ? `(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '') OR (printify_product_id IS NOT NULL AND ${printifyCommerceReady(env) ? '1=1' : '1=0'})) AND preorder = 0`
+    : `(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '')) AND preorder = 0`);
   if (av === 'pre') where.push('preorder = 1');
   const min = parseInt(u.searchParams.get('min') || '', 10), max = parseInt(u.searchParams.get('max') || '', 10);
   if (Number.isInteger(min)) { where.push('(external_checkout_url IS NULL OR external_checkout_url = \'\') AND price_cents >= ?'); args.push(min); }
