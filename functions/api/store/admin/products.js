@@ -40,6 +40,15 @@ function clean(b, partial) {
   return o;
 }
 
+async function ensureAuditTable(db) {
+  await db.prepare(`CREATE TABLE IF NOT EXISTS store_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor TEXT,
+    action TEXT NOT NULL,
+    detail TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`).run();
+}
 const audit = (db, actor, action, detail) =>
   db.prepare('INSERT INTO store_audit_log (actor, action, detail) VALUES (?,?,?)').bind(actor, action, JSON.stringify(detail)).run();
 
@@ -51,6 +60,7 @@ export const onRequestGet = wrap(async (ctx) => {
 
 export const onRequestPost = wrap(async (ctx) => {
   const actor = await requireAdmin(ctx);
+  await ensureAuditTable(ctx.env.DB);
   const b = await readJson(ctx.request, 50000), o = clean(b, false);
   if (o.external_checkout_url && o.category !== 'merch') throw new HttpError(400, 'Printify checkout links are only allowed for merchandise products.');
   o.slug = slugify(b.slug || b.name);
@@ -65,6 +75,7 @@ export const onRequestPost = wrap(async (ctx) => {
 // PATCH /api/store/admin/products?id=123   (partial update; set inventory, price, active, etc.)
 export const onRequestPatch = wrap(async (ctx) => {
   const actor = await requireAdmin(ctx);
+  await ensureAuditTable(ctx.env.DB);
   const id = int(new URL(ctx.request.url).searchParams.get('id'), 1);
   const o = clean(await readJson(ctx.request, 50000), true);
   const productColumns = await ctx.env.DB.prepare('PRAGMA table_info(store_products)').all();
