@@ -129,7 +129,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
    const items=getCartItems(),shippingAddress=getShippingAddress();
    if(hasPrintify){
      if(items.some(item=>!item.variantId))throw new Error('Choose a size and color for each Printify product.');
-     if(items.some(item=>!cart.values().next().value.product.isPrintify))throw new Error('For accurate shipping, place Printify merchandise in a separate order from other store products.');
+     if(Array.from(cart.values()).some(row=>!row.product.isPrintify))throw new Error('For accurate shipping, place Printify merchandise in a separate order from other store products.');
      if(!email)throw new Error('Enter an email address for your order receipt and shipping confirmation.');
      const addressRequired=[shippingAddress.fullName,shippingAddress.address1,shippingAddress.city,shippingAddress.region,shippingAddress.zip];
      if(addressRequired.some(value=>!value))throw new Error('Complete the required shipping address fields before continuing.');
