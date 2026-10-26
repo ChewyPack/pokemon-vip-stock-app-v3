@@ -305,11 +305,11 @@
         h('div', { class: 'ppp-collector-trial-promo__card' },
           h('div', null,
             h('p', { class: 'ppp-collector-trial-promo__eyebrow' }, 'Collector+ membership'),
-            h('h2', { class: 'ppp-collector-trial-promo__title', id: 'ppp-collector-trial-title' }, 'Get your first 7 days free'),
-            h('p', { class: 'ppp-collector-trial-promo__copy' }, 'Try Collector+ free for 7 days. A payment method is required at signup. After the trial, your selected plan renews at $5/month or $50/year unless canceled before the trial ends.'),
+            h('h2', { class: 'ppp-collector-trial-promo__title', id: 'ppp-collector-trial-title' }, 'Get your first 3 dayss free'),
+            h('p', { class: 'ppp-collector-trial-promo__copy' }, 'Try Collector+ free for 3 dayss. A payment method is required at signup. After the trial, your selected plan renews at $5/month or $50/year unless canceled before the trial ends.'),
             h('small', { class: 'ppp-collector-trial-promo__fine' }, 'For eligible first-time subscribers only. Accounts with prior subscription history do not qualify for another trial.')
           ),
-          h('a', { class: 'btn btn--lg ppp-collector-trial-promo__button', href: '/account.html?mode=register&plan=collector' }, 'Start your 7-day free trial')
+          h('a', { class: 'btn btn--lg ppp-collector-trial-promo__button', href: '/account.html?mode=register&plan=collector' }, 'Start your 3-day free trial')
         )
       )
     );
