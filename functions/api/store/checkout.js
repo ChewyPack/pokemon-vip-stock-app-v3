@@ -54,7 +54,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
       lines.push({
         product, quantity: item.quantity, isPrintify: true, variant,
         unitPrice, lineTotal: unitPrice * item.quantity,
-        itemName: product.name + ' — ' + String(variant.title || 'Selected option').slice(0, 160),
+        itemName: (product.name + ' — ' + String(variant.title || 'Selected option')).slice(0, 250),
         itemSku: String(variant.sku || product.sku || '').slice(0, 100),
       });
       productSubtotal += unitPrice * item.quantity;
