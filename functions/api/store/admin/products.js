@@ -81,7 +81,7 @@ export const onRequestPatch = wrap(async (ctx) => {
   const productColumns = await ctx.env.DB.prepare('PRAGMA table_info(store_products)').all();
   const hasPrintifyColumn = (productColumns.results || []).some((column) => column.name === 'printify_product_id');
   const existing = await ctx.env.DB.prepare(
-    `SELECT category, external_checkout_url${hasPrintifyColumn ? ', printify_product_id' : ''} FROM store_products WHERE id = ?`
+    `SELECT category, external_checkout_url${hasPrintifyColumn ? ', printify_product_id, printify_shop_id' : ''} FROM store_products WHERE id = ?`
   ).bind(id).first();
   if (!existing) throw new HttpError(404, 'Not found');
   const manualOrdersEnabled = String(ctx.env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual';
@@ -91,6 +91,17 @@ export const onRequestPatch = wrap(async (ctx) => {
   const finalCategory = o.category || existing.category;
   const finalExternalUrl = o.external_checkout_url !== undefined ? o.external_checkout_url : existing.external_checkout_url;
   if (finalExternalUrl && finalCategory !== 'merch') throw new HttpError(400, 'Printify checkout links are only allowed for merchandise products.');
+  // If an admin repurposes an old Printify row for a TCG single or another non-merch product,
+  // clear its legacy Printify IDs/options so it uses normal stock, card pricing, and checkout.
+  if (hasPrintifyColumn && existing.printify_product_id && String(finalCategory).toLowerCase() !== 'merch') {
+    o.printify_shop_id = null;
+    o.printify_product_id = null;
+    o.printify_blueprint_id = null;
+    o.printify_print_provider_id = null;
+    o.printify_options = '[]';
+    o.printify_variants = '[]';
+    o.printify_synced_at = null;
+  }
   const keys = Object.keys(o);
   if (!keys.length) throw new HttpError(400, 'Nothing to update');
   try {
