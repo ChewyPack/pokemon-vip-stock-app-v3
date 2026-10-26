@@ -170,7 +170,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
    itemsRoot.innerHTML=cart.map(row=>{
      const product=row.product||{},quantity=Math.min(20,Number(row.quantity)||1);
      const unit=Number(row.priceCents??product.priceCents??0),line=unit*quantity;
-     return '<article class="checkout-line"><div><h3>'+safe(product.name||'Store item')+'</h3>'+(row.variantTitle?'<p>Option: '+safe(row.variantTitle)+'</p>':'')+'<p>'+quantity+' × '+money(unit)+'</p></div><div class="checkout-line-total">'+money(line)+'</div></article>';
+     return '<article class="checkout-line"><div><h3>'+safe(product.name||'Store item')+'</h3>'+(row.variantTitle?'<p>Option: '+safe(row.variantTitle)+'</p>':'')+'<p>'+quantity+' × '+money(unit)+(row.isCollectorPlusPrice?' · Collector+ member price':'')+'</p></div><div class="checkout-line-total">'+money(line)+'</div></article>';
    }).join('');
    drawTotals($('checkout-tax-state').value);
    valid();
@@ -188,6 +188,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
          row.product.madeToOrder=!!line.isPrintify;
          row.product.comingSoon=false;
          row.priceCents=Number(line.unitPriceCents);
+         row.isCollectorPlusPrice=!!line.isCollectorPlusPrice;
          row.product.priceCents=Number(line.unitPriceCents);
          if(line.variantId==null){row.variantId=null;row.variantTitle='';}
          else row.variantTitle=line.variantTitle||row.variantTitle||'';
@@ -197,7 +198,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
      itemsRoot.innerHTML=cart.map(row=>{
        const product=row.product||{},quantity=Math.min(20,Number(row.quantity)||1);
        const unit=Number(row.priceCents??product.priceCents??0),line=unit*quantity;
-       return '<article class="checkout-line"><div><h3>'+safe(product.name||'Store item')+'</h3>'+(row.variantTitle?'<p>Option: '+safe(row.variantTitle)+'</p>':'')+'<p>'+quantity+' × '+money(unit)+'</p></div><div class="checkout-line-total">'+money(line)+'</div></article>';
+       return '<article class="checkout-line"><div><h3>'+safe(product.name||'Store item')+'</h3>'+(row.variantTitle?'<p>Option: '+safe(row.variantTitle)+'</p>':'')+'<p>'+quantity+' × '+money(unit)+(row.isCollectorPlusPrice?' · Collector+ member price':'')+'</p></div><div class="checkout-line-total">'+money(line)+'</div></article>';
      }).join('');
    }
    subtotalCents=Number(data.subtotalCents||0);
@@ -241,7 +242,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
    const state=$('checkout-tax-state').value;
    const lines=cart.map(row=>{
      const product=row.product||{},qty=Math.min(20,Number(row.quantity)||1),unit=Number(row.priceCents??product.priceCents??0);
-     return '- '+String(product.name||'Store item').slice(0,150)+(row.variantTitle?' — '+String(row.variantTitle).slice(0,80):'')+' × '+qty+' @ '+money(unit)+' each = '+money(unit*qty);
+     return '- '+String(product.name||'Store item').slice(0,150)+(row.variantTitle?' — '+String(row.variantTitle).slice(0,80):'')+(row.isCollectorPlusPrice?' [Collector+ member price]':'')+' × '+qty+' @ '+money(unit)+' each = '+money(unit*qty);
    });
    const taxLabel=state==='RI'?(taxCollectionEnabled?'Rhode Island sales tax (7%)':'Estimated Rhode Island sales tax (7%, collection not enabled)'):'Rhode Island sales tax (not applicable; other-state tax not calculated)';
    const totalLabel=taxCollectionEnabled?'Total including Rhode Island sales tax':'Estimated total including the displayed tax line';
