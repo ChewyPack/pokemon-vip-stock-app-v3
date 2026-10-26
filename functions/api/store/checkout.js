@@ -1,4 +1,4 @@
-import { json, wrap, readJson, HttpError, stripe, randomId, orderNumber, assertStoreStripeMode } from '../../_lib/store.js';
+import { json, wrap, readJson, HttpError, stripe, randomId, orderNumber, assertStoreStripeMode, ensureCollectorPlusPriceColumn, isCollectorPlusViewer } from '../../_lib/store.js';
 import { PRINTIFY_SHOP_ID, normalizePrintifyAddress, parseVariants, quotePrintifyShipping, printifyCommerceReady } from '../../_lib/printify.js';
 
 // POST /api/store/checkout body: { items:[{productId,variantId?,quantity}], email?, shippingAddress?, quotedShippingCents? }
@@ -8,6 +8,8 @@ export const onRequestPost = wrap(async ({ request, env }) => {
     throw new HttpError(503, 'Online Stripe checkout is disabled while PokePrizePool accepts manual store order requests. Please use the storefront order-request instructions.');
   }
   assertStoreStripeMode(env);
+  await ensureCollectorPlusPriceColumn(env.DB);
+  const collectorPlusEligible = await isCollectorPlusViewer(request, env);
   const origin = new URL(request.url).origin;
   const body = await readJson(request, 25000);
   const raw = Array.isArray(body.items) ? body.items : [];
@@ -64,7 +66,9 @@ export const onRequestPost = wrap(async ({ request, env }) => {
     } else {
       if (item.variantId != null) throw new HttpError(400, 'The selected variant is not valid for this product.');
       if (Number(product.inventory) < item.quantity) throw new HttpError(409, `Only ${product.inventory} of "${product.name}" available`);
-      const unitPrice = Number(product.price_cents);
+      const regularPriceCents = Number(product.price_cents);
+      const candidateMemberPrice = product.collector_plus_price_cents == null ? null : Number(product.collector_plus_price_cents);
+      const unitPrice = collectorPlusEligible && Number.isSafeInteger(candidateMemberPrice) && candidateMemberPrice >= 0 && candidateMemberPrice <= regularPriceCents ? candidateMemberPrice : regularPriceCents;
       lines.push({
         product, quantity: item.quantity, isPrintify: false,
         unitPrice, lineTotal: unitPrice * item.quantity,

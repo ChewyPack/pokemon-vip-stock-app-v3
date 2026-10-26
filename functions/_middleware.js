@@ -54,6 +54,64 @@ a.secondary{background:#1b2b47;color:#fff;border:1px solid #40516e}
 
 export async function onRequest({ request, env, next }) {
   const pathname = new URL(request.url).pathname;
+  // Social crawlers do not run client-side article loading. Enrich the production
+  // /news.html?story=... response with that published story's featured image and metadata.
+  if (pathname === '/news.html') {
+    const requestUrl = new URL(request.url);
+    const slug = String(requestUrl.searchParams.get('story') || '').trim().slice(0, 100);
+    const response = await next();
+    if (!slug || !env.DB || !response.ok) return response;
+    try {
+      const story = await env.DB.prepare(
+        "SELECT slug, title, excerpt, image_url, image_urls_json, status FROM poke_report_stories WHERE slug = ? AND status = 'published' LIMIT 1"
+      ).bind(slug).first();
+      if (!story) return response;
+      let images = [];
+      try { const parsed = JSON.parse(story.image_urls_json || '[]'); if (Array.isArray(parsed)) images = parsed; } catch (_) {}
+      const selectedImage = images.find(value => typeof value === 'string' && value.trim()) || story.image_url || '';
+      if (!selectedImage) return response;
+      let imageUrl;
+      try {
+        imageUrl = new URL(String(selectedImage).trim(), 'https://pokeprizepool.com');
+        if (imageUrl.protocol !== 'https:') return response;
+      } catch (_) { return response; }
+      const title = String(story.title || 'PokePrizePool News').trim().slice(0, 180);
+      const description = String(story.excerpt || '').replace(/\s+/g, ' ').trim().slice(0, 400) || title;
+      const canonicalUrl = 'https://pokeprizepool.com/news.html?story=' + encodeURIComponent(story.slug);
+      const esc = value => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const meta = [
+        '<meta property="og:type" content="article">',
+        '<meta property="og:site_name" content="PokePrizePool">',
+        '<meta property="og:title" content="' + esc(title) + '">',
+        '<meta property="og:description" content="' + esc(description) + '">',
+        '<meta property="og:url" content="' + esc(canonicalUrl) + '">',
+        '<meta property="og:image" content="' + esc(imageUrl.href) + '">',
+        '<meta property="og:image:alt" content="' + esc(title) + '">',
+        '<meta name="twitter:card" content="summary_large_image">',
+        '<meta name="twitter:title" content="' + esc(title) + '">',
+        '<meta name="twitter:description" content="' + esc(description) + '">',
+        '<meta name="twitter:image" content="' + esc(imageUrl.href) + '">',
+        '<link rel="canonical" href="' + esc(canonicalUrl) + '">'
+      ].join('\n  ');
+      let html = await response.text();
+      html = html.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + esc(title) + ' | PokePrizePool</title>');
+      const descriptionTag = '<meta name="description" content="' + esc(description) + '">';
+      if (/<meta\b(?=[^>]*\bname=["']description["'])[^>]*>/i.test(html)) html = html.replace(/<meta\b(?=[^>]*\bname=["']description["'])[^>]*>/i, descriptionTag);
+      else html = html.replace(/<\/head>/i, descriptionTag + '\n  </head>');
+      html = html.replace(/<meta\b(?=[^>]*\bproperty=["']og:[^"']+["'])[^>]*>/gi, '');
+      html = html.replace(/<meta\b(?=[^>]*\bname=["']twitter:[^"']+["'])[^>]*>/gi, '');
+      html = html.replace(/<link\b(?=[^>]*\brel=["']canonical["'])[^>]*>/gi, '');
+      html = html.replace(/<\/head>/i, '  ' + meta + '\n</head>');
+      const headers = new Headers(response.headers);
+      headers.delete('content-length'); headers.delete('content-encoding'); headers.delete('etag'); headers.delete('last-modified');
+      headers.set('content-type', 'text/html; charset=utf-8');
+      headers.set('cache-control', 'no-store');
+      return new Response(html, { status: response.status, statusText: response.statusText, headers });
+    } catch (error) {
+      console.error('News share metadata enrichment failed:', error);
+      return response;
+    }
+  }
   const isAlertsApi = pathname === '/api/alerts';
   if (pathname === '/alerts.html') return next(); // Free accounts may view delayed report history.
   if (isAlertsApi) return next(); // The API applies paid-live vs. delayed-history access itself.

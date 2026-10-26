@@ -41,9 +41,9 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   const from = clean(env.STORE_ORDER_FROM || env.RESEND_FROM || env.EMAIL_FROM || env.LINE_SERVICE_FROM || env.PASSWORD_RESET_FROM || 'PokePrizePool <noreply@send.pokeprizepool.com>', 250);
   if (!env.RESEND_API_KEY) throw new HttpError(503, 'Order email is not configured. Please contact pokeprizepool@gmail.com.');
 
-  const quote = await quoteStoreItems(env.DB, env, data.items, data.destinationState);
+  const quote = await quoteStoreItems(env.DB, env, data.items, data.destinationState, request);
   const textItems = quote.lines.map(line =>
-    '- ' + line.name + (line.variantTitle ? ' — ' + line.variantTitle : '') +
+    '- ' + line.name + (line.variantTitle ? ' — ' + line.variantTitle : '') + (line.isCollectorPlusPrice ? ' [Collector+ member price]' : '') +
     ' × ' + line.quantity + ' @ ' + dollars(line.unitPriceCents) + ' each = ' + dollars(line.lineTotalCents)
   );
   const taxDescription = quote.state === 'RI'
@@ -77,6 +77,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   const htmlItems = quote.lines.map(line =>
     '<li>' + escapeHtml(line.name) +
     (line.variantTitle ? ' — ' + escapeHtml(line.variantTitle) : '') +
+    (line.isCollectorPlusPrice ? ' <em>(Collector+ member price)</em>' : '') +
     ' × ' + line.quantity + ' @ ' + escapeHtml(dollars(line.unitPriceCents)) +
     ' each = <strong>' + escapeHtml(dollars(line.lineTotalCents)) + '</strong></li>'
   ).join('');
