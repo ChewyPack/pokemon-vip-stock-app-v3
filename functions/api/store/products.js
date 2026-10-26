@@ -1,5 +1,5 @@
 import { json, wrap, publicProduct } from '../../_lib/store.js';
-import { printifyCommerceReady, BLOCKED_PRINTIFY_PRODUCT_TITLES } from '../../_lib/printify.js';
+import { printifyCommerceReady, BLOCKED_PRINTIFY_PRODUCT_TITLES, isBlockedPrintifyProductTitle } from '../../_lib/printify.js';
 
 // GET /api/store/products?q=&category=&availability=in|pre&min=&max=&sort=new|lo|hi&page=1&slug=
 export const onRequestGet = wrap(async ({ request, env }) => {
@@ -37,8 +37,9 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   const sql = `FROM store_products WHERE ${where.join(' AND ')}`;
   const total = await env.DB.prepare(`SELECT COUNT(*) n ${sql}`).bind(...args).first('n');
   const { results } = await env.DB.prepare(`SELECT * ${sql} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(...args, size, (page - 1) * size).all();
+  const visibleResults = results.filter((row) => !isBlockedPrintifyProductTitle(row.name));
   return json({
-    products: results.map((row) => {
+    products: visibleResults.map((row) => {
       const product = publicProduct(row);
       if (product.isPrintify && !printifyReady) {
         return manualOrdersEnabled ? { ...product, comingSoon: false } : { ...product, comingSoon: true };
