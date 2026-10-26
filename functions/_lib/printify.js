@@ -3,6 +3,14 @@ import { HttpError } from './store.js';
 export const PRINTIFY_API = 'https://api.printify.com/v1/';
 export const PRINTIFY_SHOP_ID = '29457813';
 
+// Deliberate opt-in gates: importing drafts alone never enables customer sales or fulfillment.
+export function printifyCommerceReady(env) {
+  const yes = (value) => String(value || '').trim().toLowerCase() === 'true';
+  return yes(env.PRINTIFY_LIVE_CHECKOUT_ENABLED) &&
+    yes(env.PRINTIFY_ORDER_SUBMISSION_ENABLED) &&
+    yes(env.PRINTIFY_MANUAL_APPROVAL_CONFIRMED);
+}
+
 export async function printifyRequest(env, path, { method = 'GET', body } = {}) {
   const token = String(env.PRINTIFY_API_TOKEN || '').trim();
   if (!token) throw new HttpError(503, 'Printify is not configured for this environment');
