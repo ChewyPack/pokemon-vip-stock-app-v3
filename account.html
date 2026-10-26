@@ -209,6 +209,7 @@
         <button id="manage-membership-options" class="btn" type="button" hidden>Change membership</button>
         <div id="membership-change-options" hidden>
           <strong>Choose a plan</strong>
+          <p style="margin:6px 0 12px">Collector+ trial offer: eligible first-time subscribers start with 7 days free. A payment method is collected at checkout. The selected plan then renews automatically at $5/month or $50/year unless canceled before the trial ends. Accounts with prior subscription history do not receive another trial. Existing subscriptions are not changed.</p>
           <p style="margin:6px 0 12px">Eligible first-time Collector+ subscribers get a 7-day free trial and must add a payment method up front. At trial end, the selected plan automatically bills at $5/month or $50/year unless canceled beforehand. Accounts with prior subscription history do not receive another trial. Existing subscriptions are not changed.</p>
           <div class="settings-placeholder" style="margin:0 0 14px">
             <strong>Vendor+ — Coming Soon</strong>
@@ -224,7 +225,7 @@
           </div>
           <label for="membership-tier">Membership
             <select id="membership-tier">
-              <option value="collector_plus">Collector+ — $5/month or $50/year</option>
+              <option value="collector_plus">Collector+ — 7-day free trial if eligible, then $5/month or $50/year</option>
               <option value="vendor" disabled>Vendor+ — Coming Soon</option>
               <option value="organizer" hidden disabled>Legacy staging Organizer plan</option>
             </select>
@@ -366,6 +367,18 @@
    finally{button.disabled=false;}
   });
 
+ function updateSignupPlanUI(){
+  const registering=mode==='register';
+  const selected=form.querySelector('input[name="account_type"]:checked')?.value||'free';
+  const showTrial=registering&&selected==='collector';
+  document.getElementById('signup-billing-label').hidden=!showTrial;
+  document.getElementById('signup-trial-note').hidden=!showTrial;
+  document.getElementById('signup-trial-consent-label').hidden=!showTrial;
+  document.getElementById('signup-billing-label').style.display=showTrial?'grid':'none';
+  document.getElementById('signup-trial-consent-label').style.display=showTrial?'flex':'none';
+  if(!showTrial)document.getElementById('signup-trial-consent').checked=false;
+ }
+ form.querySelectorAll('input[name="account_type"]').forEach(input=>input.addEventListener('change',updateSignupPlanUI));
  function setMode(next){
   mode=next;const registering=mode==='register';
   typeSection.hidden=!registering;usernameLabel.hidden=!registering;usernameInput.required=registering;
@@ -376,7 +389,7 @@
   document.getElementById('password-help').textContent=registering?'Use at least 10 characters.':'Enter your password.';
   heading.textContent=registering?'Create your collector account':'Welcome back, collector';
   submit.textContent=registering?'Create account':'Log in';
-  loginTab.setAttribute('aria-pressed',String(!registering));registerTab.setAttribute('aria-pressed',String(registering));message.hidden=true;
+  loginTab.setAttribute('aria-pressed',String(!registering));registerTab.setAttribute('aria-pressed',String(registering));message.hidden=true;updateSignupPlanUI();
  }
  loginTab.addEventListener('click',()=>setMode('login'));registerTab.addEventListener('click',()=>setMode('register'));
  async function checkSession(){
