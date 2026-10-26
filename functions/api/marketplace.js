@@ -10,6 +10,30 @@ function json(body,status=200){
 function clean(value,max=100){
   return String(value||'').trim().slice(0,max);
 }
+async function ensureInventoryListingSchema(db) {
+  const columns = await db.prepare('PRAGMA table_info(vendor_inventory)').all();
+  const names = new Set((columns.results || []).map(column => column.name));
+  const additions = [
+    ['tcgcsv_product_id', 'ALTER TABLE vendor_inventory ADD COLUMN tcgcsv_product_id INTEGER'],
+    ['catalog_image_url', "ALTER TABLE vendor_inventory ADD COLUMN catalog_image_url TEXT NOT NULL DEFAULT ''"],
+    ['catalog_set_name', "ALTER TABLE vendor_inventory ADD COLUMN catalog_set_name TEXT NOT NULL DEFAULT ''"],
+    ['catalog_card_number', "ALTER TABLE vendor_inventory ADD COLUMN catalog_card_number TEXT NOT NULL DEFAULT ''"],
+    ['catalog_product_url', "ALTER TABLE vendor_inventory ADD COLUMN catalog_product_url TEXT NOT NULL DEFAULT ''"],
+    ['extra_image_keys', "ALTER TABLE vendor_inventory ADD COLUMN extra_image_keys TEXT NOT NULL DEFAULT '[]'"]
+  ];
+  for (const addition of additions) {
+    const name = addition[0];
+    const sql = addition[1];
+    if (!names.has(name)) {
+      try {
+        await db.prepare(sql).run();
+      } catch (error) {
+        if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error;
+      }
+    }
+  }
+}
+function parseImageKeys(value){try{const v=JSON.parse(String(value||'[]'));return Array.isArray(v)?v.filter(x=>typeof x==='string'):[];}catch{return [];}}
 function normalizeCategory(value){
   const key=String(value||'').trim().toLowerCase();
   const aliases={'single':'Singles','singles':'Singles','sealed':'Sealed','slab':'Graded cards','slabs':'Graded cards','graded':'Graded cards','graded cards':'Graded cards','collection':'Collections','collections':'Collections','accessories':'Accessories','clothing':'Clothing','plushies':'Plushies','other':'Other'};
