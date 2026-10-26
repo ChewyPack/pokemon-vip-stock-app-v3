@@ -3,6 +3,17 @@ import { HttpError } from './store.js';
 export const PRINTIFY_API = 'https://api.printify.com/v1/';
 export const PRINTIFY_SHOP_ID = '29457813';
 
+// Products with denied content-violation appeals or IP flags must never appear in the public store.
+export const BLOCKED_PRINTIFY_PRODUCT_TITLES = [
+  'PokePrizePool Backpack', 'LuffyChu', 'Peek@chu Beanie', 'Ghost Chairs?',
+  'Line Looper', 'pokeprizepool', 'Peek@chu', 'Scalper HQ', 'PokePrizePool Beanie',
+];
+const normalizePrintifyTitle = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const BLOCKED_PRINTIFY_TITLE_KEYS = new Set(BLOCKED_PRINTIFY_PRODUCT_TITLES.map(normalizePrintifyTitle));
+export function isBlockedPrintifyProductTitle(value) {
+  return BLOCKED_PRINTIFY_TITLE_KEYS.has(normalizePrintifyTitle(value));
+}
+
 // Deliberate opt-in gates: importing drafts alone never enables customer sales or fulfillment.
 export function printifyCommerceReady(env) {
   const yes = (value) => String(value || '').trim().toLowerCase() === 'true';
