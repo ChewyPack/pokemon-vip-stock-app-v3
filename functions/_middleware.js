@@ -56,7 +56,7 @@ export async function onRequest({ request, env, next }) {
   const pathname = new URL(request.url).pathname;
   // Social crawlers do not run client-side article loading. Enrich the production
   // /news.html?story=... response with that published story's featured image and metadata.
-  if (pathname === '/news.html') {
+  if (pathname === '/news.html' || pathname === '/news') {
     const requestUrl = new URL(request.url);
     const slug = String(requestUrl.searchParams.get('story') || '').trim().slice(0, 100);
     const response = await next();
@@ -77,7 +77,7 @@ export async function onRequest({ request, env, next }) {
       } catch (_) { return response; }
       const title = String(story.title || 'PokePrizePool News').trim().slice(0, 180);
       const description = String(story.excerpt || '').replace(/\s+/g, ' ').trim().slice(0, 400) || title;
-      const canonicalUrl = 'https://pokeprizepool.com/news.html?story=' + encodeURIComponent(story.slug);
+      const canonicalUrl = 'https://pokeprizepool.com/news?story=' + encodeURIComponent(story.slug);
       const esc = value => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const meta = [
         '<meta property="og:type" content="article">',
