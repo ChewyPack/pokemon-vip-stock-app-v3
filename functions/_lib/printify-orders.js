@@ -1,4 +1,4 @@
-import { PRINTIFY_SHOP_ID, printifyRequest } from './printify.js';
+import { PRINTIFY_SHOP_ID, printifyRequest, printifyCommerceReady } from './printify.js';
 
 const shortError = (error) => String(error?.message || 'Printify request failed').slice(0, 500);
 
@@ -40,10 +40,10 @@ export async function submitPaidPrintifyOrder(db, env, orderId) {
   }
 
   if (order.printify_order_id) return { applicable: true, status: order.printify_status, orderId: order.printify_order_id };
-  if (String(env.PRINTIFY_ORDER_SUBMISSION_ENABLED || '').toLowerCase() !== 'true') {
+  if (!printifyCommerceReady(env)) {
     await db.prepare(
       "UPDATE store_orders SET printify_status = 'awaiting_setup', printify_error = ?, updated_at = datetime('now') WHERE id = ? AND payment_status = 'paid'"
-    ).bind('Printify order creation is paused. Set the Printify shop Order approval to Manual, then enable PRINTIFY_ORDER_SUBMISSION_ENABLED in the production Pages environment.', orderId).run();
+    ).bind('Printify order creation is paused. Verify Printify shop Order approval is Manual, then enable PRINTIFY_LIVE_CHECKOUT_ENABLED, PRINTIFY_ORDER_SUBMISSION_ENABLED, and PRINTIFY_MANUAL_APPROVAL_CONFIRMED in the production Pages environment.', orderId).run();
     return { applicable: true, status: 'awaiting_setup' };
   }
 
