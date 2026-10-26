@@ -51,11 +51,12 @@
           </div>
           <label for="excerpt">Short summary</label>
           <textarea id="excerpt" maxlength="500" style="min-height:90px" placeholder="A short preview shown on the News page."></textarea>
-          <label for="x-post-url">Embed an X post (optional)</label>
-          <input id="x-post-url" type="url" maxlength="500" placeholder="https://x.com/username/status/123456789">
-          <p class="subtle">Paste the public X post link. PokePrizePool will display the post inside the published story—no embed code needed. Leave blank if the story has no X post.</p>
+          <label for="x-post-url">X post to insert at cursor (optional)</label>
+          <input id="x-post-url" type="text" maxlength="2000" placeholder="Paste the X post URL or X's full blockquote embed code">
+          <div class="actions"><button type="button" class="secondary" id="insert-x-post">Insert X post at cursor</button></div>
+          <p class="subtle">Place your cursor in the story text where the post should appear, then paste either the X post URL or X's full embed code above and click Insert. The published story will render the post there instead of showing code.</p>
           <label for="content">Story text *</label>
-          <textarea id="content" maxlength="30000" required placeholder="Write your story here. Blank lines become paragraph breaks."></textarea>
+          <textarea id="content" maxlength="30000" required placeholder="Write your story here. Blank lines become paragraph breaks. Put your cursor where the X post should appear and use Insert X post at cursor."></textarea>
           <div class="actions">
             <button type="submit" data-status="draft">Save draft</button>
             <button type="submit" data-status="published">Publish story</button>
@@ -203,6 +204,26 @@
         }finally{
           submitter.disabled=false;
         }
+      });
+      function extractXPostUrl(value){
+        var raw=String(value||'').trim();
+        var match=raw.match(/https?:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\/[^\\s"'<>]*?\\/status\\/\\d+/i);
+        if(match)return match[0].replace(/[?&].*$/,'');
+        return raw;
+      }
+      document.getElementById('insert-x-post').addEventListener('click',function(){
+        var field=document.getElementById('x-post-url');
+        var contentField=document.getElementById('content');
+        var url=extractXPostUrl(field.value);
+        if(!/^https:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\/[A-Za-z0-9_]{1,15}\\/status\\/\\d+\\/?$/.test(url)){
+          say('Paste a valid X post URL or X embed code containing its post link.','error');return;
+        }
+        var token='\\n\\n{{X_POST_EMBED}}\\n\\n';
+        var start=contentField.selectionStart,end=contentField.selectionEnd;
+        contentField.setRangeText(token,start,end,'end');
+        field.value=url;
+        contentField.focus();
+        say('X post placeholder inserted at the cursor. The embed will render in that position when published.','success');
       });
       document.getElementById('new-story').addEventListener('click',resetForm);
     })();
