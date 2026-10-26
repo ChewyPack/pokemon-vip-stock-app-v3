@@ -105,12 +105,25 @@ export async function verifyStripeSignature(raw, header, secret, tolerance = 300
   return v1.some((s) => timingSafeEqual(s, hex));
 }
 
-export const publicProduct = (r) => ({
-  id: r.id, slug: r.slug, name: r.name, description: r.description, sku: r.sku,
-  category: r.category, productType: r.product_type, set: r.set_name, language: r.language,
-  condition: r.condition, gradeCompany: r.grade_company, grade: r.grade,
-  priceCents: r.price_cents, compareAtCents: r.compare_at_cents,
-  available: r.inventory, preorder: !!r.preorder, comingSoon: !!r.coming_soon, releaseDate: r.release_date,
-  externalCheckoutUrl: r.external_checkout_url || null,
-  images: JSON.parse(r.images || '[]'), createdAt: r.created_at,
-});
+const safeJsonArray = (value) => { try { const parsed = JSON.parse(value || '[]'); return Array.isArray(parsed) ? parsed : []; } catch { return []; } };
+
+export const publicProduct = (r) => {
+  const printifyVariants = safeJsonArray(r.printify_variants);
+  const printifyOptions = safeJsonArray(r.printify_options);
+  const isPrintify = !!(r.printify_shop_id && r.printify_product_id);
+  const makeableVariants = printifyVariants.filter((v) => v && v.enabled !== false && v.isAvailable !== false && Number(v.priceCents) >= 0);
+  return {
+    id: r.id, slug: r.slug, name: r.name, description: r.description, sku: r.sku,
+    category: r.category, productType: r.product_type, set: r.set_name, language: r.language,
+    condition: r.condition, gradeCompany: r.grade_company, grade: r.grade,
+    priceCents: r.price_cents, compareAtCents: r.compare_at_cents,
+    available: isPrintify ? (makeableVariants.length ? 1 : 0) : r.inventory,
+    preorder: !!r.preorder, comingSoon: !!r.coming_soon, releaseDate: r.release_date,
+    externalCheckoutUrl: r.external_checkout_url || null,
+    isPrintify,
+    madeToOrder: isPrintify,
+    printifyVariants: isPrintify ? printifyVariants : [],
+    printifyOptions: isPrintify ? printifyOptions : [],
+    images: safeJsonArray(r.images), createdAt: r.created_at,
+  };
+};
