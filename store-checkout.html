@@ -27,7 +27,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
 .checkout-line h3{font-size:.95rem;line-height:1.4;margin:0 0 3px;overflow-wrap:anywhere}
 .checkout-line p{font-size:.8rem;color:var(--co-muted);margin:0;line-height:1.5}
 .checkout-line-total{font-weight:900;white-space:nowrap}
-.checkout-subtotal{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-top:15px;font-size:1rem;font-weight:900}
+.checkout-subtotal{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-top:15px;font-size:1rem;font-weight:900}.checkout-tax-row,.checkout-total-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-top:1px solid #edf1f8;font-weight:800}.checkout-tax-row{font-size:.92rem;color:#41577f}.checkout-total-row{padding-top:14px;border-top:2px solid var(--co-navy);font-size:1.04rem}.checkout-total-row strong{font-size:1.45rem;color:var(--co-navy)}.checkout-payment-details{display:grid;grid-template-columns:1fr;gap:8px;margin:12px 0}.checkout-payment-detail{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;background:#fff;border:1px solid #dbe5f4;border-radius:9px}.checkout-payment-detail span{font-size:.85rem;color:#52698d}.checkout-payment-detail strong{font-size:1rem;color:var(--co-navy);overflow-wrap:anywhere}.checkout-tax-note{margin:8px 0 0;font-size:.8rem;color:#5d6f90;line-height:1.5}.checkout-tax-note[data-mode=enabled]{color:#234d32}.checkout-tax-note[data-mode=warning]{padding:10px 12px;border-left:4px solid #e6b000;background:#fff8d9;color:#5d4b05}
 .checkout-subtotal strong{font-size:1.35rem}
 .checkout-steps{display:grid;grid-template-columns:1fr;gap:12px}
 .checkout-step{padding:14px;border:1px solid #e2eaf7;border-radius:11px;background:#f9fbff}
@@ -65,8 +65,11 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
 <section class="checkout-panel" aria-labelledby="checkout-order-title">
 <h2 id="checkout-order-title">Your order</h2>
 <div id="checkout-items" class="checkout-items"><div class="checkout-empty">Loading your cart…</div></div>
-<div class="checkout-subtotal"><span>Estimated subtotal</span><strong id="checkout-subtotal">$0.00</strong></div>
-<p class="checkout-muted">This subtotal reflects the listed product prices only. Any applicable shipping, taxes, pickup arrangements, availability changes, and the final amount will be confirmed before payment.</p>
+<div class="checkout-subtotal"><span>Product subtotal</span><strong id="checkout-subtotal">$0.00</strong></div>
+<div class="checkout-tax-row"><span id="checkout-tax-label">Estimated Rhode Island sales tax (7%)</span><strong id="checkout-tax">$0.00</strong></div>
+<div class="checkout-total-row"><span id="checkout-total-label">Estimated total</span><strong id="checkout-total">$0.00</strong></div>
+<p class="checkout-tax-note" id="checkout-tax-note" data-mode="warning">Loading your server-calculated subtotal and Rhode Island tax estimate…</p>
+<p class="checkout-muted">The total excludes any separate shipping charge. PokePrizePool will confirm availability and any fulfillment costs before the order is finalized.</p>
 <a class="checkout-back" href="/store">← Back to the store to change your cart</a>
 </section>
 
@@ -75,9 +78,9 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
 <div class="checkout-steps">
 <article class="checkout-step">
 <h3>1. Send payment</h3>
-<p>Use the current payment account or handle PokePrizePool has provided for your order. Accepted methods are:</p>
-<div class="checkout-methods"><span class="checkout-method">Venmo</span><span class="checkout-method">PayPal</span><span class="checkout-method">Zelle</span><span class="checkout-method">Cash App</span></div>
-<p>Send only the amount confirmed for your order. Do not estimate shipping or taxes from the listed-price subtotal. If you do not have the current verified handle or confirmed amount, contact PokePrizePool before paying.</p>
+<p>Send the confirmed order amount using one of these PokePrizePool payment handles:</p>
+<div class="checkout-payment-details"><div class="checkout-payment-detail"><span>Venmo / PayPal</span><strong>@pokeprizepool</strong></div><div class="checkout-payment-detail"><span>Cash App</span><strong>$pokeprizepool</strong></div><div class="checkout-payment-detail"><span>Zelle</span><strong>4014459975</strong></div></div>
+<p>Include your PokePrizePool username in the payment note/memo. If the page labels the tax line as an estimate, confirm your final payable amount with PokePrizePool before sending money.</p>
 </article>
 <article class="checkout-step">
 <h3>2. Put your PokePrizePool username in the payment note/memo</h3>
@@ -88,7 +91,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
 <p>Click <strong>Email Order Request</strong> below. The website will automatically send your items, quantities, variants, estimated subtotal, username, and preferred payment method to pokeprizepool@gmail.com. You do not need to open your own email app.</p>
 </article>
 </div>
-<div class="checkout-warning"><strong>Important:</strong> The subtotal shown here is an estimate, not a final invoice. Use only the confirmed amount and verified payment instructions provided by PokePrizePool; contact us first if either is missing. Clothing/apparel is shipped sealed in packaging; singles, sealed Pokémon products, graded cards, and accessories are pickup-only for now. Mixed carts need separate fulfillment confirmation.</div>
+<div class="checkout-warning"><strong>Important:</strong> The page calculates an order subtotal, the Rhode Island 7% tax estimate on taxable products, and a total. Rhode Island clothing items priced at $250 or less per item are generally exempt; this store applies the exemption only to products identified as clothing. If the tax line says estimate only, PokePrizePool has not enabled tax collection in checkout yet, so confirm the amount before paying. Clothing/apparel is shipped sealed in packaging; singles, sealed Pokémon products, graded cards, and accessories are pickup-only for now. Mixed carts need separate fulfillment confirmation.</div>
 <div class="checkout-fields">
 <label for="checkout-username">PokePrizePool username *
 <input id="checkout-username" type="text" minlength="3" maxlength="24" autocomplete="username" placeholder="Your PokePrizePool username" required>
@@ -98,6 +101,9 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
 <option value="">Choose a payment method</option>
 <option>Venmo</option><option>PayPal</option><option>Zelle</option><option>Cash App</option>
 </select>
+</label>
+<label for="checkout-tax-state">Pickup / delivery destination *
+<select id="checkout-tax-state" required><option value="RI" selected>Rhode Island (pickup or delivery)</option><option value="OUTSIDE_RI">Outside Rhode Island</option></select>
 </label>
 <label for="checkout-email" style="grid-column:1/-1">Contact email (optional)
 <input id="checkout-email" type="email" maxlength="200" autocomplete="email" placeholder="you@example.com">
