@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07194d">
+<title>Checkout Instructions | PokePrizePool</title>
+<meta name="description" content="Review your PokePrizePool store order, payment options, and order-request email.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+:root{--co-navy:#07194d;--co-blue:#174b9b;--co-yellow:#ffd21f;--co-muted:#62749a;--co-line:#d9e3f4}
+body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-serif}
+.checkout-wrap{width:min(980px,calc(100% - 28px));margin:22px auto 70px}
+.checkout-hero{padding:clamp(22px,4vw,38px);border:2px solid var(--co-navy);border-radius:18px;background:linear-gradient(120deg,#07194d,#174b9b);color:#fff;box-shadow:6px 6px 0 #07194d}
+.checkout-kicker{margin:0 0 7px;color:var(--co-yellow);font-size:.78rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase}
+.checkout-hero h1{font:clamp(2.5rem,7vw,4rem)/1 Bangers,cursive;letter-spacing:.025em;margin:0}
+.checkout-hero p:last-child{max-width:700px;color:#e0eaff;line-height:1.65;margin:12px 0 0}
+.checkout-panel{margin-top:20px;padding:clamp(16px,3vw,24px);border:1px solid var(--co-line);border-radius:15px;background:#fff;box-shadow:0 5px 16px #07194d0b}
+.checkout-panel h2{font:1.85rem Bangers,cursive;margin:0 0 12px}
+.checkout-muted{color:var(--co-muted);font-size:.88rem;line-height:1.6}
+.checkout-items{display:grid;gap:0}
+.checkout-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:13px 0;border-bottom:1px solid #edf1f8}
+.checkout-line h3{font-size:.95rem;line-height:1.4;margin:0 0 3px;overflow-wrap:anywhere}
+.checkout-line p{font-size:.8rem;color:var(--co-muted);margin:0;line-height:1.5}
+.checkout-line-total{font-weight:900;white-space:nowrap}
+.checkout-subtotal{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-top:15px;font-size:1rem;font-weight:900}
+.checkout-subtotal strong{font-size:1.35rem}
+.checkout-steps{display:grid;grid-template-columns:1fr;gap:12px}
+.checkout-step{padding:14px;border:1px solid #e2eaf7;border-radius:11px;background:#f9fbff}
+.checkout-step h3{margin:0 0 7px;font-size:1rem}
+.checkout-step p{margin:0;color:var(--co-muted);font-size:.88rem;line-height:1.6}
+.checkout-methods{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px}
+.checkout-method{display:inline-flex;align-items:center;border:1px solid #cbd8ec;border-radius:999px;background:#fff;padding:7px 12px;font-size:.85rem;font-weight:900}
+.checkout-warning{margin-top:12px;border-left:4px solid #e6b000;padding:10px 12px;background:#fff8d9;color:#5d4b05;font-size:.86rem;line-height:1.55}
+.checkout-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.checkout-fields label{display:grid;gap:6px;font-size:.84rem;font-weight:900}
+.checkout-fields input,.checkout-fields select{width:100%;min-height:44px;box-sizing:border-box;border:1px solid #b9c9e6;border-radius:9px;padding:10px 11px;background:#fff;color:var(--co-navy);font:800 .9rem Nunito,system-ui,sans-serif}
+.checkout-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.checkout-primary,.checkout-secondary{min-height:45px;border-radius:9px;padding:10px 15px;font:900 .9rem Nunito,system-ui,sans-serif;cursor:pointer}
+.checkout-primary{border:2px solid var(--co-navy);background:var(--co-yellow);color:var(--co-navy)}
+.checkout-primary:disabled{opacity:.5;cursor:not-allowed}
+.checkout-secondary{border:1px solid #b8c9e4;background:#fff;color:var(--co-navy)}
+.checkout-status{min-height:1.4em;margin:10px 0 0;color:#31517f;font-size:.85rem;line-height:1.5}
+.checkout-copy{width:100%;min-height:130px;box-sizing:border-box;margin-top:12px;padding:10px;border:1px solid #b9c9e6;border-radius:9px;background:#f9fbff;color:var(--co-navy);font: .82rem/1.5 ui-monospace,monospace}
+.checkout-empty{padding:24px 12px;text-align:center;border:1px dashed #bdcce5;border-radius:12px;color:var(--co-muted);line-height:1.6}
+.checkout-back{display:inline-block;color:var(--co-blue);font-weight:900;text-decoration:none;margin-top:18px}
+.checkout-back:hover{text-decoration:underline}
+[hidden]{display:none!important}
+@media(max-width:600px){.checkout-fields{grid-template-columns:1fr}.checkout-line{gap:8px}.checkout-wrap{width:calc(100% - 20px);margin-top:14px}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="checkout-wrap">
+<header class="checkout-hero">
+<p class="checkout-kicker">PokePrizePool Store</p>
+<h1>Checkout Instructions</h1>
+<p>Review your selected items and estimated subtotal, choose how you plan to pay, then email your order request to PokePrizePool. This is a manual order request, not an online card payment.</p>
+</header>
+
+<section class="checkout-panel" aria-labelledby="checkout-order-title">
+<h2 id="checkout-order-title">Your order</h2>
+<div id="checkout-items" class="checkout-items"><div class="checkout-empty">Loading your cart…</div></div>
+<div class="checkout-subtotal"><span>Estimated subtotal</span><strong id="checkout-subtotal">$0.00</strong></div>
+<p class="checkout-muted">This subtotal reflects the listed product prices only. Any applicable shipping, taxes, pickup arrangements, availability changes, and the final amount will be confirmed before payment.</p>
+<a class="checkout-back" href="/store">← Back to the store to change your cart</a>
+</section>
+
+<section class="checkout-panel" aria-labelledby="checkout-how-title">
+<h2 id="checkout-how-title">How to complete checkout</h2>
+<div class="checkout-steps">
+<article class="checkout-step">
+<h3>1. Select a payment method</h3>
+<p>Accepted payment options are:</p>
+<div class="checkout-methods"><span class="checkout-method">Venmo</span><span class="checkout-method">PayPal</span><span class="checkout-method">Zelle</span><span class="checkout-method">Cash App</span></div>
+<p>Use the verified PokePrizePool payment account or handle provided by PokePrizePool. Do not guess or send money to an unverified recipient.</p>
+</article>
+<article class="checkout-step">
+<h3>2. Put your PokePrizePool username in the payment note/memo</h3>
+<p>Enter the same username you use on PokePrizePool in the payment note or memo so we can match the payment to your order.</p>
+</article>
+<article class="checkout-step">
+<h3>3. Email your order request</h3>
+<p>Click <strong>Email Order Request</strong> below. Your email app will open a draft addressed to pokeprizepool@gmail.com with the items, quantities, variants, estimated subtotal, username, and selected payment method. Review it and press Send.</p>
+</article>
+</div>
+<div class="checkout-warning"><strong>Important:</strong> Wait until PokePrizePool confirms availability, the final total, and payment details before sending payment. The subtotal shown here is not a final invoice. Clothing/apparel is shipped sealed in packaging; singles, sealed Pokémon products, graded cards, and accessories are pickup-only for now. Mixed carts need separate fulfillment confirmation.</div>
+<div class="checkout-fields">
+<label for="checkout-username">PokePrizePool username *
+<input id="checkout-username" type="text" minlength="3" maxlength="24" autocomplete="username" placeholder="Your PokePrizePool username" required>
+</label>
+<label for="checkout-payment-method">Preferred payment method *
+<select id="checkout-payment-method" required>
+<option value="">Choose a payment method</option>
+<option>Venmo</option><option>PayPal</option><option>Zelle</option><option>Cash App</option>
+</select>
+</label>
+<label for="checkout-email" style="grid-column:1/-1">Contact email (optional)
+<input id="checkout-email" type="email" maxlength="200" autocomplete="email" placeholder="you@example.com">
+</label>
+</div>
+<div class="checkout-actions">
+<button id="checkout-email-order" class="checkout-primary" type="button" disabled>Email Order Request</button>
+<button id="checkout-copy-order" class="checkout-secondary" type="button" disabled>Copy order details</button>
+</div>
+<p id="checkout-status" class="checkout-status" role="status" aria-live="polite"></p>
+<textarea id="checkout-copy-text" class="checkout-copy" aria-label="Order details for copying" readonly hidden></textarea>
+</section>
+</main>
+<script src="/js/ui/site-nav.js?v=20261025-shared-header-v2"></script>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const money=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);
+ const safe=value=>String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const blocked=new Set(['PokePrizePool Backpack','LuffyChu','Peek@chu Beanie','Ghost Chairs?','Line Looper','pokeprizepool','Peek@chu','Scalper HQ','PokePrizePool Beanie'].map(v=>v.toLowerCase().replace(/[^a-z0-9]/g,'')));
+ let cart=[];
+ try{
+   const saved=JSON.parse(localStorage.getItem('ppp_store_cart_v1')||'[]');
+   if(Array.isArray(saved))cart=saved.filter(row=>row&&row.product&&typeof row.product.name==='string'&&!blocked.has(row.product.name.toLowerCase().replace(/[^a-z0-9]/g,''))&&Number.isInteger(Number(row.id))&&Number(row.id)>0&&Number.isInteger(Number(row.quantity))&&Number(row.quantity)>0&&Number(row.quantity)<=20);
+ }catch(_){}
+ const items=$('checkout-items');
+ let subtotal=0;
+ function build(){
+   subtotal=0;
+   if(!cart.length){
+     items.innerHTML='<div class="checkout-empty">Your cart is empty. Return to the store and add products before checking out.</div>';
+     $('checkout-subtotal').textContent=money(0);
+     $('checkout-email-order').disabled=true;$('checkout-copy-order').disabled=true;
+     return;
+   }
+   items.innerHTML=cart.map(row=>{
+     const product=row.product||{},quantity=Math.min(20,Number(row.quantity)||1);
+     const unit=Number(row.priceCents??product.priceCents??0),line=unit*quantity;
+     subtotal+=line;
+     return '<article class="checkout-line"><div><h3>'+safe(product.name||'Store item')+'</h3>'+(row.variantTitle?'<p>Option: '+safe(row.variantTitle)+'</p>':'')+'<p>'+quantity+' × '+money(unit)+'</p></div><div class="checkout-line-total">'+money(line)+'</div></article>';
+   }).join('');
+   $('checkout-subtotal').textContent=money(subtotal);
+   $('checkout-email-order').disabled=false;$('checkout-copy-order').disabled=false;
+ }
+ function orderText(){
+   const username=$('checkout-username').value.trim(),method=$('checkout-payment-method').value,email=$('checkout-email').value.trim();
+   const lines=cart.map(row=>{
+     const product=row.product||{},qty=Math.min(20,Number(row.quantity)||1),unit=Number(row.priceCents??product.priceCents??0);
+     return '- '+String(product.name||'Store item').slice(0,150)+(row.variantTitle?' — '+String(row.variantTitle).slice(0,80):'')+' × '+qty+' @ '+money(unit)+' each = '+money(unit*qty);
+   });
+   return 'PokePrizePool Store Order Request\n\nPokePrizePool username: '+username+'\nPreferred payment method: '+method+'\n'+(email?'Contact email: '+email+'\n':'')+'\nItems:\n'+lines.join('\n')+'\n\nEstimated product subtotal (not final): '+money(subtotal)+'\n\nPlease confirm availability, final total, fulfillment/pickup/shipping arrangements, and the verified payment account/handle before payment. I will include my PokePrizePool username in the payment note/memo.';
+ }
+ function valid(){
+   const user=$('checkout-username').value.trim();
+   const ok=cart.length>0&&user.length>=3&&user.length<=24&&/^[A-Za-z0-9_]+$/.test(user)&&Boolean($('checkout-payment-method').value);
+   $('checkout-email-order').disabled=!ok;$('checkout-copy-order').disabled=!ok;
+   if(user&&(!/^[A-Za-z0-9_]{3,24}$/.test(user)))$('checkout-status').textContent='Use your PokePrizePool username (3–24 letters, numbers, or underscores).';
+   else $('checkout-status').textContent='';
+   return ok;
+ }
+ $('checkout-username').addEventListener('input',valid);
+ $('checkout-payment-method').addEventListener('change',valid);
+ $('checkout-email').addEventListener('input',()=>{if($('checkout-email').value&&!$('checkout-email').checkValidity())$('checkout-status').textContent='Enter a valid contact email or leave that field blank.';else if($('checkout-status').textContent.startsWith('Enter a valid contact'))$('checkout-status').textContent='';});
+ $('checkout-email-order').addEventListener('click',()=>{
+   if(!valid())return;
+   const email=$('checkout-email').value.trim();
+   if(email&&!$('checkout-email').checkValidity()){$('checkout-status').textContent='Enter a valid contact email or leave that field blank.';return;}
+   const body=orderText();
+   $('checkout-copy-text').value=body;
+   $('checkout-status').textContent='Your email app should open with the order request. Review the items and press Send. If it does not open, use Copy order details.';
+   window.location.href='mailto:pokeprizepool@gmail.com?subject='+encodeURIComponent('PokePrizePool Store Order Request — '+$('checkout-username').value.trim())+'&body='+encodeURIComponent(body);
+ });
+ $('checkout-copy-order').addEventListener('click',async()=>{
+   if(!valid())return;
+   const body=orderText();$('checkout-copy-text').value=body;$('checkout-copy-text').hidden=false;
+   try{await navigator.clipboard.writeText(body);$('checkout-status').textContent='Order details copied. Paste them into an email to pokeprizepool@gmail.com and send it.';}
+   catch(_){$('checkout-copy-text').focus();$('checkout-copy-text').select();$('checkout-status').textContent='Select and copy the order details above, then email them to pokeprizepool@gmail.com.';}
+ });
+ build();
+})();
+</script>
+</body>
+</html>
