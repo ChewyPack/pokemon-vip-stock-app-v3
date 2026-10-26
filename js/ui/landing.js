@@ -223,6 +223,42 @@
       document.head.appendChild(style);
     }
 
+    // A previous homepage-preview stylesheet also contained giveaway-meter rules,
+    // overriding this component at common viewport widths. Apply a uniquely scoped
+    // final layout after both homepage styles are inserted.
+    var compactLayoutId = 'ppp-home-giveaway-meter-compact-v4';
+    if (!document.getElementById(compactLayoutId)) {
+      var compactStyle = document.createElement('style');
+      compactStyle.id = compactLayoutId;
+      compactStyle.textContent =
+        '#home-giveaway-meter{width:100%;min-width:0;padding:0;background:transparent}' +
+        '#home-giveaway-meter>.wrap{width:100%;max-width:none;margin:0;padding:0}' +
+        '#home-giveaway-meter .ppp-home-gm__card{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;padding:clamp(14px,2vw,20px)!important;min-width:0;box-sizing:border-box}' +
+        '#home-giveaway-meter .ppp-home-gm__main{min-width:0}' +
+        '#home-giveaway-meter .ppp-home-gm__title{font-size:clamp(1.65rem,2.3vw,2.15rem)!important;line-height:1.05}' +
+        '#home-giveaway-meter .ppp-home-gm__copy{max-width:62ch;margin:0;font-size:.88rem;line-height:1.48}' +
+        '#home-giveaway-meter .ppp-home-gm__count-row{grid-template-columns:minmax(86px,.36fr) minmax(0,1fr)!important;gap:10px!important;margin:12px 0 10px!important}' +
+        '#home-giveaway-meter .ppp-home-gm__count{padding:10px;min-width:0}' +
+        '#home-giveaway-meter .ppp-home-gm__count strong{font-size:2.1rem}' +
+        '#home-giveaway-meter .ppp-home-gm__next strong{font-size:.95rem;line-height:1.25}' +
+        '#home-giveaway-meter .ppp-home-gm__track{height:10px}' +
+        '#home-giveaway-meter .ppp-home-gm__progress-row{margin-top:6px;font-size:.72rem}' +
+        '#home-giveaway-meter .ppp-home-gm__status{margin:7px 0 0;font-size:.7rem}' +
+        '#home-giveaway-meter .ppp-home-gm__cta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px!important}' +
+        '#home-giveaway-meter .ppp-home-gm__cta .btn{margin:0;min-height:38px;padding:9px 12px;font-size:.8rem}' +
+        '#home-giveaway-meter .ppp-home-gm__tiers{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;align-content:start;align-items:stretch;min-width:0}' +
+        '#home-giveaway-meter .ppp-home-gm__tier{display:flex!important;flex-direction:column!important;align-items:stretch;gap:7px!important;padding:9px!important;min-width:0;min-height:0;height:auto;box-sizing:border-box}' +
+        '#home-giveaway-meter .ppp-home-gm__threshold{display:flex!important;align-items:center;justify-content:center;width:fit-content;min-width:42px;min-height:30px!important;padding:0 8px;font-size:1.2rem!important;box-sizing:border-box}' +
+        '#home-giveaway-meter .ppp-home-gm__tier-copy{gap:4px;min-width:0}' +
+        '#home-giveaway-meter .ppp-home-gm__tier-copy strong{font-size:.76rem;line-height:1.25;overflow-wrap:anywhere}' +
+        '#home-giveaway-meter .ppp-home-gm__tier-copy small{font-size:.67rem;line-height:1.3;overflow-wrap:anywhere}' +
+        '#home-giveaway-meter .ppp-home-gm__tier-state{font-size:.55rem;letter-spacing:.09em}' +
+        '#home-giveaway-meter .ppp-home-gm__footnote{grid-column:1/-1;margin:0;padding-top:9px;font-size:.67rem;line-height:1.4}' +
+        '@media(max-width:540px){#home-giveaway-meter .ppp-home-gm__count-row{grid-template-columns:1fr!important}#home-giveaway-meter .ppp-home-gm__count{grid-template-columns:auto 1fr;align-items:center;gap:10px}#home-giveaway-meter .ppp-home-gm__tiers{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}#home-giveaway-meter .ppp-home-gm__tier{padding:7px!important;gap:5px!important}#home-giveaway-meter .ppp-home-gm__threshold{font-size:1rem!important;min-height:26px!important}#home-giveaway-meter .ppp-home-gm__tier-copy strong{font-size:.68rem}#home-giveaway-meter .ppp-home-gm__tier-copy small{font-size:.61rem}}' +
+        '@media(prefers-reduced-motion:reduce){#home-giveaway-meter .ppp-home-gm__fill{transition:none}}';
+      document.head.appendChild(compactStyle);
+    }
+
     var milestones = [
       { count: 50, title: '30th Anniversary ETB Giveaway', prize: 'First community prize milestone' },
       { count: 100, title: 'ETB + bonus collector prizes', prize: 'A bigger prize mix for the community' },
