@@ -118,7 +118,7 @@ export async function sendPrintifyOrderToProduction(db, env, orderId) {
   if (!['on-hold', 'pending', 'payment-not-received', 'has-issues'].includes(String(order.printify_status))) {
     throw new Error('This Printify order is not in a send-to-production state.');
   }
-  const result = await printifyRequest(env, `shops/${PRINTIFY_SHOP_ID}/orders/${encodeURIComponent(order.printify_order_id)}/send_to_production.json`, { method: 'POST', body: {} });
+  const result = await printifyRequest(env, `shops/${PRINTIFY_SHOP_ID}/orders/${encodeURIComponent(order.printify_order_id)}/send_to_production.json`, { method: 'POST' });
   const status = String(result?.status || 'sent-to-production').slice(0, 80);
   await db.batch([
     db.prepare(
