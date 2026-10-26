@@ -1,5 +1,5 @@
 import { json, wrap, requireAdmin, HttpError, readJson, plainTextDescription } from '../../../_lib/store.js';
-import { printifyCommerceReady } from '../../../_lib/printify.js';
+import { printifyCommerceReady, isBlockedPrintifyProductTitle } from '../../../_lib/printify.js';
 
 const API = 'https://api.printify.com/v1/';
 const PRINTIFY_SHOP_ID = '29457813'; // The selected PokePrizePool Printify shop (not "My new store").
@@ -180,10 +180,20 @@ export const onRequestPost = wrap(async (ctx) => {
     options: cleanOptions(p?.options),
     images: cleanImages(p?.images),
   })).filter((p) => p.id && p.name);
-  const candidates = normalized.filter((p) => p.variants.length);
-  const unavailable = normalized.filter((p) => !p.variants.length);
+  const blockedProducts = normalized.filter((p) => isBlockedPrintifyProductTitle(p.name));
+  const candidates = normalized.filter((p) => p.variants.length && !isBlockedPrintifyProductTitle(p.name));
+  const unavailable = normalized.filter((p) => !p.variants.length && !isBlockedPrintifyProductTitle(p.name));
   const db = env.DB;
-  let created = 0, updated = 0, skipped = 0, deactivated = 0, activated = 0, duplicateListingsHidden = 0;
+  let created = 0, updated = 0, skipped = blockedProducts.length, deactivated = 0, activated = 0, duplicateListingsHidden = 0;
+
+  // Explicitly deactivate every listing matching a flagged Printify title or product ID. They will not be re-imported by later syncs.
+  for (const p of blockedProducts) {
+    activeProduct = p.name;
+    stage = 'removing a Printify listing flagged for content or IP issues';
+    const result = await db.prepare(`UPDATE store_products SET active=0, coming_soon=1, printify_synced_at=datetime('now'), updated_at=datetime('now') WHERE lower(name)=lower(?) OR (printify_shop_id = ? AND printify_product_id = ?)`)
+      .bind(p.name, PRINTIFY_SHOP_ID, p.id).run();
+    deactivated += Number(result?.meta?.changes || 0);
+  }
 
   // If a previously imported product no longer has enabled variants, stop offering it.
   for (const p of unavailable) {
