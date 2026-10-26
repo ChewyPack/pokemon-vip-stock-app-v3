@@ -151,6 +151,8 @@ export const onRequestPost = wrap(async (ctx) => {
   if (body.action !== 'sync') throw new HttpError(400, 'Unsupported Printify action');
   if (!env.PRINTIFY_API_TOKEN) throw new HttpError(503, 'Printify API token is not configured for this environment');
   const commerceReady = printifyCommerceReady(env);
+  const manualOrdersEnabled = String(env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual';
+  const orderRequestsReady = commerceReady || manualOrdersEnabled;
   let stage = 'checking the production database schema';
   let activeProduct = '';
   try {
@@ -231,7 +233,7 @@ export const onRequestPost = wrap(async (ctx) => {
         price_cents=?, inventory=0, active=1, coming_soon=?, images=?, printify_blueprint_id=?, printify_print_provider_id=?,
         printify_options=?, printify_variants=?, printify_synced_at=datetime('now'), updated_at=datetime('now')
         WHERE id=?`)
-        .bind(p.name, plainTextDescription(src.description).slice(0, 5000), productSku, price, commerceReady ? 0 : 1, imagesJson, blueprintId, providerId, optionsJson, variantsJson, existing.id).run();
+        .bind(p.name, plainTextDescription(src.description).slice(0, 5000), productSku, price, orderRequestsReady ? 0 : 1, imagesJson, blueprintId, providerId, optionsJson, variantsJson, existing.id).run();
       updated++;
     } else {
       stage = 'creating an active store listing';
@@ -242,7 +244,7 @@ export const onRequestPost = wrap(async (ctx) => {
         (slug,name,description,sku,category,product_type,price_cents,inventory,active,preorder,coming_soon,images,
          printify_shop_id,printify_product_id,printify_blueprint_id,printify_print_provider_id,printify_options,printify_variants,printify_synced_at)
         VALUES (?, ?, ?, ?, ?, 'Printify merchandise', ?, 0, 1, 0, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
-        .bind(slug,p.name,plainTextDescription(src.description).slice(0,5000),productSku,'merch',price,commerceReady ? 0 : 1,imagesJson,PRINTIFY_SHOP_ID,p.id,blueprintId,providerId,optionsJson,variantsJson).run();
+        .bind(slug,p.name,plainTextDescription(src.description).slice(0,5000),productSku,'merch',price,orderRequestsReady ? 0 : 1,imagesJson,PRINTIFY_SHOP_ID,p.id,blueprintId,providerId,optionsJson,variantsJson).run();
       created++;
     }
     activated++;
@@ -265,10 +267,12 @@ export const onRequestPost = wrap(async (ctx) => {
   activeProduct = '';
   await db.prepare('INSERT INTO store_audit_log (actor, action, detail) VALUES (?,?,?)')
     .bind(actor, 'printify.catalog_sync', JSON.stringify({ shopId: PRINTIFY_SHOP_ID, totalFound: all.length, candidates: candidates.length, created, updated, skipped, deactivated, duplicateListingsHidden })).run();
-  return json({ ok: true, shopId: PRINTIFY_SHOP_ID, totalFound: all.length, imported: candidates.length, created, updated, skipped, deactivated, activeListings: activated, duplicateListingsHidden, commerceReady,
+  return json({ ok: true, shopId: PRINTIFY_SHOP_ID, totalFound: all.length, imported: candidates.length, created, updated, skipped, deactivated, activeListings: activated, duplicateListingsHidden, commerceReady, manualOrdersEnabled,
     message: commerceReady
-      ? 'Products with enabled variants are active in the PokePrizePool store.'
-      : 'Products with enabled variants are active in the PokePrizePool store as Coming Soon listings. Purchases remain disabled until store checkout and fulfillment safeguards are ready.' });
+      ? 'Products with enabled variants are active in the PokePrizePool store with configured checkout safeguards.'
+      : manualOrdersEnabled
+        ? 'Products with enabled variants are published for manual order requests. Stripe checkout and automatic Printify production remain disabled.'
+        : 'Products with enabled variants are active as Coming Soon listings. Purchases remain disabled until checkout and fulfillment safeguards are ready.' });
   } catch (error) {
     if (error instanceof HttpError) throw error;
     const reason = String(error?.message || error || 'Unknown error').replace(/[\r\n\t]+/g, ' ').slice(0, 180);
