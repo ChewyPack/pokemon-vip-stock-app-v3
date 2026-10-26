@@ -22,7 +22,7 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   const hasPrintifyColumn = (productColumns.results || []).some((c) => c.name === 'printify_product_id');
   const printifyReady = printifyCommerceReady(env);
   const manualOrdersEnabled = String(env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual';
-  if (av === 'in') where.push(hasPrintifyColumn && printifyReady
+  if (av === 'in' && !manualOrdersEnabled) where.push(hasPrintifyColumn && printifyReady
     ? "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '') OR printify_product_id IS NOT NULL) AND preorder = 0"
     : "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '')) AND preorder = 0");
   if (av === 'pre') where.push('preorder = 1');
