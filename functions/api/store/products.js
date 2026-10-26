@@ -21,7 +21,6 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   const productColumns = await env.DB.prepare('PRAGMA table_info(store_products)').all();
   const hasPrintifyColumn = (productColumns.results || []).some((c) => c.name === 'printify_product_id');
   const printifyReady = printifyCommerceReady(env);
-  if (hasPrintifyColumn && !printifyReady) where.push('printify_product_id IS NULL');
   if (av === 'in') where.push(hasPrintifyColumn && printifyReady
     ? "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '') OR printify_product_id IS NOT NULL) AND preorder = 0"
     : "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '')) AND preorder = 0");

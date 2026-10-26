@@ -74,9 +74,15 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
    selectedVariant=matching[0]||null;
    if(selectedVariant){
      $('product-price').textContent=money(selectedVariant.priceCents);
-     $('product-buy').textContent='Add to Cart';
-     $('product-buy').disabled=false;
-     $('product-note').textContent='Made to order through Printify. Choose your options above; checkout and payment stay on PokePrizePool.';
+     if(selectedProduct.comingSoon){
+       $('product-buy').textContent='Coming Soon';
+       $('product-buy').disabled=true;
+       $('product-note').textContent='This product is listed in the store, but purchasing will open after PokePrizePool checkout and fulfillment are configured.';
+     }else{
+       $('product-buy').textContent='Add to Cart';
+       $('product-buy').disabled=false;
+       $('product-note').textContent='Made to order through Printify. Choose your options above; checkout and payment stay on PokePrizePool.';
+     }
    }else{
      $('product-price').textContent='Unavailable';
      $('product-buy').textContent='Unavailable';
@@ -161,11 +167,22 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
      $('product-thumbs').addEventListener('click',event=>{const button=event.target.closest('[data-image-index]');if(button)setImage(Number(button.dataset.imageIndex));});
      if(product.isPrintify){
        renderVariantOptions(product);
-       $('product-badge').textContent=Number(product.available)>0?'Made to order':'Currently unavailable';
-       $('product-buy').addEventListener('click',()=>{
-         if(!selectedVariant)return;
-         location.href='/store.html?add='+encodeURIComponent(String(product.id))+'&variant='+encodeURIComponent(String(selectedVariant.id))+'&slug='+encodeURIComponent(String(product.slug||slug));
-       });
+       if(product.comingSoon){
+         $('product-badge').textContent='Coming Soon';
+         $('product-buy').textContent='Coming Soon';
+         $('product-buy').disabled=true;
+         $('product-note').textContent='This listing is active in the PokePrizePool store. Purchasing will open after checkout, shipping, and fulfillment are configured.';
+       }else if(Number(product.available)>0){
+         $('product-badge').textContent='Made to order';
+         $('product-buy').addEventListener('click',()=>{
+           if(!selectedVariant)return;
+           location.href='/store.html?add='+encodeURIComponent(String(product.id))+'&variant='+encodeURIComponent(String(selectedVariant.id))+'&slug='+encodeURIComponent(String(product.slug||slug));
+         });
+       }else{
+         $('product-badge').textContent='Currently Unavailable';
+         $('product-buy').textContent='Currently Unavailable';
+         $('product-buy').disabled=true;
+       }
      }else if(product.comingSoon){$('product-buy').textContent='Coming Soon';$('product-note').textContent='This product is not available to purchase yet. When purchasing opens, it will be available through the PokePrizePool store checkout.';}
      else if(Number(product.available)>0&&!product.externalCheckoutUrl){$('product-buy').textContent='Add to Cart';$('product-buy').disabled=false;$('product-note').textContent='Add this product from the store catalog. Checkout is completed securely on PokePrizePool.';$('product-buy').addEventListener('click',()=>{location.href='/store.html?add='+encodeURIComponent(String(product.id))+'&slug='+encodeURIComponent(String(product.slug||slug));});}
      else{$('product-buy').textContent='Currently Unavailable';$('product-note').textContent='This product is not currently available to purchase.';}

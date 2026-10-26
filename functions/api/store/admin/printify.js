@@ -1,4 +1,5 @@
 import { json, wrap, requireAdmin, HttpError, readJson } from '../../../_lib/store.js';
+import { printifyCommerceReady } from '../../../_lib/printify.js';
 
 const API = 'https://api.printify.com/v1/';
 const PRINTIFY_SHOP_ID = '29457813'; // The selected PokePrizePool Printify shop (not "My new store").
@@ -149,9 +150,17 @@ export const onRequestPost = wrap(async (ctx) => {
   const body = await readJson(ctx.request, 5000);
   if (body.action !== 'sync') throw new HttpError(400, 'Unsupported Printify action');
   if (!env.PRINTIFY_API_TOKEN) throw new HttpError(503, 'Printify API token is not configured for this environment');
+  const commerceReady = printifyCommerceReady(env);
   let stage = 'checking the production database schema';
   let activeProduct = '';
   try {
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS store_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor TEXT,
+    action TEXT NOT NULL,
+    detail TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`).run();
   await assertSchema(env.DB);
 
   stage = 'verifying the selected Printify shop';
@@ -174,7 +183,7 @@ export const onRequestPost = wrap(async (ctx) => {
   const candidates = normalized.filter((p) => p.variants.length);
   const unavailable = normalized.filter((p) => !p.variants.length);
   const db = env.DB;
-  let created = 0, updated = 0, skipped = 0, deactivated = 0;
+  let created = 0, updated = 0, skipped = 0, deactivated = 0, activated = 0;
 
   // If a previously imported product no longer has enabled variants, stop offering it.
   for (const p of unavailable) {
@@ -207,12 +216,12 @@ export const onRequestPost = wrap(async (ctx) => {
     const existing = await db.prepare('SELECT id, slug FROM store_products WHERE printify_shop_id = ? AND printify_product_id = ?')
       .bind(PRINTIFY_SHOP_ID, p.id).first();
     if (existing) {
-      stage = 'updating an unpublished draft';
+      stage = 'activating and updating the store listing';
       await db.prepare(`UPDATE store_products SET name=?, description=?, sku=?, category='merch', product_type='Printify merchandise',
-        price_cents=?, inventory=0, images=?, printify_blueprint_id=?, printify_print_provider_id=?,
+        price_cents=?, inventory=0, active=1, coming_soon=?, images=?, printify_blueprint_id=?, printify_print_provider_id=?,
         printify_options=?, printify_variants=?, printify_synced_at=datetime('now'), updated_at=datetime('now')
         WHERE id=?`)
-        .bind(p.name, String(src.description || '').slice(0, 5000), productSku, price, imagesJson, blueprintId, providerId, optionsJson, variantsJson, existing.id).run();
+        .bind(p.name, String(src.description || '').slice(0, 5000), productSku, price, commerceReady ? 0 : 1, imagesJson, blueprintId, providerId, optionsJson, variantsJson, existing.id).run();
       updated++;
     } else {
       stage = 'creating an unpublished draft';
@@ -222,23 +231,26 @@ export const onRequestPost = wrap(async (ctx) => {
       await db.prepare(`INSERT INTO store_products
         (slug,name,description,sku,category,product_type,price_cents,inventory,active,preorder,coming_soon,images,
          printify_shop_id,printify_product_id,printify_blueprint_id,printify_print_provider_id,printify_options,printify_variants,printify_synced_at)
-        VALUES (?,?,?,?,?,'Printify merchandise',?,0,0,0,0,?,?,?,?,?,?,?,datetime('now'))`)
-        .bind(slug,p.name,String(src.description || '').slice(0,5000),productSku,'merch',price,imagesJson,PRINTIFY_SHOP_ID,p.id,blueprintId,providerId,optionsJson,variantsJson).run();
+        VALUES (?, ?, ?, ?, ?, 'Printify merchandise', ?, 0, 1, 0, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
+        .bind(slug,p.name,String(src.description || '').slice(0,5000),productSku,'merch',price,commerceReady ? 0 : 1,imagesJson,PRINTIFY_SHOP_ID,p.id,blueprintId,providerId,optionsJson,variantsJson).run();
       created++;
     }
+    activated++;
   }
 
   stage = 'writing the sync audit record';
   activeProduct = '';
   await db.prepare('INSERT INTO store_audit_log (actor, action, detail) VALUES (?,?,?)')
     .bind(actor, 'printify.catalog_sync', JSON.stringify({ shopId: PRINTIFY_SHOP_ID, totalFound: all.length, candidates: candidates.length, created, updated, skipped, deactivated })).run();
-  return json({ ok: true, shopId: PRINTIFY_SHOP_ID, totalFound: all.length, imported: candidates.length, created, updated, skipped, deactivated, published: 0,
-    message: 'Products are imported as unpublished drafts. They are not yet for sale; finish variant checkout, shipping, and fulfillment verification before publishing.' });
+  return json({ ok: true, shopId: PRINTIFY_SHOP_ID, totalFound: all.length, imported: candidates.length, created, updated, skipped, deactivated, activeListings: activated, commerceReady,
+    message: commerceReady
+      ? 'Products with enabled variants are active in the PokePrizePool store.'
+      : 'Products with enabled variants are active in the PokePrizePool store as Coming Soon listings. Purchases remain disabled until store checkout and fulfillment safeguards are ready.' });
   } catch (error) {
     if (error instanceof HttpError) throw error;
     const reason = String(error?.message || error || 'Unknown error').replace(/[\r\n\t]+/g, ' ').slice(0, 180);
     console.error('Printify catalog sync failed', { stage, product: activeProduct || undefined, error: reason });
     const productNote = activeProduct ? ' for "' + activeProduct.slice(0, 80) + '"' : '';
-    throw new HttpError(500, 'Printify sync failed while ' + stage + productNote + ': ' + reason + '. Products remain unpublished; some earlier items may already have been saved as drafts.');
+    throw new HttpError(500, 'Printify sync failed while ' + stage + productNote + ': ' + reason + '. Catalog changes made before the failure may already be active; checkout safety checks still apply.');
   }
 });
