@@ -1,9 +1,10 @@
 import { json, wrap, readJson, HttpError } from '../../_lib/store.js';
-import { PRINTIFY_SHOP_ID, normalizePrintifyAddress, parseVariants, quotePrintifyShipping } from '../../_lib/printify.js';
+import { PRINTIFY_SHOP_ID, normalizePrintifyAddress, parseVariants, quotePrintifyShipping, printifyCommerceReady } from '../../_lib/printify.js';
 
 // POST /api/store/shipping-quote { items, email, shippingAddress }
 // Shipping is quoted server-side against the selected variant IDs and entered address.
 export const onRequestPost = wrap(async ({ request, env }) => {
+  if (!printifyCommerceReady(env)) throw new HttpError(503, 'PokePrizePool Printify checkout is not enabled yet.');
   const body = await readJson(request, 20000);
   if (!Array.isArray(body.items) || !body.items.length || body.items.length > 25) {
     throw new HttpError(400, 'Your cart is empty or too large.');
