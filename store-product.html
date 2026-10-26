@@ -91,12 +91,12 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
    root.hidden=false;
    if(!variants.length){root.innerHTML='<p class="product-note">No variants are currently available.</p>';return;}
    const initial=variants[0];
-   const usableOptions=options.filter((option,index)=>option&&Array.isArray(option.values)&&option.values.length&&variants.some(v=>Array.isArray(v.optionIds)&&v.optionIds[index]!=null));
+   const usableOptions=options.map((option,optionIndex)=>({option,optionIndex})).filter(({option,optionIndex})=>option&&Array.isArray(option.values)&&option.values.length&&variants.some(v=>Array.isArray(v.optionIds)&&v.optionIds[optionIndex]!=null));
    if(usableOptions.length){
-     root.innerHTML=usableOptions.map((option,index)=>{
-       const optionValues=option.values.filter(value=>value&&value.id!=null&&value.title&&variants.some(v=>String(v.optionIds[index]??'')===String(value.id)));
-       const selectedId=String(initial.optionIds[index]??optionValues[0]?.id??'');
-       return '<label class="product-option-field">'+safe(option.name)+'<select data-printify-option="'+index+'" aria-label="'+safe(option.name)+'">'+optionValues.map(value=>'<option value="'+safe(value.id)+'" '+(String(value.id)===selectedId?'selected':'')+'>'+safe(value.title)+'</option>').join('')+'</select></label>';
+     root.innerHTML=usableOptions.map(({option,optionIndex})=>{
+       const optionValues=option.values.filter(value=>value&&value.id!=null&&value.title&&variants.some(v=>String(v.optionIds[optionIndex]??'')===String(value.id)));
+       const selectedId=String(initial.optionIds[optionIndex]??optionValues[0]?.id??'');
+       return '<label class="product-option-field">'+safe(option.name)+'<select data-printify-option="'+optionIndex+'" aria-label="'+safe(option.name)+'">'+optionValues.map(value=>'<option value="'+safe(value.id)+'" '+(String(value.id)===selectedId?'selected':'')+'>'+safe(value.title)+'</option>').join('')+'</select></label>';
      }).join('');
      // Keep only option selectors which have at least one matching variant.
      root.querySelectorAll('[data-printify-option]').forEach(select=>select.addEventListener('change',selectCurrentVariant));
@@ -164,7 +164,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
        $('product-badge').textContent=Number(product.available)>0?'Made to order':'Currently unavailable';
        $('product-buy').addEventListener('click',()=>{
          if(!selectedVariant)return;
-         location.href='/store.html?add='+encodeURIComponent(String(product.id))+'&variant='+encodeURIComponent(String(selectedVariant.id));
+         location.href='/store.html?add='+encodeURIComponent(String(product.id))+'&variant='+encodeURIComponent(String(selectedVariant.id))+'&slug='+encodeURIComponent(String(product.slug||slug));
        });
      }else if(product.comingSoon){$('product-buy').textContent='Coming Soon';$('product-note').textContent='This product is not available to purchase yet. When purchasing opens, it will be available through the PokePrizePool store checkout.';}
      else if(Number(product.available)>0&&!product.externalCheckoutUrl){$('product-buy').textContent='Add to Cart';$('product-buy').disabled=false;$('product-note').textContent='Add this product from the store catalog. Checkout is completed securely on PokePrizePool.';$('product-buy').addEventListener('click',()=>{location.href='/store.html?add='+encodeURIComponent(String(product.id));});}
