@@ -207,7 +207,7 @@
       });
       function extractXPostUrl(value){
         var raw=String(value||'').trim();
-        var match=raw.match(/https?:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\/[^\\s"'<>]*?\\/status\\/\\d+/i);
+        var match=raw.match(/https?:\/\/(?:www\.)?(?:x\.com|twitter\.com)\/[^\s"'<>]*?\/status\/\d+/i);
         if(match)return match[0].replace(/[?&].*$/,'');
         return raw;
       }
@@ -215,10 +215,10 @@
         var field=document.getElementById('x-post-url');
         var contentField=document.getElementById('content');
         var url=extractXPostUrl(field.value);
-        if(!/^https:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\/[A-Za-z0-9_]{1,15}\\/status\\/\\d+\\/?$/.test(url)){
+        if(!/^https:\/\/(?:www\.)?(?:x\.com|twitter\.com)\/[A-Za-z0-9_]{1,15}\/status\/\d+\/?$/.test(url)){
           say('Paste a valid X post URL or X embed code containing its post link.','error');return;
         }
-        var token='\\n\\n{{X_POST_EMBED}}\\n\\n';
+        var token='\n\n{{X_POST_EMBED}}\n\n';
         var start=contentField.selectionStart,end=contentField.selectionEnd;
         contentField.setRangeText(token,start,end,'end');
         field.value=url;
