@@ -1,4 +1,4 @@
-import { json, wrap, requireAdmin, HttpError, readJson } from '../../../_lib/store.js';
+import { json, wrap, requireAdmin, HttpError, readJson, plainTextDescription } from '../../../_lib/store.js';
 import { printifyCommerceReady } from '../../../_lib/printify.js';
 
 const API = 'https://api.printify.com/v1/';
@@ -183,7 +183,7 @@ export const onRequestPost = wrap(async (ctx) => {
   const candidates = normalized.filter((p) => p.variants.length);
   const unavailable = normalized.filter((p) => !p.variants.length);
   const db = env.DB;
-  let created = 0, updated = 0, skipped = 0, deactivated = 0, activated = 0;
+  let created = 0, updated = 0, skipped = 0, deactivated = 0, activated = 0, duplicateListingsHidden = 0;
 
   // If a previously imported product no longer has enabled variants, stop offering it.
   for (const p of unavailable) {
@@ -221,7 +221,7 @@ export const onRequestPost = wrap(async (ctx) => {
         price_cents=?, inventory=0, active=1, coming_soon=?, images=?, printify_blueprint_id=?, printify_print_provider_id=?,
         printify_options=?, printify_variants=?, printify_synced_at=datetime('now'), updated_at=datetime('now')
         WHERE id=?`)
-        .bind(p.name, String(src.description || '').slice(0, 5000), productSku, price, commerceReady ? 0 : 1, imagesJson, blueprintId, providerId, optionsJson, variantsJson, existing.id).run();
+        .bind(p.name, plainTextDescription(src.description).slice(0, 5000), productSku, price, commerceReady ? 0 : 1, imagesJson, blueprintId, providerId, optionsJson, variantsJson, existing.id).run();
       updated++;
     } else {
       stage = 'creating an active store listing';
@@ -232,17 +232,30 @@ export const onRequestPost = wrap(async (ctx) => {
         (slug,name,description,sku,category,product_type,price_cents,inventory,active,preorder,coming_soon,images,
          printify_shop_id,printify_product_id,printify_blueprint_id,printify_print_provider_id,printify_options,printify_variants,printify_synced_at)
         VALUES (?, ?, ?, ?, ?, 'Printify merchandise', ?, 0, 1, 0, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
-        .bind(slug,p.name,String(src.description || '').slice(0,5000),productSku,'merch',price,commerceReady ? 0 : 1,imagesJson,PRINTIFY_SHOP_ID,p.id,blueprintId,providerId,optionsJson,variantsJson).run();
+        .bind(slug,p.name,plainTextDescription(src.description).slice(0,5000),productSku,'merch',price,commerceReady ? 0 : 1,imagesJson,PRINTIFY_SHOP_ID,p.id,blueprintId,providerId,optionsJson,variantsJson).run();
       created++;
     }
     activated++;
+
+    // Retire older seeded products that use the exact same Printify mockup image path.
+    // This hides duplicate legacy cards without deleting their records or order history.
+    const mockupPaths = [...new Set(p.images.map((image) => {
+      try { return new URL(image).pathname; } catch { return ''; }
+    }).filter((pathname) => pathname.startsWith('/mockup/')))];
+    for (const pathname of mockupPaths) {
+      const hidden = await db.prepare(`UPDATE store_products
+        SET active=0, updated_at=datetime('now')
+        WHERE printify_product_id IS NULL AND active=1 AND images LIKE ?`)
+        .bind('%' + pathname + '%').run();
+      duplicateListingsHidden += Number(hidden?.meta?.changes || 0);
+    }
   }
 
   stage = 'writing the sync audit record';
   activeProduct = '';
   await db.prepare('INSERT INTO store_audit_log (actor, action, detail) VALUES (?,?,?)')
-    .bind(actor, 'printify.catalog_sync', JSON.stringify({ shopId: PRINTIFY_SHOP_ID, totalFound: all.length, candidates: candidates.length, created, updated, skipped, deactivated })).run();
-  return json({ ok: true, shopId: PRINTIFY_SHOP_ID, totalFound: all.length, imported: candidates.length, created, updated, skipped, deactivated, activeListings: activated, commerceReady,
+    .bind(actor, 'printify.catalog_sync', JSON.stringify({ shopId: PRINTIFY_SHOP_ID, totalFound: all.length, candidates: candidates.length, created, updated, skipped, deactivated, duplicateListingsHidden })).run();
+  return json({ ok: true, shopId: PRINTIFY_SHOP_ID, totalFound: all.length, imported: candidates.length, created, updated, skipped, deactivated, activeListings: activated, duplicateListingsHidden, commerceReady,
     message: commerceReady
       ? 'Products with enabled variants are active in the PokePrizePool store.'
       : 'Products with enabled variants are active in the PokePrizePool store as Coming Soon listings. Purchases remain disabled until store checkout and fulfillment safeguards are ready.' });

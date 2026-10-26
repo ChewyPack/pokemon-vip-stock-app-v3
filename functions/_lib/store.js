@@ -107,13 +107,45 @@ export async function verifyStripeSignature(raw, header, secret, tolerance = 300
 
 const safeJsonArray = (value) => { try { const parsed = JSON.parse(value || '[]'); return Array.isArray(parsed) ? parsed : []; } catch { return []; } };
 
+// Printify descriptions arrive as HTML fragments. Convert them to readable text rather than
+// exposing literal <p>/<li> markup on the public storefront.
+export function plainTextDescription(value) {
+  return String(value || '')
+    .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+    .replace(/<\s*li(?:\s[^>]*)?>/gi, '• ')
+    .replace(/<\s*\/\s*(p|li|ul|ol|h[1-6])\s*>/gi, '\n')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;|&#160;|&#xA0;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;|&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&copy;/gi, '©')
+    .replace(/&reg;/gi, '®')
+    .replace(/&trade;/gi, '™')
+    .replace(/&mdash;/gi, '—')
+    .replace(/&ndash;/gi, '–')
+    .replace(/&#(?:x([0-9a-f]+)|(\d+));?/gi, (_, hex, dec) => {
+      const code = hex ? parseInt(hex, 16) : parseInt(dec, 10);
+      try { return Number.isFinite(code) && code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : ' '; }
+      catch { return ' '; }
+    })
+    .replace(/\r/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export const publicProduct = (r) => {
   const printifyVariants = safeJsonArray(r.printify_variants);
   const printifyOptions = safeJsonArray(r.printify_options);
   const isPrintify = !!(r.printify_shop_id && r.printify_product_id);
   const makeableVariants = printifyVariants.filter((v) => v && v.enabled !== false && v.isAvailable !== false && Number(v.priceCents) >= 0);
   return {
-    id: r.id, slug: r.slug, name: r.name, description: r.description, sku: r.sku,
+    id: r.id, slug: r.slug, name: r.name, description: plainTextDescription(r.description), sku: r.sku,
     category: r.category, productType: r.product_type, set: r.set_name, language: r.language,
     condition: r.condition, gradeCompany: r.grade_company, grade: r.grade,
     priceCents: r.price_cents, compareAtCents: r.compare_at_cents,

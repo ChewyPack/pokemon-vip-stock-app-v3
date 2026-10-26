@@ -27,7 +27,7 @@
   const button=$('sa-sync-printify');button.disabled=true;$('sa-printify-status').textContent='Syncing products from the PokePrizePool Printify shop…';
   try{
    const data=await api('/api/store/admin/printify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'sync'})});
-   $('sa-printify-status').textContent='Sync complete: '+Number(data.created||0)+' new, '+Number(data.updated||0)+' updated, '+Number(data.skipped||0)+' skipped; '+Number(data.activeListings||0)+' active listings. '+(data.commerceReady?'Purchasing is enabled by the configured safeguards.':'Listings show as Coming Soon and purchasing remains disabled until checkout, shipping, and fulfillment are verified.');
+   $('sa-printify-status').textContent='Sync complete: '+Number(data.created||0)+' new, '+Number(data.updated||0)+' updated, '+Number(data.skipped||0)+' skipped; '+Number(data.activeListings||0)+' active listings; '+Number(data.duplicateListingsHidden||0)+' duplicate legacy listings hidden. '+(data.commerceReady?'Purchasing is enabled by the configured safeguards.':'Listings show as Coming Soon and purchasing remains disabled until checkout, shipping, and fulfillment are verified.');
    await loadProducts();
   }catch(error){$('sa-printify-status').textContent=error.message||'Printify sync failed.';}
   finally{button.disabled=false;}
