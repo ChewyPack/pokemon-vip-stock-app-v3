@@ -108,11 +108,11 @@
       .news-article-gallery{grid-template-columns:1fr}
       .news-article-image{height:auto;aspect-ratio:16/10}
     }
-    .news-x-embed{margin:28px 0;padding:18px;border:1px solid rgba(159,181,222,.35);border-radius:14px;background:rgba(6,18,48,.82)}
-    .news-x-embed h2{margin:0 0 12px;color:#ffd21f;font-size:1.15rem}
+    .news-x-embed{margin:18px 0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
     .news-x-embed .twitter-tweet{margin:0 auto!important;max-width:550px}
     .news-x-embed-fallback{font-size:.9rem;color:#cfe3ff}
     .news-x-embed-fallback a{color:#ffd21f;font-weight:800}
+    .news-x-embed-fallback[hidden]{display:none!important}
   </style>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="mobile-web-app-capable" content="yes">
@@ -176,10 +176,9 @@
       function addXPostEmbed(panel,value){
         var url=validXPostUrl(value);if(!url)return;
         var block=add('section','news-x-embed');
-        block.appendChild(add('h2','','Embedded post on X'));
         var quote=document.createElement('blockquote');quote.className='twitter-tweet';
         var link=document.createElement('a');link.href=url;link.textContent='View this post on X';quote.appendChild(link);block.appendChild(quote);
-        var fallback=add('p','news-x-embed-fallback','If the post does not load, open it directly on X.');
+        var fallback=add('p','news-x-embed-fallback',''); fallback.hidden=true;
         var fallbackLink=add('a','', 'Open post on X');fallbackLink.href=url;fallbackLink.target='_blank';fallbackLink.rel='noopener noreferrer';fallback.appendChild(document.createTextNode(' '));fallback.appendChild(fallbackLink);block.appendChild(fallback);
         panel.appendChild(block);
         if(window.twttr&&window.twttr.widgets&&typeof window.twttr.widgets.load==='function'){
