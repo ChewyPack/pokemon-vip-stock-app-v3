@@ -192,7 +192,7 @@ export const onRequestPost = wrap(async (ctx) => {
   for (const p of blockedProducts) {
     activeProduct = p.name;
     stage = 'removing a Printify listing flagged for content or IP issues';
-    const result = await db.prepare(`UPDATE store_products SET active=0, coming_soon=1, printify_synced_at=datetime('now'), updated_at=datetime('now') WHERE lower(name)=lower(?) OR (printify_shop_id = ? AND printify_product_id = ?)`)
+    const result = await db.prepare(`UPDATE store_products SET active=0, coming_soon=1, printify_synced_at=datetime('now'), updated_at=datetime('now') WHERE lower(name)=lower(?) OR (category = 'merch' AND printify_shop_id = ? AND printify_product_id = ?)`)
       .bind(p.name, PRINTIFY_SHOP_ID, p.id).run();
     deactivated += Number(result?.meta?.changes || 0);
   }
