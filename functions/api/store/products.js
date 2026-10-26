@@ -15,7 +15,21 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   }
   const cat = u.searchParams.get('category');
   if (cat === 'preorder') where.push('preorder = 1');
-  else if (cat) { where.push('category = ?'); args.push(cat); }
+  else if (cat) {
+    // The homepage uses short category slugs while product records use display labels.
+    // Match labels case-insensitively and support the existing store category aliases.
+    const normalizedCategory = cat.trim().toLowerCase();
+    const categoryAliases = {
+      singles: ['singles'],
+      sealed: ['sealed'],
+      slabs: ['graded cards', 'graded cards / slabs', 'slabs'],
+      accessories: ['accessories'],
+      merch: ['clothing', 'clothing & merch', 'merch']
+    };
+    const matches = categoryAliases[normalizedCategory] || [normalizedCategory];
+    where.push(`LOWER(TRIM(category)) IN (${matches.map(() => '?').join(',')})`);
+    args.push(...matches);
+  }
   const av = u.searchParams.get('availability');
   // Remain compatible with the store before the production Printify migration is applied.
   const productColumns = await env.DB.prepare('PRAGMA table_info(store_products)').all();
