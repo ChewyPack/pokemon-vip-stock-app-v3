@@ -1,8 +1,10 @@
-import { json, wrap, publicProduct } from '../../_lib/store.js';
+import { json, wrap, publicProduct, ensureCollectorPlusPriceColumn, isCollectorPlusViewer } from '../../_lib/store.js';
 import { printifyCommerceReady, BLOCKED_PRINTIFY_PRODUCT_TITLES, isBlockedPrintifyProductTitle } from '../../_lib/printify.js';
 
 // GET /api/store/products?q=&category=&availability=in|pre&min=&max=&sort=new|lo|hi&page=1&slug=
 export const onRequestGet = wrap(async ({ request, env }) => {
+  await ensureCollectorPlusPriceColumn(env.DB);
+  const viewerIsCollectorPlus = await isCollectorPlusViewer(request, env);
   const u = new URL(request.url);
   const where = ['active = 1', `LOWER(name) NOT IN (${BLOCKED_PRINTIFY_PRODUCT_TITLES.map(() => '?').join(',')})`]; const args = BLOCKED_PRINTIFY_PRODUCT_TITLES.map((name) => name.toLowerCase());
   const slug = u.searchParams.get('slug');
@@ -71,6 +73,6 @@ export const onRequestGet = wrap(async ({ request, env }) => {
       } else if (product.isPrintify && !printifyReady) product.comingSoon = true;
       return product;
     }),
-    total, page, pageSize: size
+    total, page, pageSize: size, viewerIsCollectorPlus
   });
 });
