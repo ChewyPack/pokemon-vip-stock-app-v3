@@ -153,11 +153,9 @@ export async function onRequestGet({ request, env }) {
       ).all();
     };
 
-    let rows = await runCatalogSearch(false);
-    // Preserve substring convenience without paying for a full scan on every normal query.
-    if (!(rows.results || []).length && query.length >= 4) {
-      rows = await runCatalogSearch(true);
-    }
+    // Use substring matching for both singles and sealed products so names containing
+    // the search term (and card-number/clean-name matches) are not missed by prefix-only search.
+    let rows = await runCatalogSearch(true);
 
     const byId = new Map();
     for (const row of rows.results || []) {
