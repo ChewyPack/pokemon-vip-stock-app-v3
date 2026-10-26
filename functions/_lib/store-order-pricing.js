@@ -1,4 +1,4 @@
-import { HttpError } from './store.js';
+import { HttpError, ensureCollectorPlusPriceColumn, isCollectorPlusViewer } from './store.js';
 import { isBlockedPrintifyProductTitle, parseVariants } from './printify.js';
 
 const PAYMENT_TAX_RATE_BPS = 700;
@@ -14,7 +14,9 @@ function isClearlyExemptClothing(product) {
   return clothingPattern.test(String(product.name || '') + ' ' + String(product.product_type || ''));
 }
 
-export async function quoteStoreItems(db, env, rawItems, destinationState = 'RI') {
+export async function quoteStoreItems(db, env, rawItems, destinationState = 'RI', request = null) {
+  await ensureCollectorPlusPriceColumn(db);
+  const collectorPlusEligible = request ? await isCollectorPlusViewer(request, env) : false;
   if (!Array.isArray(rawItems) || !rawItems.length || rawItems.length > 25) {
     throw new HttpError(400, 'Your cart is empty or has too many different items.');
   }
@@ -65,7 +67,10 @@ export async function quoteStoreItems(db, env, rawItems, destinationState = 'RI'
     } else {
       // Manual order requests do not reserve inventory; availability is confirmed by PokePrizePool before fulfillment.
       if (!manualMode(env) && Number(product.inventory) < item.quantity) throw new HttpError(409, 'Not enough listed stock for "' + clean(product.name, 100) + '". Refresh the store and adjust your cart.');
-      unitPriceCents = Number(product.price_cents);
+      const regularPriceCents = Number(product.price_cents);
+      const candidateMemberPrice = product.collector_plus_price_cents == null ? null : Number(product.collector_plus_price_cents);
+      const canUseMemberPrice = collectorPlusEligible && !isPrintify && Number.isSafeInteger(candidateMemberPrice) && candidateMemberPrice >= 0 && candidateMemberPrice <= regularPriceCents;
+      unitPriceCents = canUseMemberPrice ? candidateMemberPrice : regularPriceCents;
       if (!dollarsToCents(unitPriceCents)) throw new HttpError(409, 'A product price needs review before an order can be requested.');
     }
 
@@ -89,7 +94,8 @@ export async function quoteStoreItems(db, env, rawItems, destinationState = 'RI'
       unitPriceCents,
       lineTotalCents,
       category: clean(product.category, 50),
-      isPrintify
+      isPrintify,
+      isCollectorPlusPrice: !isPrintify && collectorPlusEligible && product.collector_plus_price_cents != null && unitPriceCents === Number(product.collector_plus_price_cents) && unitPriceCents < Number(product.price_cents)
     });
   }
 
