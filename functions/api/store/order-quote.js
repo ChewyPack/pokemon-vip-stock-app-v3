@@ -7,7 +7,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   if (!env.DB) throw new HttpError(503, 'The store catalog is temporarily unavailable.');
   const data = await readJson(request, 25000);
   if (String(data.website || '').trim()) return json({ ok: true, request_received: true }, 202);
-  const quote = await quoteStoreItems(env.DB, env, data.items, data.destinationState);
+  const quote = await quoteStoreItems(env.DB, env, data.items, data.destinationState, request);
   return json({
     ok: true,
     state: quote.state,
@@ -20,7 +20,8 @@ export const onRequestPost = wrap(async ({ request, env }) => {
       unitPriceCents: line.unitPriceCents,
       lineTotalCents: line.lineTotalCents,
       category: line.category,
-      isPrintify: line.isPrintify
+      isPrintify: line.isPrintify,
+      isCollectorPlusPrice: line.isCollectorPlusPrice
     })),
     subtotalCents: quote.subtotalCents,
     taxableCents: quote.taxableCents,
