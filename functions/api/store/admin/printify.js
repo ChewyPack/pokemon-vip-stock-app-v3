@@ -97,7 +97,7 @@ async function assertSchema(db) {
 // Admin-only connection check and catalog sync.
 // GET /api/store/admin/printify -> list shops
 // GET /api/store/admin/printify?shop_id=29457813 -> preview one product page
-// POST /api/store/admin/printify { "action": "sync" } -> sync PokePrizePool products as unpublished drafts
+// POST /api/store/admin/printify { "action": "sync" } -> activate enabled products locally; hold purchases in Coming Soon until ready
 export const onRequestGet = wrap(async (ctx) => {
   await requireAdmin(ctx);
   const { request, env } = ctx;
@@ -224,7 +224,7 @@ export const onRequestPost = wrap(async (ctx) => {
         .bind(p.name, String(src.description || '').slice(0, 5000), productSku, price, commerceReady ? 0 : 1, imagesJson, blueprintId, providerId, optionsJson, variantsJson, existing.id).run();
       updated++;
     } else {
-      stage = 'creating an unpublished draft';
+      stage = 'creating an active store listing';
       let slug = slugify(p.name);
       const conflict = await db.prepare('SELECT id FROM store_products WHERE slug = ?').bind(slug).first();
       if (conflict) slug = `${slug.slice(0, 55)}-${p.id.replace(/[^a-z0-9]/gi, '').slice(-8).toLowerCase()}`.slice(0, 80);
