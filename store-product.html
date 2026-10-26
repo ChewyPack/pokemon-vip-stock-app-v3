@@ -66,7 +66,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
    let matching=[];
    if(optionSelects.length){
      const values=optionSelects.map(select=>String(select.value));
-     matching=variants.filter(v=>Array.isArray(v.optionIds)&&values.every((value,index)=>String(v.optionIds[index]??'')===value));
+     matching=variants.filter(v=>Array.isArray(v.optionIds)&&optionSelects.every(select=>String(v.optionIds[Number(select.dataset.printifyOption)]??'')===String(select.value)));
    }else{
      const variantSelect=root.querySelector('[data-printify-variant]');
      matching=variantSelect?variants.filter(v=>String(v.id)===String(variantSelect.value)):variants;
@@ -91,7 +91,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
    root.hidden=false;
    if(!variants.length){root.innerHTML='<p class="product-note">No variants are currently available.</p>';return;}
    const initial=variants[0];
-   const usableOptions=options.map((option,optionIndex)=>({option,optionIndex})).filter(({option,optionIndex})=>option&&Array.isArray(option.values)&&option.values.length&&variants.some(v=>Array.isArray(v.optionIds)&&v.optionIds[optionIndex]!=null));
+   const usableOptions=options.map((option,optionIndex)=>({option,optionIndex})).filter(({option,optionIndex})=>option&&Array.isArray(option.values)&&option.values.some(value=>value&&variants.some(v=>Array.isArray(v.optionIds)&&v.optionIds[optionIndex]!=null&&String(v.optionIds[optionIndex])===String(value.id))));
    if(usableOptions.length){
      root.innerHTML=usableOptions.map(({option,optionIndex})=>{
        const optionValues=option.values.filter(value=>value&&value.id!=null&&value.title&&variants.some(v=>String(v.optionIds[optionIndex]??'')===String(value.id)));
