@@ -2,10 +2,10 @@ import { PRINTIFY_SHOP_ID, printifyRequest, printifyCommerceReady } from './prin
 
 const shortError = (error) => String(error?.message || 'Printify request failed').slice(0, 500);
 
-async function findExistingOrder(env, shopId, externalId) {
+async function findExistingOrder(env, shopId, externalId, maxPages = 3) {
   // Printify exposes an API-created order's external_id as metadata.shop_order_id.
   // Search recent pages before retrying a POST, so a lost response cannot create a duplicate.
-  let lastPage = 50;
+  let lastPage = Math.max(1, Math.min(50, Number(maxPages) || 3));
   for (let page = 1; page <= Math.min(50, lastPage); page++) {
     const result = await printifyRequest(env, `shops/${shopId}/orders.json?page=${page}`);
     const data = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : [];
@@ -59,13 +59,15 @@ export async function submitPaidPrintifyOrder(db, env, orderId) {
     `UPDATE store_orders SET printify_status = 'submitting', printify_error = NULL,
        printify_last_attempt_at = datetime('now'), updated_at = datetime('now')
      WHERE id = ? AND payment_status = 'paid' AND printify_order_id IS NULL
-       AND printify_status IN ('not_applicable','awaiting_setup','failed','pending')`
+       AND (printify_status IN ('not_applicable','awaiting_setup','failed','pending')
+            OR (printify_status = 'submitting' AND printify_last_attempt_at < datetime('now','-5 minutes')))`
   ).bind(orderId).run();
   if (!claim.meta.changes) return { applicable: true, status: order.printify_status };
 
   try {
     const externalId = String(order.order_number);
-    let remote = await findExistingOrder(env, PRINTIFY_SHOP_ID, externalId);
+    const lookupPages = ['failed', 'submitting'].includes(String(order.printify_status)) ? 50 : 3;
+    let remote = await findExistingOrder(env, PRINTIFY_SHOP_ID, externalId, lookupPages);
     if (!remote) {
       let addressTo = {};
       try { addressTo = JSON.parse(order.shipping_address || '{}'); } catch { addressTo = {}; }
