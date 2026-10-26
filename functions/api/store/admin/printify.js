@@ -158,26 +158,39 @@ export const onRequestPost = wrap(async (ctx) => {
   }
 
   const all = await loadAllProducts(env);
-  const candidates = all.map((p) => ({
+  const normalized = all.map((p) => ({
     source: p,
     id: String(p?.id || ''),
     name: String(p?.title || '').trim().slice(0, 200),
     variants: cleanVariants(p?.variants),
     options: cleanOptions(p?.options),
     images: cleanImages(p?.images),
-  })).filter((p) => p.id && p.name && p.variants.length);
+  })).filter((p) => p.id && p.name);
+  const candidates = normalized.filter((p) => p.variants.length);
+  const unavailable = normalized.filter((p) => !p.variants.length);
   const db = env.DB;
-  let created = 0, updated = 0, skipped = 0;
+  let created = 0, updated = 0, skipped = 0, deactivated = 0;
+
+  // If a previously imported product no longer has enabled variants, stop offering it.
+  for (const p of unavailable) {
+    const existing = await db.prepare('SELECT id FROM store_products WHERE printify_shop_id = ? AND printify_product_id = ?')
+      .bind(PRINTIFY_SHOP_ID, p.id).first();
+    if (!existing) { skipped++; continue; }
+    await db.prepare(`UPDATE store_products SET active=0, printify_options=?, printify_variants='[]',
+      printify_synced_at=datetime('now'), updated_at=datetime('now') WHERE id=?`)
+      .bind(JSON.stringify(p.options), existing.id).run();
+    updated++;
+    deactivated++;
+  }
 
   for (const p of candidates) {
     const prices = p.variants.map((v) => v.priceCents).filter((n) => Number.isInteger(n) && n >= 0);
     if (!prices.length) { skipped++; continue; }
     const price = Math.min(...prices);
-    const firstSku = p.variants.find((v) => v.sku)?.sku;
     const productSku = `PFY-${PRINTIFY_SHOP_ID}-${p.id}`.slice(0, 60);
     const src = p.source;
-    const blueprintId = Number.isInteger(Number(src.blueprint_id)) ? Number(src.blueprint_id) : null;
-    const providerId = Number.isInteger(Number(src.print_provider_id)) ? Number(src.print_provider_id) : null;
+    const blueprintId = src.blueprint_id == null || src.blueprint_id === '' ? null : (Number.isInteger(Number(src.blueprint_id)) ? Number(src.blueprint_id) : null);
+    const providerId = src.print_provider_id == null || src.print_provider_id === '' ? null : (Number.isInteger(Number(src.print_provider_id)) ? Number(src.print_provider_id) : null);
     const variantsJson = JSON.stringify(p.variants);
     const optionsJson = JSON.stringify(p.options);
     const imagesJson = JSON.stringify(p.images);
@@ -204,7 +217,7 @@ export const onRequestPost = wrap(async (ctx) => {
   }
 
   await db.prepare('INSERT INTO store_audit_log (actor, action, detail) VALUES (?,?,?)')
-    .bind(actor, 'printify.catalog_sync', JSON.stringify({ shopId: PRINTIFY_SHOP_ID, totalFound: all.length, candidates: candidates.length, created, updated, skipped })).run();
-  return json({ ok: true, shopId: PRINTIFY_SHOP_ID, totalFound: all.length, imported: candidates.length, created, updated, skipped, published: 0,
+    .bind(actor, 'printify.catalog_sync', JSON.stringify({ shopId: PRINTIFY_SHOP_ID, totalFound: all.length, candidates: candidates.length, created, updated, skipped, deactivated })).run();
+  return json({ ok: true, shopId: PRINTIFY_SHOP_ID, totalFound: all.length, imported: candidates.length, created, updated, skipped, deactivated, published: 0,
     message: 'Products are imported as unpublished drafts. They are not yet for sale; finish variant checkout, shipping, and fulfillment verification before publishing.' });
 });
