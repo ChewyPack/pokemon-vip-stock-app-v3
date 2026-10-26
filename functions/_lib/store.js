@@ -142,7 +142,7 @@ export function plainTextDescription(value) {
 export const publicProduct = (r) => {
   const printifyVariants = safeJsonArray(r.printify_variants);
   const printifyOptions = safeJsonArray(r.printify_options);
-  const isPrintify = !!(r.printify_shop_id && r.printify_product_id);
+  const isPrintify = String(r.category || '').toLowerCase() === 'merch' && !!(r.printify_shop_id && r.printify_product_id);
   const makeableVariants = printifyVariants.filter((v) => v && v.enabled !== false && v.isAvailable !== false && Number(v.priceCents) >= 0);
   return {
     id: r.id, slug: r.slug, name: r.name, description: plainTextDescription(r.description), sku: r.sku,
