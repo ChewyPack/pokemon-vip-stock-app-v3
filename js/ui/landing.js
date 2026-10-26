@@ -305,8 +305,8 @@
         h('div', { class: 'ppp-collector-trial-promo__card' },
           h('div', null,
             h('p', { class: 'ppp-collector-trial-promo__eyebrow' }, 'Collector+ membership'),
-            h('h2', { class: 'ppp-collector-trial-promo__title', id: 'ppp-collector-trial-title' }, 'Get your first 3 dayss free'),
-            h('p', { class: 'ppp-collector-trial-promo__copy' }, 'Try Collector+ free for 3 dayss. A payment method is required at signup. After the trial, your selected plan renews at $5/month or $50/year unless canceled before the trial ends.'),
+            h('h2', { class: 'ppp-collector-trial-promo__title', id: 'ppp-collector-trial-title' }, 'Get your first 3 days free'),
+            h('p', { class: 'ppp-collector-trial-promo__copy' }, 'Try Collector+ free for 3 days. A payment method is required at signup. After the trial, your selected plan renews at $5/month or $50/year unless canceled before the trial ends.'),
             h('small', { class: 'ppp-collector-trial-promo__fine' }, 'For eligible first-time subscribers only. Accounts with prior subscription history do not qualify for another trial.')
           ),
           h('a', { class: 'btn btn--lg ppp-collector-trial-promo__button', id: 'ppp-collector-trial-cta', href: '/account.html?mode=register&plan=collector' }, 'Start your 3-day free trial')
@@ -558,6 +558,8 @@
         .then(function (response) { return response.ok ? response.json() : null; })
         .then(function (data) {
           if (!data || !data.ok || !data.authenticated) return;
+          // Signed-in members do not need the public acquisition hero.
+          hero.hidden = true;
           var account = data.account || {};
           var membership = data.membership || {};
           var status = String(membership.status || '').toLowerCase();
@@ -572,12 +574,17 @@
           }
           var button = trialPromo.querySelector('#ppp-collector-trial-cta');
           var copy = trialPromo.querySelector('.ppp-collector-trial-promo__copy');
+          var promoTitle = trialPromo.querySelector('#ppp-collector-trial-title');
           if (button) {
             button.href = '/account.html#settings-membership';
             button.textContent = data.trialEligible ? 'Start my 3-day free trial' : 'View membership options';
           }
-          if (copy && !data.trialEligible) {
-            copy.textContent = 'Explore Collector+ membership at $5/month or $50/year. A payment method is required at checkout; eligible first-time subscribers receive 3 days free.';
+          if (data.trialEligible) {
+            if (promoTitle) promoTitle.textContent = 'Start your 3-day free trial';
+            if (copy) copy.textContent = 'You are signed in with no current subscription. Start Collector+ with 3 days free. A payment method is required; your chosen plan renews at $5/month or $50/year unless canceled before the trial ends.';
+          } else {
+            if (promoTitle) promoTitle.textContent = 'Collector+ membership options';
+            if (copy) copy.textContent = 'Explore Collector+ membership at $5/month or $50/year. A payment method is required at checkout. Because this account has prior subscription history, another free trial is not available.';
           }
         })
         .catch(function () {});
