@@ -20,7 +20,7 @@ async function enforceEmailRateLimit(db, request) {
       window_started = CASE WHEN window_started <= ? THEN ? ELSE window_started END`)
     .bind(ipHash, now, windowStart, windowStart, now).run();
   const row = await db.prepare('SELECT request_count FROM store_order_email_rate_limits WHERE ip_hash = ?').bind(ipHash).first();
-  if (Number(row?.request_count || 0) > 5) throw new HttpError(429, 'Too many order requests were submitted from this connection. Please try again later.');
+  if (Number(row?.request_count || 0) > 20) throw new HttpError(429, 'Too many order requests were submitted from this connection. Please try again later.');
   await db.prepare('DELETE FROM store_order_email_rate_limits WHERE window_started < ?').bind(now - 7 * 24 * 3600).run();
 }
 
@@ -35,7 +35,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   const email = clean(data.email, 254).toLowerCase();
   if (!/^[A-Za-z0-9_]{3,24}$/.test(username)) throw new HttpError(400, 'Enter your PokePrizePool username.');
   if (!METHODS.has(method)) throw new HttpError(400, 'Choose a payment method.');
-  if (email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) throw new HttpError(400, 'Enter a valid email or leave it blank.');
+  if (email && (email.length > 254 || email.indexOf('@') <= 0 || email.lastIndexOf('.') <= email.indexOf('@') + 1 || email.includes(' '))) throw new HttpError(400, 'Enter a valid email or leave it blank.');
   if (!env.DB) throw new HttpError(503, 'The store catalog is temporarily unavailable.');
 
   const from = clean(env.STORE_ORDER_FROM || env.RESEND_FROM || env.EMAIL_FROM || env.LINE_SERVICE_FROM || env.PASSWORD_RESET_FROM || 'PokePrizePool <noreply@send.pokeprizepool.com>', 250);
@@ -111,7 +111,13 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   }
   if (!response.ok) {
     console.error('Resend rejected a store order email:', response.status);
-    throw new HttpError(502, 'Could not send your order request. Please try again or contact pokeprizepool@gmail.com.');
+    if (response.status === 401 || response.status === 403) {
+      throw new HttpError(502, 'The email service rejected the sending credentials or sender address. Please contact PokePrizePool so the Resend settings can be checked.');
+    }
+    if (response.status === 429) {
+      throw new HttpError(503, 'The email service is temporarily rate-limited. Please wait a little and try again, or use Copy order details.');
+    }
+    throw new HttpError(502, 'Could not send your order request. Please try again or use Copy order details.');
   }
   const sent = await response.json().catch(() => ({}));
   return json({ ok: true, request_received: true, email_sent: true, email_id: clean(sent.id, 120), item_count: quote.lines.reduce((n, x) => n + x.quantity, 0), subtotal_cents: quote.subtotalCents, tax_cents: quote.taxCents, total_cents: quote.totalCents, tax_collection_enabled: quote.taxCollectionEnabled });
