@@ -1,4 +1,5 @@
 import { json, wrap, readJson, requireAdmin, HttpError } from '../../../_lib/store.js';
+import { printifyCommerceReady } from '../../../_lib/printify.js';
 
 const FULFILL = ['unfulfilled', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -22,7 +23,7 @@ export const onRequestGet = wrap(async (ctx) => {
   const hasPrintify = (columns.results || []).some((column) => column.name === 'printify_status');
   const printifyFields = hasPrintify ? ', printify_status, printify_order_id, printify_error, printify_submitted_at' : '';
   const { results } = await db.prepare(`SELECT id, order_number, email, total_cents, payment_status, fulfillment_status, tracking_carrier, tracking_number, created_at${printifyFields} FROM store_orders ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY id DESC LIMIT 200`).bind(...args).all();
-  return json({ orders: results, printifyOrderSubmissionEnabled: String(ctx.env.PRINTIFY_ORDER_SUBMISSION_ENABLED || '').toLowerCase() === 'true' });
+  return json({ orders: results, printifyOrderSubmissionEnabled: printifyCommerceReady(ctx.env) });
 });
 
 // PATCH /api/store/admin/orders?id=1  body: { fulfillmentStatus?, trackingCarrier?, trackingNumber? }
