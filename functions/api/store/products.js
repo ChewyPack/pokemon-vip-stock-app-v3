@@ -41,9 +41,10 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   return json({
     products: visibleResults.map((row) => {
       const product = publicProduct(row);
-      if (product.isPrintify && !printifyReady && !manualOrdersEnabled) {
-        return { ...product, comingSoon: true };
-      }
+      // Manual order-request mode means published listings can be requested now.
+      // Never surface stale Coming Soon flags from an earlier disabled-checkout sync.
+      if (manualOrdersEnabled) product.comingSoon = false;
+      else if (product.isPrintify && !printifyReady) product.comingSoon = true;
       return product;
     }),
     total, page, pageSize: size
