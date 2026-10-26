@@ -41,8 +41,8 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   return json({
     products: visibleResults.map((row) => {
       const product = publicProduct(row);
-      if (product.isPrintify && !printifyReady) {
-        return manualOrdersEnabled ? { ...product, comingSoon: false } : { ...product, comingSoon: true };
+      if (product.isPrintify && !printifyReady && !manualOrdersEnabled) {
+        return { ...product, comingSoon: true };
       }
       return product;
     }),
