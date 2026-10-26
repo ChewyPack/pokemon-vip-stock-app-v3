@@ -38,11 +38,9 @@ This branch integrates a direct-to-customer official store using Cloudflare Page
 
 
 
-## Printify apparel listings
+## Legacy Printify-hosted checkout links
 
-The official PokePrizePool storefront supports optional Printify-hosted product checkout links for merchandise. Add a product in `/store-admin.html`, paste the product's HTTPS `*.printify.me` URL, add its title, description, and mockup image URL, and publish it. The public store then shows “Shop on Printify” instead of putting the item in the PokePrizePool Stripe cart. Printify's hosted product page handles its own size/color selection, checkout, printing, and shipping; these links do not reserve local D1 inventory or create a PokePrizePool Stripe order.
-
-Before deploying code that uses the new `store_products.external_checkout_url` column, apply `production-migrations/010_store_external_checkout.sql` once to the production `pokemon-vip-members` D1 database. Do not execute the same ALTER migration twice. Only HTTPS links on a `printify.me` domain are accepted. See the [official Printify Pop-Up Store guide](https://help.printify.com/hc/en-us/articles/12051129478417-What-is-Printify-Pop-Up-Store) for store URL and fulfillment details.
+Older versions of the store supported optional Printify-hosted checkout links. Do not use that approach for new merchandise. The supported integration is to import products from the PokePrizePool Printify shop as variant-aware drafts, then use the PokePrizePool product page, cart, shipping quote, and one-time store checkout described below. The legacy database column remains for backward compatibility only.
 
 ## Direct Printify variant integration — production
 
