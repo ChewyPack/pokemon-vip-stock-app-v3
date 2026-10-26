@@ -37,7 +37,13 @@ export async function printifyRequest(env, path, { method = 'GET', body } = {}) 
     throw new HttpError(502, 'Printify could not complete the request. Please try again later.');
   }
   if (response.status === 204) return {};
-  return response.json();
+  const responseText = await response.text();
+  if (!responseText.trim()) return {};
+  try { return JSON.parse(responseText); }
+  catch {
+    console.error('Printify API returned a non-JSON success response', path);
+    throw new HttpError(502, 'Printify returned an unexpected response. Please review the order before retrying.');
+  }
 }
 
 export function parseVariants(value) {
