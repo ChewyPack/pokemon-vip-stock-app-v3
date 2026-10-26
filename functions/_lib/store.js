@@ -139,6 +139,39 @@ export function plainTextDescription(value) {
     .trim();
 }
 
+// Additive, idempotent guard for production D1 instances receiving Collector+ pricing.
+export async function ensureCollectorPlusPriceColumn(db) {
+  let columns = await db.prepare('PRAGMA table_info(store_products)').all();
+  if ((columns.results || []).some((column) => column.name === 'collector_plus_price_cents')) return;
+  try {
+    await db.prepare('ALTER TABLE store_products ADD COLUMN collector_plus_price_cents INTEGER').run();
+  } catch (error) {
+    // Concurrent first requests can race to add the same column. Accept only if it now exists.
+    columns = await db.prepare('PRAGMA table_info(store_products)').all();
+    if (!(columns.results || []).some((column) => column.name === 'collector_plus_price_cents')) throw error;
+  }
+}
+
+export async function isCollectorPlusViewer(request, env) {
+  try {
+    const account = await currentChatAccount(request, env);
+    if (!account) return false;
+    if (account.is_admin) return true;
+    const membership = await env.DB.prepare(
+      'SELECT membership_status, membership_entitlement_tier, membership_tier FROM accounts WHERE id = ? LIMIT 1'
+    ).bind(account.id).first();
+    const status = String(membership?.membership_status || '').trim().toLowerCase();
+    const tier = String(membership?.membership_entitlement_tier || membership?.membership_tier || '')
+      .trim().toLowerCase().replace(/[_-]/g, ' ').replace(/\s+/g, ' ');
+    return ['active', 'trialing'].includes(status) &&
+      ['collector+', 'collector plus', 'vendor', 'vendor+', 'vendor plus', 'organizer', 'organizer+', 'event organizer'].includes(tier);
+  } catch (error) {
+    // Pricing must fail closed: if membership cannot be verified, use regular prices.
+    console.error('Store Collector+ pricing eligibility check failed:', error);
+    return false;
+  }
+}
+
 export const publicProduct = (r) => {
   const printifyVariants = safeJsonArray(r.printify_variants);
   const printifyOptions = safeJsonArray(r.printify_options);
@@ -149,6 +182,7 @@ export const publicProduct = (r) => {
     category: r.category, productType: r.product_type, set: r.set_name, language: r.language,
     condition: r.condition, gradeCompany: r.grade_company, grade: r.grade,
     priceCents: r.price_cents, compareAtCents: r.compare_at_cents,
+    collectorPlusPriceCents: r.collector_plus_price_cents == null ? null : Number(r.collector_plus_price_cents),
     available: isPrintify ? (makeableVariants.length ? 1 : 0) : r.inventory,
     preorder: !!r.preorder, comingSoon: !!r.coming_soon, releaseDate: r.release_date,
     externalCheckoutUrl: r.external_checkout_url || null,
