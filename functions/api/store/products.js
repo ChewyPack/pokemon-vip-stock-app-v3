@@ -21,6 +21,7 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   const productColumns = await env.DB.prepare('PRAGMA table_info(store_products)').all();
   const hasPrintifyColumn = (productColumns.results || []).some((c) => c.name === 'printify_product_id');
   const printifyReady = printifyCommerceReady(env);
+  const manualOrdersEnabled = String(env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual';
   if (av === 'in') where.push(hasPrintifyColumn && printifyReady
     ? "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '') OR printify_product_id IS NOT NULL) AND preorder = 0"
     : "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '')) AND preorder = 0");
@@ -39,7 +40,10 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   return json({
     products: results.map((row) => {
       const product = publicProduct(row);
-      return product.isPrintify && !printifyReady ? { ...product, comingSoon: true } : product;
+      if (product.isPrintify && !printifyReady) {
+        return manualOrdersEnabled ? { ...product, comingSoon: false } : { ...product, comingSoon: true };
+      }
+      return product;
     }),
     total, page, pageSize: size
   });
