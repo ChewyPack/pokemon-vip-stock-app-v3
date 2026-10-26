@@ -156,7 +156,9 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
    const ok=cart.length>0&&user.length>=3&&user.length<=24&&/^[A-Za-z0-9_]+$/.test(user)&&Boolean($('checkout-payment-method').value);
    $('checkout-email-order').disabled=!ok||requestSent;$('checkout-copy-order').disabled=!ok;
    if(user&&(!/^[A-Za-z0-9_]{3,24}$/.test(user)))$('checkout-status').textContent='Use your PokePrizePool username (3–24 letters, numbers, or underscores).';
-   else $('checkout-status').textContent='';
+   else if(!cart.length)$('checkout-status').textContent='Your cart is empty. Go back to the store and add an item first.';
+   else if(!user||!$('checkout-payment-method').value)$('checkout-status').textContent='Enter your PokePrizePool username and select a payment method to send the order request.';
+   else if(!requestSent)$('checkout-status').textContent='';
    return ok;
  }
  function formChanged(){
@@ -201,7 +203,7 @@ body{background:#f5f8ff;color:var(--co-navy);font-family:Nunito,system-ui,sans-s
    try{await navigator.clipboard.writeText(body);$('checkout-status').textContent='Order details copied. Paste them into an email to pokeprizepool@gmail.com and send it.';}
    catch(_){$('checkout-copy-text').focus();$('checkout-copy-text').select();$('checkout-status').textContent='Select and copy the order details above, then email them to pokeprizepool@gmail.com.';}
  });
- build();
+ build();valid();
 })();
 </script>
 </body>
