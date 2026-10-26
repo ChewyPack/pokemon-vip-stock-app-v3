@@ -69,6 +69,7 @@ export async function onRequestGet({ request, env }) {
     const stripe = accountStripeConfig(env);
     const webhookSecret = stripe ? (stripe.live ? env.STRIPE_EVENT_CONNECT_WEBHOOK_SECRET : env.STRIPE_EVENT_CONNECT_TEST_WEBHOOK_SECRET) : '';
     const webhookReady = !!webhookSecret;
+    const paymentConfigReason = !stripe ? 'stripe_account_configuration_missing' : (!webhookReady ? 'connect_webhook_secret_not_available_to_production_function' : '');
     let orders = [];
     let connect = null;
     let summary = null;
@@ -90,7 +91,7 @@ export async function onRequestGet({ request, env }) {
     } else {
       const connect = null;
     }
-    return eventPaymentsJson({ ok: true, event: { id: event.id, title: event.title, event_date: event.event_date }, can_manage: manage, checkout_enabled: !!publicConnect.connected && webhookReady, checkout_disabled_reason: !webhookReady ? 'payment_tracking_setup_pending' : (!publicConnect.connected ? 'organizer_stripe_not_ready' : ''), webhook_ready: manage ? webhookReady : undefined, connect: manage ? connect : undefined, items, orders: manage ? orders : undefined, summary: manage ? summary : undefined });
+    return eventPaymentsJson({ ok: true, event: { id: event.id, title: event.title, event_date: event.event_date }, can_manage: manage, checkout_enabled: !!publicConnect.connected && webhookReady, checkout_disabled_reason: paymentConfigReason || (!publicConnect.connected ? 'organizer_stripe_not_ready' : ''), webhook_ready: manage ? webhookReady : undefined, connect: manage ? connect : undefined, items, orders: manage ? orders : undefined, summary: manage ? summary : undefined });
   } catch (error) {
     console.error('Event sales read failed:', error);
     return eventPaymentsJson({ ok: false, error: 'event_sales_unavailable' }, 500);
