@@ -79,8 +79,9 @@ export const onRequestPost = wrap(async ({ request, env }) => {
     throw new HttpError(400, 'For accurate shipping, place Printify merchandise in a separate order from other store products.');
   }
 
-  const autoTax = env.STORE_TAX_MODE === 'stripe_automatic';
-  if (!autoTax && env.STORE_TAX_MODE !== 'none_confirmed') throw new HttpError(503, 'Tax is not configured');
+  // Collect a clearly itemized 7% sales-tax amount with the same Stripe payment.
+  // Tax is calculated server-side from merchandise subtotal so the browser cannot change it.
+  const taxCents = Math.round(productSubtotal * 0.07);
 
   let shippingCents = 0, addressTo = null, shippingOptions = [];
   if (hasPrintify) {
@@ -114,11 +115,11 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   }
 
   const num = orderNumber(), token = randomId(16), db = env.DB;
-  const totalBeforeTax = productSubtotal + shippingCents;
+  const totalBeforeTax = productSubtotal + shippingCents + taxCents;
   const stmts = [db.prepare(
-    `INSERT INTO store_orders (order_number, public_token, email, subtotal_cents, shipping_cents, total_cents, shipping_name, shipping_address)
-     VALUES (?,?,?,?,?,?,?,?)`
-  ).bind(num, token, email, productSubtotal, shippingCents, totalBeforeTax,
+    `INSERT INTO store_orders (order_number, public_token, email, subtotal_cents, shipping_cents, tax_cents, total_cents, shipping_name, shipping_address)
+     VALUES (?,?,?,?,?,?,?,?,?)`
+  ).bind(num, token, email, productSubtotal, shippingCents, taxCents, totalBeforeTax,
     addressTo ? [addressTo.first_name, addressTo.last_name].join(' ') : null,
     addressTo ? JSON.stringify({ ...addressTo }) : null)];
 
@@ -153,11 +154,17 @@ export const onRequestPost = wrap(async ({ request, env }) => {
         unit_amount: line.unitPrice,
         product_data: {
           name: line.itemName,
-          ...(autoTax ? { tax_code: env.STORE_TAX_CODE || 'txcd_99999999' } : {}),
-        },
-        ...(autoTax ? { tax_behavior: 'exclusive' } : {}),
+           },
       },
     }));
+    stripeItems.push({
+      quantity: 1,
+      price_data: {
+        currency: 'usd',
+        unit_amount: taxCents,
+        product_data: { name: 'Sales tax (7%)' },
+      },
+    });
     // For Printify orders the address has already been entered and quoted on PokePrizePool.
     // The shipping quote is a checkout line item so Stripe cannot silently re-price a different address.
     if (hasPrintify && shippingCents > 0) {
@@ -168,9 +175,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
           unit_amount: shippingCents,
           product_data: {
             name: 'Standard shipping (Printify)',
-            ...(autoTax ? { tax_code: env.STORE_SHIPPING_TAX_CODE || 'txcd_92010001' } : {}),
-          },
-          ...(autoTax ? { tax_behavior: 'exclusive' } : {}),
+             },
         },
       });
     }
@@ -186,14 +191,13 @@ export const onRequestPost = wrap(async ({ request, env }) => {
       payment_intent_data: { metadata: { ppp_store_order_id: String(order.id) } },
       ...(hasPrintify ? {} : { shipping_address_collection: { allowed_countries: (env.STORE_SHIP_COUNTRIES || 'US').split(',') } }),
       billing_address_collection: 'required',
-      automatic_tax: autoTax ? { enabled: true } : undefined,
       line_items: stripeItems,
       ...(hasPrintify ? {} : {
         shipping_options: shippingOptions.map((option) => ({
           shipping_rate_data: {
             type: 'fixed_amount', display_name: String(option.name),
             fixed_amount: { amount: Number(option.amountCents), currency: 'usd' },
-            ...(autoTax ? { tax_behavior: 'exclusive', tax_code: env.STORE_SHIPPING_TAX_CODE || 'txcd_92010001' } : {}),
+            
           },
         })),
       }),
