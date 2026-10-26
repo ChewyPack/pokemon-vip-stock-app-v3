@@ -16,7 +16,12 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   if (cat === 'preorder') where.push('preorder = 1');
   else if (cat) { where.push('category = ?'); args.push(cat); }
   const av = u.searchParams.get('availability');
-  if (av === 'in') where.push('(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != \'\')) AND preorder = 0');
+  // Remain compatible with the store before the production Printify migration is applied.
+  const productColumns = await env.DB.prepare('PRAGMA table_info(store_products)').all();
+  const hasPrintifyColumn = (productColumns.results || []).some((c) => c.name === 'printify_product_id');
+  if (av === 'in') where.push(hasPrintifyColumn
+    ? '(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != \'\') OR printify_product_id IS NOT NULL) AND preorder = 0'
+    : '(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != \'\')) AND preorder = 0');
   if (av === 'pre') where.push('preorder = 1');
   const min = parseInt(u.searchParams.get('min') || '', 10), max = parseInt(u.searchParams.get('max') || '', 10);
   if (Number.isInteger(min)) { where.push('(external_checkout_url IS NULL OR external_checkout_url = \'\') AND price_cents >= ?'); args.push(min); }
