@@ -51,6 +51,9 @@
           </div>
           <label for="excerpt">Short summary</label>
           <textarea id="excerpt" maxlength="500" style="min-height:90px" placeholder="A short preview shown on the News page."></textarea>
+          <label for="x-post-url">Embed an X post (optional)</label>
+          <input id="x-post-url" type="url" maxlength="500" placeholder="https://x.com/username/status/123456789">
+          <p class="subtle">Paste the public X post link. PokePrizePool will display the post inside the published story—no embed code needed. Leave blank if the story has no X post.</p>
           <label for="content">Story text *</label>
           <textarea id="content" maxlength="30000" required placeholder="Write your story here. Blank lines become paragraph breaks."></textarea>
           <div class="actions">
@@ -140,7 +143,7 @@
             var meta=document.createElement('div');meta.className='story-meta';meta.textContent=story.category+' · Updated '+dateLabel(story.updated_at)+' · '+(story.status==='published'?'Published':'Draft')+' · '+(Array.isArray(story.image_urls)?story.image_urls.length:(story.image_url?1:0))+' image'+((Array.isArray(story.image_urls)?story.image_urls.length:(story.image_url?1:0))===1?'':'s');info.appendChild(meta);
             var actions=document.createElement('div');actions.className='actions';
             function addButton(label,fn,cls){var b=document.createElement('button');b.type='button';b.textContent=label;if(cls)b.className=cls;b.addEventListener('click',fn);actions.appendChild(b);}
-            addButton('Edit',function(){document.getElementById('story-id').value=story.id;document.getElementById('title').value=story.title||'';document.getElementById('category').value=story.category||'News';document.getElementById('slug').value=story.slug||'';currentImageUrls=Array.isArray(story.image_urls)?story.image_urls.slice(0,3):(story.image_url?[story.image_url]:[]);imageInput.value='';renderImagePreview();document.getElementById('excerpt').value=story.excerpt||'';document.getElementById('content').value=story.content||'';document.getElementById('form-heading').textContent='Edit story';window.scrollTo({top:0,behavior:'smooth'});});
+            addButton('Edit',function(){document.getElementById('story-id').value=story.id;document.getElementById('title').value=story.title||'';document.getElementById('category').value=story.category||'News';document.getElementById('slug').value=story.slug||'';currentImageUrls=Array.isArray(story.image_urls)?story.image_urls.slice(0,3):(story.image_url?[story.image_url]:[]);imageInput.value='';renderImagePreview();document.getElementById('excerpt').value=story.excerpt||'';document.getElementById('x-post-url').value=story.x_post_url||'';document.getElementById('content').value=story.content||'';document.getElementById('form-heading').textContent='Edit story';window.scrollTo({top:0,behavior:'smooth'});});
             if(story.status==='published')addButton('Unpublish',function(){if(!confirm('Move this story back to drafts? It will disappear from the public News page.'))return;saveStory(Object.assign({},story,{status:'draft'}));},'secondary');
             else addButton('Publish',function(){if(!confirm('Publish this story so everyone can see it?'))return;saveStory(Object.assign({},story,{status:'published'}));});
             addButton('Delete',function(){if(!confirm('Permanently delete this story?'))return;api('/api/news?id='+encodeURIComponent(story.id),{method:'DELETE'}).then(function(){say('Story deleted.','success');return loadStories();}).catch(function(e){say('Could not delete story: '+e.message,'error');});},'danger');
@@ -190,6 +193,7 @@
             image_urls:imageUrls,
             image_url:imageUrls[0]||'',
             excerpt:document.getElementById('excerpt').value,
+            x_post_url:document.getElementById('x-post-url').value.trim(),
             content:document.getElementById('content').value,
             status:status
           };
