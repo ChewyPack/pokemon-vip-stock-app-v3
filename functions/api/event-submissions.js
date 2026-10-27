@@ -77,13 +77,24 @@ async function ensureTables(env) {
     try { await env.DB.prepare("ALTER TABLE poke_prize_event_submissions ADD COLUMN recurrence_until TEXT NOT NULL DEFAULT ''").run(); }
     catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
   }
+  for (const [name, sql] of [
+    ['organizer_contact_name', "ALTER TABLE poke_prize_event_submissions ADD COLUMN organizer_contact_name TEXT NOT NULL DEFAULT ''"],
+    ['organizer_contact_email', "ALTER TABLE poke_prize_event_submissions ADD COLUMN organizer_contact_email TEXT NOT NULL DEFAULT ''"],
+    ['organizer_contact_phone', "ALTER TABLE poke_prize_event_submissions ADD COLUMN organizer_contact_phone TEXT NOT NULL DEFAULT ''"],
+    ['is_own_event', "ALTER TABLE poke_prize_event_submissions ADD COLUMN is_own_event TEXT NOT NULL DEFAULT ''"]
+  ]) {
+    if (!submissionNames.has(name)) {
+      try { await env.DB.prepare(sql).run(); }
+      catch (error) { if (!String(error && error.message || '').toLowerCase().includes('duplicate column')) throw error; }
+    }
+  }
   await env.DB.prepare("UPDATE poke_report_events SET owner_account_id = (SELECT submitted_by_account_id FROM poke_prize_event_submissions WHERE approved_event_id = poke_report_events.id LIMIT 1), source_submission_id = (SELECT id FROM poke_prize_event_submissions WHERE approved_event_id = poke_report_events.id LIMIT 1) WHERE owner_account_id IS NULL AND EXISTS (SELECT 1 FROM poke_prize_event_submissions WHERE approved_event_id = poke_report_events.id)").run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_poke_prize_event_submissions_status ON poke_prize_event_submissions(status, created_at DESC)').run();
 }
 const TYPES = new Set(['show', 'trade', 'tournament', 'store', 'restock', 'release']);
 const RECURRENCE = new Set(['once', 'weekly', 'monthly', 'yearly']);
 const RECURRENCE_LIMITS = { weekly: 53, monthly: 60, yearly: 10 };
-const FIELDS = ['title','description','event_type','event_date','start_time','end_time','venue','address','city','state','state_name','zip','url','price','recurrence_frequency','recurrence_until'];
+const FIELDS = ['title','description','event_type','event_date','start_time','end_time','venue','address','city','state','state_name','zip','url','price','recurrence_frequency','recurrence_until','organizer_contact_name','organizer_contact_email','organizer_contact_phone','is_own_event'];
 function normalize(body) {
   const result = {};
   for (const field of FIELDS) {
@@ -93,6 +104,10 @@ function normalize(body) {
   result.event_type = result.event_type || 'show';
   result.recurrence_frequency = result.recurrence_frequency || 'once';
   result.recurrence_until = result.recurrence_until || '';
+  result.organizer_contact_name = clean(body.organizer_contact_name, 160);
+  result.organizer_contact_email = clean(body.organizer_contact_email, 254);
+  result.organizer_contact_phone = clean(body.organizer_contact_phone, 50);
+  result.is_own_event = clean(body.is_own_event, 3).toLowerCase();
   if (!result.state_name) {
     const stateNames = { RI: 'Rhode Island', MA: 'Massachusetts', CT: 'Connecticut', NH: 'New Hampshire', VT: 'Vermont', ME: 'Maine', ONLINE: 'Online / nationwide', OTHER: 'Other' };
     result.state_name = stateNames[result.state] || result.state;
@@ -200,6 +215,8 @@ export async function onRequestPost({ request, env }) {
     if (!account) return json({ ok: false, error: 'login_required' }, 401);
     const data = normalize(body);
     if (!data.title || data.title.length < 4) return json({ ok: false, error: 'title_required' }, 400);
+    if (!['yes', 'no'].includes(data.is_own_event)) return json({ ok: false, error: 'is_own_event_required' }, 400);
+    if (data.organizer_contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.organizer_contact_email)) return json({ ok: false, error: 'invalid_organizer_contact_email' }, 400);
     if (!validDate(data.event_date)) return json({ ok: false, error: 'valid_event_date_required' }, 400);
     if (!TYPES.has(data.event_type)) return json({ ok: false, error: 'invalid_event_type' }, 400);
     if (!RECURRENCE.has(data.recurrence_frequency)) return json({ ok: false, error: 'invalid_recurrence_frequency' }, 400);
@@ -212,7 +229,7 @@ export async function onRequestPost({ request, env }) {
     } else {
       data.recurrence_until = '';
     }
-    const result = await env.DB.prepare('INSERT INTO poke_prize_event_submissions (submitted_by_account_id,title,description,event_type,event_date,start_time,end_time,venue,address,city,state,state_name,zip,url,price,recurrence_frequency,recurrence_until) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(account.id,data.title,data.description,data.event_type,data.event_date,data.start_time,data.end_time,data.venue,data.address,data.city,data.state,data.state_name,data.zip,data.url,data.price,data.recurrence_frequency,data.recurrence_until).run();
+    const result = await env.DB.prepare('INSERT INTO poke_prize_event_submissions (submitted_by_account_id,title,description,event_type,event_date,start_time,end_time,venue,address,city,state,state_name,zip,url,price,recurrence_frequency,recurrence_until,organizer_contact_name,organizer_contact_email,organizer_contact_phone,is_own_event) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(account.id,data.title,data.description,data.event_type,data.event_date,data.start_time,data.end_time,data.venue,data.address,data.city,data.state,data.state_name,data.zip,data.url,data.price,data.recurrence_frequency,data.recurrence_until,data.organizer_contact_name,data.organizer_contact_email,data.organizer_contact_phone,data.is_own_event).run();
     return json({ ok: true, submission: { id: Number(result.meta?.last_row_id || 0), status: 'pending', recurrence_frequency: data.recurrence_frequency, recurrence_until: data.recurrence_until }, message: data.recurrence_frequency === 'once' ? 'Your event was submitted for review. It will appear on the calendar after approval.' : 'Your recurring event was submitted for review. Each scheduled occurrence will be added to the calendar after approval.' }, 201);
   } catch (error) {
     console.error('Member event submission failed:', error);
