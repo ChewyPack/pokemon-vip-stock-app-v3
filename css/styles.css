@@ -2543,3 +2543,39 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
     height: 440px;
   }
 }
+
+
+/* Two standalone character models side by side, without cards or captions. */
+.ppp-3d-showcase__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  max-width: 1200px;
+}
+.ppp-3d-showcase__grid > .ppp-model-standalone {
+  grid-column: auto;
+  width: 100%;
+  min-width: 0;
+  padding: 0 8px;
+  margin: 0;
+}
+.ppp-3d-showcase .ppp-model-standalone .ppp-ash-standalone__link,
+.ppp-3d-showcase .ppp-model-standalone .ppp-ash-standalone__viewer {
+  width: 100%;
+  max-width: none;
+}
+.ppp-3d-showcase .ppp-model-standalone,
+.ppp-3d-showcase .ppp-model-standalone .ppp-ash-standalone__link {
+  min-height: clamp(420px, 48vw, 580px);
+  height: clamp(420px, 48vw, 580px);
+}
+.ppp-3d-showcase .ppp-model-standalone .ppp-ash-standalone__viewer {
+  height: 100%;
+}
+@media (max-width: 600px) {
+  .ppp-3d-showcase__grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .ppp-3d-showcase .ppp-model-standalone,
+  .ppp-3d-showcase .ppp-model-standalone .ppp-ash-standalone__link {
+    min-height: 440px;
+    height: 440px;
+  }
+}
