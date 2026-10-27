@@ -35,7 +35,7 @@ export async function onRequestGet({ env }) {
     const latest = await env.DB.prepare(
       "SELECT MAX(source_timestamp) AS source_timestamp FROM tcgcsv_price_history WHERE market_price IS NOT NULL"
     ).first();
-    const sourceTimestamp = latest?.source_timestamp || state?.source_timestamp || null;
+    const sourceTimestamp = state?.source_timestamp || latest?.source_timestamp || null;
     if (!sourceTimestamp) {
       return json({
         ok: true, ready: false, reason: "history_not_started",
@@ -60,8 +60,8 @@ export async function onRequestGet({ env }) {
       const rows = await env.DB.prepare(`
         SELECT p.product_id, p.name, p.clean_name, p.image_url, p.product_url,
                p.product_type, p.card_number, p.rarity, p.group_id,
-               g.name AS set_name, current.subtype_name,
-               current.source_timestamp, current.market_price,
+               g.name AS set_name, cur.subtype_name,
+               cur.source_timestamp, cur.market_price,
                (SELECT old.market_price FROM tcgcsv_price_history old
                 WHERE old.product_id=p.product_id
                   AND old.subtype_name=current.subtype_name
@@ -96,7 +96,7 @@ export async function onRequestGet({ env }) {
          )
         WHERE p.category_id=3 AND p.product_type=? AND current.market_price > 0
         ORDER BY p.product_id
-      `).bind(dayCutoff, dayCutoff, weekCutoff, weekCutoff, type).all();
+      `).bind(dayCutoff, dayCutoff, weekCutoff, weekCutoff, sourceTimestamp, type).all();
 
       const items = (rows.results || []).map(row => {
         const day = change(row.market_price, row.price_1d);
