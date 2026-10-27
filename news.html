@@ -110,7 +110,7 @@
       .news-article-image{height:auto;aspect-ratio:16/10}
     }
     .news-x-embed{margin:18px 0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
-    .news-x-embed .twitter-tweet{margin:0 auto!important;max-width:550px}
+    .news-x-embed .twitter-tweet{margin:0 auto!important;max-width:550px;width:100%}.news-x-embed iframe{max-width:100%!important}.news-article-content{overflow-wrap:anywhere;word-break:normal}
     .news-x-embed-fallback{font-size:.9rem;color:#cfe3ff}
     .news-x-embed-fallback a{color:#ffd21f;font-weight:800}
     .news-x-embed-fallback[hidden]{display:none!important}
@@ -241,19 +241,38 @@
           panel.appendChild(gallery);
         }
         if(story.excerpt)panel.appendChild(add('p','',story.excerpt));
-        var articleContent=add('div','news-article-content');
+        var source=String(story.content||'');
         var marker='{{X_POST_EMBED}}';
-        var parts=String(story.content||'').split(marker);
-        parts.forEach(function(part,index){
-          if(part)articleContent.appendChild(add('p','',part));
-          if(index<parts.length-1){
-            panel.appendChild(articleContent);
-            articleContent=add('div','news-article-content');
-            addXPostEmbed(panel,story.x_post_url);
+        var embeddedFromContent=false;
+        // Older stories may contain X's full HTML blockquote/script pasted into the
+        // story text. Extract its post URL and render a real responsive embed instead
+        // of displaying the markup as literal text.
+        var rawEmbedPattern=/<blockquote\\b[^>]*class\\s*=\\s*["'][^"']*\\btwitter-tweet\\b[^"']*["'][\\s\\S]*?<\\/blockquote>\\s*(?:<script\\b[^>]*>[\\s\\S]*?<\\/script>)?/ig;
+        var chunks=[],lastIndex=0,rawMatch;
+        while((rawMatch=rawEmbedPattern.exec(source))!==null){
+          chunks.push({text:source.slice(lastIndex,rawMatch.index)});
+          var postMatch=rawMatch[0].match(/https?:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\/(?:[A-Za-z0-9_]{1,15}\\/status\\/\\d+|i\\/web\\/status\\/\\d+)/i);
+          chunks.push({url:postMatch?postMatch[0].replace(/[?&].*$/,''):'' ,fallback:postMatch?'':rawMatch[0]});
+          lastIndex=rawEmbedPattern.lastIndex;
+        }
+        chunks.push({text:source.slice(lastIndex)});
+        chunks.forEach(function(chunk){
+          if(chunk.url){
+            addXPostEmbed(panel,chunk.url);
+            embeddedFromContent=true;
+            return;
           }
+          var text=chunk.text||chunk.fallback||'';
+          var parts=text.split(marker);
+          parts.forEach(function(part,index){
+            if(part.trim())panel.appendChild(add('div','news-article-content',part));
+            if(index<parts.length-1){
+              addXPostEmbed(panel,story.x_post_url);
+              embeddedFromContent=true;
+            }
+          });
         });
-        if(articleContent.childNodes.length||parts.length===1)panel.appendChild(articleContent);
-        if(!String(story.content||'').includes(marker))addXPostEmbed(panel,story.x_post_url);
+        if(!embeddedFromContent)addXPostEmbed(panel,story.x_post_url);
         container.appendChild(panel);
       }
       var slug=new URLSearchParams(location.search).get('story');
