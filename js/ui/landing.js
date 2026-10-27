@@ -446,6 +446,7 @@
       "      const size = box.getSize(new THREE.Vector3());",
       "      const center = box.getCenter(new THREE.Vector3());",
       "      model.position.sub(center);",
+      "      model.position.y -= size.y * 0.16;",
       "      const maxDim = Math.max(size.x, size.y, size.z) || 1;",
       "      model.scale.setScalar(2.2 / maxDim);",
       "      scene.add(model);",
