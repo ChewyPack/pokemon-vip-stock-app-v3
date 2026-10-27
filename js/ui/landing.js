@@ -414,7 +414,7 @@
   function initShowcaseModels() {
     var configs = [
       { id: 'ppp-ash-viewer', src: '/assets/ash_ketchum.glb', label: 'Ash Ketchum' },
-      { id: 'ppp-luffy-viewer', src: '/assets/luffy_one_piece.glb', label: 'Luffy from One Piece', rotationX: -Math.PI / 2 }
+      { id: 'ppp-luffy-viewer', src: '/assets/luffy_one_piece.glb', label: 'Luffy from One Piece', rotationX: -Math.PI / 2, rotationY: Math.PI }
     ];
     var pending = configs.filter(function (item) {
       var host = document.getElementById(item.id);
@@ -443,13 +443,13 @@
       "    const fill = new THREE.DirectionalLight(0xffffff, 1.1); fill.position.set(-4, 1, -3); scene.add(fill);",
       "    let model = null;",
       "    new GLTFLoader().load(config.src, (gltf) => {",
-      "      const character = new THREE.Group(); model = gltf.scene; const rawBox = new THREE.Box3().setFromObject(model); const rawCenter = rawBox.getCenter(new THREE.Vector3()); model.position.sub(rawCenter); character.add(model); if (config.rotationX) character.rotation.x = config.rotationX; character.updateMatrixWorld(true); const box = new THREE.Box3().setFromObject(character); const size = box.getSize(new THREE.Vector3()); const center = box.getCenter(new THREE.Vector3());",
+      "      const character = new THREE.Group(); model = gltf.scene; const rawBox = new THREE.Box3().setFromObject(model); const rawCenter = rawBox.getCenter(new THREE.Vector3()); model.position.sub(rawCenter); character.add(model); if (config.rotationX) character.rotation.x = config.rotationX; if (config.rotationY) character.rotation.y = config.rotationY; character.updateMatrixWorld(true); const box = new THREE.Box3().setFromObject(character); const size = box.getSize(new THREE.Vector3()); const center = box.getCenter(new THREE.Vector3());",
       "      character.position.sub(center); const maxDim = Math.max(size.x, size.y, size.z) || 1; character.scale.setScalar(1.8 / maxDim); camera.lookAt(0, 0, 0); scene.add(character);",
       "      const loading = host.querySelector('.universe-3d-loading'); if (loading) loading.remove();",
       "    }, undefined, (error) => showError('3D model failed to load. Please refresh and try again.', error));",
       "    const resize = () => { const w = Math.max(1, host.clientWidth); const h = Math.max(1, host.clientHeight); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h); };",
       "    const observer = new ResizeObserver(resize); observer.observe(host); const clock = new THREE.Clock();",
-      "    renderer.setAnimationLoop(() => { const delta = Math.min(clock.getDelta(), 0.05); if (model && !reduceMotion) model.rotation.y += delta * 0.32; renderer.render(scene, camera); });",
+      "    renderer.setAnimationLoop(() => { const delta = Math.min(clock.getDelta(), 0.05); if (model && !reduceMotion) character.rotation.y += delta * 0.32; renderer.render(scene, camera); });",
       "  });",
       "}).catch((error) => { console.error('PokePrizePool 3D showcase could not start:', error); document.querySelectorAll('#ppp-ash-viewer .universe-3d-loading, #ppp-luffy-viewer .universe-3d-loading').forEach((node) => { node.textContent = '3D viewer could not start. Please refresh and try again.'; }); });"
     ].join('\n');
