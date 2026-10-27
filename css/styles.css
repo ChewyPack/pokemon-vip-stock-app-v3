@@ -2353,3 +2353,45 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
   .footer-social { gap: 8px; }
   .footer-social__link { gap: 6px; padding: 7px 10px; }
 }
+
+
+/* Pokémon TCG history feature — official product artwork with an accessible 3D-style tilt. */
+.card--history { cursor: pointer; }
+.card--history .card__art--official-product {
+  background-size: contain !important;
+  background-position: center 30% !important;
+  background-repeat: no-repeat !important;
+  background-image: linear-gradient(180deg, rgba(7,20,46,.12), rgba(7,20,46,.2)), var(--pokemon-product-art) !important;
+}
+.card--history .card__frame {
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(42,99,190,.4), transparent 55%),
+    linear-gradient(160deg, #102a5c, #06132f 70%);
+}
+.card__history-link {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: block;
+  border-radius: 5px;
+  text-decoration: none;
+}
+.card__history-link:focus-visible {
+  outline: 4px solid #fff;
+  outline-offset: -7px;
+}
+.card__plate { z-index: 2; }
+.card__plate .card__report-link { position: relative; z-index: 5; }
+.card__history-hint {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 3px;
+  color: #b9d9ff;
+  font-size: .78rem;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card--history { transition: none; }
+}
