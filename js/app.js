@@ -19,7 +19,7 @@
   homeInstallButton.id = 'pwa-install-home';
   homeInstallButton.textContent = 'Install PokePrizePool';
   homeInstallButton.hidden = true;
-  homeInstallButton.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2000;border:0;border-radius:999px;padding:12px 17px;background:#ffd21f;color:#07142e;font:800 14px system-ui,sans-serif;box-shadow:0 6px 20px #0004;cursor:pointer';
+  homeInstallButton.style.cssText = 'position:fixed;right:16px;bottom:84px;z-index:2000;border:0;border-radius:999px;padding:12px 17px;background:#ffd21f;color:#07142e;font:800 14px system-ui,sans-serif;box-shadow:0 6px 20px #0004;cursor:pointer';
   document.body.appendChild(homeInstallButton);
   homeInstallButton.addEventListener('click', async function () {
     if (!deferredInstallPrompt) {

@@ -632,6 +632,29 @@
       var trialPromo = buildCollectorTrialPromo();
       trialPromo.hidden = true;
       root.appendChild(trialPromo);
+
+      // Persistent home action: visitors get the trial CTA; members with report access get the reporting action.
+      var floatingActionStyleId = 'ppp-home-floating-action-style';
+      if (!document.getElementById(floatingActionStyleId)) {
+        var floatingActionStyle = document.createElement('style');
+        floatingActionStyle.id = floatingActionStyleId;
+        floatingActionStyle.textContent =
+          '.ppp-home-floating-action{position:fixed!important;right:clamp(12px,2.2vw,28px)!important;bottom:calc(16px + env(safe-area-inset-bottom,0px))!important;z-index:1900!important;display:inline-flex;align-items:center;justify-content:center;min-height:56px;max-width:calc(100vw - 24px);box-sizing:border-box;padding:14px 20px;border:1px solid rgba(255,255,255,.45);border-radius:14px;background:linear-gradient(135deg,#ffe45c 0%,#ffd21f 100%);color:#07194d;text-decoration:none;font:900 1rem/1.15 Nunito,system-ui,sans-serif;letter-spacing:.01em;box-shadow:0 8px 26px rgba(0,0,0,.32),0 2px 0 rgba(7,25,77,.25);transition:transform .16s ease,box-shadow .16s ease}.ppp-home-floating-action:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.36),0 2px 0 rgba(7,25,77,.25)}.ppp-home-floating-action:focus-visible{outline:3px solid #fff;outline-offset:3px}@media(max-width:560px){.ppp-home-floating-action{right:12px!important;bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;min-height:52px;padding:13px 17px;font-size:.94rem;border-radius:13px}}';
+        document.head.appendChild(floatingActionStyle);
+      }
+      var floatingAction = h('a', {
+        class: 'ppp-home-floating-action',
+        id: 'ppp-home-floating-action',
+        href: '/account.html?mode=register&plan=collector',
+        'aria-label': 'Start your 3-day free trial'
+      }, 'Free Trial');
+      root.appendChild(floatingAction);
+      function setFloatingAction(label, href, ariaLabel) {
+        floatingAction.textContent = label;
+        floatingAction.href = href;
+        floatingAction.setAttribute('aria-label', ariaLabel || label);
+      }
+
       // Signed-in subscribers hide both prompts; signed-in non-subscribers get an eligible-trial or membership CTA.
       fetch('/api/account/me', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } })
         .then(function (response) { return response.ok ? response.json() : null; })
@@ -646,12 +669,23 @@
             trialPromo.hidden = false;
             return;
           }
-          // Keep the Home hero visible to signed-in members so Report a Sighting remains easy to reach.
-          hero.hidden = false;
+          // Preserve the focused signed-in homepage layout; the persistent corner action provides the primary CTA.
+          hero.hidden = true;
           var account = data.account || {};
           var membership = data.membership || {};
           var status = String(membership.status || '').toLowerCase();
+          var tier = String(membership.entitlement_tier || membership.tier || '').toLowerCase();
+          var paidTier = ['collector_plus', 'vendor', 'organizer'].indexOf(tier) !== -1;
+          var hasReportAccess = !!account.is_admin || (status === 'active' && paidTier);
           var hasSubscription = !!account.is_admin || status === 'active' || status === 'trialing';
+
+          if (hasReportAccess) {
+            setFloatingAction('Report a Sighting', '#report', 'Report a Sighting');
+          } else if (!hasSubscription && data.trialEligible) {
+            setFloatingAction('Free Trial', '/account.html#settings-membership', 'Start your 3-day free trial');
+          } else {
+            setFloatingAction('Membership Options', '/account.html#settings-membership', 'View membership options');
+          }
           var conversion = root.querySelector('#hero-account-conversion');
           var freeNote = root.querySelector('#hero-free-note');
           if (conversion) conversion.hidden = true;
