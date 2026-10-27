@@ -63,6 +63,12 @@ export async function onRequestGet({request,env}){
         i.price_cents,
         i.condition_label,
         i.image_key,
+        i.tcgcsv_product_id,
+        i.catalog_image_url,
+        i.catalog_set_name,
+        i.catalog_card_number,
+        i.catalog_product_url,
+        i.extra_image_keys,
         i.created_at,
         i.updated_at,
         b.boosted_until,
@@ -94,7 +100,8 @@ export async function onRequestGet({request,env}){
       ...item,
       boosted:Boolean(item.boosted_until),
       is_owner:Boolean(viewer&&Number(item.account_id)===viewer.id),
-      image_url:item.image_key?'/api/vendor/image?key='+encodeURIComponent(item.image_key):'',
+      image_url:item.image_key?'/api/vendor/image?key='+encodeURIComponent(item.image_key):String(item.catalog_image_url||''),
+      image_urls:(()=>{const custom=item.image_key?'/api/vendor/image?key='+encodeURIComponent(item.image_key):'';const extra=parseImageKeys(item.extra_image_keys).map(key=>'/api/vendor/image?key='+encodeURIComponent(key));const urls=[];for(const value of [custom||String(item.catalog_image_url||''),String(item.catalog_image_url||''),...extra])if(value&&!urls.includes(value))urls.push(value);return urls;})(),
       shop_url:'/collector.html?user='+encodeURIComponent(item.username)+'#shop',
       profile_url:'/collector.html?user='+encodeURIComponent(item.username)
     }));

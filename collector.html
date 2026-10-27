@@ -252,6 +252,21 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+.cp-catalog{border:1px solid #d7e2f2;background:#f7faff;border-radius:12px;padding:14px;margin:12px 0}
+.cp-catalog-title{margin:0 0 6px;font-size:1.05rem;color:#0b2a6b}
+.cp-catalog-controls{display:grid;gap:8px}
+.cp-catalog-controls input,.cp-catalog-controls select{width:100%;min-height:42px;padding:9px;border:1px solid #b7c8e3;border-radius:8px;background:#fff;color:#0b2a6b;font:inherit}
+.cp-catalog-status{font-size:.9rem;min-height:1.25em;margin:10px 0;color:#40577f}
+.cp-catalog-results{display:grid;gap:7px;max-height:360px;overflow:auto}
+.cp-catalog-result{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:center;width:100%;text-align:left;padding:8px;border:1px solid #cbd8ea;border-radius:9px;background:#fff;color:#0b2a6b;cursor:pointer;font:inherit}
+.cp-catalog-result:hover,.cp-catalog-result:focus-visible{border-color:#2367d1;outline:2px solid #d7e6ff}
+.cp-catalog-result img{width:52px;height:64px;object-fit:contain;background:#f1f5fb;border-radius:5px}
+.cp-catalog-result strong,.cp-catalog-result small{display:block;overflow-wrap:anywhere}
+.cp-catalog-result small{font-size:.82rem;color:#526589;margin-top:3px}
+.cp-catalog-selected{border:1px solid #a8c9f7;background:#fff;border-radius:9px;padding:9px;margin-top:8px}
+.cp-catalog-selected .cp-catalog-result{border:0;padding:0;cursor:default}
+</style>
 </head>
 <body>
 <div id="site-navigation"></div>
@@ -384,7 +399,22 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 </form></section>
 <section class="cp-shop-editor-card"><h3>Marketplace listings</h3><p class="cp-shop-muted">Add a listing here and it can appear on the public marketplace while marked for sale.</p>
 <form id="profile-listing-form" class="cp-shop-form">
-<input type="hidden" name="id"><input type="hidden" name="image_key">
+<input type="hidden" name="id"><input type="hidden" name="image_key"><input type="hidden" name="tcgcsv_product_id">
+<section id="profile-listing-catalog" class="cp-catalog" aria-label="Find product details in TCGCSV">
+<h4 class="cp-catalog-title">Find product details in TCGCSV</h4>
+<p class="cp-shop-muted">Search as you type, just like My Collection. Select a card or sealed product to fill in its catalog details, then upload your own photo and set your own asking price.</p>
+<div class="cp-catalog-controls">
+<input id="profile-listing-catalog-search" type="search" maxlength="80" autocomplete="off" placeholder="Search a card, sealed product, or card number" aria-label="Search TCGCSV catalog">
+<div class="cp-shop-form-row">
+<select id="profile-listing-catalog-type" aria-label="Catalog product type"><option value="single">Cards / singles</option><option value="sealed">Sealed products</option><option value="all">All products</option></select>
+<select id="profile-listing-catalog-set" aria-label="Filter by set"><option value="">All sets</option></select>
+</div>
+</div>
+<p id="profile-listing-catalog-status" class="cp-catalog-status" role="status" aria-live="polite">Type at least 2 characters to search.</p>
+<div id="profile-listing-catalog-results" class="cp-catalog-results"></div>
+<div id="profile-listing-catalog-selected" class="cp-catalog-selected" hidden></div>
+<button id="profile-listing-catalog-clear" class="cp-btn secondary" type="button" style="margin-top:8px" hidden>Remove catalog selection</button>
+</section>
 <label>Item name *<input name="item_name" maxlength="160" required placeholder="e.g. Charizard ex, ETB, PSA 10 slab"></label>
 <div class="cp-shop-form-row"><label>Category<select name="category"><option>Singles</option><option>Sealed</option><option>Graded cards</option><option>Collections</option><option>Accessories</option><option>Clothing</option><option>Plushies</option><option>Other</option></select></label><label>Price (USD)<input name="price" type="number" min="0" max="10000000" step="0.01" placeholder="Leave blank to ask"></label></div>
 <div class="cp-shop-form-row"><label>Condition / grade<input name="condition_label" maxlength="80" placeholder="Near Mint, PSA 10…"></label><label>Quantity / availability note<input name="quantity_hint" maxlength="80" placeholder="1 available"></label></div>
@@ -1117,6 +1147,7 @@ $('collector-search-form').addEventListener('submit',event=>{
    const item=(shopState.inventory||[]).find(x=>Number(x.id)===Number(id));if(!item)return;
    const form=$('profile-listing-form');fillShopForm(form,item);form.elements.price.value=item.price_cents===null||item.price_cents===undefined?'':(Number(item.price_cents)/100).toFixed(2);
    form.elements.is_for_sale.checked=Number(item.is_for_sale)===1;form.elements.image_key.value=item.image_key||'';
+   window.dispatchEvent(new CustomEvent('shop-listing-catalog-edit',{detail:item}));
    $('profile-listing-save').textContent='Save listing';$('profile-listing-cancel').hidden=false;setStatus('profile-listing-status','Editing '+item.item_name+'. Update the fields and save.');
    form.scrollIntoView({behavior:'smooth',block:'start'});
   }
@@ -1125,7 +1156,7 @@ $('collector-search-form').addEventListener('submit',event=>{
   });
   $('profile-listing-form').addEventListener('submit',async event=>{
    event.preventDefault();const form=$('profile-listing-form'),button=$('profile-listing-save');button.disabled=true;setStatus('profile-listing-status','Saving listing…');
-   const data={action:'save_item',id:form.elements.id.value,item_name:form.elements.item_name.value,category:form.elements.category.value,price:form.elements.price.value,condition_label:form.elements.condition_label.value,quantity_hint:form.elements.quantity_hint.value,image_key:form.elements.image_key.value,notes:form.elements.notes.value,is_for_sale:form.elements.is_for_sale.checked};
+   const data={action:'save_item',id:form.elements.id.value,item_name:form.elements.item_name.value,category:form.elements.category.value,price:form.elements.price.value,condition_label:form.elements.condition_label.value,quantity_hint:form.elements.quantity_hint.value,image_key:form.elements.image_key.value,tcgcsv_product_id:form.elements.tcgcsv_product_id.value,notes:form.elements.notes.value,is_for_sale:form.elements.is_for_sale.checked};
    try{const result=await profileShopApi(data);resetShopListingForm();renderOwnerShop(result);setStatus('profile-listing-status','Listing saved.');}
    catch(error){setStatus('profile-listing-status',error.message);}finally{button.disabled=false;}
   });
@@ -1157,6 +1188,7 @@ $('collector-search-form').addEventListener('submit',event=>{
  load();
 })();
 </script>
+<script src="/js/ui/shop-listing-catalog.js?v=20261026-live-search-v1"></script>
 <script src="/js/ui/collector-social.js?v=20261022-comment-replies-2"></script>
-<script src="/js/ui/site-nav.js?v=20261025-shared-header-v2"></script>
+<script src="/js/ui/site-nav.js?v=20261026-marketplace-menu-cleanup-v1"></script>
 </body></html>
