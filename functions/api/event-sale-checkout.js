@@ -1,5 +1,6 @@
 import { accountStripeConfig } from '../_lib/account-stripe.js';
 import { currentEventPaymentsAccount, ensureEventPaymentsSchema, eventPaymentsJson, cleanupExpiredEventReservations } from '../_lib/event-payments.js';
+import { getVendorEventSalesPermission } from '../_lib/vendor-event-sales-verification.js';
 
 export async function onRequestPost({ request, env }) {
   if (!env.DB) return eventPaymentsJson({ ok: false, error: 'database_not_configured' }, 500);
@@ -24,6 +25,8 @@ export async function onRequestPost({ request, env }) {
     await cleanupExpiredEventReservations(env.DB);
     const item = await env.DB.prepare("SELECT i.*,e.title AS event_title,e.event_date,e.status AS event_status FROM event_sale_items i JOIN poke_report_events e ON e.id=i.event_id WHERE i.id=? LIMIT 1").bind(itemId).first();
     if (!item || Number(item.is_active) !== 1 || item.event_status !== 'published') return eventPaymentsJson({ ok: false, error: 'sale_item_unavailable', message: 'This ticket or booth reservation is no longer available.' }, 404);
+    const sellerPermission = await getVendorEventSalesPermission(env, Number(item.owner_account_id));
+    if (!sellerPermission.can_sell) return eventPaymentsJson({ ok: false, error: 'event_sales_verification_required', message: 'This organizer is not approved to sell admission tickets, tables, or booths yet.' }, 403);
     if (String(item.event_date || '') < new Date().toISOString().slice(0, 10)) return eventPaymentsJson({ ok: false, error: 'event_is_past', message: 'Reservations are closed for this event.' }, 409);
     const connected = await env.DB.prepare('SELECT stripe_account_id,livemode,charges_enabled,payouts_enabled FROM event_connect_accounts WHERE account_id=? LIMIT 1').bind(item.owner_account_id).first();
     if (!connected || Number(connected.livemode) !== (stripe.live ? 1 : 0)) return eventPaymentsJson({ ok: false, error: 'organizer_stripe_not_ready', message: 'The organizer has not finished connecting payments for this event yet.' }, 409);
