@@ -64,25 +64,25 @@ export async function onRequestGet({ env }) {
                cur.source_timestamp, cur.market_price,
                (SELECT old.market_price FROM tcgcsv_price_history old
                 WHERE old.product_id=p.product_id
-                  AND old.subtype_name=current.subtype_name
+                  AND old.subtype_name=cur.subtype_name
                   AND old.source_timestamp <= ?
                   AND old.market_price IS NOT NULL
                 ORDER BY old.source_timestamp DESC LIMIT 1) AS price_1d,
                (SELECT old.source_timestamp FROM tcgcsv_price_history old
                 WHERE old.product_id=p.product_id
-                  AND old.subtype_name=current.subtype_name
+                  AND old.subtype_name=cur.subtype_name
                   AND old.source_timestamp <= ?
                   AND old.market_price IS NOT NULL
                 ORDER BY old.source_timestamp DESC LIMIT 1) AS timestamp_1d,
                (SELECT old.market_price FROM tcgcsv_price_history old
                 WHERE old.product_id=p.product_id
-                  AND old.subtype_name=current.subtype_name
+                  AND old.subtype_name=cur.subtype_name
                   AND old.source_timestamp <= ?
                   AND old.market_price IS NOT NULL
                 ORDER BY old.source_timestamp DESC LIMIT 1) AS price_7d,
                (SELECT old.source_timestamp FROM tcgcsv_price_history old
                 WHERE old.product_id=p.product_id
-                  AND old.subtype_name=current.subtype_name
+                  AND old.subtype_name=cur.subtype_name
                   AND old.source_timestamp <= ?
                   AND old.market_price IS NOT NULL
                 ORDER BY old.source_timestamp DESC LIMIT 1) AS timestamp_7d
