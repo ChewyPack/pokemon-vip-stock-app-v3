@@ -2579,3 +2579,28 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
     height: 440px;
   }
 }
+
+
+/* Stable explicit placement for the three homepage character viewers.
+   Named grid areas prevent Goku from being auto-placed onto a new row
+   when the homepage is revisited or viewer sizes change. */
+.ppp-3d-showcase__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas: "ash luffy goku";
+}
+.ppp-3d-showcase__grid > .ppp-model-standalone:nth-child(1) { grid-area: ash; }
+.ppp-3d-showcase__grid > .ppp-model-standalone:nth-child(2) { grid-area: luffy; }
+.ppp-3d-showcase__grid > .ppp-model-standalone:nth-child(3) { grid-area: goku; }
+
+@media (max-width: 900px) {
+  .ppp-3d-showcase__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "ash luffy" "goku goku";
+  }
+}
+@media (max-width: 600px) {
+  .ppp-3d-showcase__grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "ash" "luffy" "goku";
+  }
+}
