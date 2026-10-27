@@ -411,53 +411,47 @@
     );
   }
 
-  function initAshKetchumViewer() {
-    var host = document.getElementById('ppp-ash-viewer');
-    if (!host || host.dataset.initialized === 'true') return;
-    host.dataset.initialized = 'true';
+  function initShowcaseModels() {
+    var configs = [
+      { id: 'ppp-ash-viewer', src: '/assets/ash_ketchum.glb', label: 'Ash Ketchum' },
+      { id: 'ppp-luffy-viewer', src: '/assets/luffy_one_piece.glb', label: 'Luffy from One Piece' }
+    ];
+    var pending = configs.filter(function (item) {
+      var host = document.getElementById(item.id);
+      if (!host || host.dataset.initialized === 'true') return false;
+      host.dataset.initialized = 'true';
+      return true;
+    });
+    if (!pending.length) return;
     var moduleScript = document.createElement('script');
     moduleScript.type = 'module';
     moduleScript.textContent = [
-      "const host = document.getElementById('ppp-ash-viewer');",
-      "const showError = (message, error) => { console.error('PokePrizePool Ash 3D viewer:', error || message); if (host) { const loading = host.querySelector('.universe-3d-loading'); if (loading) loading.textContent = message; else host.textContent = message; } };",
-      "if (host) {",
-      "  Promise.all([",
-      "    import('https://esm.sh/three@0.169.0'),",
-      "    import('https://esm.sh/three@0.169.0/examples/jsm/loaders/GLTFLoader.js')",
-      "  ]).then(([THREE, loaderModule]) => {",
-      "    const GLTFLoader = loaderModule.GLTFLoader;",
-      "    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;",
+      "Promise.all([import('https://esm.sh/three@0.169.0'), import('https://esm.sh/three@0.169.0/examples/jsm/loaders/GLTFLoader.js')]).then(([THREE, loaderModule]) => {",
+      "  const GLTFLoader = loaderModule.GLTFLoader;",
+      "  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;",
+      "  const configs = " + JSON.stringify(pending) + ";",
+      "  configs.forEach((config) => {",
+      "    const host = document.getElementById(config.id); if (!host) return;",
+      "    const showError = (message, error) => { console.error('PokePrizePool ' + config.label + ' 3D viewer:', error || message); const loading = host.querySelector('.universe-3d-loading'); if (loading) loading.textContent = message; else host.textContent = message; };",
       "    const scene = new THREE.Scene();",
-      "    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);",
-      "    camera.position.set(0, 0, 5.8);",
+      "    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100); camera.position.set(0, 0, 5.8);",
       "    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });",
-      "    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));",
-      "    renderer.setSize(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight));",
-      "    renderer.outputColorSpace = THREE.SRGBColorSpace;",
-      "    renderer.setClearColor(0x000000, 0);",
-      "    host.replaceChildren(renderer.domElement);",
+      "    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); renderer.setSize(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight));",
+      "    renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.setClearColor(0x000000, 0); host.replaceChildren(renderer.domElement);",
       "    scene.add(new THREE.HemisphereLight(0xffffff, 0x526080, 2.2));",
       "    const key = new THREE.DirectionalLight(0xffffff, 2.6); key.position.set(3, 4, 5); scene.add(key);",
       "    const fill = new THREE.DirectionalLight(0xffffff, 1.1); fill.position.set(-4, 1, -3); scene.add(fill);",
       "    let model = null;",
-      "    new GLTFLoader().load('/assets/ash_ketchum.glb', (gltf) => {",
-      "      model = gltf.scene;",
-      "      const box = new THREE.Box3().setFromObject(model);",
-      "      const size = box.getSize(new THREE.Vector3());",
-      "      const center = box.getCenter(new THREE.Vector3());",
-      "      model.position.sub(center);",
-      "      const maxDim = Math.max(size.x, size.y, size.z) || 1;",
-      "      model.scale.setScalar(1.8 / maxDim);",
-      "      camera.lookAt(0, 0, 0);",
-      "      scene.add(model);",
+      "    new GLTFLoader().load(config.src, (gltf) => {",
+      "      model = gltf.scene; const box = new THREE.Box3().setFromObject(model); const size = box.getSize(new THREE.Vector3()); const center = box.getCenter(new THREE.Vector3());",
+      "      model.position.sub(center); const maxDim = Math.max(size.x, size.y, size.z) || 1; model.scale.setScalar(1.8 / maxDim); camera.lookAt(0, 0, 0); scene.add(model);",
       "      const loading = host.querySelector('.universe-3d-loading'); if (loading) loading.remove();",
       "    }, undefined, (error) => showError('3D model failed to load. Please refresh and try again.', error));",
       "    const resize = () => { const w = Math.max(1, host.clientWidth); const h = Math.max(1, host.clientHeight); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h); };",
-      "    const observer = new ResizeObserver(resize); observer.observe(host);",
-      "    const clock = new THREE.Clock();",
+      "    const observer = new ResizeObserver(resize); observer.observe(host); const clock = new THREE.Clock();",
       "    renderer.setAnimationLoop(() => { const delta = Math.min(clock.getDelta(), 0.05); if (model && !reduceMotion) model.rotation.y += delta * 0.32; renderer.render(scene, camera); });",
-      "  }).catch((error) => showError('3D viewer could not start. Please refresh and try again.', error));",
-      "}"
+      "  });",
+      "}).catch((error) => { console.error('PokePrizePool 3D showcase could not start:', error); document.querySelectorAll('#ppp-ash-viewer .universe-3d-loading, #ppp-luffy-viewer .universe-3d-loading').forEach((node) => { node.textContent = '3D viewer could not start. Please refresh and try again.'; }); });"
     ].join('\n');
     document.body.appendChild(moduleScript);
   }
@@ -583,21 +577,16 @@
         bolt()
       );
 
-      /* Dedicated showcase area for up to four standalone 3D Pokémon models. */
+      /* Dedicated showcase: Ash remains on the left; Luffy is added directly to his right. */
       var universes = h(
         'section',
         {
           class: 'ppp-3d-showcase',
           id: 'universes',
-          'aria-label': 'Featured 3D Pokémon models'
+          'aria-label': 'Featured 3D character models'
         },
         h('div', { class: 'ppp-3d-showcase__grid' },
-          h(
-            'section',
-            {
-              class: 'ppp-ash-standalone',
-              'aria-label': 'Ash Ketchum 3D model'
-            },
+          h('section', { class: 'ppp-ash-standalone ppp-model-standalone', 'aria-label': 'Ash Ketchum 3D model' },
             h('a', {
               class: 'ppp-ash-standalone__link',
               href: '/tcg-history/pokemon.html',
@@ -608,6 +597,14 @@
               role: 'img',
               'aria-label': 'Rotating 3D Ash Ketchum model'
             }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')))
+          ),
+          h('section', { class: 'ppp-ash-standalone ppp-model-standalone', 'aria-label': 'Luffy from One Piece 3D model' },
+            h('div', {
+              class: 'ppp-ash-standalone__viewer',
+              id: 'ppp-luffy-viewer',
+              role: 'img',
+              'aria-label': 'Rotating 3D Luffy from One Piece model'
+            }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…'))
           )
         )
       );
@@ -827,7 +824,7 @@
       /* Keep Ash in his original position after Explore/Featured Events, with its own visible space. */
       root.appendChild(homeExplore);
       root.appendChild(universes);
-      initAshKetchumViewer();
+      initShowcaseModels();
       root.appendChild(how);
       root.appendChild(cta);
       root.appendChild(footer);
