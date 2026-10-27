@@ -2487,3 +2487,38 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
     height: 340px;
   }
 }
+
+
+/* Dedicated area below Explore for the four standalone 3D model features. */
+.ppp-3d-showcase {
+  position: relative;
+  display: block;
+  clear: both;
+  isolation: isolate;
+  width: 100%;
+  margin: 28px auto 12px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  overflow: visible;
+}
+.ppp-3d-showcase__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 16px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.ppp-3d-showcase__grid > .ppp-ash-standalone {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .ppp-3d-showcase__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .ppp-3d-showcase { margin-top: 18px; padding-inline: 8px; }
+  .ppp-3d-showcase__grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+}
