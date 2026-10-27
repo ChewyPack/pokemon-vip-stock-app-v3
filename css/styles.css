@@ -2492,12 +2492,16 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 /* Dedicated area below Explore for the four standalone 3D model features. */
 .ppp-3d-showcase {
   position: relative;
+  z-index: 20;
   display: block;
   clear: both;
+  grid-column: 1 / -1;
+  flex: 0 0 100%;
   isolation: isolate;
   width: 100%;
-  margin: 28px auto 12px;
-  padding: 0 16px;
+  min-width: 0;
+  margin: 96px auto 24px;
+  padding: 36px 16px 12px;
   box-sizing: border-box;
   overflow: visible;
 }
@@ -2513,12 +2517,29 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 .ppp-3d-showcase__grid > .ppp-ash-standalone {
   grid-column: 1 / -1;
   min-width: 0;
+  width: 100%;
   margin: 0;
 }
+.ppp-3d-showcase .ppp-ash-standalone {
+  min-height: clamp(460px, 55vw, 620px);
+}
+.ppp-3d-showcase .ppp-ash-standalone__link {
+  height: clamp(460px, 55vw, 620px);
+  width: min(100%, 560px);
+}
+.ppp-3d-showcase .ppp-ash-standalone__viewer {
+  overflow: visible;
+}
 @media (max-width: 900px) {
+  .ppp-3d-showcase { margin-top: 72px; }
   .ppp-3d-showcase__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
-  .ppp-3d-showcase { margin-top: 18px; padding-inline: 8px; }
+  .ppp-3d-showcase { margin-top: 56px; padding: 24px 8px 8px; }
   .ppp-3d-showcase__grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .ppp-3d-showcase .ppp-ash-standalone,
+  .ppp-3d-showcase .ppp-ash-standalone__link {
+    min-height: 440px;
+    height: 440px;
+  }
 }
