@@ -580,32 +580,24 @@
         bolt()
       );
 
-      /* Original universe cards — preserved. */
+      /* Standalone 3D Pokémon model linking to the Pokémon TCG history page. */
       var universes = h(
         'section',
         {
-          class: 'section',
+          class: 'ppp-ash-standalone',
           id: 'universes',
-          'aria-labelledby': 'uni-title'
+          'aria-label': 'Explore Pokémon TCG history'
         },
-        h(
-          'div',
-          { class: 'wrap' },
-          h('h2', {
-            class: 'section__title',
-            id: 'uni-title'
-          }, 'Where the crew hunts'),
-          h('p', {
-            class: 'section__sub'
-          }, 'Pokémon is live. More universes are on the way.')
-        ),
-        h(
-          'div',
-          { class: 'binder' },
-          h('div', {
-            class: 'binder__row'
-          }, cfg.universes.map(universeCard))
-        )
+        h('a', {
+          class: 'ppp-ash-standalone__link',
+          href: '/tcg-history/pokemon.html',
+          'aria-label': 'Explore Pokémon Trading Card Game history'
+        }, h('div', {
+          class: 'ppp-ash-standalone__viewer',
+          id: 'ppp-ash-viewer',
+          role: 'img',
+          'aria-label': 'Rotating 3D Ash Ketchum model'
+        }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')))
       );
 
       /* Original how-it-works section — preserved. */
@@ -797,7 +789,6 @@
         })
         .catch(function () { hero.hidden = false; trialPromo.hidden = false; });
       initPokeBallViewer();
-      initAshKetchumViewer();
       var homeExplore = buildHomepagePreviews();
       var homeGiveaway = buildHomeGiveawayMeter();
       var exploreGrid = homeExplore.querySelector('.ppp-home-previews__grid');
@@ -823,6 +814,7 @@
       }
       root.appendChild(homeExplore);
       root.appendChild(universes);
+      initAshKetchumViewer();
       root.appendChild(how);
       root.appendChild(cta);
       root.appendChild(footer);
