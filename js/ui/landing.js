@@ -583,24 +583,33 @@
         bolt()
       );
 
-      /* Standalone 3D Pokémon model linking to the Pokémon TCG history page. */
+      /* Dedicated showcase area for up to four standalone 3D Pokémon models. */
       var universes = h(
         'section',
         {
-          class: 'ppp-ash-standalone',
+          class: 'ppp-3d-showcase',
           id: 'universes',
-          'aria-label': 'Explore Pokémon TCG history'
+          'aria-label': 'Featured 3D Pokémon models'
         },
-        h('a', {
-          class: 'ppp-ash-standalone__link',
-          href: '/tcg-history/pokemon.html',
-          'aria-label': 'Explore Pokémon Trading Card Game history'
-        }, h('div', {
-          class: 'ppp-ash-standalone__viewer',
-          id: 'ppp-ash-viewer',
-          role: 'img',
-          'aria-label': 'Rotating 3D Ash Ketchum model'
-        }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')))
+        h('div', { class: 'ppp-3d-showcase__grid' },
+          h(
+            'section',
+            {
+              class: 'ppp-ash-standalone',
+              'aria-label': 'Ash Ketchum 3D model'
+            },
+            h('a', {
+              class: 'ppp-ash-standalone__link',
+              href: '/tcg-history/pokemon.html',
+              'aria-label': 'Explore Pokémon Trading Card Game history'
+            }, h('div', {
+              class: 'ppp-ash-standalone__viewer',
+              id: 'ppp-ash-viewer',
+              role: 'img',
+              'aria-label': 'Rotating 3D Ash Ketchum model'
+            }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')))
+          )
+        )
       );
 
       /* Original how-it-works section — preserved. */
