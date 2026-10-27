@@ -37,9 +37,14 @@
 
     var frameChildren = [
       h('div', {
-        class: 'card__art' + (art.src ? '' : ' card__art--back') + (u.id === 'pokemon' ? ' card__art--official-product' : ''),
+        class: 'card__art' + (art.src ? '' : ' card__art--back') + (u.id === 'pokemon' ? ' card__art--ash-model' : ''),
         style: style
-      }),
+      }, u.id === 'pokemon' ? h('div', {
+        class: 'universe-3d-viewer',
+        id: 'ppp-ash-viewer',
+        role: 'img',
+        'aria-label': 'Ash Ketchum displayed as a rotating 3D model'
+      }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')) : null),
       h('span', { class: 'card__rarity' }, live ? 'Live now' : 'Coming soon'),
       h(
         'div',
@@ -406,6 +411,54 @@
     );
   }
 
+  function initAshKetchumViewer() {
+    var host = document.getElementById('ppp-ash-viewer');
+    if (!host || host.dataset.initialized === 'true') return;
+    host.dataset.initialized = 'true';
+    var moduleScript = document.createElement('script');
+    moduleScript.type = 'module';
+    moduleScript.textContent = [
+      "import * as THREE from 'https://esm.sh/three@0.169.0';",
+      "import { GLTFLoader } from 'https://esm.sh/three@0.169.0/examples/jsm/loaders/GLTFLoader.js';",
+      "const host = document.getElementById('ppp-ash-viewer');",
+      "if (host) {",
+      "  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;",
+      "  const scene = new THREE.Scene();",
+      "  const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);",
+      "  camera.position.set(0, 0, 4.5);",
+      "  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });",
+      "  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));",
+      "  renderer.setSize(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight));",
+      "  renderer.outputColorSpace = THREE.SRGBColorSpace;",
+      "  renderer.setClearColor(0x000000, 0);",
+      "  host.replaceChildren(renderer.domElement);",
+      "  scene.add(new THREE.HemisphereLight(0xffffff, 0x526080, 2.2));",
+      "  const key = new THREE.DirectionalLight(0xffffff, 2.6); key.position.set(3, 4, 5); scene.add(key);",
+      "  const fill = new THREE.DirectionalLight(0xffffff, 1.1); fill.position.set(-4, 1, -3); scene.add(fill);",
+      "  let model = null;",
+      "  new GLTFLoader().load('/assets/ash_ketchum.glb', (gltf) => {",
+      "    model = gltf.scene;",
+      "    const box = new THREE.Box3().setFromObject(model);",
+      "    const size = box.getSize(new THREE.Vector3());",
+      "    const center = box.getCenter(new THREE.Vector3());",
+      "    model.position.sub(center);",
+      "    const maxDim = Math.max(size.x, size.y, size.z) || 1;",
+      "    model.scale.setScalar(2.55 / maxDim);",
+      "    scene.add(model);",
+      "    const loading = host.querySelector('.universe-3d-loading'); if (loading) loading.remove();",
+      "  }, undefined, (error) => {",
+      "    console.error('PokePrizePool Ash 3D model failed to load:', error);",
+      "    host.textContent = '3D model temporarily unavailable.';",
+      "  });",
+      "  const resize = () => { const w = Math.max(1, host.clientWidth); const h = Math.max(1, host.clientHeight); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h); };",
+      "  const observer = new ResizeObserver(resize); observer.observe(host);",
+      "  const clock = new THREE.Clock();",
+      "  renderer.setAnimationLoop(() => { const delta = Math.min(clock.getDelta(), 0.05); if (model && !reduceMotion) model.rotation.y += delta * 0.32; renderer.render(scene, camera); });",
+      "}"
+    ].join('\\n');
+    document.body.appendChild(moduleScript);
+  }
+
   VIP.landing = {
     render: function (root) {
       var cfg = VIP.siteConfig;
@@ -744,6 +797,7 @@
         })
         .catch(function () { hero.hidden = false; trialPromo.hidden = false; });
       initPokeBallViewer();
+      initAshKetchumViewer();
       var homeExplore = buildHomepagePreviews();
       var homeGiveaway = buildHomeGiveawayMeter();
       var exploreGrid = homeExplore.querySelector('.ppp-home-previews__grid');
