@@ -457,7 +457,7 @@
       "    renderer.setAnimationLoop(() => { const delta = Math.min(clock.getDelta(), 0.05); if (model && !reduceMotion) model.rotation.y += delta * 0.32; renderer.render(scene, camera); });",
       "  }).catch((error) => showError('3D viewer could not start. Please refresh and try again.', error));",
       "}"
-    ].join('\\n');
+    ].join('\n');
     document.body.appendChild(moduleScript);
   }
 
