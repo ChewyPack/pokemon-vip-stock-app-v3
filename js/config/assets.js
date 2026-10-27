@@ -19,7 +19,7 @@
 
     // Card art per universe. `src: null` renders the generic card back.
     universeArt: {
-      pokemon: { src: 'https://www.pokemon.com/static-assets/content-assets/cms2/img/trading-card-game/series/incrementals/2026/30th-celebration-booster-bundle/30th-celebration-booster-bundle-169-en.png', size: 'contain', position: '50% 30%' },
+      pokemon: { src: null },
       'one-piece': { src: COLLAGE, size: 'auto 100%', position: '50% 50%' },
       'dragon-ball': { src: COLLAGE, size: 'auto 100%', position: '100% 50%' },
       'other-tcg': { src: null }
