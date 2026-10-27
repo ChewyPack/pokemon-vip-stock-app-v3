@@ -239,11 +239,13 @@
 
       VIP.effects.burst(views.done);
     } else {
-      // Rebuild the homepage from a clean root on every route change. Without this,
-      // clicking Home can append duplicate viewers with the same IDs and attach the
-      // 3D renderer to an old, detached canvas host.
-      VIP.clear(views.home);
-      VIP.landing.render(views.home);
+      // Render the homepage only once per page load. Hash navigation back to Home
+      // should reveal the existing DOM rather than recreate the 3D canvases and start
+      // extra render loops, which can cause the character viewers to jump or vanish.
+      if (views.home && views.home.dataset.homeRendered !== 'true') {
+        VIP.landing.render(views.home);
+        views.home.dataset.homeRendered = 'true';
+      }
       show('home');
 
       var target =
