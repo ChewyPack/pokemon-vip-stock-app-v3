@@ -95,8 +95,19 @@ async function beginSync(db) {
   if (!sourceTimestamp) throw new Error('TCGCSV last-updated.txt was empty.');
   const state = await db.prepare('SELECT source_timestamp, last_success_at FROM tcgcsv_sync_state WHERE id = 1').first();
   if (state?.source_timestamp === sourceTimestamp && state?.last_success_at) {
-    await db.prepare("UPDATE tcgcsv_sync_state SET status='up_to_date', last_error=NULL WHERE id=1").run();
-    return { skipped: true, reason: 'source_unchanged', source_timestamp: sourceTimestamp };
+    // The older catalog sync may already have published this source marker before
+    // snapshot history existed. Run a one-time price-only pass if any priced
+    // product is still missing a snapshot for this marker.
+    const missingSnapshot = await db.prepare(
+      'SELECT 1 AS missing FROM tcgcsv_products p WHERE p.market_price IS NOT NULL ' +
+      'AND NOT EXISTS (SELECT 1 FROM tcgcsv_market_price_snapshots s ' +
+      'WHERE s.product_id=p.product_id AND s.source_timestamp=?) LIMIT 1'
+    ).bind(sourceTimestamp).first();
+    if (!missingSnapshot) {
+      await db.prepare("UPDATE tcgcsv_sync_state SET status='up_to_date', last_error=NULL WHERE id=1").run();
+      return { skipped: true, reason: 'source_unchanged', source_timestamp: sourceTimestamp };
+    }
+    console.log('Starting a price-only refresh because snapshot history is missing for the current source timestamp.');
   }
   await db.prepare("UPDATE tcgcsv_sync_state SET status='syncing', last_error=NULL WHERE id=1").run();
   try {
