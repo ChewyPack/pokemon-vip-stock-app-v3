@@ -88,13 +88,11 @@ export async function onRequestGet({ env }) {
                 ORDER BY old.source_timestamp DESC LIMIT 1) AS timestamp_7d
         FROM tcgcsv_products p
         JOIN tcgcsv_groups g ON g.group_id=p.group_id
-        JOIN tcgcsv_price_history current
-          ON current.product_id=p.product_id
-         AND current.source_timestamp=(
-           SELECT MAX(h.source_timestamp) FROM tcgcsv_price_history h
-           WHERE h.product_id=p.product_id AND h.market_price IS NOT NULL
-         )
-        WHERE p.category_id=3 AND p.product_type=? AND current.market_price > 0
+        JOIN tcgcsv_price_history cur
+          ON cur.product_id=p.product_id
+         AND cur.source_timestamp=?
+         AND cur.market_price IS NOT NULL
+        WHERE p.category_id=3 AND p.product_type=? AND cur.market_price > 0
         ORDER BY p.product_id
       `).bind(dayCutoff, dayCutoff, weekCutoff, weekCutoff, sourceTimestamp, type).all();
 
