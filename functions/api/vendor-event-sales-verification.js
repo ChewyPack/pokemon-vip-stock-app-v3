@@ -36,7 +36,7 @@ async function currentAccount(request, env) {
   const token = cookie(request, COOKIE);
   if (!token) return null;
   const account = await env.DB.prepare(
-    'SELECT id,display_name,email,is_admin,session_expires_at FROM accounts WHERE session_token_hash=? LIMIT 1'
+    'SELECT id,display_name,email,is_admin,session_expires_at,membership_status,membership_tier,membership_entitlement_tier FROM accounts WHERE session_token_hash=? LIMIT 1'
   ).bind(await sha256(token)).first();
   return account && account.session_expires_at && Number(account.session_expires_at) > Date.now() ? account : null;
 }
@@ -151,7 +151,12 @@ export async function onRequestGet({ request, env }) {
   ).bind(account.id).first();
   return json({
     ok: true,
-    account: { display_name: account.display_name || '', is_admin: Number(account.is_admin || 0) === 1 },
+    account: {
+      display_name: account.display_name || '',
+      is_admin: Number(account.is_admin || 0) === 1,
+      membership_status: String(account.membership_status || 'inactive'),
+      membership_tier: String(account.membership_entitlement_tier || account.membership_tier || 'free')
+    },
     ...permission,
     verification_id: verification ? Number(verification.id) : null,
     storage_configured: !!env.VENDOR_VERIFICATION_PRIVATE
