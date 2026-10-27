@@ -78,6 +78,22 @@
       var sealedHeading = document.getElementById('sealed');
       if (singles) singles.innerHTML = '<div class="mi-empty">' + msg + '</div>';
       if (sealedHeading && sealedHeading.nextElementSibling) sealedHeading.nextElementSibling.innerHTML = '<div class="mi-empty">' + msg + '</div>';
+      var stats = document.querySelectorAll('.mi-stats .mi-stat');
+      if (stats.length >= 3) {
+        stats[0].querySelector('strong').textContent = 'Unavailable';
+        stats[0].querySelector('small').textContent = 'Live market coverage could not be confirmed.';
+        stats[1].querySelector('strong').textContent = '24 hours / 7 days';
+        stats[1].querySelector('small').textContent = 'Price comparisons require successful dated snapshots.';
+        stats[2].querySelector('strong').textContent = 'Feed unavailable';
+        stats[2].querySelector('small').textContent = 'No static market figures are shown when the live feed cannot be reached.';
+      }
+      var history = document.getElementById('snapshot-history');
+      if (history) history.innerHTML = '<h3>Automated price history</h3><div class="mi-empty">' + msg + '</div>';
+      var slabsHeading = document.getElementById('slabs');
+      if (slabsHeading && slabsHeading.nextElementSibling) {
+        slabsHeading.querySelector('p').textContent = 'Separate graded-card integration planned.';
+        slabsHeading.nextElementSibling.innerHTML = '<article class="mi-note" style="grid-column:1/-1"><h3>Graded-card data is not connected yet</h3><p>Raw-card prices are not graded-slab prices. This section will remain separate until a reliable graded-price source is connected.</p></article>';
+      }
       return;
     }
     setStatus(data.ready ? 'TCGCSV · daily feed' : 'Building price history');
