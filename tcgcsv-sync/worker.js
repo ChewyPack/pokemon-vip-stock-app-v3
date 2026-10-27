@@ -147,6 +147,12 @@ async function ensurePriceProgressTable(db) {
     "current_group_offset INTEGER NOT NULL DEFAULT 0, sync_day TEXT, rows_written_today INTEGER NOT NULL DEFAULT 0)").run();
   await db.prepare("INSERT OR IGNORE INTO tcgcsv_price_sync_progress " +
     "(id, next_group_index, current_group_offset, rows_written_today) VALUES (1, 0, 0, 0)").run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS tcgcsv_market_price_snapshots (" +
+    "product_id INTEGER NOT NULL, subtype_name TEXT NOT NULL DEFAULT 'Normal', " +
+    "source_timestamp TEXT NOT NULL, market_price REAL NOT NULL, recorded_at TEXT NOT NULL, " +
+    "PRIMARY KEY (product_id, subtype_name, source_timestamp))").run();
+  await db.prepare("CREATE INDEX IF NOT EXISTS idx_tcgcsv_market_snapshots_time " +
+    "ON tcgcsv_market_price_snapshots(source_timestamp, product_id)").run();
 }
 
 async function beginPriceSync(db) {
@@ -268,9 +274,9 @@ async function processOnePriceGroup(db, token, dailyWriteBudget = DEFAULT_IMPORT
           .bind(price.marketPrice, price.subtype, progress.source_timestamp, productId));
         if (price.marketPrice !== null) {
           statements.push(db.prepare(
-            'INSERT INTO tcgcsv_price_history ' +
-            '(product_id, subtype_name, source_timestamp, low_price, mid_price, high_price, direct_low_price, recorded_at, market_price) ' +
-            'SELECT product_id, ?, ?, NULL, NULL, NULL, NULL, ?, market_price FROM tcgcsv_products ' +
+            'INSERT INTO tcgcsv_market_price_snapshots ' +
+            '(product_id, subtype_name, source_timestamp, market_price, recorded_at) ' +
+            'SELECT product_id, ?, ?, market_price, ? FROM tcgcsv_products ' +
             'WHERE product_id=? AND market_price IS NOT NULL ' +
             'ON CONFLICT(product_id, subtype_name, source_timestamp) DO UPDATE SET ' +
             'market_price=excluded.market_price, recorded_at=excluded.recorded_at'
