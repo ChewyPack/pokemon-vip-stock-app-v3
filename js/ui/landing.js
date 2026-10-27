@@ -414,7 +414,7 @@
   function initShowcaseModels() {
     var configs = [
       { id: 'ppp-ash-viewer', src: '/assets/ash_ketchum.glb', label: 'Ash Ketchum' },
-      { id: 'ppp-luffy-viewer', src: '/assets/luffy_one_piece.glb', label: 'Luffy from One Piece', rotationX: -Math.PI / 2, rotationY: Math.PI }
+      { id: 'ppp-luffy-viewer', src: '/assets/luffy_one_piece.glb', label: 'Luffy from One Piece', rotationY: Math.PI }
     ];
     var pending = configs.filter(function (item) {
       var host = document.getElementById(item.id);
