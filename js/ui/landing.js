@@ -730,12 +730,9 @@
         toolsTitle.className = 'ppp-home-previews__group-title';
         toolsTitle.textContent = 'More for collectors';
         tools.appendChild(toolsTitle);
-        while (newsCard.nextElementSibling && newsCard.nextElementSibling !== tools) {
-          var candidate = newsCard.nextElementSibling;
+        Array.prototype.slice.call(exploreGrid.children).forEach(function(candidate){
           if (candidate.classList && candidate.classList.contains('ppp-home-previews__panel') && !candidate.classList.contains('ppp-home-previews__panel--store') && !candidate.classList.contains('ppp-home-previews__panel--social')) tools.appendChild(candidate);
-          else if (candidate.classList && candidate.classList.contains('ppp-home-previews__feature-row')) break;
-          else break;
-        }
+        });
         exploreGrid.appendChild(homeGiveaway);
         exploreGrid.appendChild(tools);
       }
