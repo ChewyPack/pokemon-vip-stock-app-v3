@@ -385,7 +385,7 @@
             h('p', { class: 'ppp-collector-trial-promo__copy' }, 'Try Collector+ free for 3 days. A payment method is required at signup. After the trial, your selected plan renews at $5/month or $50/year unless canceled before the trial ends.'),
             h('small', { class: 'ppp-collector-trial-promo__fine' }, 'For eligible first-time subscribers only. Accounts with prior subscription history do not qualify for another trial.')
           ),
-          h('a', { class: 'btn btn--lg ppp-collector-trial-promo__button', id: 'ppp-collector-trial-cta', href: '/account.html?mode=register&plan=collector' }, 'Start your 3-day free trial')
+          h('a', { class: 'btn btn--lg ppp-collector-trial-promo__button', id: 'ppp-collector-trial-cta', href: '/account?mode=register&plan=collector' }, 'Start your 3-day free trial')
         )
       )
     );
@@ -467,8 +467,8 @@
               h('span', null, 'Collector community')
             ),
             h('div', { class: 'hero__conversion', id: 'hero-account-conversion' },
-              h('a', { class: 'btn btn--lg hero__signup', href: '/account.html?mode=register' }, 'Create your free account'),
-              h('a', { class: 'hero__login-link', href: '/account.html?mode=login' }, 'Already a member? Log in')
+              h('a', { class: 'btn btn--lg hero__signup', href: '/account?mode=register' }, 'Create your free account'),
+              h('a', { class: 'hero__login-link', href: '/account?mode=login' }, 'Already a member? Log in')
             ),
             h('p', { class: 'hero__free-note', id: 'hero-free-note' }, 'Free to join. Create your collector profile in minutes.')
           ),
@@ -645,7 +645,7 @@
       var floatingAction = h('a', {
         class: 'ppp-home-floating-action',
         id: 'ppp-home-floating-action',
-        href: '/account.html?mode=register&plan=collector',
+        href: '/account?mode=register&plan=collector',
         'aria-label': 'Start your 3-day free trial'
       }, 'Free Trial');
       root.appendChild(floatingAction);
