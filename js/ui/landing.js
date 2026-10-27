@@ -599,12 +599,16 @@
             }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')))
           ),
           h('section', { class: 'ppp-ash-standalone ppp-model-standalone', 'aria-label': 'Luffy from One Piece 3D model' },
-            h('div', {
+            h('a', {
+              class: 'ppp-ash-standalone__link',
+              href: '/tcg-history/one-piece.html',
+              'aria-label': 'Explore the history of the One Piece Card Game'
+            }, h('div', {
               class: 'ppp-ash-standalone__viewer',
               id: 'ppp-luffy-viewer',
               role: 'img',
               'aria-label': 'Rotating 3D Luffy from One Piece model'
-            }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…'))
+            }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')))
           )
         )
       );
