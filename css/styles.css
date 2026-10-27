@@ -2547,9 +2547,9 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 
 /* Two standalone character models side by side, without cards or captions. */
 .ppp-3d-showcase__grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
-  max-width: 1200px;
+  max-width: 1440px;
 }
 .ppp-3d-showcase__grid > .ppp-model-standalone {
   grid-column: auto;
