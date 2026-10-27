@@ -414,7 +414,8 @@
   function initShowcaseModels() {
     var configs = [
       { id: 'ppp-ash-viewer', src: '/assets/ash_ketchum.glb', label: 'Ash Ketchum' },
-      { id: 'ppp-luffy-viewer', src: '/assets/luffy_one_piece.glb', label: 'Luffy from One Piece', rotationY: Math.PI }
+      { id: 'ppp-luffy-viewer', src: '/assets/luffy_one_piece.glb', label: 'Luffy from One Piece', rotationY: Math.PI },
+      { id: 'ppp-goku-viewer', src: '/assets/son_goku.glb', label: 'Son Goku from Dragon Ball' }
     ];
     var pending = configs.filter(function (item) {
       var host = document.getElementById(item.id);
@@ -608,6 +609,18 @@
               id: 'ppp-luffy-viewer',
               role: 'img',
               'aria-label': 'Rotating 3D Luffy from One Piece model'
+            }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')))
+          ),
+          h('section', { class: 'ppp-ash-standalone ppp-model-standalone', 'aria-label': 'Son Goku 3D model' },
+            h('a', {
+              class: 'ppp-ash-standalone__link',
+              href: '/tcg-history/dragon-ball.html',
+              'aria-label': 'Explore the history of the Dragon Ball trading card game'
+            }, h('div', {
+              class: 'ppp-ash-standalone__viewer',
+              id: 'ppp-goku-viewer',
+              role: 'img',
+              'aria-label': 'Rotating 3D Son Goku model'
             }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')))
           )
         )
