@@ -45,7 +45,12 @@ self.addEventListener('fetch', event => {
   event.respondWith((async () => {
     const cache = await caches.open(SHELL_CACHE);
     try {
-      const response = await fetch(new Request(request, { cache: 'reload' }));
+      const response = await fetch(url.href, {
+        cache: 'no-store',
+        credentials: request.credentials,
+        redirect: 'follow',
+        headers: { 'Accept': request.headers.get('Accept') || 'text/html' }
+      });
       if (response && response.ok && (response.headers.get('content-type') || '').includes('text/html')) {
         await cache.put(url.pathname, response.clone());
       }
