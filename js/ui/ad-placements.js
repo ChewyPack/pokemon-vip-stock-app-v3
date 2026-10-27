@@ -144,8 +144,21 @@ function renderLeftAmazonAffiliate(slot){
  link.appendChild(img);el._pppAd.inner.replaceChildren(link);
  img.addEventListener('error',function(){el.dataset.pppAffiliateLeftRail='';el.classList.remove('ppp-ad-slot--image-creative');houseAd(slot);},{once:true});
 }
+function renderRightAmazonAffiliate(slot){
+ var el=document.querySelector('[data-ad-slot="'+slot+'"]');if(!el||el.dataset.pppAffiliateRightRail==='1'||!el._pppAd)return;
+ el.dataset.pppAffiliateRightRail='1';el.dataset.pppCampaignRequested='1';
+ el.classList.add('ppp-ad-slot--image-creative');
+ el.setAttribute('aria-label','Amazon affiliate advertisement');
+ var link=element('a','ppp-ad-art-link');
+ link.href='https://link.amazon/B0hz4IRqX';link.target='_blank';link.rel='sponsored nofollow noopener noreferrer';
+ link.setAttribute('aria-label','Shop on Amazon (opens in a new tab)');
+ var img=element('img','ppp-ad-art');img.src='/images/ritesiderail.jpg';img.alt='Shop on Amazon';img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
+ link.appendChild(img);el._pppAd.inner.replaceChildren(link);
+ img.addEventListener('error',function(){el.dataset.pppAffiliateRightRail='';el.classList.remove('ppp-ad-slot--image-creative');houseAd(slot);},{once:true});
+}
 function loadCampaign(slot){
  if(/-left$/.test(slot)){renderLeftAmazonAffiliate(slot);return;}
+ if(/-right$/.test(slot)){renderRightAmazonAffiliate(slot);return;}
  if(slot==='home-top'){renderAmazonAffiliateBanner(slot);return;}
  var slotElement=document.querySelector('[data-ad-slot="'+slot+'"]');
  if(!slotElement||slotElement.dataset.pppCampaignRequested==='1')return;
