@@ -1,4 +1,5 @@
 import { accountStripeConfig } from '../_lib/account-stripe.js';
+import { getVendorEventSalesPermission } from '../_lib/vendor-event-sales-verification.js';
 import { currentEventPaymentsAccount, ensureEventPaymentsSchema, eventPaymentsJson, getOwnedEvent, eventItemAvailability, itemAvailability, cleanupExpiredEventReservations } from '../_lib/event-payments.js';
 
 function clean(value, max = 500) { return String(value ?? '').trim().slice(0, max); }
@@ -75,6 +76,9 @@ export async function onRequestGet({ request, env }) {
     let summary = null;
     const connectOwnerId = Number(event.owner_account_id || (manage ? user.id : 0));
     const publicConnect = connectOwnerId ? await accountConnectStatus(env, connectOwnerId) : { connected: false };
+    const sellerPermission = connectOwnerId ? await getVendorEventSalesPermission(env, connectOwnerId) : { can_sell: false, reason: 'verification_required', verification_status: 'not_submitted', review_note: '' };
+    const adminOverride = !!user && Number(user.is_admin || 0) === 1;
+    const salesPermission = adminOverride ? { ...sellerPermission, can_sell: true, reason: '' } : sellerPermission;
     if (manage) {
       orders = await eventOrders(env, eventId);
       connect = await accountConnectStatus(env, Number(event.owner_account_id || user.id));
@@ -91,7 +95,7 @@ export async function onRequestGet({ request, env }) {
     } else {
       const connect = null;
     }
-    return eventPaymentsJson({ ok: true, event: { id: event.id, title: event.title, event_date: event.event_date }, can_manage: manage, checkout_enabled: !!publicConnect.connected && webhookReady, checkout_disabled_reason: paymentConfigReason || (!publicConnect.connected ? 'organizer_stripe_not_ready' : ''), webhook_ready: manage ? webhookReady : undefined, connect: manage ? connect : undefined, items, orders: manage ? orders : undefined, summary: manage ? summary : undefined });
+    return eventPaymentsJson({ ok: true, event: { id: event.id, title: event.title, event_date: event.event_date }, can_manage: manage, can_sell: !!salesPermission.can_sell, verification_status: salesPermission.verification_status, verification_reason: salesPermission.reason, verification_review_note: salesPermission.review_note || '', checkout_enabled: !!salesPermission.can_sell && !!publicConnect.connected && webhookReady, checkout_disabled_reason: !salesPermission.can_sell ? salesPermission.reason : (paymentConfigReason || (!publicConnect.connected ? 'organizer_stripe_not_ready' : '')), webhook_ready: manage ? webhookReady : undefined, connect: manage ? connect : undefined, items, orders: manage ? orders : undefined, summary: manage ? summary : undefined });
   } catch (error) {
     console.error('Event sales read failed:', error);
     return eventPaymentsJson({ ok: false, error: 'event_sales_unavailable' }, 500);
@@ -132,6 +136,10 @@ export async function onRequestPost({ request, env }) {
     const quantityText = String(data.quantity_total ?? '').trim();
     const quantityTotal = quantityText === '' ? null : Number(quantityText);
     const isActive = data.is_active === false || data.is_active === 0 || data.is_active === '0' ? 0 : 1;
+    if ((isActive === 1 || !itemId) && Number(user.is_admin || 0) !== 1) {
+      const permission = await getVendorEventSalesPermission(env, user.id);
+      if (!permission.can_sell) return eventPaymentsJson({ ok: false, error: permission.reason || 'event_sales_verification_required', message: permission.reason === 'vendor_plus_required' ? 'An active Vendor+ membership is required to sell admission tickets, tables, or booths.' : permission.reason === 'verification_pending' ? 'Your identity documents are awaiting review. Selling is locked until approval.' : permission.reason === 'verification_rejected' ? 'Your verification was not approved. Review the note and submit updated documents before selling.' : 'Complete Vendor+ identity verification and wait for approval before selling tickets, tables, or booths.' }, 403);
+    }
     if (!['admission','booth','table'].includes(type)) return eventPaymentsJson({ ok: false, error: 'invalid_item_type' }, 400);
     if (!title) return eventPaymentsJson({ ok: false, error: 'title_required' }, 400);
     if (!Number.isSafeInteger(cents) || cents < 50 || cents > 100000000) return eventPaymentsJson({ ok: false, error: 'invalid_price', message: 'Enter a price of at least $0.50.' }, 400);
