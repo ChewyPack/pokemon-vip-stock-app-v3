@@ -85,8 +85,8 @@
  var nav=el('nav',{class:'site-nav','aria-label':'Main navigation'},[
   link('PokePrizePool','/'),
   dropdown('Explore',[
-   {title:'News & Updates',description:'Pokémon news, hobby coverage, and announcements',href:'/news.html'},
-   {title:'Market Intelligence',description:'Market trends and product insights',href:'/market-intelligence.html'},
+   {title:'News & Updates',description:'Pokémon news, hobby coverage, and announcements',href:'/news'},
+   {title:'Market Intelligence',description:'Market trends and product insights',href:'/market-intelligence'},
    {title:'Events',description:'Shows, trade nights, and releases',href:'/events.html'},
    {title:'Submit an Event',href:'/submit-event.html'},
    {title:'Instant Cashout',description:'Explore collection cash-out options',href:'/instant-buyout.html'},
@@ -94,8 +94,8 @@
   ]),
   dropdown('Alerts',alertsItems),
   dropdown('Marketplace',[
-   {title:'PokePrizePool Store',description:'Official cards, sealed products, and merchandise',href:'/store.html'},
-   {title:'Collector Marketplace',description:'Browse listings from member shops',href:'/marketplace.html'},
+   {title:'PokePrizePool Store',description:'Official cards, sealed products, and merchandise',href:'/store'},
+   {title:'Collector Marketplace',description:'Browse listings from member shops',href:'/marketplace'},
    {title:'Line Services',description:'Get help securing products in person',href:'/line-services.html'}
   ]),
   dropdown('Community',[

@@ -18,7 +18,7 @@
 <div class="sa-actions"><button id="sa-save" class="sa-btn" type="submit">Save product</button><button id="sa-cancel" class="sa-btn secondary" type="button" hidden>Cancel edit</button></div><p id="sa-form-status" class="sa-status" role="status" aria-live="polite"></p></form></section>
 <section class="sa-card"><div class="sa-product-head"><h2>Products & inventory</h2><button id="sa-refresh-products" class="sa-btn secondary" type="button">Refresh</button></div><div id="sa-product-list" class="sa-list"><p class="sa-status">Loading products…</p></div></section></div>
 <section class="sa-card sa-orders"><div class="sa-product-head"><h2>Orders</h2><button id="sa-refresh-orders" class="sa-btn secondary" type="button">Refresh</button></div><p class="sa-status">Payment status is set by the signed Stripe webhook. Update fulfillment after checking order details.</p><div id="sa-order-list" class="sa-list"><p class="sa-status">Loading orders…</p></div></section></main>
-<script src="/js/ui/site-nav.js?v=20261026-profile-route-fix-v2"></script><script>
+<script src="/js/ui/site-nav.js?v=20261026-canonical-route-fix-v3"></script><script>
 (function(){
  const $=id=>document.getElementById(id),form=$('sa-product-form'),safe=value=>String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),money=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents||0)/100);
  let products=[],editingId=null,authorized=false,currentImages=[],previewObjectUrls=[],tcgcsvResults=[];
