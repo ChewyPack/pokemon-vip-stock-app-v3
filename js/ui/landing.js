@@ -297,7 +297,7 @@
       h('p', { class: 'ppp-home-gm__status', id: 'ppp-home-gm-status', role: 'status', 'aria-live': 'polite' }, 'Subscriber total refreshes periodically.'),
       h('div', { class: 'ppp-home-gm__cta' },
         h('a', { class: 'btn btn--lg', href: '/giveaways.html#giveaway-meter' }, 'Explore Giveaways'),
-        h('a', { class: 'btn btn--lg', href: '/account.html' }, 'Subscribe to VIP')
+        h('a', { class: 'btn btn--lg', href: '/account.html' }, 'Subscribe to Collector+')
       )
     );
 
