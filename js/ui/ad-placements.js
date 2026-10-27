@@ -132,7 +132,20 @@ function renderAmazonAffiliateBanner(slot){
  el.replaceChildren(link,disclosure);
  img.addEventListener('error',function(){el.dataset.pppAffiliateBanner='';el.classList.remove('ppp-ad-slot--affiliate-banner');houseAd(slot);},{once:true});
 }
+function renderLeftAmazonAffiliate(slot){
+ var el=document.querySelector('[data-ad-slot="'+slot+'"]');if(!el||el.dataset.pppAffiliateLeftRail==='1'||!el._pppAd)return;
+ el.dataset.pppAffiliateLeftRail='1';el.dataset.pppCampaignRequested='1';
+ el.classList.add('ppp-ad-slot--image-creative');
+ el.setAttribute('aria-label','Amazon affiliate advertisement');
+ var link=element('a','ppp-ad-art-link');
+ link.href='https://link.amazon/B06dqBzHt';link.target='_blank';link.rel='sponsored nofollow noopener noreferrer';
+ link.setAttribute('aria-label','Shop on Amazon (opens in a new tab)');
+ var img=element('img','ppp-ad-art');img.src='/images/leftsiderail.jpg';img.alt='Shop on Amazon';img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
+ link.appendChild(img);el._pppAd.inner.replaceChildren(link);
+ img.addEventListener('error',function(){el.dataset.pppAffiliateLeftRail='';el.classList.remove('ppp-ad-slot--image-creative');houseAd(slot);},{once:true});
+}
 function loadCampaign(slot){
+ if(/-left$/.test(slot)){renderLeftAmazonAffiliate(slot);return;}
  if(slot==='home-top'){renderAmazonAffiliateBanner(slot);return;}
  var slotElement=document.querySelector('[data-ad-slot="'+slot+'"]');
  if(!slotElement||slotElement.dataset.pppCampaignRequested==='1')return;
