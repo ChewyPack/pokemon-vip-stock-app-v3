@@ -2224,3 +2224,100 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
   .site-nav__dropdown:nth-of-type(5) .site-nav__menu,
   .site-nav__dropdown:last-of-type .site-nav__menu { left: auto; right: 0; }
 }
+
+
+/* Footer social media links */
+.footer-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px auto 20px;
+}
+
+.footer-social__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 7px 13px;
+  border: 1px solid rgba(159, 183, 230, 0.38);
+  border-radius: 999px;
+  color: #e3eeff;
+  background: rgba(6, 23, 74, 0.42);
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.footer-social__link:hover,
+.footer-social__link:focus-visible {
+  color: #fff;
+  background: rgba(48, 92, 176, 0.48);
+  border-color: #9fb7e6;
+  transform: translateY(-2px);
+}
+
+.footer-social__link:focus-visible {
+  outline: 2px solid #fff6bf;
+  outline-offset: 3px;
+}
+
+.footer-social__icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  color: #fff;
+}
+
+.footer-social__icon--x {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.footer-social__icon--facebook {
+  align-items: flex-end;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  font-size: 29px;
+  font-weight: 800;
+  line-height: 22px;
+}
+
+.footer-social__icon--instagram {
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+}
+
+.footer-social__icon--instagram::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.footer-social__icon--instagram::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+@media (max-width: 420px) {
+  .footer-social { gap: 8px; }
+  .footer-social__link { gap: 6px; padding: 7px 10px; }
+}
