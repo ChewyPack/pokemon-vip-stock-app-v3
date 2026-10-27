@@ -2433,12 +2433,16 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 /* Standalone clickable Ash model — no tile, frame, caption, or card artwork. */
 .ppp-ash-standalone {
   position: relative;
+  z-index: 5;
+  isolation: isolate;
   display: flex;
+  flex: 0 0 auto;
+  clear: both;
   justify-content: center;
   align-items: center;
   width: 100%;
   min-height: clamp(300px, 42vw, 500px);
-  margin: 0 auto;
+  margin: 24px auto 0;
   padding: 0 16px;
   box-sizing: border-box;
   background: transparent;
