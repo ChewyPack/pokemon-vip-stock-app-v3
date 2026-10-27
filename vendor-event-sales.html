@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06174A">
+<title>Event Sales Verification | PokePrizePool</title>
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+.verify-wrap{width:min(850px,calc(100% - 28px));margin:28px auto 72px;color:#0b2a6b}
+.verify-card{background:#fff;border:2px solid #0b2a6b;border-radius:14px;padding:clamp(18px,3vw,30px);margin:18px 0;box-shadow:4px 4px 0 #000}
+.verify-card h1{font:400 clamp(2rem,5vw,3rem)/1.1 var(--font-display);margin:0 0 10px}
+.verify-muted{color:#52648b;line-height:1.6}
+.verify-notice{padding:13px;border-radius:9px;background:#f0f5ff;border:1px solid #cad8ef;color:#17366d;line-height:1.6;margin:14px 0}
+.verify-status{min-height:1.5em;white-space:pre-line;color:#52648b}.verify-status.error{color:#a32222}.verify-status.success{color:#126c43}
+.verify-form{display:grid;gap:14px;margin-top:18px}
+.verify-form label{display:grid;gap:7px;font-weight:800}
+.verify-form input[type=file]{width:100%;box-sizing:border-box;border:1px solid #b7c8e7;border-radius:8px;padding:12px;background:#f8faff;color:#0b2a6b}
+.verify-form button{min-height:46px;padding:10px 16px;border:0;border-radius:8px;background:#0b2a6b;color:#fff;font:inherit;font-weight:900;cursor:pointer}
+.verify-form button:disabled{opacity:.55;cursor:wait}
+.verify-state{padding:13px;border-radius:9px;background:#f7f9fd;border:1px solid #d5e0f2;margin:12px 0}
+.verify-state strong{display:block;text-transform:capitalize;margin-bottom:4px}
+@media(max-width:620px){.verify-wrap{width:calc(100% - 20px)}}
+</style>
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="verify-wrap">
+<section class="verify-card">
+<p class="dashboard-eyebrow">Vendor+ · Event Organizer</p>
+<h1>Get approved to sell event tickets and spaces</h1>
+<p class="verify-muted">Anyone can submit an event for calendar review. Separate approval is required before a Vendor+ member can sell admission tickets or reserve paid tables and booths through PokePrizePool.</p>
+<div class="verify-notice"><strong>What to upload</strong><br>1. A clear photo of the front of your government-issued ID<br>2. A clear photo of the back of that ID<br>3. A clear selfie of you holding no ID is needed; use a recent, well-lit selfie showing your face clearly.<br><br>These images are used only for organizer verification. They are stored in a private bucket, are not public event media, and are deleted after an admin records a decision.</div>
+<div id="verify-account-status" class="verify-status" role="status" aria-live="polite">Checking account and verification status…</div>
+<div id="verify-current" class="verify-state" hidden></div>
+<form id="verify-form" class="verify-form" hidden>
+<label for="id-front">Government ID — front *<input id="id-front" name="id_front" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label>
+<label for="id-back">Government ID — back *<input id="id-back" name="id_back" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label>
+<label for="selfie">Selfie *<input id="selfie" name="selfie" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label>
+<p class="verify-muted">Upload JPG, PNG, WebP, or AVIF images, maximum 8 MB each. Keep the whole ID visible and make sure text and photo are readable. Do not upload unrelated documents.</p>
+<label style="display:flex;gap:9px;align-items:flex-start;font-weight:600"><input id="verify-consent" type="checkbox" required style="width:auto;min-height:0;margin-top:4px"> I consent to PokePrizePool reviewing these images for event seller identity verification. I understand the images will be stored privately and deleted after a review decision.</label>
+<button id="verify-submit" type="submit">Submit for verification</button>
+</form>
+<p class="verify-muted">Your identity documents are not the same as Stripe’s separate payment onboarding. If approved, you must still complete Stripe setup before checkout can accept payments.</p>
+</section>
+</main>
+<script src="/js/ui/site-nav.js?v=20261026-logout-cache-fix-v4"></script>
+<script>
+(function(){
+'use strict';
+var status=document.getElementById('verify-account-status'),form=document.getElementById('verify-form'),current=document.getElementById('verify-current'),button=document.getElementById('verify-submit');
+function say(message,kind){status.textContent=message;status.className='verify-status '+(kind||'');}
+function explain(data){
+ current.hidden=false;current.replaceChildren();
+ var title=document.createElement('strong');title.textContent=String(data.verification_status||'not_submitted').replace(/_/g,' ');current.appendChild(title);
+ var copy=document.createElement('p');copy.className='verify-muted';
+ if(data.verification_status==='approved')copy.textContent='Approved. Your account can create paid admission, table, and booth listings, subject to Stripe setup.';
+ else if(data.verification_status==='pending')copy.textContent='Your documents are awaiting review. Selling remains locked until approval.';
+ else if(data.verification_status==='rejected')copy.textContent='Your last submission was not approved. '+(data.review_note||'Please submit clear replacement images.');
+ else copy.textContent='No identity verification has been submitted yet.';
+ current.appendChild(copy);
+}
+async function load(){
+ try{
+  var r=await fetch('/api/vendor-event-sales-verification',{credentials:'include',cache:'no-store'}),d=await r.json();
+  if(!r.ok||!d.ok)throw new Error(d.message||d.error||'Could not check verification status.');
+  if(!d.is_vendor_plus){form.hidden=true;say('An active Vendor+ membership is required to apply for event sales permission. Regular event submissions remain available to all signed-in members.');return;}
+  explain(d);
+  if(d.verification_status==='approved'){form.hidden=true;say('Your identity verification is approved. You can sell tickets, tables, and booths on events you own.','success');return;}
+  if(d.verification_status==='pending'){form.hidden=true;say('Your verification is awaiting review. You cannot sell tickets, tables, or booths until approved.');return;}
+  if(!d.storage_configured){form.hidden=true;say('Secure identity upload is not configured yet. Your documents have not been requested or uploaded. Please try again later.','error');return;}
+  form.hidden=false;
+  say(d.verification_status==='rejected'?'Your previous submission was not approved. Review the note above and upload all three images again.':'You are eligible to apply. Upload all three images to request approval.');
+ }catch(e){form.hidden=true;say(e.message||'Could not load verification status.','error');}
+}
+form.addEventListener('submit',async function(e){
+ e.preventDefault();
+ var front=form.elements.id_front.files[0],back=form.elements.id_back.files[0],selfie=form.elements.selfie.files[0];
+ if(!front||!back||!selfie){say('Choose the front, back, and selfie images before submitting.','error');return;}
+ for(var file of [front,back,selfie])if(file.size>8*1024*1024){say('Each image must be 8 MB or smaller.','error');return;}
+ if(!document.getElementById('verify-consent').checked){say('Confirm consent before uploading your identity documents.','error');return;}
+ button.disabled=true;button.textContent='Uploading securely…';say('Validating and securely uploading your three images…');
+ try{
+  var data=new FormData();data.append('id_front',front);data.append('id_back',back);data.append('selfie',selfie);
+  var r=await fetch('/api/vendor-event-sales-verification',{method:'POST',credentials:'include',body:data}),result=await r.json().catch(function(){return {};});
+  if(!r.ok||!result.ok)throw new Error(result.message||result.error||'Verification submission failed.');
+  form.reset();say('Submitted successfully. Your documents are awaiting admin review; selling is still locked until approval.','success');await load();
+ }catch(error){say(error.message||'Could not submit verification.','error');}
+ finally{button.disabled=false;button.textContent='Submit for verification';}
+});
+load();
+})();
+</script>
+</body>
+</html>
