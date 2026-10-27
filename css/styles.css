@@ -2500,8 +2500,8 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
   isolation: isolate;
   width: 100%;
   min-width: 0;
-  margin: 96px auto 24px;
-  padding: 36px 16px 12px;
+  margin: 24px auto 8px;
+  padding: 8px 12px 0;
   box-sizing: border-box;
   overflow: visible;
 }
@@ -2531,11 +2531,11 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
   overflow: visible;
 }
 @media (max-width: 900px) {
-  .ppp-3d-showcase { margin-top: 72px; }
+  .ppp-3d-showcase { margin-top: 18px; }
   .ppp-3d-showcase__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
-  .ppp-3d-showcase { margin-top: 56px; padding: 24px 8px 8px; }
+  .ppp-3d-showcase { margin-top: 12px; padding: 4px 8px 0; }
   .ppp-3d-showcase__grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .ppp-3d-showcase .ppp-ash-standalone,
   .ppp-3d-showcase .ppp-ash-standalone__link {
@@ -2565,8 +2565,8 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
 }
 .ppp-3d-showcase .ppp-model-standalone,
 .ppp-3d-showcase .ppp-model-standalone .ppp-ash-standalone__link {
-  min-height: clamp(420px, 48vw, 580px);
-  height: clamp(420px, 48vw, 580px);
+  min-height: clamp(340px, 36vw, 440px);
+  height: clamp(340px, 36vw, 440px);
 }
 .ppp-3d-showcase .ppp-model-standalone .ppp-ash-standalone__viewer {
   height: 100%;
@@ -2575,8 +2575,8 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
   .ppp-3d-showcase__grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .ppp-3d-showcase .ppp-model-standalone,
   .ppp-3d-showcase .ppp-model-standalone .ppp-ash-standalone__link {
-    min-height: 440px;
-    height: 440px;
+    min-height: 340px;
+    height: 340px;
   }
 }
 
