@@ -51,7 +51,11 @@
       panel('Biggest gainers', 'Top 15 products · 24-hour price change', data.gainers, 'day',
         'No comparable daily price history yet. The system needs a previous dated snapshot before it can rank this category.') +
       panel('Biggest decliners', 'Top 15 products · 24-hour price change', data.decliners, 'day',
-        'No comparable daily price history yet. Rankings will appear automatically after comparable snapshots are available.');
+        'No comparable daily price history yet. Rankings will appear automatically after comparable snapshots are available.') +
+      panel('Weekly gainers', 'Top 15 products · 7-day price change', data.weekly_gainers, 'week',
+        'Seven days of comparable price history are needed before weekly rankings can appear.') +
+      panel('Weekly decliners', 'Top 15 products · 7-day price change', data.weekly_decliners, 'week',
+        'Seven days of comparable price history are needed before weekly rankings can appear.');
   };
   var showSealed = function (heading, section, data) {
     if (heading) {
@@ -97,7 +101,7 @@
     }
     var singles = document.getElementById('singles');
     if (singles) showCategory(singles, data.singles, 'singles');
-    var singlesHeading = singles && singles.previousElementSibling;
+    var singlesHeading = singles && singles.previousElementSibling && singles.previousElementSibling.previousElementSibling;
     if (singlesHeading) {
       var p = singlesHeading.querySelector('p');
       if (p) p.textContent = 'Live TCGCSV market prices · daily gainers and decliners · singles only.';
