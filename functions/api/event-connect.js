@@ -1,5 +1,6 @@
 import { accountStripeConfig } from '../_lib/account-stripe.js';
 import { currentEventPaymentsAccount, ensureEventPaymentsSchema, eventPaymentsJson, getOwnedEvent } from '../_lib/event-payments.js';
+import { getVendorEventSalesPermission } from '../_lib/vendor-event-sales-verification.js';
 
 async function stripeRequest(path, stripe, options = {}) {
   const response = await fetch('https://api.stripe.com/v1/' + path, {
@@ -67,9 +68,11 @@ export async function onRequestGet({ request, env }) {
     if (!event) return eventPaymentsJson({ ok: false, error: 'event_manage_forbidden' }, 403);
     const stripe = accountStripeConfig(env);
     if (!stripe) return eventPaymentsJson({ ok: true, configured: false, connected: false, message: 'Stripe Connect is not configured for this environment.' });
+    const permission = await getVendorEventSalesPermission(env, user.id);
+    const adminOverride = Number(user.is_admin || 0) === 1;
     const connect = await findAndSync(env, Number(user.id), stripe);
     const webhookSecret = stripe.live ? env.STRIPE_EVENT_CONNECT_WEBHOOK_SECRET : env.STRIPE_EVENT_CONNECT_TEST_WEBHOOK_SECRET;
-    return eventPaymentsJson({ ok: true, configured: true, webhook_ready: !!webhookSecret, payments_ready: !!connect.connected && !!webhookSecret, ...connect });
+    return eventPaymentsJson({ ok: true, configured: true, webhook_ready: !!webhookSecret, can_sell: adminOverride || !!permission.can_sell, verification_status: permission.verification_status, verification_reason: permission.reason, payments_ready: (adminOverride || !!permission.can_sell) && !!connect.connected && !!webhookSecret, ...connect });
   } catch (error) {
     console.error('Event Connect status read failed:', error);
     return eventPaymentsJson({ ok: false, error: 'event_connect_unavailable' }, 500);
@@ -92,9 +95,13 @@ export async function onRequestPost({ request, env }) {
     await ensureEventPaymentsSchema(env);
     const event = await getOwnedEvent(env, eventId, user);
     if (!event) return eventPaymentsJson({ ok: false, error: 'event_manage_forbidden' }, 403);
+    if (data.action !== 'start_onboarding') return eventPaymentsJson({ ok: false, error: 'unknown_action' }, 400);
+    if (Number(user.is_admin || 0) !== 1) {
+      const permission = await getVendorEventSalesPermission(env, user.id);
+      if (!permission.can_sell) return eventPaymentsJson({ ok: false, error: permission.reason || 'event_sales_verification_required', message: 'Approved Vendor+ identity verification is required before connecting sales payments.' }, 403);
+    }
     const stripe = accountStripeConfig(env);
     if (!stripe) return eventPaymentsJson({ ok: false, error: 'stripe_connect_not_configured', message: 'Stripe payments are not configured for this environment yet.' }, 503);
-    if (data.action !== 'start_onboarding') return eventPaymentsJson({ ok: false, error: 'unknown_action' }, 400);
     const result = await createOnboardingLink(env, user, eventId, stripe);
     if (result.error) return eventPaymentsJson({ ok: false, error: result.error, message: 'Your Stripe connection belongs to a different Stripe mode. Contact PokePrizePool support before continuing.' }, 409);
     return eventPaymentsJson({ ok: true, url: result.url, expires_at: result.expires_at });
