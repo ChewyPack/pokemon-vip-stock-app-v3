@@ -646,8 +646,8 @@
             trialPromo.hidden = false;
             return;
           }
-          // Signed-in members do not need the public acquisition hero.
-          hero.hidden = true;
+          // Keep the Home hero visible to signed-in members so Report a Sighting remains easy to reach.
+          hero.hidden = false;
           var account = data.account || {};
           var membership = data.membership || {};
           var status = String(membership.status || '').toLowerCase();
