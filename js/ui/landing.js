@@ -570,8 +570,7 @@
             { class: 'hero__copy' },
             h('p', { class: 'hero__lead' }, 'Already out hunting? Share a sighting with the community and help other collectors know what’s on shelves.'),
             h('div', { class: 'hero__actions' },
-              h('a', { class: 'btn btn--sm', href: '#report' }, 'Report a sighting'),
-              h('a', { class: 'text-link', href: '#how' }, 'How it works')
+              h('a', { class: 'btn btn--sm', href: '#report' }, 'Report a sighting')
             )
           )
         ),
@@ -622,48 +621,6 @@
               role: 'img',
               'aria-label': 'Rotating 3D Son Goku model'
             }, h('span', { class: 'universe-3d-loading' }, 'Loading 3D model…')))
-          )
-        )
-      );
-
-      /* Original how-it-works section — preserved. */
-      var how = h(
-        'section',
-        {
-          class: 'section',
-          id: 'how',
-          'aria-labelledby': 'how-title'
-        },
-        h(
-          'div',
-          { class: 'wrap' },
-          h('h2', {
-            class: 'section__title',
-            id: 'how-title'
-          }, 'How it works'),
-          h(
-            'ol',
-            { class: 'steps' },
-            cfg.howItWorks.map(function (s, i) {
-              return h(
-                'li',
-                { class: 'step-card' },
-                h('span', {
-                  class: 'step-card__num',
-                  'aria-hidden': 'true'
-                }, String(i + 1)),
-                h('span', {
-                  class: 'step-card__icon',
-                  'aria-hidden': 'true'
-                }, s.icon),
-                h('h3', {
-                  class: 'step-card__title'
-                }, s.title),
-                h('p', {
-                  class: 'step-card__text'
-                }, s.text)
-              );
-            })
           )
         )
       );
@@ -842,7 +799,6 @@
       root.appendChild(homeExplore);
       root.appendChild(universes);
       initShowcaseModels();
-      root.appendChild(how);
       root.appendChild(cta);
       root.appendChild(footer);
     }
