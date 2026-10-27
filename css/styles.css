@@ -2361,7 +2361,6 @@ button, .btn, .site-nav__link, .site-nav__toggle { font-weight: 600 !important; 
   background-size: contain !important;
   background-position: center 30% !important;
   background-repeat: no-repeat !important;
-  background-image: linear-gradient(180deg, rgba(7,20,46,.12), rgba(7,20,46,.2)), var(--pokemon-product-art) !important;
 }
 .card--history .card__frame {
   background:
