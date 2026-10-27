@@ -20,6 +20,11 @@
 .verify-form button:disabled{opacity:.55;cursor:wait}
 .verify-state{padding:13px;border-radius:9px;background:#f7f9fd;border:1px solid #d5e0f2;margin:12px 0}
 .verify-state strong{display:block;text-transform:capitalize;margin-bottom:4px}
+.verify-upload-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.verify-upload-card{border:1px solid #cad8ef;border-radius:10px;padding:12px;background:#f8faff;min-width:0}
+.verify-upload-card h3{font-size:1rem;margin:0 0 8px}
+.verify-preview{display:flex;align-items:center;justify-content:center;min-height:150px;aspect-ratio:4/3;overflow:hidden;border:1px dashed #a9bcdd;border-radius:8px;background:#eef3fc;color:#52648b;text-align:center;padding:10px;box-sizing:border-box}
+.verify-preview img{display:block;max-width:100%;max-height:220px;object-fit:contain}
 @media(max-width:620px){.verify-wrap{width:calc(100% - 20px)}}
 </style>
 </head>
@@ -34,9 +39,11 @@
 <div id="verify-account-status" class="verify-status" role="status" aria-live="polite">Checking account and verification status…</div>
 <div id="verify-current" class="verify-state" hidden></div>
 <form id="verify-form" class="verify-form" hidden>
-<label for="id-front">Government ID — front *<input id="id-front" name="id_front" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label>
-<label for="id-back">Government ID — back *<input id="id-back" name="id_back" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label>
-<label for="selfie">Selfie *<input id="selfie" name="selfie" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label>
+<div class="verify-upload-grid">
+<div class="verify-upload-card"><h3>1. Government ID — front *</h3><label for="id-front">Choose front image<input id="id-front" name="id_front" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label><div class="verify-preview" id="preview-front">Your selected ID front will preview here.</div></div>
+<div class="verify-upload-card"><h3>2. Government ID — back *</h3><label for="id-back">Choose back image<input id="id-back" name="id_back" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label><div class="verify-preview" id="preview-back">Your selected ID back will preview here.</div></div>
+<div class="verify-upload-card"><h3>3. Selfie *</h3><label for="selfie">Choose selfie image<input id="selfie" name="selfie" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label><div class="verify-preview" id="preview-selfie">Your selected selfie will preview here.</div></div>
+</div>
 <p class="verify-muted">Upload JPG, PNG, WebP, or AVIF images, maximum 8 MB each. Keep the whole ID visible and make sure text and photo are readable. Do not upload unrelated documents.</p>
 <label style="display:flex;gap:9px;align-items:flex-start;font-weight:600"><input id="verify-consent" type="checkbox" required style="width:auto;min-height:0;margin-top:4px"> I consent to PokePrizePool reviewing these images for event seller identity verification. I understand the images will be stored privately and deleted after a review decision.</label>
 <button id="verify-submit" type="submit">Submit for verification</button>
@@ -60,6 +67,7 @@ function explain(data){
  else copy.textContent='No identity verification has been submitted yet.';
  current.appendChild(copy);
 }
+[['id-front','front'],['id-back','back'],['selfie','selfie']].forEach(function(pair){document.getElementById(pair[0]).addEventListener('change',function(){var target=document.getElementById('preview-'+pair[1]);target.replaceChildren();var file=this.files&&this.files[0];if(!file){target.textContent='Your selected image will preview here.';return;}if(!/^image\\/(jpeg|png|webp|avif)$/i.test(file.type)){target.textContent='Choose JPG, PNG, WebP, or AVIF.';return;}var image=document.createElement('img');image.alt='Selected image preview';image.src=URL.createObjectURL(file);target.appendChild(image);});});
 async function load(){
  try{
   var r=await fetch('/api/vendor-event-sales-verification',{credentials:'include',cache:'no-store'}),d=await r.json();
