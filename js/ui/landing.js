@@ -30,30 +30,42 @@
       style.backgroundSize = art.size || 'cover';
       style.backgroundPosition = art.position || '50% 50%';
     }
+    if (u.id === 'pokemon') {
+      style.backgroundColor = '#07142e';
+      style.backgroundRepeat = 'no-repeat';
+    }
+
+    var frameChildren = [
+      h('div', {
+        class: 'card__art' + (art.src ? '' : ' card__art--back') + (u.id === 'pokemon' ? ' card__art--official-product' : ''),
+        style: style
+      }),
+      h('span', { class: 'card__rarity' }, live ? 'Live now' : 'Coming soon'),
+      h(
+        'div',
+        { class: 'card__plate' },
+        h('h3', { class: 'card__name' }, u.name),
+        h('p', { class: 'card__blurb' }, u.blurb),
+        u.id === 'pokemon' ? h('span', { class: 'card__history-hint' }, 'Explore the TCG history ↗') : null,
+        live ? h('a', {
+          class: 'btn btn--sm card__report-link',
+          href: '#report'
+        }, u.cta || 'Report a sighting') : null
+      )
+    ];
+    if (u.id === 'pokemon') {
+      frameChildren.push(h('a', {
+        class: 'card__history-link',
+        href: '/tcg-history/pokemon.html',
+        'aria-label': 'Explore the history of the Pokémon Trading Card Game'
+      }));
+    }
+    frameChildren.push(h('span', { class: 'card__holo', 'aria-hidden': 'true' }));
 
     return h(
       'article',
-      { class: 'card ' + (live ? 'card--live' : 'card--soon') },
-      h(
-        'div',
-        { class: 'card__frame' },
-        h('div', {
-          class: 'card__art' + (art.src ? '' : ' card__art--back'),
-          style: style
-        }),
-        h('span', { class: 'card__rarity' }, live ? 'Live now' : 'Coming soon'),
-        h(
-          'div',
-          { class: 'card__plate' },
-          h('h3', { class: 'card__name' }, u.name),
-          h('p', { class: 'card__blurb' }, u.blurb),
-          live ? h('a', {
-            class: 'btn btn--sm',
-            href: '#report'
-          }, u.cta || 'Report a sighting') : null
-        ),
-        h('span', { class: 'card__holo', 'aria-hidden': 'true' })
-      )
+      { class: 'card ' + (live ? 'card--live' : 'card--soon') + (u.id === 'pokemon' ? ' card--history' : '') },
+      h('div', { class: 'card__frame' }, frameChildren)
     );
   }
 
