@@ -40,6 +40,10 @@ button:disabled{opacity:.6;cursor:wait}
 <div><label for="start_time">Start time</label><input id="start_time" name="start_time" type="time"></div>
 <div><label for="end_time">End time</label><input id="end_time" name="end_time" type="time"></div>
 <div><label for="venue">Venue / store name</label><input id="venue" name="venue" maxlength="160" placeholder="Venue or store name"></div>
+<div><label for="is_own_event">Is this your event? *</label><select id="is_own_event" name="is_own_event" required><option value="">Choose yes or no</option><option value="yes">Yes, I am the organizer</option><option value="no">No, I am sharing someone else’s event</option></select></div>
+<div><label for="organizer_contact_name">Organizer contact name (optional)</label><input id="organizer_contact_name" name="organizer_contact_name" maxlength="160" placeholder="Name of event organizer"></div>
+<div><label for="organizer_contact_email">Organizer contact email (optional)</label><input id="organizer_contact_email" name="organizer_contact_email" type="email" maxlength="254" placeholder="organizer@example.com"></div>
+<div><label for="organizer_contact_phone">Organizer contact phone (optional)</label><input id="organizer_contact_phone" name="organizer_contact_phone" type="tel" maxlength="50" placeholder="Phone number"></div>
 <div><label for="url">Official event details URL</label><input id="url" name="url" type="url" maxlength="1000" placeholder="https://…"></div>
 <div><label for="address">Street address</label><input id="address" name="address" maxlength="300"></div>
 <div><label for="city">City / town</label><input id="city" name="city" maxlength="160"></div>
@@ -82,7 +86,7 @@ form.addEventListener('submit',async function(event){
   var response=await fetch('/api/event-submissions',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)});
   var result=await response.json().catch(function(){return {};});
   if(!response.ok||!result.ok){
-   var messages={login_required:'Your session expired. Sign in again and resubmit.',title_required:'Enter a title with at least four characters.',valid_event_date_required:'Choose a valid event date.',invalid_event_type:'Choose a valid event type.',invalid_event_time:'Check the event start and end times.',event_url_must_be_https:'Use an official HTTPS event link.',event_location_or_url_required:'Enter the venue/city or an official event link.',invalid_recurrence_frequency:'Choose one-time, weekly, monthly, or yearly.',valid_recurrence_end_required:'Choose a repeat-until date on or after the first event date.',recurrence_limit_exceeded:'That schedule includes too many occurrences. Shorten the repeat-until date and try again.'};
+   var messages={login_required:'Your session expired. Sign in again and resubmit.',title_required:'Enter a title with at least four characters.',is_own_event_required:'Please answer whether this is your event.',invalid_organizer_contact_email:'Enter a valid organizer contact email or leave it blank.',valid_event_date_required:'Choose a valid event date.',invalid_event_type:'Choose a valid event type.',invalid_event_time:'Check the event start and end times.',event_url_must_be_https:'Use an official HTTPS event link.',event_location_or_url_required:'Enter the venue/city or an official event link.',invalid_recurrence_frequency:'Choose one-time, weekly, monthly, or yearly.',valid_recurrence_end_required:'Choose a repeat-until date on or after the first event date.',recurrence_limit_exceeded:'That schedule includes too many occurrences. Shorten the repeat-until date and try again.'};
    throw new Error(messages[result.error]||result.message||result.error||'Submission failed. Please try again.');
   }
   var isRecurring=!!(result.submission&&result.submission.recurrence_frequency&&result.submission.recurrence_frequency!=='once');
