@@ -33,7 +33,7 @@ export async function getVendorEventSalesPermission(env, accountId) {
   const account = await env.DB.prepare(
     'SELECT id,is_admin,membership_status,membership_tier,membership_entitlement_tier FROM accounts WHERE id=? LIMIT 1'
   ).bind(id).first();
-  const normalizeTier = value => String(value || '').trim().toLowerCase().replace(/[_-]/g, ' ').replace(/\\s+/g, ' ');
+  const normalizeTier = value => String(value || '').trim().toLowerCase().replace(/[_-]/g, ' ').replace(/\s+/g, ' ');
   const tiers = [account?.membership_entitlement_tier, account?.membership_tier].map(normalizeTier);
   const membershipStatus = String(account?.membership_status || '').trim().toLowerCase();
   const isAdmin = !!account && Number(account.is_admin || 0) === 1;
