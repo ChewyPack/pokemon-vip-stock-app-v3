@@ -239,6 +239,10 @@
 
       VIP.effects.burst(views.done);
     } else {
+      // Rebuild the homepage from a clean root on every route change. Without this,
+      // clicking Home can append duplicate viewers with the same IDs and attach the
+      // 3D renderer to an old, detached canvas host.
+      VIP.clear(views.home);
       VIP.landing.render(views.home);
       show('home');
 
