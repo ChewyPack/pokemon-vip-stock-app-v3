@@ -132,6 +132,7 @@ textarea{min-height:100px;resize:vertical}
 <p id="event-sales-empty" class="muted" hidden>No admission tickets or booth/table spaces are listed for online reservation yet.</p>
 <div id="event-sales-manager" class="event-sales-manager" hidden>
 <h3>Organizer payment setup</h3>
+<div id="event-seller-verification-note" class="event-connect-note pending"><strong>Vendor+ identity approval required to sell.</strong> You can submit and own an event without this approval, but selling admission tickets, tables, or booths requires an active Vendor+ membership and approved identity verification. <a href="/vendor-event-sales.html">Open seller verification</a>.</div>
 <p id="event-connect-note" class="event-connect-note pending">Checking Stripe Connect status…</p>
 <div class="actions"><button id="event-connect-button" class="btn primary" type="button">Connect Stripe to receive payments</button></div>
 <p id="event-connect-status" class="status" role="status" aria-live="polite"></p>
@@ -401,18 +402,34 @@ async function loadEventSales(){
   renderEventSalePublic(data.items||[],!!data.checkout_enabled,data.checkout_disabled_reason);
   $('event-sales-manager').hidden=!data.can_manage;
   if(data.can_manage){
-   if(connectData&&connectData.connected&&connectData.webhook_ready&&data.checkout_enabled){
+   var verifyNote=$('event-seller-verification-note');
+   if(data.can_sell){
+    verifyNote.className='event-connect-note ready';
+    verifyNote.textContent='Vendor+ event seller permission is approved. You can create and activate admission, table, and booth listings. Stripe onboarding is a separate requirement for accepting payments.';
+   }else{
+    verifyNote.className='event-connect-note pending';verifyNote.replaceChildren();
+    var verifyMessages={vendor_plus_required:'An active Vendor+ membership is required before selling tickets, tables, or booths.',verification_required:'Submit your ID front, ID back, and selfie for review before selling.',verification_pending:'Your identity documents are awaiting review. Selling remains locked until approval.',verification_rejected:'Your verification was not approved. Submit clear replacement images after reviewing the admin note.'};
+    var verifyCopy=make('span');verifyCopy.textContent=verifyMessages[data.verification_reason]||'Identity verification must be approved before selling tickets, tables, or booths.';verifyNote.appendChild(verifyCopy);
+    var verifyLink=make('a','btn primary');verifyLink.href='/vendor-event-sales.html';verifyLink.textContent=data.verification_status==='pending'?'Verification pending':'Open seller verification';verifyLink.style.marginLeft='10px';verifyNote.appendChild(verifyLink);
+    var lockedSave=$('event-sale-save');if(lockedSave)lockedSave.disabled=true;
+    $('event-connect-button').hidden=true;$('event-connect-button').disabled=true;
+   }
+   if(data.can_sell&&connectData&&connectData.connected&&connectData.webhook_ready&&data.checkout_enabled){
     $('event-connect-note').className='event-connect-note ready';$('event-connect-note').textContent='Stripe is connected and ready to accept payments. Admission and booth payments are charged directly on your connected Stripe account.';
     $('event-connect-button').hidden=true;$('event-connect-button').disabled=true;
-   }else if(connectData&&connectData.connected&&!connectData.webhook_ready){
+   }else if(data.can_sell&&connectData&&connectData.connected&&!connectData.webhook_ready){
     $('event-connect-note').className='event-connect-note pending';$('event-connect-note').textContent='Your Stripe account is connected. PokePrizePool must finish its payment-tracking setup before buyers can check out safely; online reservations remain disabled until then.';
     $('event-connect-button').hidden=true;$('event-connect-button').disabled=true;
-   }else{
+   }else if(data.can_sell){
     $('event-connect-note').className='event-connect-note pending';
     $('event-connect-note').textContent='Connect Stripe so buyers can pay you directly. Online checkout stays disabled until Stripe confirms both payments and payouts are enabled.';
     $('event-connect-button').hidden=false;$('event-connect-button').disabled=false;
     $('event-connect-button').textContent=connectData&&connectData.details_submitted?'Continue Stripe setup':'Connect Stripe to receive payments';
+   }else{
+    $('event-connect-note').className='event-connect-note pending';$('event-connect-note').textContent='Stripe onboarding will be available after Vendor+ event seller verification is approved.';
+    $('event-connect-button').hidden=true;$('event-connect-button').disabled=true;
    }
+   var saleSave=$('event-sale-save');if(saleSave)saleSave.disabled=!data.can_sell;
    renderEventSaleManagerItems(data.items||[]);
    renderEventSaleOrders(data.orders||[],data.summary||{});
    $('event-sale-form-status').textContent='';
