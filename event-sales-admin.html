@@ -71,7 +71,7 @@ function renderVerifications(rows,storageConfigured){
    card.appendChild(docs);
    const note=document.createElement('textarea');note.maxLength=500;note.placeholder='Optional note for the applicant (especially if rejecting)';note.setAttribute('aria-label','Review note for '+(v.display_name||'member'));card.appendChild(note);
    const actions=el('div','sales-verification-actions');
-   [['Approve selling permission','approve','approve'],['Reject / request new images','reject','rejected']].forEach(function(spec){
+   [['Approve selling permission','approve','approved'],['Reject / request new images','reject','rejected']].forEach(function(spec){
     const b=el('button',spec[1],spec[0]);b.type='button';
     b.addEventListener('click',async function(){
      if(spec[2]==='rejected'&&!confirm('Reject this verification and delete the uploaded identity images?'))return;
@@ -80,7 +80,7 @@ function renderVerifications(rows,storageConfigured){
       const response=await fetch('/api/vendor-event-sales-verification',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'review',verification_id:v.id,decision:spec[2],review_note:note.value})});
       const result=await response.json().catch(function(){return {};});
       if(!response.ok||!result.ok)throw new Error(result.message||result.error||'Review could not be saved.');
-      $('verification-status').textContent=(spec[2]==='approve'?'Vendor+ event sales permission approved.':'Verification rejected.')+' Private documents deleted.';
+      $('verification-status').textContent=(spec[2]==='approved'?'Vendor+ event sales permission approved.':'Verification rejected.')+' Private documents deleted.';
       await loadVerifications();
      }catch(error){$('verification-status').textContent=error.message||'Review failed.';b.disabled=false;}
     });
