@@ -31,10 +31,11 @@ export async function getVendorEventSalesPermission(env, accountId) {
     return { is_vendor_plus: false, verification_status: 'not_submitted', can_sell: false, reason: 'login_required', review_note: '' };
   }
   const account = await env.DB.prepare(
-    'SELECT id,membership_status,membership_tier,membership_entitlement_tier FROM accounts WHERE id=? LIMIT 1'
+    'SELECT id,is_admin,membership_status,membership_tier,membership_entitlement_tier FROM accounts WHERE id=? LIMIT 1'
   ).bind(id).first();
   const tier = String(account?.membership_entitlement_tier || '').toLowerCase();
   const billingTier = String(account?.membership_tier || '').toLowerCase();
+  const isAdmin = !!account && Number(account.is_admin || 0) === 1;
   const isVendorPlus = !!account &&
     String(account.membership_status || '').toLowerCase() === 'active' &&
     (tier === VENDOR_TIER || billingTier === VENDOR_TIER);
@@ -42,9 +43,10 @@ export async function getVendorEventSalesPermission(env, accountId) {
     'SELECT status,review_note,submitted_at,reviewed_at FROM vendor_event_sales_verifications WHERE account_id=? LIMIT 1'
   ).bind(id).first();
   const status = String(verification?.status || 'not_submitted');
-  const canSell = isVendorPlus && status === 'approved';
+  const canSell = isAdmin || (isVendorPlus && status === 'approved');
   let reason = '';
-  if (!isVendorPlus) reason = 'vendor_plus_required';
+  if (isAdmin) reason = '';
+  else if (!isVendorPlus) reason = 'vendor_plus_required';
   else if (status === 'not_submitted') reason = 'verification_required';
   else if (status === 'pending') reason = 'verification_pending';
   else if (status === 'rejected') reason = 'verification_rejected';
