@@ -1,6 +1,6 @@
 'use strict';
 
-const SHELL_CACHE = 'pokeprizepool-shell-v19';
+const SHELL_CACHE = 'pokeprizepool-shell-v20';
 const CORE_NAVIGATION = new Set([
   '/', '/index.html', '/account.html',
   '/chat.html', '/events.html', '/marketplace', '/vendor.html', '/newsfeed',
@@ -44,8 +44,17 @@ self.addEventListener('fetch', event => {
 
   event.respondWith((async () => {
     const cache = await caches.open(SHELL_CACHE);
+    // Cloudflare Pages clean URLs redirect *.html requests to extensionless paths.
+    // Fetch the canonical path directly from inside the service worker to avoid
+    // a redirect being replayed through the navigation interception layer.
+    const fetchUrl = new URL(url.href);
+    if (fetchUrl.pathname === '/index.html') {
+      fetchUrl.pathname = '/';
+    } else if (fetchUrl.pathname.endsWith('.html')) {
+      fetchUrl.pathname = fetchUrl.pathname.slice(0, -5);
+    }
     try {
-      const response = await fetch(url.href, {
+      const response = await fetch(fetchUrl.href, {
         cache: 'no-store',
         credentials: request.credentials,
         redirect: 'follow',
