@@ -906,7 +906,6 @@
       fetch('/api/events',{credentials:'same-origin',cache:'no-store'}).then(function(response){if(!response.ok)throw new Error('events_unavailable');return response.json();}).then(function(data){events=(data.events||[]).map(function(item){return {id:item.id,slug:item.slug||'',title:item.title,description:item.description||'',type:item.event_type||'show',date:item.event_date||'',start_time:item.start_time||'',end_time:item.end_time||'',venue:item.venue||'',city:item.city||'',state:item.state||'',stateName:item.state_name||item.state||'',url:item.url||'',status:item.badge||'',image_url:item.image_url||'',boosted:!!item.boosted,boosted_until:item.boosted_until||''};});render();}).catch(function(){events=[];render();count.textContent='The event calendar could not load right now. Please refresh in a moment.';});
     })();
   </script>
-<script src="/js/ui/pokereport-sidebar.js"></script>
 <aside class="ppp-ad-slot ppp-ad-slot--rail ppp-ad-slot--left" data-ad-slot="events-left" aria-label="Advertisement placement: events left">Ad placement · events · left</aside>
   <aside class="ppp-ad-slot ppp-ad-slot--rail ppp-ad-slot--right" data-ad-slot="events-right" aria-label="Advertisement placement: events right">Ad placement · events · right</aside>
   <script src="/js/ui/ad-placements.js?v=20261027-amazon-rails-v1"></script>
