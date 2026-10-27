@@ -76,9 +76,9 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
 .chat-reaction-picker[hidden]{display:none!important}
 
 .chat-message-deleted{color:#8795b0;font-style:italic}
-.chat-message-actions{float:right;opacity:0;transition:opacity .15s}
+.chat-reply-quote{margin:2px 0 8px;padding:7px 10px;border-left:3px solid #7da0d9;border-radius:0 7px 7px 0;background:#eef4ff;color:#536b91;font-size:.8rem;line-height:1.4;overflow-wrap:anywhere}.chat-reply-quote strong{display:block;color:#214a89;margin-bottom:2px}.chat-message-actions{float:right;opacity:0;transition:opacity .15s}
 .chat-message:hover .chat-message-actions,.chat-message:focus-within .chat-message-actions{opacity:1}
-.chat-delete{border:1px solid #e3b9bd;background:#fff;color:#a32e38;border-radius:7px;padding:3px 7px;font:800 .72rem Nunito,system-ui,sans-serif;cursor:pointer}
+.chat-delete{border:1px solid #e3b9bd;background:#fff;color:#a32e38;border-radius:7px;padding:3px 7px;font:800 .72rem Nunito,system-ui,sans-serif;cursor:pointer}.chat-reply-button{border:1px solid #cbd8ee;background:#fff;color:#254a83;border-radius:7px;padding:3px 7px;font:800 .72rem Nunito,system-ui,sans-serif;cursor:pointer;margin-right:5px}.chat-reply-preview{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;margin-bottom:8px;border-left:3px solid #174b9b;border-radius:0 8px 8px 0;background:#eef4ff;color:#294779;font-size:.82rem}.chat-reply-preview[hidden]{display:none}.chat-reply-preview-text{min-width:0;overflow-wrap:anywhere}.chat-reply-preview-text strong{display:block;color:#123a7b}.chat-reply-cancel{flex:0 0 auto;border:1px solid #c3d1e8;border-radius:7px;background:#fff;color:#294779;padding:5px 8px;font:800 .75rem Nunito,system-ui,sans-serif;cursor:pointer}
 .chat-composer-wrap{padding:13px 16px 15px;border-top:1px solid #e3eaf7;background:#fbfcff}
 .chat-composer{display:flex;align-items:flex-end;gap:10px;padding:9px;border:1px solid #c9d7ef;border-radius:13px;background:#fff;box-shadow:0 2px 0 #e5ebf7}
 .chat-composer:focus-within{border-color:#5379bd;box-shadow:0 0 0 3px #174b9b12}
@@ -179,6 +179,7 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
       <div id="chat-alert" class="chat-alert" hidden></div>
       <div class="chat-history" id="chat-history" role="log" aria-live="polite" aria-relevant="additions text"><div class="chat-history-status">Loading messages…</div></div>
       <div class="chat-composer-wrap">
+        <div class="chat-reply-preview" id="chat-reply-preview" hidden><div class="chat-reply-preview-text" id="chat-reply-preview-text"></div><button class="chat-reply-cancel" id="chat-reply-cancel" type="button">Cancel</button></div>
         <form class="chat-composer" id="chat-form">
           <textarea id="chat-input" rows="1" maxlength="1200" placeholder="Message #general" aria-label="Write a message" required></textarea>
           <button class="chat-send" id="chat-send" type="submit">Send ↗</button>
@@ -194,7 +195,7 @@ body{font-family:Nunito,system-ui,sans-serif;color:var(--chat-navy)}
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-const state={account:null,channels:[],channelId:null,messages:new Map(),unread:{},socket:null,retry:1000,retryTimer:null,online:null,loading:false,chatPrefs:{notification_mode:'mentions',sound_enabled:true},chatUsername:'',chatNameColor:'#ffd54a',canCustomizeNameColor:false,browserPushEnabled:false,vapidPublicKey:''};
+const state={account:null,channels:[],channelId:null,messages:new Map(),unread:{},socket:null,retry:1000,retryTimer:null,online:null,loading:false,chatPrefs:{notification_mode:'mentions',sound_enabled:true},chatUsername:'',chatNameColor:'#ffd54a',canCustomizeNameColor:false,browserPushEnabled:false,vapidPublicKey:'',replyTo:null};
 const icons={general:'✦',restocks:'⚡',market:'↗',trades:'⇄',help:'?'}; 
 function api(url,options={}){return fetch(url,{credentials:'include',cache:'no-store',...options,headers:{'content-type':'application/json',...(options.headers||{})}}).then(async r=>{let d={};try{d=await r.json()}catch{}if(r.status===401){showGate();throw new Error('login_required')}if(!r.ok)throw new Error(d.message||friendly(d.error)||'Something went wrong.');return d;});}
 function friendly(code){return ({chat_realtime_not_configured:'Real-time chat is not configured yet.',rate_limited:'Please slow down before sending another message.',message_length:'Messages must be between 1 and 1,200 characters.',channel_not_found:'That channel is not available.',chat_messages_read_failed:'Could not load messages.',chat_message_send_failed:'Could not send that message.'})[code]||code||'Something went wrong.';}
@@ -326,6 +327,14 @@ function renderReactionControls(article,m){
  add.addEventListener('click',()=>{picker.hidden=!picker.hidden;});
  area.appendChild(picker);
 }
+function setReplyTo(message){
+ if(!message||message.deleted)return;
+ state.replyTo=message;
+ const preview=$('chat-reply-preview'),label=$('chat-reply-preview-text');
+ const author=message.display_name||'Collector';
+ label.replaceChildren();const strong=document.createElement('strong');strong.textContent='Replying to '+author;const excerpt=document.createElement('span');excerpt.textContent=String(message.body||'').slice(0,180);label.append(strong,excerpt);preview.hidden=false;$('chat-input').focus();
+}
+function clearReplyTo(){state.replyTo=null;$('chat-reply-preview').hidden=true;$('chat-reply-preview-text').replaceChildren();}
 function renderMessage(m){
  if(!m||!m.id||Number(m.channel_id)!==Number(state.channelId))return;
  const root=$('chat-history');const old=root.querySelector('[data-message-id="'+Number(m.id)+'"]');if(old)old.remove();
@@ -338,13 +347,15 @@ function renderMessage(m){
  const name=document.createElement(profileUrl?'a':'span');name.className='chat-message-name'+(profileUrl?' chat-profile-link':'');if(profileUrl){name.href=profileUrl;name.title='View @'+m.username+' collector profile';}name.textContent=m.display_name||'Collector';if(/^#[0-9a-f]{6}$/i.test(String(m.chat_name_color||'')))name.style.color=m.chat_name_color;meta.appendChild(name);
  if(m.username){const user=document.createElement(profileUrl?'a':'span');user.className='chat-message-username'+(profileUrl?' chat-profile-link':'');if(profileUrl){user.href=profileUrl;user.title='View @'+m.username+' collector profile';}user.textContent='@'+m.username;meta.appendChild(user);}
  const time=document.createElement('time');time.className='chat-message-time';time.textContent=timeLabel(m.created_at);time.dateTime=m.created_at||'';meta.appendChild(time);
- if(m.mine||Number(m.account_id)===Number(state.account?.id)||state.account?.is_admin){const actions=document.createElement('span');actions.className='chat-message-actions';const del=document.createElement('button');del.type='button';del.className='chat-delete';del.textContent='Delete';del.setAttribute('aria-label','Delete message');del.addEventListener('click',()=>deleteMessage(m.id));actions.appendChild(del);meta.appendChild(actions);}
+ if(!m.deleted){const actions=document.createElement('span');actions.className='chat-message-actions';const reply=document.createElement('button');reply.type='button';reply.className='chat-reply-button';reply.textContent='Reply';reply.setAttribute('aria-label','Reply to '+(m.display_name||'collector')+'\'s message');reply.addEventListener('click',()=>setReplyTo(m));actions.appendChild(reply);if(m.mine||Number(m.account_id)===Number(state.account?.id)||state.account?.is_admin){const del=document.createElement('button');del.type='button';del.className='chat-delete';del.textContent='Delete';del.setAttribute('aria-label','Delete message');del.addEventListener('click',()=>deleteMessage(m.id));actions.appendChild(del);}meta.appendChild(actions);}
+ if(m.reply_to){const quote=document.createElement('div');quote.className='chat-reply-quote';const quotedAuthor=document.createElement('strong');quotedAuthor.textContent='↳ '+(m.reply_to.display_name||'Collector');const quotedBody=document.createElement('span');quotedBody.textContent=m.reply_to.deleted?'Message deleted':String(m.reply_to.body||'').slice(0,240);quote.append(quotedAuthor,quotedBody);body.appendChild(quote);}
  const text=document.createElement('div');text.className='chat-message-text'+(m.deleted?' chat-message-deleted':'');
  if(m.deleted){text.textContent='Message deleted';}else{const parts=String(m.body||'').split(/(@[a-zA-Z0-9_.-]{2,30})/g);parts.forEach(part=>{if(/^@[a-zA-Z0-9_.-]{2,30}$/.test(part)){const mention=document.createElement('span');mention.className='chat-mention'+(part.toLowerCase()==='@everyone'?' chat-mention-everyone':'');mention.textContent=part;text.appendChild(mention);}else{text.appendChild(document.createTextNode(part));}});}
  body.append(meta,text);article.append(avatar,body);renderReactionControls(article,m);root.appendChild(article);
 }
 function renderMessages(messages){const root=$('chat-history');root.replaceChildren();if(!messages.length){const empty=document.createElement('div');empty.className='chat-history-status';empty.textContent='No messages yet. Be the first to say hello!';root.appendChild(empty);return;}messages.forEach(renderMessage);root.scrollTop=root.scrollHeight;}
 async function selectChannel(id){
+ if(Number(state.channelId)!==Number(id))clearReplyTo();
  state.channelId=id;state.unread[id]=0;saveUnread();renderChannels();const c=currentChannel();if(!c)return;
  $('chat-room-name').textContent=c.name;$('chat-room-description').textContent=c.description||'Community conversation';$('chat-input').placeholder='Message #'+c.slug;$('chat-history').innerHTML='<div class="chat-history-status">Loading messages…</div>';alertBox('');
  try{const d=await api('/api/chat/messages?channel='+encodeURIComponent(id));state.messages.set(id,d.messages||[]);renderMessages(d.messages||[]);if(d.realtime_ready===false)alertBox('Messages can be read, but live delivery is not configured. Ask the site administrator to finish the real-time chat setup.');}
@@ -383,7 +394,7 @@ function connect(){
 async function sendMessage(event){
  event.preventDefault();if(state.loading)return;const input=$('chat-input');const body=input.value.trim();if(!body||!state.channelId)return;
  state.loading=true;$('chat-send').disabled=true;alertBox('');
- try{const d=await api('/api/chat/messages',{method:'POST',body:JSON.stringify({channel_id:state.channelId,body})});input.value='';updateCount();const arr=state.messages.get(Number(state.channelId))||[];if(!arr.some(m=>Number(m.id)===Number(d.message.id))){arr.push(d.message);state.messages.set(Number(state.channelId),arr.slice(-100));renderMessage(d.message);$('chat-history').scrollTop=$('chat-history').scrollHeight;}if(d.realtime===false)alertBox('Your message was saved, but live delivery is temporarily unavailable. Other members may not see it until they refresh.');}
+ try{const d=await api('/api/chat/messages',{method:'POST',body:JSON.stringify({channel_id:state.channelId,body,reply_to_message_id:state.replyTo?Number(state.replyTo.id):null})});input.value='';clearReplyTo();updateCount();const arr=state.messages.get(Number(state.channelId))||[];if(!arr.some(m=>Number(m.id)===Number(d.message.id))){arr.push(d.message);state.messages.set(Number(state.channelId),arr.slice(-100));renderMessage(d.message);$('chat-history').scrollTop=$('chat-history').scrollHeight;}if(d.realtime===false)alertBox('Your message was saved, but live delivery is temporarily unavailable. Other members may not see it until they refresh.');}
  catch(e){alertBox(e.message);}
  finally{state.loading=false;$('chat-send').disabled=false;input.focus();}
 }
@@ -453,6 +464,7 @@ $('chat-notification-mode').addEventListener('change',saveChatPreferences);
 $('chat-sound-toggle').addEventListener('change',saveChatPreferences);
 $('chat-enable-push').addEventListener('click',enableBrowserChatNotifications);
 $('chat-name-color-save').addEventListener('click',saveChatNameColor);
+$('chat-reply-cancel').addEventListener('click',clearReplyTo);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){updateDocumentTitle();if(state.channelId){state.unread[state.channelId]=0;saveUnread();renderChannels();}}});
 $('chat-input').addEventListener('input',()=>{updateCount();updateMentionSuggestions();});$('chat-input').addEventListener('keydown',e=>{if(! $('chat-mention-suggestions').hidden && mentionResults.length && (e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();mentionIndex=(mentionIndex+(e.key==='ArrowDown'?1:mentionResults.length-1))%mentionResults.length;const buttons=$('chat-mention-suggestions').querySelectorAll('button');buttons.forEach((button,index)=>button.setAttribute('aria-selected',String(index===mentionIndex)));return;}if(! $('chat-mention-suggestions').hidden && e.key==='Enter'&&!e.shiftKey){e.preventDefault();chooseMention(mentionResults[mentionIndex].username);return;}if(e.key==='Escape')hideMentionSuggestions();if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chat-form').requestSubmit();}});$('chat-input').addEventListener('blur',()=>setTimeout(hideMentionSuggestions,160));
 window.addEventListener('beforeunload',()=>{if(state.retryTimer)clearTimeout(state.retryTimer);if(reactionRefreshTimer)window.clearInterval(reactionRefreshTimer);if(state.socket)state.socket.close();});
