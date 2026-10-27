@@ -64,8 +64,19 @@ async function load(){
  try{
   var r=await fetch('/api/vendor-event-sales-verification',{credentials:'include',cache:'no-store'}),d=await r.json();
   if(!r.ok||!d.ok)throw new Error(d.message||d.error||'Could not check verification status.');
-  if(!d.is_vendor_plus){form.hidden=true;say('An active Vendor+ membership is required to apply for event sales permission. Regular event submissions remain available to all signed-in members.');return;}
   explain(d);
+  if(d.account&&d.account.is_admin){
+   form.hidden=true;
+   say('You are signed in as an administrator. Admin accounts do not need to submit seller identity verification. All admin tools and seller-verification reviews are available from /admin.');
+   return;
+  }
+  if(!d.is_vendor_plus){
+   form.hidden=true;
+   var currentTier=String(d.account&&d.account.membership_tier||'free');
+   var currentStatus=String(d.account&&d.account.membership_status||'inactive');
+   say('Your account is currently recognized as '+currentTier+' ('+currentStatus+'). An active Vendor+ membership is required before the upload fields are enabled. If you already have Vendor+, refresh your account or contact PokePrizePool support so the entitlement can be checked. Regular event submissions remain available to signed-in members.');
+   return;
+  }
   if(d.verification_status==='approved'){form.hidden=true;say('Your identity verification is approved. You can sell tickets, tables, and booths on events you own.','success');return;}
   if(d.verification_status==='pending'){form.hidden=true;say('Your verification is awaiting review. You cannot sell tickets, tables, or booths until approved.');return;}
   if(!d.storage_configured){form.hidden=true;say('Secure identity upload is not configured yet. Your documents have not been requested or uploaded. Please try again later.','error');return;}
