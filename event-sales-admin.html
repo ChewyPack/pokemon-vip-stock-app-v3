@@ -7,7 +7,7 @@
 <title>Event Sales &amp; Payouts | PokePrizePool Admin</title>
 <link rel="stylesheet" href="/css/styles.css">
 <style>
-.sales-wrap{width:min(1280px,calc(100% - 28px));margin:28px auto 72px;color:#0b2a6b}.sales-hero,.sales-panel{background:#fff;border:2px solid #0b2a6b;border-radius:14px;padding:clamp(16px,3vw,28px);margin:18px 0;box-shadow:4px 4px 0 #000}.sales-hero h1{font:400 clamp(2rem,5vw,3.2rem)/1.1 var(--font-display);margin:0 0 10px}.sales-muted{color:#52648b;line-height:1.6}.sales-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0}.sales-metric{background:#f3f7ff;border:1px solid #d0def2;border-radius:10px;padding:14px;min-width:0}.sales-metric span{display:block;color:#52648b;font-size:.85rem}.sales-metric strong{display:block;margin-top:6px;font-size:1.4rem;overflow-wrap:anywhere}.sales-table-wrap{width:100%;overflow:auto;border:1px solid #d0def2;border-radius:10px}.sales-table{border-collapse:collapse;width:100%;min-width:900px;background:#fff}.sales-table th,.sales-table td{text-align:left;padding:11px 12px;border-bottom:1px solid #e3eaf6;vertical-align:top;font-size:.88rem}.sales-table th{background:#edf4ff;color:#0b2a6b;position:sticky;top:0}.sales-table td{overflow-wrap:anywhere}.sales-status{min-height:1.5em;color:#52648b;white-space:pre-line}.sales-status.error{color:#a32222}.sales-pill{display:inline-flex;border-radius:999px;padding:4px 8px;background:#edf4ff;color:#0b2a6b;font-size:.76rem;font-weight:900}.sales-empty{padding:22px;text-align:center;border:1px dashed #c9d7ec;border-radius:9px;color:#52648b}.sales-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}.sales-head h2{margin:0 0 8px}.sales-refresh{min-height:42px;padding:9px 13px;border:1px solid #0b2a6b;border-radius:8px;background:#fff;color:#0b2a6b;font:inherit;font-weight:800;cursor:pointer}
+.sales-wrap{width:min(1280px,calc(100% - 28px));margin:28px auto 72px;color:#0b2a6b}.sales-hero,.sales-panel{background:#fff;border:2px solid #0b2a6b;border-radius:14px;padding:clamp(16px,3vw,28px);margin:18px 0;box-shadow:4px 4px 0 #000}.sales-hero h1{font:400 clamp(2rem,5vw,3.2rem)/1.1 var(--font-display);margin:0 0 10px}.sales-muted{color:#52648b;line-height:1.6}.sales-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0}.sales-metric{background:#f3f7ff;border:1px solid #d0def2;border-radius:10px;padding:14px;min-width:0}.sales-metric span{display:block;color:#52648b;font-size:.85rem}.sales-metric strong{display:block;margin-top:6px;font-size:1.4rem;overflow-wrap:anywhere}.sales-table-wrap{width:100%;overflow:auto;border:1px solid #d0def2;border-radius:10px}.sales-table{border-collapse:collapse;width:100%;min-width:900px;background:#fff}.sales-table th,.sales-table td{text-align:left;padding:11px 12px;border-bottom:1px solid #e3eaf6;vertical-align:top;font-size:.88rem}.sales-table th{background:#edf4ff;color:#0b2a6b;position:sticky;top:0}.sales-table td{overflow-wrap:anywhere}.sales-status{min-height:1.5em;color:#52648b;white-space:pre-line}.sales-status.error{color:#a32222}.sales-pill{display:inline-flex;border-radius:999px;padding:4px 8px;background:#edf4ff;color:#0b2a6b;font-size:.76rem;font-weight:900}.sales-empty{padding:22px;text-align:center;border:1px dashed #c9d7ec;border-radius:9px;color:#52648b}.sales-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}.sales-head h2{margin:0 0 8px}.sales-refresh{min-height:42px;padding:9px 13px;border:1px solid #0b2a6b;border-radius:8px;background:#fff;color:#0b2a6b;font:inherit;font-weight:800;cursor:pointer}.sales-verification-list{display:grid;gap:14px}.sales-verification-card{border:1px solid #d0def2;border-radius:10px;padding:14px;background:#f9fbff}.sales-verification-card h3{margin:0 0 6px}.sales-verification-docs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.sales-verification-docs a,.sales-verification-card button{display:inline-flex;align-items:center;min-height:38px;padding:8px 11px;border:1px solid #0b2a6b;border-radius:7px;background:#fff;color:#0b2a6b;font:inherit;font-weight:800;text-decoration:none;cursor:pointer}.sales-verification-card textarea{width:100%;box-sizing:border-box;min-height:75px;padding:10px;border:1px solid #b9c9e6;border-radius:8px;font:inherit}.sales-verification-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.sales-verification-actions .approve{background:#e7f7ee;border-color:#187647;color:#14532d}.sales-verification-actions .reject{background:#fff0f0;border-color:#a32222;color:#a32222}
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
@@ -20,6 +20,11 @@
 <div class="sales-head"><div><p class="dashboard-eyebrow">PokePrizePool Admin</p><h1>Event Sales &amp; Payouts</h1><p class="sales-muted">Reports for admission tickets, booth spaces, and table reservations sold through organizers’ connected Stripe accounts. Sales and payout activity update from Stripe Connect webhooks.</p></div><button id="sales-refresh" class="sales-refresh" type="button">Refresh report</button></div>
 <p id="sales-status" class="sales-status" role="status" aria-live="polite">Loading event sales…</p>
 <div id="sales-metrics" class="sales-metrics"></div>
+</section>
+<section class="sales-panel">
+<div class="sales-head"><div><h2>Vendor+ event seller verification</h2><p class="sales-muted">Review the applicant’s ID front, ID back, and selfie. Documents are private and are deleted after a decision is recorded.</p></div><button id="verification-refresh" class="sales-refresh" type="button">Refresh verification queue</button></div>
+<p id="verification-status" class="sales-status" role="status" aria-live="polite">Loading verification requests…</p>
+<div id="verification-list" class="sales-verification-list"></div>
 </section>
 <section class="sales-panel">
 <h2>Organizer payments</h2>
@@ -51,6 +56,54 @@ function makeTable(headers,rows,emptyText){
  table.appendChild(tbody);wrap.appendChild(table);return wrap;
 }
 function statusLabel(value){return String(value||'pending').replace(/_/g,' ');}
+function renderVerifications(rows,storageConfigured){
+ const list=$('verification-list');list.replaceChildren();
+ if(!rows||!rows.length){list.appendChild(el('div','sales-empty','No Vendor+ event seller verification requests yet.'));return;}
+ rows.forEach(function(v){
+  const card=el('article','sales-verification-card'),heading=el('h3','',v.display_name||'Vendor+ member');
+  card.appendChild(heading);card.appendChild(el('p','sales-muted',(v.email||'No email')+' · '+statusLabel(v.status)+' · membership: '+(v.membership_tier||'free')+' / '+(v.membership_status||'inactive')));
+  card.appendChild(el('p','sales-muted','Submitted: '+(v.submitted_at||'Unknown')+(v.review_note?' · Previous note: '+v.review_note:'')));
+  if(v.status==='pending'&&v.has_documents&&storageConfigured){
+   const docs=el('div','sales-verification-docs');
+   [['ID front','id_front'],['ID back','id_back'],['Selfie','selfie']].forEach(function(pair){
+    const a=el('a','',pair[0]);a.href='/api/vendor-event-sales-verification?document='+encodeURIComponent(pair[1])+'&verification_id='+encodeURIComponent(v.id);a.target='_blank';a.rel='noopener noreferrer';docs.appendChild(a);
+   });
+   card.appendChild(docs);
+   const note=document.createElement('textarea');note.maxLength=500;note.placeholder='Optional note for the applicant (especially if rejecting)';note.setAttribute('aria-label','Review note for '+(v.display_name||'member'));card.appendChild(note);
+   const actions=el('div','sales-verification-actions');
+   [['Approve selling permission','approve','approve'],['Reject / request new images','reject','rejected']].forEach(function(spec){
+    const b=el('button',spec[1],spec[0]);b.type='button';
+    b.addEventListener('click',async function(){
+     if(spec[2]==='rejected'&&!confirm('Reject this verification and delete the uploaded identity images?'))return;
+     b.disabled=true;
+     try{
+      const response=await fetch('/api/vendor-event-sales-verification',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'review',verification_id:v.id,decision:spec[2],review_note:note.value})});
+      const result=await response.json().catch(function(){return {};});
+      if(!response.ok||!result.ok)throw new Error(result.message||result.error||'Review could not be saved.');
+      $('verification-status').textContent=(spec[2]==='approve'?'Vendor+ event sales permission approved.':'Verification rejected.')+' Private documents deleted.';
+      await loadVerifications();
+     }catch(error){$('verification-status').textContent=error.message||'Review failed.';b.disabled=false;}
+    });
+    actions.appendChild(b);
+   });
+   card.appendChild(actions);
+  }else if(v.status==='pending'){
+   card.appendChild(el('p','sales-status error',storageConfigured?'Required private documents are missing; do not approve until resubmitted.':'Private verification storage is not configured. Documents cannot be reviewed.'));
+  }else{
+   card.appendChild(el('p','sales-muted','Review complete. The uploaded identity documents have been deleted.'));
+  }
+  list.appendChild(card);
+ });
+}
+async function loadVerifications(){
+ $('verification-status').textContent='Loading verification requests…';
+ try{
+  const response=await fetch('/api/vendor-event-sales-verification?admin=1',{credentials:'include',cache:'no-store'}),data=await response.json().catch(function(){return {};});
+  if(!response.ok||!data.ok)throw new Error(data.message||data.error||'Verification queue could not be loaded.');
+  renderVerifications(data.verifications||[],!!data.storage_configured);
+  $('verification-status').textContent=(data.verifications||[]).filter(function(v){return v.status==='pending';}).length+' pending verification request(s). '+(data.storage_configured?'Private storage is configured.':'Private storage is not configured; review and uploads are unavailable.');
+ }catch(error){$('verification-status').textContent=error.message||'Could not load verification queue.';}
+}
 async function load(){
  $('sales-status').textContent='Loading event sales and payout activity…';
  $('sales-status').classList.remove('error');
@@ -73,6 +126,8 @@ async function load(){
  }catch(error){$('sales-status').textContent=error.message||'Could not load the event sales report.';$('sales-status').classList.add('error');}
 }
 $('sales-refresh').addEventListener('click',load);
+$('verification-refresh').addEventListener('click',loadVerifications);
+loadVerifications();
 load();
 })();
 </script>
