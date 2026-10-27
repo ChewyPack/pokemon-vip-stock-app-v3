@@ -1,6 +1,6 @@
 'use strict';
 
-const SHELL_CACHE = 'pokeprizepool-shell-v18';
+const SHELL_CACHE = 'pokeprizepool-shell-v19';
 const CORE_NAVIGATION = new Set([
   '/', '/index.html', '/account.html',
   '/chat.html', '/events.html', '/marketplace', '/vendor.html', '/newsfeed',
