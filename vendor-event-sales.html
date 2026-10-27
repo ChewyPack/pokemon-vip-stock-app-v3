@@ -38,7 +38,7 @@
 <div class="verify-notice"><strong>What to upload</strong><br>1. A clear photo of the front of your government-issued ID<br>2. A clear photo of the back of that ID<br>3. A clear, recent selfie showing your face clearly.<br><br>These images are used only for organizer verification. They are stored in a private bucket, are not public event media, and are deleted after an admin records a decision.</div>
 <div id="verify-account-status" class="verify-status" role="status" aria-live="polite">Checking account and verification status…</div>
 <div id="verify-current" class="verify-state" hidden></div>
-<form id="verify-form" class="verify-form" hidden>
+<form id="verify-form" class="verify-form">
 <div class="verify-upload-grid">
 <div class="verify-upload-card"><h3>1. Government ID — front *</h3><label for="id-front">Choose front image<input id="id-front" name="id_front" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label><div class="verify-preview" id="preview-front">Your selected ID front will preview here.</div></div>
 <div class="verify-upload-card"><h3>2. Government ID — back *</h3><label for="id-back">Choose back image<input id="id-back" name="id_back" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required></label><div class="verify-preview" id="preview-back">Your selected ID back will preview here.</div></div>
@@ -46,7 +46,7 @@
 </div>
 <p class="verify-muted">Upload JPG, PNG, WebP, or AVIF images, maximum 8 MB each. Keep the whole ID visible and make sure text and photo are readable. Do not upload unrelated documents.</p>
 <label style="display:flex;gap:9px;align-items:flex-start;font-weight:600"><input id="verify-consent" type="checkbox" required style="width:auto;min-height:0;margin-top:4px"> I consent to PokePrizePool reviewing these images for event seller identity verification. I understand the images will be stored privately and deleted after a review decision.</label>
-<button id="verify-submit" type="submit">Submit for verification</button>
+<button id="verify-submit" type="submit" disabled>Submit for verification</button>
 </form>
 <p class="verify-muted">Your identity documents are not the same as Stripe’s separate payment onboarding. If approved, you must still complete Stripe setup before checkout can accept payments.</p>
 </section>
@@ -74,23 +74,23 @@ async function load(){
   if(!r.ok||!d.ok)throw new Error(d.message||d.error||'Could not check verification status.');
   explain(d);
   if(d.account&&d.account.is_admin){
-   form.hidden=true;
-   say('You are signed in as an administrator. Admin accounts do not need to submit seller identity verification. All admin tools and seller-verification reviews are available from /admin.');
+   button.disabled=true;
+   say('Preview mode: administrator accounts do not need seller identity verification. These upload examples are shown for reference only; reviews are available from /admin.');
    return;
   }
   if(!d.is_vendor_plus){
-   form.hidden=true;
+   button.disabled=true;
    var currentTier=String(d.account&&d.account.membership_tier||'free');
    var currentStatus=String(d.account&&d.account.membership_status||'inactive');
-   say('Your account is currently recognized as '+currentTier+' ('+currentStatus+'). An active Vendor+ membership is required before the upload fields are enabled. If you already have Vendor+, refresh your account or contact PokePrizePool support so the entitlement can be checked. Regular event submissions remain available to signed-in members.');
+   say('Preview mode: your account is currently recognized as '+currentTier+' ('+currentStatus+'). The upload fields stay visible as examples, but submitting identity documents requires an active Vendor+ membership.');
    return;
   }
-  if(d.verification_status==='approved'){form.hidden=true;say('Your identity verification is approved. You can sell tickets, tables, and booths on events you own.','success');return;}
-  if(d.verification_status==='pending'){form.hidden=true;say('Your verification is awaiting review. You cannot sell tickets, tables, or booths until approved.');return;}
-  if(!d.storage_configured){form.hidden=true;say('Secure identity upload is not configured yet. Your documents have not been requested or uploaded. Please try again later.','error');return;}
-  form.hidden=false;
+  if(d.verification_status==='approved'){button.disabled=true;say('Your identity verification is approved. You can sell tickets, tables, and booths on events you own. The upload fields remain visible as examples.','success');return;}
+  if(d.verification_status==='pending'){button.disabled=true;say('Your verification is awaiting review. You cannot sell tickets, tables, or booths until approved. The upload fields remain visible as examples.');return;}
+  if(!d.storage_configured){button.disabled=true;say('Secure identity upload is not configured yet. The upload fields are shown as examples only; no documents can be submitted yet.','error');return;}
+  button.disabled=false;
   say(d.verification_status==='rejected'?'Your previous submission was not approved. Review the note above and upload all three images again.':'You are eligible to apply. Upload all three images to request approval.');
- }catch(e){form.hidden=true;say(e.message||'Could not load verification status.','error');}
+ }catch(e){button.disabled=true;say((e.message||'Could not load verification status.')+' The upload fields remain visible as examples, but submission is disabled until eligibility and secure storage are confirmed.','error');}
 }
 form.addEventListener('submit',async function(e){
  e.preventDefault();
