@@ -249,23 +249,37 @@ async function processOnePriceGroup(db, token, dailyWriteBudget = DEFAULT_IMPORT
       return { marketPrice, subtype: marketPrice === null ? null : String(preferred?.subTypeName || 'Normal') };
     };
     while (offset < productIds.length) {
+      // Each product uses one current-price update plus one dated history write.
+      // Budget two row writes per product conservatively; a NULL price may skip history.
       const remainingBudget = dailyWriteBudget - rowsWrittenToday;
-      if (remainingBudget < 1) {
+      const productsThisBatch = Math.floor(remainingBudget / 2);
+      if (productsThisBatch < 1) {
         await db.prepare("UPDATE tcgcsv_price_sync_progress SET current_group_offset=?, rows_written_today=?, sync_day=? WHERE id=1 AND run_token=?")
           .bind(offset, rowsWrittenToday, today, token).run();
         return { paused_for_daily_write_budget: true, mode: 'price_only', current_group: groupId,
           products_processed_in_group: offset, products_in_group: productIds.length,
           rows_written_today: rowsWrittenToday, resumes_after_utc_midnight: true };
       }
-      const batchIds = productIds.slice(offset, offset + Math.min(40, remainingBudget));
-      const statements = batchIds.map(productId => {
+      const batchIds = productIds.slice(offset, offset + Math.min(20, productsThisBatch));
+      const statements = [];
+      for (const productId of batchIds) {
         const price = priceFor(pricesByProduct.get(String(productId)) || []);
-        return db.prepare('UPDATE tcgcsv_products SET market_price=?, market_price_subtype=?, last_seen_sync=? WHERE product_id=?')
-          .bind(price.marketPrice, price.subtype, progress.source_timestamp, productId);
-      });
+        statements.push(db.prepare('UPDATE tcgcsv_products SET market_price=?, market_price_subtype=?, last_seen_sync=? WHERE product_id=?')
+          .bind(price.marketPrice, price.subtype, progress.source_timestamp, productId));
+        if (price.marketPrice !== null) {
+          statements.push(db.prepare(
+            'INSERT INTO tcgcsv_price_history ' +
+            '(product_id, subtype_name, source_timestamp, low_price, mid_price, high_price, direct_low_price, recorded_at, market_price) ' +
+            'SELECT product_id, ?, ?, NULL, NULL, NULL, NULL, ?, market_price FROM tcgcsv_products ' +
+            'WHERE product_id=? AND market_price IS NOT NULL ' +
+            'ON CONFLICT(product_id, subtype_name, source_timestamp) DO UPDATE SET ' +
+            'market_price=excluded.market_price, recorded_at=excluded.recorded_at'
+          ).bind(price.subtype || 'Normal', progress.source_timestamp, new Date().toISOString(), productId));
+        }
+      }
       await db.batch(statements);
       offset += batchIds.length;
-      rowsWrittenToday += batchIds.length;
+      rowsWrittenToday += batchIds.length * 2;
       await db.prepare("UPDATE tcgcsv_price_sync_progress SET current_group_offset=?, rows_written_today=?, sync_day=? WHERE id=1 AND run_token=?")
         .bind(offset, rowsWrittenToday, today, token).run();
     }
