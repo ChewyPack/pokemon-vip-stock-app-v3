@@ -33,7 +33,6 @@
     // The hosted preview build turns this on automatically.
     demoMode: !!window.VIP_DEMO,
 
-    legal: 'Pokémon, One Piece, Dragon Ball and related names and artwork are trademarks of their respective owners.',
 
     // Universes shown as collectible cards. status: 'live' unlocks the report button.
     // To go live with another universe later, set status to 'live' and add its own form and endpoint.
