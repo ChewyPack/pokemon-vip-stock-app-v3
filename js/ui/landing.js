@@ -682,9 +682,9 @@
           if (hasReportAccess) {
             setFloatingAction('Report a Sighting', '#report', 'Report a Sighting');
           } else if (!hasSubscription && data.trialEligible) {
-            setFloatingAction('Free Trial', '/account.html#settings-membership', 'Start your 3-day free trial');
+            setFloatingAction('Free Trial', '/account#settings-membership', 'Start your 3-day free trial');
           } else {
-            setFloatingAction('Membership Options', '/account.html#settings-membership', 'View membership options');
+            setFloatingAction('Membership Options', '/account#settings-membership', 'View membership options');
           }
           var conversion = root.querySelector('#hero-account-conversion');
           var freeNote = root.querySelector('#hero-free-note');
@@ -698,7 +698,7 @@
           var copy = trialPromo.querySelector('.ppp-collector-trial-promo__copy');
           var promoTitle = trialPromo.querySelector('#ppp-collector-trial-title');
           if (button) {
-            button.href = '/account.html#settings-membership';
+            button.href = '/account#settings-membership';
             button.textContent = data.trialEligible ? 'Start my 3-day free trial' : 'View membership options';
           }
           if (data.trialEligible) {
