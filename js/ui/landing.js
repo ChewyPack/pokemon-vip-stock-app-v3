@@ -115,7 +115,7 @@
     }
     var news = panel('Latest News','/news','All news ↗','No news stories to preview right now. Open the News page for published Pokémon TCG coverage.');
     var markets = panel('Market Intelligence','/market-intelligence','Market info ↗','Member-only research with dated market snapshots, sourced price movers, and collector tools.');
-    var giveaways = panel('Giveaways','/giveaways.html#gallery','All giveaways ↗','Visit the giveaways page for published prize details, entry rules, and community milestone goals.');
+    var giveaways = panel('Giveaways','/giveaways.html#gallery','All giveaways ↗','Visit the giveaways page for published prize details, entry rules, and community milestone goals.','ppp-home-previews__panel--giveaways');
     var listings = panel('Collector Marketplace','/marketplace','Browse listings ↗','Member shops post listings as items become available. Browse the marketplace for current offers.');
     var social = panel('News Feed','/newsfeed','View feed ↗','No community posts to preview yet. Open the feed to join the conversation.','ppp-home-previews__panel--social');
     var featuredEvents = panel('Featured Events','/events.html','All events ↗','Featured events are boosted by organizers. Browse the calendar for upcoming shows, trade nights, and releases.');
@@ -731,7 +731,7 @@
         toolsTitle.textContent = 'More for collectors';
         tools.appendChild(toolsTitle);
         Array.prototype.slice.call(exploreGrid.children).forEach(function(candidate){
-          if (candidate.classList && candidate.classList.contains('ppp-home-previews__panel') && !candidate.classList.contains('ppp-home-previews__panel--store') && !candidate.classList.contains('ppp-home-previews__panel--social')) tools.appendChild(candidate);
+          if (candidate.classList && candidate.classList.contains('ppp-home-previews__panel') && !candidate.classList.contains('ppp-home-previews__panel--store') && !candidate.classList.contains('ppp-home-previews__panel--social')) { if (candidate.classList.contains('ppp-home-previews__panel--giveaways')) candidate.remove(); else tools.appendChild(candidate); }
         });
         exploreGrid.appendChild(homeGiveaway);
         exploreGrid.appendChild(tools);
