@@ -613,6 +613,20 @@
           'div',
           { class: 'wrap' },
           h('p', null, cfg.legal),
+          h('nav', { class: 'footer-social', 'aria-label': 'PokePrizePool social media' },
+            h('a', { class: 'footer-social__link footer-social__link--x', href: 'https://x.com/pokeprizepool', target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'PokePrizePool on X', title: 'Follow PokePrizePool on X' },
+              h('span', { class: 'footer-social__icon footer-social__icon--x', 'aria-hidden': 'true' }, '𝕏'),
+              h('span', { class: 'footer-social__label' }, 'X')
+            ),
+            h('a', { class: 'footer-social__link footer-social__link--facebook', href: 'https://facebook.com/pokeprizepool', target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'PokePrizePool on Facebook', title: 'Follow PokePrizePool on Facebook' },
+              h('span', { class: 'footer-social__icon footer-social__icon--facebook', 'aria-hidden': 'true' }, 'f'),
+              h('span', { class: 'footer-social__label' }, 'Facebook')
+            ),
+            h('a', { class: 'footer-social__link footer-social__link--instagram', href: 'https://instagram.com/pokeprizepool', target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'PokePrizePool on Instagram', title: 'Follow PokePrizePool on Instagram' },
+              h('span', { class: 'footer-social__icon footer-social__icon--instagram', 'aria-hidden': 'true' }),
+              h('span', { class: 'footer-social__label' }, 'Instagram')
+            )
+          ),
           h('p', { class: 'asset-credit' },
             '3D asset credit: ',
             h('a', { href: 'https://sketchfab.com/3d-models/poke-ball-pokemon-pokeball-c266163bd310411bac727783e4c79c4a', target: '_blank', rel: 'noopener noreferrer' }, 'Poké Ball by Jesús Orgaz'),
