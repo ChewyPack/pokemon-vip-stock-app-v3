@@ -585,24 +585,28 @@
         )
       );
 
-      /* Original call-to-action — preserved. */
+      /* Amazon affiliate banner in the former blue call-to-action area. */
       var cta = h(
         'section',
-        { class: 'cta-band' },
+        { class: 'cta-band cta-band--affiliate', 'aria-label': 'Sponsored offer' },
         h(
-          'div',
-          { class: 'wrap cta-band__inner' },
-          h('h2', {
-            class: 'cta-band__title'
-          }, 'Spotted something?'),
-          h('a', {
-            class: 'btn btn--lg',
-            href: '#report'
-          }, 'Report a sighting'),
-          h('p', {
-            class: 'notice notice--light'
-          }, cfg.notice)
-        )
+          'a',
+          {
+            class: 'cta-band__affiliate-link',
+            href: 'https://link.amazon/B01EkM3X5',
+            target: '_blank',
+            rel: 'sponsored nofollow noopener noreferrer',
+            'aria-label': 'View this Amazon offer'
+          },
+          h('img', {
+            class: 'cta-band__affiliate-image',
+            src: '/images/bottomfield.jpg',
+            alt: 'View our featured Amazon offer',
+            loading: 'lazy',
+            decoding: 'async'
+          })
+        ),
+        h('p', { class: 'cta-band__affiliate-disclosure' }, 'Affiliate link')
       );
 
       /* Original footer — preserved. */
