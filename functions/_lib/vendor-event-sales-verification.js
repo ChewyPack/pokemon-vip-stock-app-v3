@@ -33,12 +33,12 @@ export async function getVendorEventSalesPermission(env, accountId) {
   const account = await env.DB.prepare(
     'SELECT id,is_admin,membership_status,membership_tier,membership_entitlement_tier FROM accounts WHERE id=? LIMIT 1'
   ).bind(id).first();
-  const tier = String(account?.membership_entitlement_tier || '').toLowerCase();
-  const billingTier = String(account?.membership_tier || '').toLowerCase();
+  const normalizeTier = value => String(value || '').trim().toLowerCase().replace(/[_-]/g, ' ').replace(/\\s+/g, ' ');
+  const tiers = [account?.membership_entitlement_tier, account?.membership_tier].map(normalizeTier);
+  const membershipStatus = String(account?.membership_status || '').trim().toLowerCase();
   const isAdmin = !!account && Number(account.is_admin || 0) === 1;
-  const isVendorPlus = !!account &&
-    String(account.membership_status || '').toLowerCase() === 'active' &&
-    (tier === VENDOR_TIER || billingTier === VENDOR_TIER);
+  const isVendorPlus = !!account && ['active', 'trialing'].includes(membershipStatus) &&
+    tiers.some(tier => [VENDOR_TIER, 'vendor+', 'vendor plus'].includes(tier));
   const verification = await env.DB.prepare(
     'SELECT status,review_note,submitted_at,reviewed_at FROM vendor_event_sales_verifications WHERE account_id=? LIMIT 1'
   ).bind(id).first();
