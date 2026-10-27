@@ -414,7 +414,7 @@
   function initShowcaseModels() {
     var configs = [
       { id: 'ppp-ash-viewer', src: '/assets/ash_ketchum.glb', label: 'Ash Ketchum' },
-      { id: 'ppp-luffy-viewer', src: '/assets/luffy_one_piece.glb', label: 'Luffy from One Piece' }
+      { id: 'ppp-luffy-viewer', src: '/assets/luffy_one_piece.glb', label: 'Luffy from One Piece', rotationX: -Math.PI / 2 }
     ];
     var pending = configs.filter(function (item) {
       var host = document.getElementById(item.id);
@@ -443,7 +443,7 @@
       "    const fill = new THREE.DirectionalLight(0xffffff, 1.1); fill.position.set(-4, 1, -3); scene.add(fill);",
       "    let model = null;",
       "    new GLTFLoader().load(config.src, (gltf) => {",
-      "      model = gltf.scene; const box = new THREE.Box3().setFromObject(model); const size = box.getSize(new THREE.Vector3()); const center = box.getCenter(new THREE.Vector3());",
+      "      model = gltf.scene; if (config.rotationX) model.rotation.x = config.rotationX; model.updateMatrixWorld(true); const box = new THREE.Box3().setFromObject(model); const size = box.getSize(new THREE.Vector3()); const center = box.getCenter(new THREE.Vector3());",
       "      model.position.sub(center); const maxDim = Math.max(size.x, size.y, size.z) || 1; model.scale.setScalar(1.8 / maxDim); camera.lookAt(0, 0, 0); scene.add(model);",
       "      const loading = host.querySelector('.universe-3d-loading'); if (loading) loading.remove();",
       "    }, undefined, (error) => showError('3D model failed to load. Please refresh and try again.', error));",
