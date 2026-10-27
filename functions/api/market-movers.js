@@ -29,13 +29,27 @@ function sortMovers(items, direction, field) {
 export async function onRequestGet({ env }) {
   if (!env.DB) return json({ ok: false, error: "database_not_configured" }, 500);
   try {
+    await env.DB.prepare("CREATE TABLE IF NOT EXISTS tcgcsv_market_price_snapshots (" +
+      "product_id INTEGER NOT NULL, subtype_name TEXT NOT NULL DEFAULT 'Normal', " +
+      "source_timestamp TEXT NOT NULL, market_price REAL NOT NULL, recorded_at TEXT NOT NULL, " +
+      "PRIMARY KEY (product_id, subtype_name, source_timestamp))").run();
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_tcgcsv_market_snapshots_time " +
+      "ON tcgcsv_market_price_snapshots(source_timestamp, product_id)").run();
     const state = await env.DB.prepare(
       "SELECT source_timestamp, last_success_at, status, last_error FROM tcgcsv_sync_state WHERE id=1"
     ).first();
     const latest = await env.DB.prepare(
-      "SELECT MAX(source_timestamp) AS source_timestamp FROM tcgcsv_price_history WHERE market_price IS NOT NULL"
+      "SELECT MAX(source_timestamp) AS source_timestamp FROM tcgcsv_market_price_snapshots WHERE market_price IS NOT NULL"
     ).first();
-    const sourceTimestamp = state?.source_timestamp || latest?.source_timestamp || null;
+    if (!latest?.source_timestamp) {
+      return json({
+        ok: true, ready: false, reason: "history_not_started",
+        source_timestamp: state?.source_timestamp || null,
+        message: "Daily price history begins with the next successful TCGCSV refresh.",
+        sync: state || null, singles: { gainers: [], decliners: [] }, sealed: { gainers: [], decliners: [] }
+      });
+    }
+    const sourceTimestamp = state?.source_timestamp || latest.source_timestamp;
     if (!sourceTimestamp) {
       return json({
         ok: true, ready: false, reason: "history_not_started",
@@ -62,25 +76,25 @@ export async function onRequestGet({ env }) {
                p.product_type, p.card_number, p.rarity, p.group_id,
                g.name AS set_name, cur.subtype_name,
                cur.source_timestamp, cur.market_price,
-               (SELECT old.market_price FROM tcgcsv_price_history old
+               (SELECT old.market_price FROM tcgcsv_market_price_snapshots old
                 WHERE old.product_id=p.product_id
                   AND old.subtype_name=cur.subtype_name
                   AND old.source_timestamp <= ?
                   AND old.market_price IS NOT NULL
                 ORDER BY old.source_timestamp DESC LIMIT 1) AS price_1d,
-               (SELECT old.source_timestamp FROM tcgcsv_price_history old
+               (SELECT old.source_timestamp FROM tcgcsv_market_price_snapshots old
                 WHERE old.product_id=p.product_id
                   AND old.subtype_name=cur.subtype_name
                   AND old.source_timestamp <= ?
                   AND old.market_price IS NOT NULL
                 ORDER BY old.source_timestamp DESC LIMIT 1) AS timestamp_1d,
-               (SELECT old.market_price FROM tcgcsv_price_history old
+               (SELECT old.market_price FROM tcgcsv_market_price_snapshots old
                 WHERE old.product_id=p.product_id
                   AND old.subtype_name=cur.subtype_name
                   AND old.source_timestamp <= ?
                   AND old.market_price IS NOT NULL
                 ORDER BY old.source_timestamp DESC LIMIT 1) AS price_7d,
-               (SELECT old.source_timestamp FROM tcgcsv_price_history old
+               (SELECT old.source_timestamp FROM tcgcsv_market_price_snapshots old
                 WHERE old.product_id=p.product_id
                   AND old.subtype_name=cur.subtype_name
                   AND old.source_timestamp <= ?
@@ -88,7 +102,7 @@ export async function onRequestGet({ env }) {
                 ORDER BY old.source_timestamp DESC LIMIT 1) AS timestamp_7d
         FROM tcgcsv_products p
         JOIN tcgcsv_groups g ON g.group_id=p.group_id
-        JOIN tcgcsv_price_history cur
+        JOIN tcgcsv_market_price_snapshots cur
           ON cur.product_id=p.product_id
          AND cur.source_timestamp=?
          AND cur.market_price IS NOT NULL
