@@ -815,9 +815,10 @@
         exploreGrid.appendChild(homeGiveaway);
         exploreGrid.appendChild(tools);
       }
-      root.appendChild(homeExplore);
+      /* Keep Ash above the Explore/Featured Events content so the model cannot be visually buried by that section. */
       root.appendChild(universes);
       initAshKetchumViewer();
+      root.appendChild(homeExplore);
       root.appendChild(how);
       root.appendChild(cta);
       root.appendChild(footer);
