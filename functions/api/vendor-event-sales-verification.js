@@ -188,16 +188,19 @@ export async function onRequestPost({ request, env }) {
   for (const item of files) {
     if (!validImageFile(item.file)) return json({ ok: false, error: 'invalid_verification_image', message: item.label + ' must be a JPG, PNG, WebP, or AVIF image no larger than 8 MB.' }, 400);
   }
+  const prepared = [];
+  for (const item of files) {
+    const type = String(item.file.type || '').toLowerCase().split(';')[0];
+    const bytes = new Uint8Array(await item.file.arrayBuffer());
+    if (!validSignature(type, bytes)) return json({ ok: false, error: 'invalid_verification_image_signature', message: item.label + ' file content does not match its image type.' }, 415);
+    prepared.push({ field: item.field, type, bytes, ext: extensionFor(type) });
+  }
   const uploaded = [];
   try {
-    for (const item of files) {
-      const type = String(item.file.type || '').toLowerCase().split(';')[0];
-      const ext = extensionFor(type);
-      const bytes = new Uint8Array(await item.file.arrayBuffer());
-      if (!validSignature(type, bytes)) return json({ ok: false, error: 'invalid_verification_image_signature', message: item.label + ' file content does not match its image type.' }, 415);
-      const key = 'vendor-verification/' + Number(account.id) + '/' + crypto.randomUUID() + '.' + ext;
-      await env.VENDOR_VERIFICATION_PRIVATE.put(key, bytes, { httpMetadata: { contentType: type, cacheControl: 'private, no-store, max-age=0' } });
-      uploaded.push({ field: item.field, key, type });
+    for (const item of prepared) {
+      const key = 'vendor-verification/' + Number(account.id) + '/' + crypto.randomUUID() + '.' + item.ext;
+      await env.VENDOR_VERIFICATION_PRIVATE.put(key, item.bytes, { httpMetadata: { contentType: item.type, cacheControl: 'private, no-store, max-age=0' } });
+      uploaded.push({ field: item.field, key, type: item.type });
     }
     const byField = Object.fromEntries(uploaded.map(item => [item.field, item]));
     const result = await env.DB.prepare(
