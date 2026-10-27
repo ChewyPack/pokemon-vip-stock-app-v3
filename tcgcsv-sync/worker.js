@@ -513,8 +513,8 @@ export default {
         console.log('No active TCGCSV import; skipping source check until the daily trigger.');
         return;
       }
-      console.log('Daily TCGCSV source check; starting a metadata-preserving catalog refresh if the source changed.');
-      await beginSync(env.DB).catch(error => {
+      console.log('Daily TCGCSV source check; starting a price-only refresh with historical snapshots if the source changed.');
+      await beginPriceSync(env.DB).catch(error => {
         console.error('TCGCSV scheduled price refresh failed:', error);
         return setError(env.DB, error);
       });
