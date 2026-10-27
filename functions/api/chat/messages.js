@@ -2,6 +2,13 @@ import { ensureCollectorRewardSchema } from "../../_lib/collector-rewards.js";
 import { chatJson, currentChatAccount, publishChatEvent, chatError } from "../../_lib/chat.js";
 import { sendWebPush } from "../../_lib/web-push.js";
 
+async function ensureChatReplySchema(env) {
+  const columns = await env.DB.prepare("PRAGMA table_info(chat_messages)").all();
+  if (!(columns.results || []).some(column => column.name === "reply_to_message_id")) {
+    await env.DB.prepare("ALTER TABLE chat_messages ADD COLUMN reply_to_message_id INTEGER").run();
+  }
+}
+
 async function ensureChatNotificationPreferences(env) {
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS chat_notification_preferences (
@@ -191,6 +198,7 @@ export async function onRequestGet({ request, env }) {
     const account = await currentChatAccount(request, env);
     if (!account) return chatJson({ ok: false, error: "login_required" }, 401);
     await ensureCollectorRewardSchema(env);
+    await ensureChatReplySchema(env);
     await ensureReactionTable(env);
     const url = new URL(request.url);
     const channelId = Number(url.searchParams.get("channel"));
@@ -201,11 +209,11 @@ export async function onRequestGet({ request, env }) {
     let result;
     if (Number.isSafeInteger(before) && before > 0) {
       result = await env.DB.prepare(
-        "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, p.chat_name_color, m.body, m.created_at, m.edited_at, m.deleted_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.channel_id = ? AND m.id < ? ORDER BY m.id DESC LIMIT 100"
+        "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, p.chat_name_color, m.body, m.created_at, m.edited_at, m.deleted_at, m.reply_to_message_id, rm.body AS reply_body, rm.deleted_at AS reply_deleted_at, ra.display_name AS reply_display_name, rp.username AS reply_username FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id LEFT JOIN chat_messages rm ON rm.id = m.reply_to_message_id LEFT JOIN accounts ra ON ra.id = rm.account_id LEFT JOIN collector_profiles rp ON rp.account_id = rm.account_id WHERE m.channel_id = ? AND m.id < ? ORDER BY m.id DESC LIMIT 100"
       ).bind(channelId, before).all();
     } else {
       result = await env.DB.prepare(
-        "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, p.chat_name_color, m.body, m.created_at, m.edited_at, m.deleted_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.channel_id = ? ORDER BY m.id DESC LIMIT 100"
+        "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, p.chat_name_color, m.body, m.created_at, m.edited_at, m.deleted_at, m.reply_to_message_id, rm.body AS reply_body, rm.deleted_at AS reply_deleted_at, ra.display_name AS reply_display_name, rp.username AS reply_username FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id LEFT JOIN chat_messages rm ON rm.id = m.reply_to_message_id LEFT JOIN accounts ra ON ra.id = rm.account_id LEFT JOIN collector_profiles rp ON rp.account_id = rm.account_id WHERE m.channel_id = ? ORDER BY m.id DESC LIMIT 100"
       ).bind(channelId).all();
     }
     const rows = (result.results || []).reverse();
@@ -215,6 +223,8 @@ export async function onRequestGet({ request, env }) {
       display_name: m.display_name || "Collector", username: m.username || "", avatar_url: m.avatar_url || "", chat_name_color: m.chat_name_color || "#ffd54a",
       body: m.deleted_at ? "" : m.body, created_at: m.created_at,
       edited_at: m.edited_at, deleted: Boolean(m.deleted_at), mine: Number(m.account_id) === account.id,
+      reply_to_message_id: m.reply_to_message_id ? Number(m.reply_to_message_id) : null,
+      reply_to: m.reply_to_message_id ? { id: Number(m.reply_to_message_id), display_name: m.reply_display_name || "Collector", username: m.reply_username || "", body: m.reply_deleted_at ? "Message deleted" : (m.reply_body || ""), deleted: Boolean(m.reply_deleted_at) } : null,
       reactions: reactionMap.get(Number(m.id)) || []
     }));
     return chatJson({ ok: true, messages, realtime_ready: realtimeReady(env) });
@@ -228,6 +238,7 @@ export async function onRequestPost({ request, env }) {
     const account = await currentChatAccount(request, env);
     if (!account) return chatJson({ ok: false, error: "login_required" }, 401);
     await ensureCollectorRewardSchema(env);
+    await ensureChatReplySchema(env);
     let data;
     try { data = await request.json(); } catch { return chatJson({ ok: false, error: "bad_request" }, 400); }
     if (data && data.action === "reaction") return await toggleReaction(env, account, data);
@@ -238,14 +249,22 @@ export async function onRequestPost({ request, env }) {
     if (!body || body.length > 1200) return chatJson({ ok: false, error: "message_length", message: "Messages must be between 1 and 1,200 characters." }, 400);
     const channel = await env.DB.prepare("SELECT id FROM chat_channels WHERE id = ? AND is_active = 1").bind(channelId).first();
     if (!channel) return chatJson({ ok: false, error: "channel_not_found" }, 404);
+    const requestedReplyId = data.reply_to_message_id == null || data.reply_to_message_id === "" ? null : Number(data.reply_to_message_id);
+    if (requestedReplyId !== null && (!Number.isSafeInteger(requestedReplyId) || requestedReplyId < 1)) return chatJson({ ok: false, error: "invalid_reply" }, 400);
+    let replyTo = null;
+    if (requestedReplyId !== null) {
+      const parent = await env.DB.prepare("SELECT m.id, m.channel_id, m.body, m.deleted_at, a.display_name, p.username FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.id = ? AND m.channel_id = ? LIMIT 1").bind(requestedReplyId, channelId).first();
+      if (!parent || parent.deleted_at) return chatJson({ ok: false, error: "reply_message_unavailable", message: "That message can no longer be replied to." }, 400);
+      replyTo = { id: Number(parent.id), display_name: parent.display_name || "Collector", username: parent.username || "", body: parent.body || "", deleted: false };
+    }
     const recent = await env.DB.prepare(
       "SELECT COUNT(*) AS total FROM chat_messages WHERE account_id = ? AND created_at >= datetime('now', '-1 minute') AND deleted_at IS NULL"
     ).bind(account.id).first();
     if (Number(recent?.total || 0) >= 15) return chatJson({ ok: false, error: "rate_limited", message: "You have sent 15 messages in the last minute. Please slow down." }, 429);
 
     const inserted = await env.DB.prepare(
-      "INSERT INTO chat_messages (channel_id, account_id, body) VALUES (?, ?, ?)"
-    ).bind(channelId, account.id, body).run();
+      "INSERT INTO chat_messages (channel_id, account_id, body, reply_to_message_id) VALUES (?, ?, ?, ?)"
+    ).bind(channelId, account.id, body, requestedReplyId).run();
     const id = Number(inserted.meta?.last_row_id);
     const saved = await env.DB.prepare(
       "SELECT m.id, m.channel_id, m.account_id, a.display_name, p.username, p.avatar_url, p.chat_name_color, m.body, m.created_at FROM chat_messages m JOIN accounts a ON a.id = m.account_id LEFT JOIN collector_profiles p ON p.account_id = a.id WHERE m.id = ?"
@@ -254,6 +273,7 @@ export async function onRequestPost({ request, env }) {
       id: Number(saved.id), channel_id: Number(saved.channel_id), account_id: Number(saved.account_id),
       display_name: saved.display_name || "Collector", username: saved.username || "", avatar_url: saved.avatar_url || "", chat_name_color: saved.chat_name_color || "#ffd54a",
       body: saved.body, created_at: saved.created_at, edited_at: null, deleted: false,
+      reply_to_message_id: requestedReplyId, reply_to: replyTo,
       mine: true
     };
     let realtime = true;
