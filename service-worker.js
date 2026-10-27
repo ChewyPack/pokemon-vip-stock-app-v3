@@ -1,6 +1,6 @@
 'use strict';
 
-const SHELL_CACHE = 'pokeprizepool-shell-v5';
+const SHELL_CACHE = 'pokeprizepool-shell-v6';
 const CORE_NAVIGATION = new Set([
   '/', '/index.html', '/account.html', '/collector.html',
   '/chat.html', '/events.html', '/marketplace.html', '/vendor.html', '/newsfeed',
@@ -45,7 +45,7 @@ self.addEventListener('fetch', event => {
   event.respondWith((async () => {
     const cache = await caches.open(SHELL_CACHE);
     try {
-      const response = await fetch(request);
+      const response = await fetch(new Request(request, { cache: 'reload' }));
       if (response && response.ok && (response.headers.get('content-type') || '').includes('text/html')) {
         await cache.put(url.pathname, response.clone());
       }

@@ -12,8 +12,10 @@ function renderSelected(product){
  const productId=Number(product.product_id||product.tcgcsv_product_id||product.id)||0;
  form.elements.tcgcsv_product_id.value=productId?String(productId):'';
  if(product.name)form.elements.item_name.value=product.name;
- if(String(product.product_type||'').toLowerCase()==='sealed')form.elements.category.value='Sealed';
- else if(form.elements.category.value!=='Graded cards')form.elements.category.value='Singles';
+ if(product.product_type){
+  if(String(product.product_type).toLowerCase()==='sealed')form.elements.category.value='Sealed';
+  else if(form.elements.category.value!=='Graded cards')form.elements.category.value='Singles';
+ }
  selected.innerHTML='<div class="cp-catalog-result">'+(product.image_url?'<img loading="lazy" alt="" src="'+escapeHtml(product.image_url)+'">':'<span aria-hidden="true">TCGCSV</span>')+'<span><strong>'+escapeHtml(product.name||'Selected catalog product')+'</strong><small>'+escapeHtml(product.set_name||'TCGCSV catalog')+(product.card_number?' · #'+escapeHtml(product.card_number):'')+'</small><small>TCGCSV market reference: '+escapeHtml(priceLabel(product.market_price))+'</small><small>Upload your own item photo below; this reference does not set your asking price.</small></span></div>';
  selected.hidden=false;clearButton.hidden=false;
 }
