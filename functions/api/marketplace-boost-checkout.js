@@ -49,8 +49,8 @@ export async function onRequestPost({ request, env }) {
     params.set("line_items[0][quantity]", "1");
     params.set("client_reference_id", String(account.id));
     if (account.email) params.set("customer_email", account.email);
-    params.set("success_url", origin + "/marketplace.html?boost=success&session_id={CHECKOUT_SESSION_ID}");
-    params.set("cancel_url", origin + "/marketplace.html?boost=cancelled");
+    params.set("success_url", origin + "/marketplace?boost=success&session_id={CHECKOUT_SESSION_ID}");
+    params.set("cancel_url", origin + "/marketplace?boost=cancelled");
     params.set("allow_promotion_codes", "false");
     params.set("metadata[purchase_type]", "marketplace_listing_boost");
     params.set("metadata[account_id]", String(account.id));

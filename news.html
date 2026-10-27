@@ -160,7 +160,7 @@
           body.appendChild(add('h2','',story.title));
           if(story.excerpt)body.appendChild(add('p','',story.excerpt));
           if(Array.isArray(story.image_urls)&&story.image_urls.length>1)body.appendChild(add('p','news-photo-count',story.image_urls.length+' photos in this article'));
-          var link=add('a','news-read-link','Read story →');link.href='/news.html?story='+encodeURIComponent(story.slug);body.appendChild(link);
+          var link=add('a','news-read-link','Read story →');link.href='/news?story='+encodeURIComponent(story.slug);body.appendChild(link);
           card.appendChild(body);grid.appendChild(card);
         });
         container.appendChild(grid);
@@ -202,7 +202,7 @@
         heading.textContent=story.title;
         document.title=String(story.title||'News')+' | PokePrizePool';
         container.replaceChildren();
-        var back=add('a','news-back-link','← All News');back.href='/news.html';container.appendChild(back);
+        var back=add('a','news-back-link','← All News');back.href='/news';container.appendChild(back);
         var panel=add('article','news-article-panel');
         panel.appendChild(add('div','news-story-meta',[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · ')));
         var share=add('div','news-share');share.setAttribute('aria-label','Share this story');
@@ -258,12 +258,12 @@
       }
       var slug=new URLSearchParams(location.search).get('story');
       if(slug){
-        api('/api/news?slug='+encodeURIComponent(slug)).then(function(data){renderStory(data.story);}).catch(function(){heading.textContent='News';container.replaceChildren(add('p','', 'That story could not be found or is no longer published.'),Object.assign(add('a','news-back-link','← Back to News'),{href:'/news.html'}));});
+        api('/api/news?slug='+encodeURIComponent(slug)).then(function(data){renderStory(data.story);}).catch(function(){heading.textContent='News';container.replaceChildren(add('p','', 'That story could not be found or is no longer published.'),Object.assign(add('a','news-back-link','← Back to News'),{href:'/news'}));});
       }else{
         api('/api/news?category=News').then(function(data){renderList(data.stories||[]);}).catch(function(){container.replaceChildren(add('p','', 'We could not load the latest stories right now. Please try again soon.'));});
       }
     })();
   </script>
-<script src="/js/ui/pokereport-sidebar.js"></script>
+<script src="/js/ui/pokereport-sidebar.js?v=20261026-canonical-route-fix-v2"></script>
 </body>
 </html>

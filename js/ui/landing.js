@@ -113,10 +113,10 @@
       if(opts.copy)copy.appendChild(node('p','',shorten(opts.copy,140)));
       link.appendChild(copy);target.feed.appendChild(link);return link;
     }
-    var news = panel('Latest News','/news.html','All news ↗','No news stories to preview right now. Open the News page for published Pokémon TCG coverage.');
-    var markets = panel('Market Intelligence','/market-intelligence.html','Market info ↗','Member-only research with dated market snapshots, sourced price movers, and collector tools.');
+    var news = panel('Latest News','/news','All news ↗','No news stories to preview right now. Open the News page for published Pokémon TCG coverage.');
+    var markets = panel('Market Intelligence','/market-intelligence','Market info ↗','Member-only research with dated market snapshots, sourced price movers, and collector tools.');
     var giveaways = panel('Giveaways','/giveaways.html#gallery','All giveaways ↗','Visit the giveaways page for published prize details, entry rules, and community milestone goals.');
-    var listings = panel('Collector Marketplace','/marketplace.html','Browse listings ↗','Member shops post listings as items become available. Browse the marketplace for current offers.');
+    var listings = panel('Collector Marketplace','/marketplace','Browse listings ↗','Member shops post listings as items become available. Browse the marketplace for current offers.');
     var social = panel('News Feed','/newsfeed','View feed ↗','No community posts to preview yet. Open the feed to join the conversation.','ppp-home-previews__panel--social');
     var featuredEvents = panel('Featured Events','/events.html','All events ↗','Featured events are boosted by organizers. Browse the calendar for upcoming shows, trade nights, and releases.');
     var storePanel = panel('Official Store','/store','Shop all products ↗','Browse singles, sealed Pokémon products, graded cards, accessories, and PokePrizePool merch.','ppp-home-previews__panel--store');
@@ -175,14 +175,14 @@
       var rows=Array.isArray(data.stories)?data.stories.slice(0,2):[];
       if(!rows.length){empty(news,news.emptyCopy);return;}
       news.feed.replaceChildren();
-      rows.forEach(function(story){addItem(news,{title:story.title,copy:story.excerpt,meta:[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · '),image:story.image_url,href:'/news.html?story='+encodeURIComponent(story.slug)});});
+      rows.forEach(function(story){addItem(news,{title:story.title,copy:story.excerpt,meta:[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · '),image:story.image_url,href:'/news?story='+encodeURIComponent(story.slug)});});
     }).catch(function(){empty(news,'Latest news could not load right now.');});
 
     fetch('/api/news?category=Market%20Intelligence',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('market intelligence unavailable');return r.json();}).then(function(data){
       var rows=Array.isArray(data.stories)?data.stories.slice(0,2):[];
       if(!rows.length){empty(markets,markets.emptyCopy);return;}
       markets.feed.replaceChildren();
-      rows.forEach(function(story){addItem(markets,{title:story.title,copy:story.excerpt,meta:[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · '),image:story.image_url,href:'/news.html?story='+encodeURIComponent(story.slug)});});
+      rows.forEach(function(story){addItem(markets,{title:story.title,copy:story.excerpt,meta:[story.category,dateLabel(story.published_at)].filter(Boolean).join(' · '),image:story.image_url,href:'/news?story='+encodeURIComponent(story.slug)});});
     }).catch(function(){empty(markets,'Market intelligence could not load right now.');});
 
     fetch('/api/giveaways',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('giveaways unavailable');return r.json();}).then(function(data){
@@ -196,7 +196,7 @@
       var rows=Array.isArray(data.listings)?data.listings.slice(0,2):[];
       if(!rows.length){empty(listings,listings.emptyCopy);return;}
       listings.feed.replaceChildren();
-      rows.forEach(function(listing){var price=listing.price_cents==null?'Contact for price':'$'+(Number(listing.price_cents)/100).toFixed(2);addItem(listings,{title:listing.item_name,copy:[listing.shop_name||listing.username,price].filter(Boolean).join(' · '),meta:listing.category||'Member listing',image:listing.image_url,href:listing.shop_url||'/marketplace.html'});});
+      rows.forEach(function(listing){var price=listing.price_cents==null?'Contact for price':'$'+(Number(listing.price_cents)/100).toFixed(2);addItem(listings,{title:listing.item_name,copy:[listing.shop_name||listing.username,price].filter(Boolean).join(' · '),meta:listing.category||'Member listing',image:listing.image_url,href:listing.shop_url||'/marketplace'});});
     }).catch(function(){empty(listings,'Marketplace listings could not load right now.');});
 
     fetch('/api/events?featured=1',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('featured events unavailable');return r.json();}).then(function(data){

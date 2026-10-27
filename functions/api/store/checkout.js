@@ -189,7 +189,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
       client_reference_id: num,
       customer_email: email || undefined,
       success_url: `${origin}/store/order.html?n=${encodeURIComponent(num)}&t=${encodeURIComponent(token)}`,
-      cancel_url: `${origin}/store.html?checkout=cancelled`,
+      cancel_url: `${origin}/store?checkout=cancelled`,
       expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
       metadata: { ppp_store_order_id: String(order.id), ppp_order_number: num, ppp_printify_order: hasPrintify ? '1' : '0' },
       payment_intent_data: { metadata: { ppp_store_order_id: String(order.id) } },

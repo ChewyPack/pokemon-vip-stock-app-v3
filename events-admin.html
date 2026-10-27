@@ -64,4 +64,4 @@ form.elements.slug.addEventListener('input',function(){slugTouched=this.value.le
 $('new-event').addEventListener('click',reset);
 api('/api/events?admin=1').then(()=>{$('editor').classList.remove('hidden');say('Admin access confirmed.');return load();}).catch(e=>{say('Could not verify admin access: '+e.message+'. Sign in with your admin account and refresh.');});
 })();
-</script><script src="/js/ui/pokereport-sidebar.js"></script></body></html>
+</script><script src="/js/ui/pokereport-sidebar.js?v=20261026-canonical-route-fix-v2"></script></body></html>

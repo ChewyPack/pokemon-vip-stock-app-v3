@@ -28,7 +28,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
 <body>
 <div id="site-navigation"></div>
 <main class="product-wrap">
-<a class="product-back" href="/store.html">← Back to the PokePrizePool Store</a>
+<a class="product-back" href="/store">← Back to the PokePrizePool Store</a>
 <div id="product-status" class="product-message" role="status" aria-live="polite">Loading product details…</div>
 <section id="product-panel" class="product-panel" hidden aria-labelledby="product-title">
 <div class="product-gallery">
@@ -180,7 +180,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
          $('product-badge').textContent='Available · choose options';
          $('product-buy').addEventListener('click',()=>{
            if(!selectedVariant)return;
-           location.href='/store.html?add='+encodeURIComponent(String(product.id))+'&variant='+encodeURIComponent(String(selectedVariant.id))+'&slug='+encodeURIComponent(String(product.slug||slug));
+           location.href='/store?add='+encodeURIComponent(String(product.id))+'&variant='+encodeURIComponent(String(selectedVariant.id))+'&slug='+encodeURIComponent(String(product.slug||slug));
          });
        }else{
          $('product-badge').textContent='Currently Unavailable';
@@ -188,7 +188,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
          $('product-buy').disabled=true;
        }
      }else if(productIsComingSoon(product)){$('product-buy').textContent='Purchases Opening Soon';$('product-note').textContent='This item is available to request through the PokePrizePool store. Availability is confirmed before the order is finalized.';}
-     else if(Number(product.available)>0&&!product.externalCheckoutUrl){$('product-buy').textContent='Add to Cart';$('product-buy').disabled=false;$('product-note').textContent='Add this item to your cart. At checkout, request payment instructions directly from PokePrizePool. Singles, sealed products, graded cards, and accessories are pickup-only for now; do not send payment until we confirm the final total.';$('product-buy').addEventListener('click',()=>{location.href='/store.html?add='+encodeURIComponent(String(product.id))+'&slug='+encodeURIComponent(String(product.slug||slug));});}
+     else if(Number(product.available)>0&&!product.externalCheckoutUrl){$('product-buy').textContent='Add to Cart';$('product-buy').disabled=false;$('product-note').textContent='Add this item to your cart. At checkout, request payment instructions directly from PokePrizePool. Singles, sealed products, graded cards, and accessories are pickup-only for now; do not send payment until we confirm the final total.';$('product-buy').addEventListener('click',()=>{location.href='/store?add='+encodeURIComponent(String(product.id))+'&slug='+encodeURIComponent(String(product.slug||slug));});}
      else{$('product-buy').textContent='Currently Unavailable';$('product-note').textContent='This product is not currently available to purchase.';}
      $('product-panel').hidden=false;$('product-status').hidden=true;
    }catch(error){showError(error.message||'We could not load this product right now.');}
