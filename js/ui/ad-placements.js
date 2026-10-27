@@ -16,6 +16,10 @@ var css=`
 .ppp-ad-art{display:block;width:100%;max-height:70px;object-fit:contain;border-radius:5px}
 .ppp-ad-art-wrap{width:135px;max-width:24%;flex-shrink:0}
 .ppp-ad-slot--top{width:min(970px,calc(100% - 32px));min-height:100px;margin:18px auto 24px;border-radius:10px}
+.ppp-ad-slot--affiliate-banner{display:block!important;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;overflow:visible!important}
+.ppp-amazon-banner-link{display:block;width:100%;line-height:0;border-radius:8px;overflow:hidden}
+.ppp-amazon-banner-image{display:block;width:100%;height:auto;max-width:100%;border:0}
+.ppp-amazon-affiliate-disclosure{margin:5px 0 0;text-align:center;color:#8fa2c6;font:10px/1.4 system-ui,-apple-system,\"Segoe UI\",sans-serif;letter-spacing:0;text-transform:none}
 .ppp-ad-slot--inline{width:min(100%,920px);min-height:82px;margin:12px auto 16px;border-radius:10px}
 .ppp-ad-slot--inline .ppp-ad-inner{padding:12px 15px}
 .ppp-ad-slot--top .ppp-ad-inner{padding-top:23px}
@@ -114,7 +118,22 @@ function initializeSlot(el,slot,kind,label){
  el.dataset.adSlot=slot;
  el.setAttribute('aria-label','Advertisement placement: '+page+' '+label);
 }
+function renderAmazonAffiliateBanner(slot){
+ var el=document.querySelector('[data-ad-slot="'+slot+'"]');if(!el||el.dataset.pppAffiliateBanner==='1')return;
+ el.dataset.pppAffiliateBanner='1';el.dataset.pppCampaignRequested='1';
+ el.className='ppp-ad-slot ppp-ad-slot--top ppp-ad-slot--affiliate-banner';
+ el.setAttribute('aria-label','Amazon affiliate banner');
+ var link=element('a','ppp-amazon-banner-link');
+ link.href='https://link.amazon/B07M8pu0H';link.target='_blank';link.rel='sponsored nofollow noopener noreferrer';
+ link.setAttribute('aria-label','Shop on Amazon (opens in a new tab)');
+ var img=element('img','ppp-amazon-banner-image');img.src='/images/amazon-banner.jpg';img.alt='Shop on Amazon';img.loading='eager';img.decoding='async';
+ link.appendChild(img);
+ var disclosure=element('p','ppp-amazon-affiliate-disclosure','As an Amazon Associate, PokePrizePool earns from qualifying purchases.');
+ el.replaceChildren(link,disclosure);
+ img.addEventListener('error',function(){el.dataset.pppAffiliateBanner='';el.classList.remove('ppp-ad-slot--affiliate-banner');houseAd(slot);},{once:true});
+}
 function loadCampaign(slot){
+ if(slot==='home-top'){renderAmazonAffiliateBanner(slot);return;}
  var slotElement=document.querySelector('[data-ad-slot="'+slot+'"]');
  if(!slotElement||slotElement.dataset.pppCampaignRequested==='1')return;
  slotElement.dataset.pppCampaignRequested='1';
