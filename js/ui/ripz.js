@@ -191,6 +191,8 @@
         state.selectedStream = null;
         $("ripz-watch-video").hidden = true;
         $("ripz-stage-placeholder").hidden = false;
+        var endedViewerCount = $("ripz-viewer-count");
+        if (endedViewerCount) endedViewerCount.hidden = true;
         $("ripz-stage-title").textContent = "That rip has ended";
         $("ripz-stage-subtitle").textContent = "Choose another live session above.";
         $("ripz-chat-caption").textContent = "Select a stream to join the conversation.";
@@ -231,6 +233,8 @@
         $("ripz-watch-video").hidden = true;
         $("ripz-watch-video").srcObject = null;
         $("ripz-stage-placeholder").hidden = false;
+        var endedViewerCount = $("ripz-viewer-count");
+        if (endedViewerCount) endedViewerCount.hidden = true;
         $("ripz-stage-placeholder").innerHTML = '<strong>That rip has ended</strong><span>Choose another live session above.</span>';
         $("ripz-stage-title").textContent = "That rip has ended";
         $("ripz-stage-subtitle").textContent = "Choose another live session above.";
