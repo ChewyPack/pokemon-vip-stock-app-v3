@@ -53,6 +53,8 @@
         login_required: "Please sign in to PokePrizePool to use Ripz.",
         collector_plus_required: "Hosting a live rip requires an active Collector+ membership.",
         streaming_not_configured: "Live video is not connected yet. Please contact PokePrizePool support.",
+        unknown_action: "The live site has not finished updating the giveaway controls yet. Refresh Ripz and try again shortly.",
+        not_live_stream_owner: "Giveaway viewer import is only available for your own live stream.",
         stream_provider_error: "The live video service could not start a stream. Please try again later.",
         stream_provider_unavailable: "The live video provider did not return the required browser streaming links.",
         stream_not_live: "That stream is no longer live."
@@ -67,6 +69,7 @@
   }
 
   function renderHostPanel() {
+    syncGiveawayDock();
     var host = $("ripz-host-panel");
     if (!state.authenticated) {
       host.innerHTML = '<div class="ripz-host-card"><h3>Sign in to host</h3><p>Sign in to check your member access and launch a live rip.</p><a class="ripz-button" href="/account.html">Sign in</a></div>';
@@ -128,10 +131,9 @@
           '<button id="ripz-host-connect" class="ripz-button" type="button" ' + (state.isPublishing || !state.media ? "disabled" : "") + '>' + (state.myStream.status === "live" ? "Reconnect &amp; go live" : "Go live") + '</button>' +
           '<button id="ripz-host-stop" class="ripz-button ripz-button--danger" type="button">End stream</button>' +
         '</div><p class="ripz-note ripz-host-span">Preview first, then go live when your picture and microphone look right. Keep this page open while you rip.</p>' +
-        (state.myStream.status === "live" ? giveawayMarkup() : '') +
         '</div>';
       bindCameraControls(true);
-      if (state.myStream.status === "live") bindGiveawayControls();
+      syncGiveawayDock();
       var connect = $("ripz-host-connect");
       if (connect) connect.addEventListener("click", function () { connectExistingStream(); });
       var stop = $("ripz-host-stop");
@@ -253,6 +255,40 @@
   }
 
 
+
+  function syncGiveawayDock() {
+    var dock = $("ripz-host-dock");
+    var modal = $("ripz-giveaway-modal");
+    var content = $("ripz-giveaway-modal-content");
+    var isLiveHost = !!(state.authenticated && state.myStream && state.myStream.status === "live");
+    if (dock) dock.hidden = !isLiveHost;
+    if (modal && !isLiveHost) modal.hidden = true;
+    if (content && isLiveHost && !content.querySelector("#ripz-giveaway-title")) {
+      content.innerHTML = giveawayMarkup();
+      bindGiveawayControls();
+    }
+  }
+
+  function closeGiveawayModal() {
+    var modal = $("ripz-giveaway-modal");
+    if (modal) modal.hidden = true;
+    var button = $("ripz-host-giveaway");
+    if (button) button.setAttribute("aria-expanded", "false");
+  }
+
+  function openGiveawayModal() {
+    var modal = $("ripz-giveaway-modal");
+    var content = $("ripz-giveaway-modal-content");
+    if (!modal || !content || !state.myStream || state.myStream.status !== "live") return;
+    content.innerHTML = giveawayMarkup();
+    bindGiveawayControls();
+    modal.hidden = false;
+    var button = $("ripz-host-giveaway");
+    if (button) button.setAttribute("aria-expanded", "true");
+    var close = $("ripz-giveaway-close");
+    if (close) close.focus();
+  }
+
   function giveawayMarkup() {
     var entries = state.giveawayEntries;
     var segment = entries.length ? 100 / entries.length : 100;
@@ -272,13 +308,9 @@
   }
 
   function renderGiveaway() {
-    var section = $("ripz-giveaway-title");
-    if (!section) return;
-    var wrapper = section.closest(".ripz-giveaway");
-    if (!wrapper) return;
-    var temp = document.createElement("div");
-    temp.innerHTML = giveawayMarkup();
-    wrapper.replaceWith(temp.firstElementChild);
+    var content = $("ripz-giveaway-modal-content");
+    if (!content || !content.querySelector("#ripz-giveaway-title")) return;
+    content.innerHTML = giveawayMarkup();
     bindGiveawayControls();
   }
 
@@ -913,6 +945,20 @@
     if (state.listTimer) clearInterval(state.listTimer);
     if (state.recordingTimer) clearTimeout(state.recordingTimer);
   });
+
+  var giveawayOpenButton = $("ripz-host-giveaway");
+  if (giveawayOpenButton) giveawayOpenButton.addEventListener("click", openGiveawayModal);
+  var giveawayCloseButton = $("ripz-giveaway-close");
+  if (giveawayCloseButton) giveawayCloseButton.addEventListener("click", closeGiveawayModal);
+  var giveawayBackdrop = $("ripz-giveaway-modal");
+  if (giveawayBackdrop) giveawayBackdrop.addEventListener("click", function (event) {
+    if (event.target === giveawayBackdrop) closeGiveawayModal();
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") closeGiveawayModal();
+  });
+  var dockEndButton = $("ripz-host-dock-end");
+  if (dockEndButton) dockEndButton.addEventListener("click", function () { stopHostStream(false); });
 
   refreshData().then(function () {
     state.listTimer = window.setInterval(refreshLiveList, 12000);
