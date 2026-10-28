@@ -355,6 +355,8 @@
     var button = $("ripz-preview-start");
     var statusNode = $("ripz-host-status");
     if (button) button.disabled = true;
+    var goLiveButton = $("ripz-start-button") || $("ripz-host-connect");
+    if (goLiveButton) goLiveButton.disabled = true;
     if (statusNode) statusNode.textContent = "Requesting camera and microphone access…";
     try {
       var cameraId = selectedDeviceValue("ripz-camera-device", state.cameraDeviceId);
@@ -383,16 +385,17 @@
           stopButton.className = "ripz-button ripz-button--secondary";
           stopButton.textContent = "Stop preview";
           actions.appendChild(stopButton);
-          stopButton.addEventListener("click", stopCameraPreview);
         }
       }
       var stopButtonExisting = $("ripz-preview-stop");
       if (stopButtonExisting) stopButtonExisting.addEventListener("click", stopCameraPreview);
     } catch (error) {
       if (statusNode) statusNode.textContent = error.message || "Could not start your camera preview.";
+      if (goLiveButton) goLiveButton.disabled = !state.media;
       if (button) button.disabled = false;
       return;
     }
+    if (goLiveButton) goLiveButton.disabled = false;
     if (button) button.disabled = false;
   }
 
