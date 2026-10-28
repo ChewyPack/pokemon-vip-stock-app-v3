@@ -30,7 +30,9 @@
     giveawayEntries: [],
     giveawayConfig: { title: "Live Giveaway", prize: "", style: "wheel", eligibility: "everyone", enabled: false, winner: "" },
     giveawayStateTimer: null,
-    giveawaySpinTimer: null
+    giveawaySpinTimer: null,
+    guestTimer: null,
+    guestRequest: null
   };
 
   function esc(value) {
@@ -184,6 +186,7 @@
       host.innerHTML = '<div class="ripz-host-content">' +
         '<div class="ripz-host-card ripz-host-span"><div class="ripz-live-badge">Your session</div><h3 style="margin-top:10px">' + esc(state.myStream.title) + '</h3><p>' + esc(state.myStream.product_name) + '</p>' + (state.myStream.status === "live" ? '<p id="ripz-host-viewer-count" class="ripz-viewer-count" aria-live="polite">' + Number(state.myStream.viewer_count || 0) + ' watching</p>' : '') + '<p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite" style="margin-top:10px">' + esc(statusText) + '</p></div>' +
         cameraSetupMarkup(true) +
+        '<div id="ripz-guest-requests" class="ripz-guest-requests ripz-host-span"><h3>Guest requests</h3><p class="ripz-note">No requests yet.</p></div>' +
         '<div class="ripz-camera-actions ripz-host-span">' +
           '<button id="ripz-host-connect" class="ripz-button" type="button" ' + (state.isPublishing || !state.media ? "disabled" : "") + '>' + (state.myStream.status === "live" ? "Reconnect &amp; go live" : "Go live") + '</button>' +
           '<button id="ripz-host-stop" class="ripz-button ripz-button--danger" type="button">End stream</button>' +
@@ -366,6 +369,11 @@
         state.selectedStream = null;
         $("ripz-watch-video").hidden = true;
         $("ripz-watch-video").srcObject = null;
+    var joinPanel = $("ripz-guest-join-panel");
+    if (joinPanel) joinPanel.hidden = !!(state.myStream && state.myStream.status === "live");
+    state.guestRequest = null;
+    if ($("ripz-guest-request-status")) $("ripz-guest-request-status").textContent = "";
+    refreshGuestState(stream.id);
         $("ripz-stage-placeholder").hidden = false;
         var endedViewerCount = $("ripz-viewer-count");
         if (endedViewerCount) endedViewerCount.hidden = true;
@@ -1044,6 +1052,62 @@
     }
   }
 
+
+  async function refreshGuestState(streamId) {
+    if (!streamId) return;
+    try {
+      var result = await api("POST", { action: "guest_state", stream_id: streamId });
+      var hostOwns = !!(state.myStream && state.myStream.id === streamId);
+      var requestBox = $("ripz-guest-requests");
+      if (hostOwns && requestBox) {
+        var requests = result.requests || [];
+        requestBox.innerHTML = '<h3>Guest requests</h3>' + (requests.length ? requests.map(function (item) {
+          return '<div class="ripz-guest-request-row"><div><strong>@' + esc(item.username) + '</strong><p class="ripz-note">' + (item.status === "pending" ? "Waiting for your decision" : "Approved — media connection is the next step") + '</p></div>' +
+            (item.status === "pending" ? '<div class="ripz-guest-request-actions"><button class="ripz-button" type="button" data-ripz-guest-approve="' + esc(item.id) + '">Approve</button><button class="ripz-button ripz-button--danger" type="button" data-ripz-guest-decline="' + esc(item.id) + '">Decline</button></div>' : '<span class="ripz-pill">Approved</span>') + '</div>';
+        }).join("") : '<p class="ripz-note">No requests yet. Viewers can request to join while you are live.</p>');
+      } else if (state.selectedStream && state.selectedStream.id === streamId) {
+        state.guestRequest = result.own_request || null;
+        var status = $("ripz-guest-request-status");
+        var button = $("ripz-guest-request-button");
+        if (status) status.textContent = !state.guestRequest ? "You have not requested to join." :
+          state.guestRequest.status === "pending" ? "Request sent. Waiting for the host to respond." :
+          state.guestRequest.status === "approved" ? "The host approved your request. Live guest video is not connected yet." :
+          state.guestRequest.status === "declined" ? "The host declined this request." : "Your request was cancelled.";
+        if (button) {
+          button.disabled = !!(state.guestRequest && ["pending", "approved"].includes(state.guestRequest.status));
+          button.textContent = state.guestRequest && state.guestRequest.status === "approved" ? "Approved — media setup pending" :
+            state.guestRequest && state.guestRequest.status === "pending" ? "Request pending" : "Request to join";
+        }
+      }
+    } catch (_) {}
+  }
+
+  async function submitGuestRequest() {
+    if (!state.selectedStream) return;
+    var button = $("ripz-guest-request-button");
+    if (button) button.disabled = true;
+    try {
+      var result = await api("POST", { action: "guest_request", stream_id: state.selectedStream.id });
+      state.guestRequest = result.request || null;
+      await refreshGuestState(state.selectedStream.id);
+    } catch (error) {
+      setStatus("ripz-guest-request-status", error.message || "Could not send your request.", true);
+    } finally {
+      if (button && !(state.guestRequest && ["pending", "approved"].includes(state.guestRequest.status))) button.disabled = false;
+    }
+  }
+
+  async function decideGuestRequest(requestId, decision) {
+    var stream = state.myStream && state.myStream.status === "live" ? state.myStream : state.selectedStream;
+    if (!stream) return;
+    try {
+      await api("POST", { action: "guest_decide", request_id: requestId, decision: decision });
+      await refreshGuestState(stream.id);
+    } catch (error) {
+      setStatus("ripz-host-status", error.message || "Could not update guest request.", true);
+    }
+  }
+
   async function sendViewerHeartbeat(streamId) {
     if (!streamId || !state.selectedStream || state.selectedStream.id !== streamId || !state.playback) return;
     try {
@@ -1085,6 +1149,14 @@
       }
     }
   }
+
+  document.addEventListener("click", function (event) {
+    var target = event.target.closest("button");
+    if (!target) return;
+    if (target.id === "ripz-guest-request-button") { submitGuestRequest(); return; }
+    if (target.hasAttribute("data-ripz-guest-approve")) { decideGuestRequest(target.getAttribute("data-ripz-guest-approve"), "approve"); return; }
+    if (target.hasAttribute("data-ripz-guest-decline")) { decideGuestRequest(target.getAttribute("data-ripz-guest-decline"), "decline"); return; }
+  });
 
   $("ripz-chat-form").addEventListener("submit", async function (event) {
     event.preventDefault();
@@ -1149,6 +1221,7 @@
       try { active.pc.close(); } catch (_) {}
     }
     if (state.chatTimer) clearInterval(state.chatTimer);
+    if (state.guestTimer) clearInterval(state.guestTimer);
     if (state.listTimer) clearInterval(state.listTimer);
     if (state.recordingTimer) clearTimeout(state.recordingTimer);
   });
@@ -1175,5 +1248,9 @@
     state.chatTimer = window.setInterval(function () {
       if (state.selectedStream) loadChat(state.selectedStream.id);
     }, 3500);
+    state.guestTimer = window.setInterval(function () {
+      var activeGuestStream = state.myStream && state.myStream.status === "live" ? state.myStream.id : (state.selectedStream && state.selectedStream.id);
+      if (activeGuestStream) refreshGuestState(activeGuestStream);
+    }, 3000);
   });
 })();
