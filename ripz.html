@@ -37,6 +37,14 @@
     .ripz-form label{display:grid;gap:6px;color:#e3edff;font-size:.88rem;font-weight:900}
     .ripz-form input{width:100%;min-width:0;box-sizing:border-box;min-height:45px;padding:11px 12px;border:1px solid #425778;border-radius:9px;background:#071329;color:#fff;font:inherit}
     .ripz-form input:focus{outline:2px solid #ffd21f;outline-offset:1px}
+    .ripz-form select{width:100%;min-width:0;box-sizing:border-box;min-height:43px;padding:10px 11px;border:1px solid #425778;border-radius:9px;background:#071329;color:#fff;font:inherit}
+    .ripz-camera-setup{display:grid;gap:10px;padding:12px;border:1px solid #2a4368;border-radius:12px;background:#0a1730}
+    .ripz-device-grid{display:grid;grid-template-columns:1fr;gap:10px}
+    .ripz-mic-test{display:grid;gap:6px;color:#b9c9e3;font-size:.82rem}
+    .ripz-mic-meter{height:9px;overflow:hidden;border-radius:99px;background:#253753}
+    .ripz-mic-meter span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#42d392,#ffd21f,#fb425b);transition:width .08s linear}
+    .ripz-camera-setup .ripz-host-video{max-height:320px}
+    @media(min-width:600px){.ripz-device-grid{grid-template-columns:1fr 1fr}}
     .ripz-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:45px;padding:11px 15px;border:1px solid #e5bf22;border-radius:9px;background:#ffd21f;color:#1a210e;text-align:center;text-decoration:none;font:900 .93rem/1.2 var(--font-body,Nunito,system-ui,sans-serif);cursor:pointer;transition:transform .15s,filter .15s}
     .ripz-button:hover{filter:brightness(1.04);transform:translateY(-1px)}
     .ripz-button:disabled{opacity:.55;cursor:not-allowed;transform:none}
