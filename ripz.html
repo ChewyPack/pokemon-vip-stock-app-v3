@@ -31,6 +31,11 @@
     .ripz-studio-top h2{margin:0;font:400 1.8rem/1.1 var(--font-display,Bangers,Impact,sans-serif)}
     .ripz-replay-frame{display:block;width:100%;aspect-ratio:16/9;border:1px solid #263f64;border-radius:11px;background:#030710}
     .ripz-host-video{display:none!important}
+    .ripz-viewer-giveaway-overlay{position:absolute;z-index:5;left:4%;right:4%;bottom:7%;max-width:640px;margin:auto;padding:14px 18px;border:1px solid #f5c451;border-radius:16px;background:rgba(5,12,28,.94);color:#fff;box-shadow:0 12px 50px #0009;text-align:center;pointer-events:none}
+    .ripz-viewer-giveaway-overlay h3{margin:0 0 6px;color:#f5c451;font-size:clamp(1.2rem,3vw,2rem)}
+    .ripz-viewer-giveaway-overlay p{margin:4px 0}
+    .ripz-viewer-giveaway-overlay .ripz-race-lanes{display:grid;gap:5px;margin-top:8px}
+    .ripz-viewer-giveaway-overlay .ripz-race-lanes span{display:block;padding:4px 8px;background:#17325a;border-radius:8px;text-align:left}
     .ripz-panel{min-width:0;border:1px solid #263e63;border-radius:17px;background:#0c1830;box-shadow:0 14px 36px #0002}
     .ripz-panel-head{padding:17px 19px;border-bottom:1px solid #253753}
     .ripz-panel-head h2{margin:0;color:#f7faff;font:400 1.55rem/1.1 var(--font-display,Bangers,Impact,sans-serif);letter-spacing:.02em}
@@ -208,6 +213,7 @@
               <p id="ripz-viewer-count" class="ripz-viewer-count" aria-live="polite" hidden>0 watching</p>
               <div id="ripz-stage-placeholder" class="ripz-stage-placeholder"><span style="font-size:2.3rem" aria-hidden="true">🎥</span><strong>No stream selected</strong><span>Choose a live session above to tune in.</span></div>
               <video id="ripz-watch-video" class="ripz-stage-video" autoplay playsinline controls hidden></video>
+              <div id="ripz-viewer-giveaway-overlay" class="ripz-viewer-giveaway-overlay" hidden aria-live="polite"></div>
               <iframe id="ripz-replay-frame" class="ripz-replay-frame" title="Ripz replay" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen hidden></iframe>
               <p id="ripz-playback-status" class="ripz-status" role="status" aria-live="polite"></p>
             </div>
@@ -238,6 +244,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261026-logout-cache-fix-v4"></script>
-  <script src="/js/ui/ripz.js?v=20261028-ripz-studio-landing-v1"></script>
+  <script src="/js/ui/ripz.js?v=20261028-ripz-stream-tools-overlay-v2"></script>
 </body>
 </html>
