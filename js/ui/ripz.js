@@ -32,7 +32,13 @@
     giveawayStateTimer: null,
     giveawaySpinTimer: null,
     guestTimer: null,
-    guestRequest: null
+    guestRequest: null,
+    guestPublisher: null,
+    guestPublishBusy: false,
+    guestSubscriber: null,
+    guestSubscribedStreamId: "",
+    guestSubscribeBusy: false,
+    guestMediaStream: null
   };
 
   function esc(value) {
@@ -1053,6 +1059,156 @@
   }
 
 
+
+  function waitForGuestIce(pc) {
+    if (pc.iceGatheringState === "complete") return Promise.resolve();
+    return new Promise(function(resolve) {
+      var done = false;
+      var finish = function() {
+        if (done) return;
+        done = true;
+        pc.removeEventListener("icegatheringstatechange", check);
+        resolve();
+      };
+      var check = function() { if (pc.iceGatheringState === "complete") finish(); };
+      pc.addEventListener("icegatheringstatechange", check);
+      window.setTimeout(finish, 7000);
+    });
+  }
+
+  function currentGuestStreamId() {
+    if (state.myStream && state.myStream.status === "live") return state.myStream.id;
+    return state.selectedStream && state.selectedStream.id ? state.selectedStream.id : "";
+  }
+
+  function clearGuestSubscriber() {
+    if (state.guestSubscriber && state.guestSubscriber.pc) {
+      try { state.guestSubscriber.pc.close(); } catch (_) {}
+    }
+    state.guestSubscriber = null;
+    state.guestSubscribedStreamId = "";
+    var grid = $("ripz-guest-video-grid");
+    if (grid) { grid.innerHTML = ""; grid.hidden = true; }
+  }
+
+  async function ensureGuestSubscription(streamId) {
+    if (!streamId || state.guestSubscribeBusy) return;
+    if (state.guestSubscriber && state.guestSubscribedStreamId === streamId) return;
+    state.guestSubscribeBusy = true;
+    try {
+      var list = await api("POST", { action: "guest_sfu_list", stream_id: streamId });
+      var publishers = (list.publishers || []).slice(0, 1);
+      if (!publishers.length) {
+        if (state.guestSubscriber) clearGuestSubscriber();
+        return;
+      }
+      clearGuestSubscriber();
+      var created = await api("POST", { action: "guest_sfu_subscriber_create", stream_id: streamId });
+      if (!created.session_id || !created.publishers || !created.publishers.length) return;
+      var pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] });
+      var remote = new MediaStream();
+      var grid = $("ripz-guest-video-grid");
+      if (!grid) { pc.close(); return; }
+      grid.innerHTML = '<div class="ripz-guest-video-card"><video id="ripz-guest-remote-video" autoplay playsinline></video><span>Guest on camera</span></div>';
+      grid.hidden = false;
+      var remoteVideo = $("ripz-guest-remote-video");
+      remoteVideo.srcObject = remote;
+      pc.addEventListener("track", function(event) {
+        if (!remote.getTracks().some(function(track) { return track.id === event.track.id; })) remote.addTrack(event.track);
+        remoteVideo.play().catch(function(){});
+      });
+      var sub = { pc: pc, streamId: streamId, sessionId: created.session_id };
+      state.guestSubscriber = sub;
+      state.guestSubscribedStreamId = streamId;
+      var negotiated = await api("POST", {
+        action: "guest_sfu_subscribe",
+        stream_id: streamId,
+        session_id: created.session_id,
+        publishers: created.publishers
+      });
+      if (!negotiated.session_description) { clearGuestSubscriber(); return; }
+      await pc.setRemoteDescription(negotiated.session_description);
+      var answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await waitForGuestIce(pc);
+      await api("POST", {
+        action: "guest_sfu_subscriber_answer",
+        stream_id: streamId,
+        session_id: created.session_id,
+        session_description: pc.localDescription
+      });
+      if (pc.connectionState === "failed") throw new Error("Guest media connection failed.");
+      remoteVideo.play().catch(function(){});
+    } catch (error) {
+      clearGuestSubscriber();
+      if ($("ripz-playback-status") && state.selectedStream && state.selectedStream.id === streamId) {
+        setStatus("ripz-playback-status", "Guest video is connecting. If it does not appear, refresh the stream.", false);
+      }
+    } finally {
+      state.guestSubscribeBusy = false;
+    }
+  }
+
+  async function startGuestCamera() {
+    if (!state.selectedStream || !state.guestRequest || state.guestRequest.status !== "approved" || state.guestPublishBusy || state.guestPublisher) return;
+    state.guestPublishBusy = true;
+    var startButton = $("ripz-guest-start-camera");
+    if (startButton) startButton.disabled = true;
+    try {
+      var media = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      state.guestMediaStream = media;
+      var preview = $("ripz-guest-local-preview");
+      if (preview) { preview.srcObject = media; preview.hidden = false; }
+      var session = await api("POST", { action: "guest_sfu_create", stream_id: state.selectedStream.id });
+      var pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] });
+      media.getTracks().forEach(function(track) { pc.addTransceiver(track, { direction: "sendonly" }); });
+      var offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await waitForGuestIce(pc);
+      var tracks = pc.getTransceivers().map(function(transceiver) {
+        return { mid: transceiver.mid, kind: transceiver.sender.track ? transceiver.sender.track.kind : "" };
+      }).filter(function(track) { return track.mid && (track.kind === "audio" || track.kind === "video"); });
+      var result = await api("POST", {
+        action: "guest_sfu_publish",
+        stream_id: state.selectedStream.id,
+        session_id: session.session_id,
+        session_description: pc.localDescription,
+        tracks: tracks
+      });
+      await pc.setRemoteDescription(result.session_description);
+      state.guestPublisher = { pc: pc, streamId: state.selectedStream.id, sessionId: session.session_id };
+      if (startButton) startButton.hidden = true;
+      var stopButton = $("ripz-guest-stop-camera");
+      if (stopButton) stopButton.hidden = false;
+      setStatus("ripz-guest-request-status", "Your camera and microphone are connected to the live rip.", false);
+      await refreshGuestState(state.selectedStream.id);
+    } catch (error) {
+      if (state.guestMediaStream) state.guestMediaStream.getTracks().forEach(function(track){ track.stop(); });
+      state.guestMediaStream = null;
+      var preview = $("ripz-guest-local-preview");
+      if (preview) { preview.srcObject = null; preview.hidden = true; }
+      setStatus("ripz-guest-request-status", error.message || "Could not connect your camera. Check browser permissions and try again.", true);
+    } finally {
+      state.guestPublishBusy = false;
+      if (startButton && state.guestRequest && state.guestRequest.status === "approved" && !state.guestPublisher) startButton.disabled = false;
+    }
+  }
+
+  function stopGuestCamera() {
+    if (state.guestPublisher && state.guestPublisher.pc) {
+      try { state.guestPublisher.pc.close(); } catch (_) {}
+    }
+    state.guestPublisher = null;
+    if (state.guestMediaStream) state.guestMediaStream.getTracks().forEach(function(track){ track.stop(); });
+    state.guestMediaStream = null;
+    var preview = $("ripz-guest-local-preview");
+    if (preview) { preview.srcObject = null; preview.hidden = true; }
+    var stop = $("ripz-guest-stop-camera"), start = $("ripz-guest-start-camera");
+    if (stop) stop.hidden = true;
+    if (start) { start.hidden = false; start.disabled = false; }
+    if (state.selectedStream) api("POST", { action: "guest_cancel", stream_id: state.selectedStream.id }).catch(function(){});
+  }
+
   async function refreshGuestState(streamId) {
     if (!streamId) return;
     try {
@@ -1062,7 +1218,7 @@
       if (hostOwns && requestBox) {
         var requests = result.requests || [];
         requestBox.innerHTML = '<h3>Guest requests</h3>' + (requests.length ? requests.map(function (item) {
-          return '<div class="ripz-guest-request-row"><div><strong>@' + esc(item.username) + '</strong><p class="ripz-note">' + (item.status === "pending" ? "Waiting for your decision" : "Approved — media connection is the next step") + '</p></div>' +
+          return '<div class="ripz-guest-request-row"><div><strong>@' + esc(item.username) + '</strong><p class="ripz-note">' + (item.status === "pending" ? "Waiting for your decision" : "Approved — guest can join when ready") + '</p></div>' +
             (item.status === "pending" ? '<div class="ripz-guest-request-actions"><button class="ripz-button" type="button" data-ripz-guest-approve="' + esc(item.id) + '">Approve</button><button class="ripz-button ripz-button--danger" type="button" data-ripz-guest-decline="' + esc(item.id) + '">Decline</button></div>' : '<span class="ripz-pill">Approved</span>') + '</div>';
         }).join("") : '<p class="ripz-note">No requests yet. Viewers can request to join while you are live.</p>');
       } else if (state.selectedStream && state.selectedStream.id === streamId) {
@@ -1071,13 +1227,18 @@
         var button = $("ripz-guest-request-button");
         if (status) status.textContent = !state.guestRequest ? "You have not requested to join." :
           state.guestRequest.status === "pending" ? "Request sent. Waiting for the host to respond." :
-          state.guestRequest.status === "approved" ? "The host approved your request. Live guest video is not connected yet." :
+          state.guestRequest.status === "approved" ? "The host approved your request. Start your camera when you are ready." :
           state.guestRequest.status === "declined" ? "The host declined this request." : "Your request was cancelled.";
         if (button) {
           button.disabled = !!(state.guestRequest && ["pending", "approved"].includes(state.guestRequest.status));
-          button.textContent = state.guestRequest && state.guestRequest.status === "approved" ? "Approved — media setup pending" :
+          button.textContent = state.guestRequest && state.guestRequest.status === "approved" ? "Request approved" :
             state.guestRequest && state.guestRequest.status === "pending" ? "Request pending" : "Request to join";
         }
+        var startCamera = $("ripz-guest-start-camera");
+        if (startCamera) startCamera.hidden = !(state.guestRequest && state.guestRequest.status === "approved") || !!state.guestPublisher;
+        var stopCamera = $("ripz-guest-stop-camera");
+        if (stopCamera) stopCamera.hidden = !state.guestPublisher;
+        if (state.guestRequest && state.guestRequest.status === "approved") ensureGuestSubscription(streamId);
       }
     } catch (_) {}
   }
@@ -1154,6 +1315,8 @@
     var target = event.target.closest("button");
     if (!target) return;
     if (target.id === "ripz-guest-request-button") { submitGuestRequest(); return; }
+    if (target.id === "ripz-guest-start-camera") { startGuestCamera(); return; }
+    if (target.id === "ripz-guest-stop-camera") { stopGuestCamera(); return; }
     if (target.hasAttribute("data-ripz-guest-approve")) { decideGuestRequest(target.getAttribute("data-ripz-guest-approve"), "approve"); return; }
     if (target.hasAttribute("data-ripz-guest-decline")) { decideGuestRequest(target.getAttribute("data-ripz-guest-decline"), "decline"); return; }
   });
@@ -1222,6 +1385,8 @@
     }
     if (state.chatTimer) clearInterval(state.chatTimer);
     if (state.guestTimer) clearInterval(state.guestTimer);
+    stopGuestCamera();
+    clearGuestSubscriber();
     if (state.listTimer) clearInterval(state.listTimer);
     if (state.recordingTimer) clearTimeout(state.recordingTimer);
   });
@@ -1250,7 +1415,10 @@
     }, 3500);
     state.guestTimer = window.setInterval(function () {
       var activeGuestStream = state.myStream && state.myStream.status === "live" ? state.myStream.id : (state.selectedStream && state.selectedStream.id);
-      if (activeGuestStream) refreshGuestState(activeGuestStream);
+      if (activeGuestStream) {
+        refreshGuestState(activeGuestStream);
+        ensureGuestSubscription(activeGuestStream);
+      }
     }, 3000);
   });
 })();
