@@ -19,7 +19,7 @@ async function searchProductSuggestions(){
  box.replaceChildren();box.hidden=true;
  if(query.length<2)return;
  try{
-  const params=new URLSearchParams({q:query,type:'single',limit:'8'});
+  const selectedType=$('request-form').elements.product_type.value;const catalogType=selectedType==='sealed'?'sealed':selectedType==='other'?'all':'single';const params=new URLSearchParams({q:query,type:catalogType,limit:'8'});
   const response=await fetch('/api/collector/catalog?'+params.toString(),{credentials:'same-origin',cache:'no-store'});
   const data=await response.json();
   if(request!==catalogRequest||!response.ok||!data.ok)return;
@@ -38,6 +38,7 @@ async function searchProductSuggestions(){
  }catch{}
 }
 $('product-search').addEventListener('input',()=>{clearTimeout(catalogTimer);catalogTimer=setTimeout(searchProductSuggestions,250);});
+$('request-form').elements.product_type.addEventListener('change',()=>{clearTimeout(catalogTimer);catalogTimer=setTimeout(searchProductSuggestions,0);});
 $('product-search').addEventListener('keydown',e=>{if(e.key==='Escape')$('product-suggestions').hidden=true;});
 document.addEventListener('click',e=>{if(!e.target.closest('.product-search-wrap'))$('product-suggestions').hidden=true;});
 function render(){const root=$('request-list');if(!state.requests?.length){root.innerHTML='<p class="muted">No buyer requests yet. Be the first to post one.</p>';return;}
