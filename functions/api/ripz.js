@@ -662,7 +662,7 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true, message: row }, 201);
     }
 
-    return json({ ok: false, error: "unknown_action" }, 400);
+    return json({ ok: false, error: "unknown_action", message: "This Ripz action is not available in the deployed API version yet." }, 400);
   } catch (error) {
     console.error("Ripz action failed:", error);
     return json({ ok: false, error: "ripz_action_failed", message: "That Ripz action could not be completed. Please try again." }, 500);
