@@ -261,9 +261,10 @@ function renderMediaTile(item,idx){
  if(item.caption){text(card,'div','media-caption',item.caption);}
  return card;
 }
+async function updateEventRequestsButton(){var link=$('event-requests-link');if(!link||!record||previewActive)return;try{var data=await api('/api/event-vending?event_id='+encodeURIComponent(record.id));if(data.can_vend){link.textContent='Show Tools';link.href='/vendor-tools.html?event_id='+encodeURIComponent(record.id);}else{link.textContent='Buyer Request';link.href='/show-requests.html?event_id='+encodeURIComponent(record.id);}}catch(error){link.textContent='Buyer Request';link.href='/show-requests.html?event_id='+encodeURIComponent(record.id);}}
 function renderPublic(){
  $('event-content').hidden=false;
- $('event-vending-panel').hidden=previewActive||!['show','trade','tournament','store'].includes(String(record.event_type||''));
+ $('event-vending-panel').hidden=true;
  $('event-sales-panel').hidden=previewActive||record.status!=='published'||!['show','trade','tournament','store'].includes(String(record.event_type||''));
  $('event-title').textContent=record.title||'Event details';
  $('event-eyebrow').textContent=TYPE_LABELS[record.event_type]||'PokePrizePool Event';
@@ -275,7 +276,7 @@ function renderPublic(){
  $('event-details').textContent=record.details||'';
  renderFacts();
  var links=$('event-links');links.replaceChildren();
- if(!previewActive&&record.status==='published'&&['show','trade','tournament','store'].includes(String(record.event_type||''))){var requestsLink=make('a','btn primary');requestsLink.id='event-requests-link';requestsLink.href='/show-requests.html?event_id='+encodeURIComponent(record.id);requestsLink.textContent='Buyer Request';links.appendChild(requestsLink);}
+ if(!previewActive&&record.status==='published'&&['show','trade','tournament','store'].includes(String(record.event_type||''))){var requestsLink=make('a','btn primary');requestsLink.id='event-requests-link';requestsLink.href='/show-requests.html?event_id='+encodeURIComponent(record.id);requestsLink.textContent='Buyer Request';requestsLink.dataset.baseHref='/show-requests.html?event_id='+encodeURIComponent(record.id);requestsLink.href=requestsLink.dataset.baseHref;links.appendChild(requestsLink);}
  var organizer=approvedUrl(record.url||'');
  if(organizer){var a=make('a','btn primary');a.href=organizer;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Official event details ↗';links.appendChild(a);}
  renderEventShareActions();
@@ -475,6 +476,7 @@ async function load(){
    history.replaceState({},'', '/'+record.slug+(canonicalQuery?'?'+canonicalQuery:''));
   }
   renderPublic();
+  updateEventRequestsButton();
   loadEventVending();
   loadEventSales();
   var purchaseState=params.get('purchase');
