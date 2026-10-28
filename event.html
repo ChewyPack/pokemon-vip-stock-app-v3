@@ -275,6 +275,7 @@ function renderPublic(){
  $('event-details').textContent=record.details||'';
  renderFacts();
  var links=$('event-links');links.replaceChildren();
+ if(!previewActive&&record.status==='published'&&['show','trade','tournament','store'].includes(String(record.event_type||''))){var requestsLink=make('a','btn primary');requestsLink.href='/show-requests.html?event_id='+encodeURIComponent(record.id);requestsLink.textContent='Buyer Requests & Vendor Offers';links.appendChild(requestsLink);}
  var organizer=approvedUrl(record.url||'');
  if(organizer){var a=make('a','btn primary');a.href=organizer;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Official event details ↗';links.appendChild(a);}
  renderEventShareActions();
