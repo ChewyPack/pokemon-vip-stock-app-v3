@@ -1413,6 +1413,42 @@
     if (state.recordingTimer) clearTimeout(state.recordingTimer);
   });
 
+  var videoFullscreenButton = $("ripz-video-fullscreen");
+  var liveVideoLayout = $("ripz-live-video-layout");
+  function syncVideoFullscreenButton() {
+    if (!videoFullscreenButton || !liveVideoLayout) return;
+    var active = document.fullscreenElement === liveVideoLayout || liveVideoLayout.classList.contains("ripz-fullscreen-fallback");
+    videoFullscreenButton.textContent = active ? "⤢ Exit full screen" : "⛶ Full screen";
+    videoFullscreenButton.setAttribute("aria-label", active ? "Exit full screen for host and guest feeds" : "View host and guest feeds full screen");
+  }
+  async function toggleVideoFullscreen() {
+    if (!liveVideoLayout) return;
+    if (document.fullscreenElement === liveVideoLayout) {
+      try { await document.exitFullscreen(); } catch (_) {}
+      liveVideoLayout.classList.remove("ripz-fullscreen-fallback");
+      syncVideoFullscreenButton();
+      return;
+    }
+    if (liveVideoLayout.classList.contains("ripz-fullscreen-fallback")) {
+      liveVideoLayout.classList.remove("ripz-fullscreen-fallback");
+      syncVideoFullscreenButton();
+      return;
+    }
+    var request = liveVideoLayout.requestFullscreen || liveVideoLayout.webkitRequestFullscreen;
+    if (request) {
+      try {
+        await request.call(liveVideoLayout);
+        syncVideoFullscreenButton();
+        return;
+      } catch (_) {}
+    }
+    liveVideoLayout.classList.add("ripz-fullscreen-fallback");
+    syncVideoFullscreenButton();
+  }
+  if (videoFullscreenButton) videoFullscreenButton.addEventListener("click", toggleVideoFullscreen);
+  document.addEventListener("fullscreenchange", syncVideoFullscreenButton);
+  document.addEventListener("webkitfullscreenchange", syncVideoFullscreenButton);
+
   var giveawayOpenButton = $("ripz-host-giveaway");
   if (giveawayOpenButton) giveawayOpenButton.addEventListener("click", openGiveawayModal);
   var giveawayCloseButton = $("ripz-giveaway-close");
