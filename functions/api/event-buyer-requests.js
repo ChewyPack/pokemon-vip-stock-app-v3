@@ -58,7 +58,7 @@ export async function onRequestGet({request,env}){
  }
  const eventId=Number(url.searchParams.get('event_id')||0);if(!Number.isSafeInteger(eventId)||eventId<1)return json({ok:false,error:'valid_event_id_required'},400);
  const event=await eventInfo(env,eventId);if(!event||event.status!=='published')return json({ok:false,error:'event_not_found'},404);
- const user=await account(request,env);return json({ok:true,event:{id:event.id,title:event.title,event_date:event.event_date},...await load(env,eventId,user),signed_in:!!user,is_vendor_plus:vendorPlus(user)});
+ return json({ok:true,event:{id:event.id,title:event.title,event_date:event.event_date},...await load(env,eventId,user),signed_in:!!user,is_vendor_plus:vendorPlus(user)});
  }catch(e){console.error('Event buyer requests read failed',e);return json({ok:false,error:'event_requests_unavailable'},500);}
 }
 export async function onRequestPost({request,env}){
