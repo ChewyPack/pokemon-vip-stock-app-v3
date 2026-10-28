@@ -48,7 +48,15 @@ async function load(env,eventId,user){
 }
 export async function onRequestGet({request,env}){
  if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
- try{await schema(env);const url=new URL(request.url),eventId=Number(url.searchParams.get('event_id')||0);if(!Number.isSafeInteger(eventId)||eventId<1)return json({ok:false,error:'valid_event_id_required'},400);
+ try{await schema(env);const url=new URL(request.url);const user=await account(request,env);
+ if(url.searchParams.get('admin')==='1'){
+  if(!user)return json({ok:false,error:'login_required'},401);
+  if(Number(user.is_admin||0)!==1)return json({ok:false,error:'admin_required'},403);
+  const events=await env.DB.prepare("SELECT id,title,event_date,status FROM poke_report_events ORDER BY event_date DESC LIMIT 300").all();
+  const all=[];for(const event of (events.results||[])){const loaded=await load(env,Number(event.id),user);for(const item of loaded.requests)all.push({...item,event_title:event.title,event_date:event.event_date});}
+  return json({ok:true,requests:all});
+ }
+ const eventId=Number(url.searchParams.get('event_id')||0);if(!Number.isSafeInteger(eventId)||eventId<1)return json({ok:false,error:'valid_event_id_required'},400);
  const event=await eventInfo(env,eventId);if(!event||event.status!=='published')return json({ok:false,error:'event_not_found'},404);
  const user=await account(request,env);return json({ok:true,event:{id:event.id,title:event.title,event_date:event.event_date},...await load(env,eventId,user),signed_in:!!user,is_vendor_plus:vendorPlus(user)});
  }catch(e){console.error('Event buyer requests read failed',e);return json({ok:false,error:'event_requests_unavailable'},500);}
@@ -72,6 +80,14 @@ export async function onRequestPost({request,env}){
   return json({ok:true,created:true,...await load(env,eventId,user)});
  }
  const requestId=Number(d.request_id||0);if(!Number.isSafeInteger(requestId)||requestId<1)return json({ok:false,error:'valid_request_id_required'},400);
+ if(action==='admin_delete'){
+  if(Number(user.is_admin||0)!==1)return json({ok:false,error:'admin_required'},403);
+  await env.DB.batch([
+   env.DB.prepare('DELETE FROM event_buyer_request_responses WHERE request_id=?').bind(requestId),
+   env.DB.prepare('DELETE FROM event_buyer_requests WHERE id=? AND event_id=?').bind(requestId,eventId)
+  ]);
+  return json({ok:true,deleted:true});
+ }
  const target=await env.DB.prepare('SELECT id,event_id,buyer_account_id,status FROM event_buyer_requests WHERE id=? AND event_id=? LIMIT 1').bind(requestId,eventId).first();
  if(!target)return json({ok:false,error:'request_not_found'},404);
  if(action==='close'){
