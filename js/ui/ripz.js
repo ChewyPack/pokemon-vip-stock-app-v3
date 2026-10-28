@@ -26,6 +26,8 @@
     listTimer: null,
     viewerTimer: null,
     giveawayEntries: [],
+    giveawayConfig: { title: "Live Giveaway", prize: "", style: "wheel", eligibility: "everyone", enabled: false, winner: "" },
+    giveawayStateTimer: null,
     giveawaySpinTimer: null
   };
 
@@ -156,6 +158,23 @@
       event.preventDefault();
       startNewStream($("ripz-title").value, $("ripz-product").value, $("ripz-description").value);
     });
+  }
+
+  function renderViewerGiveaway(data) {
+    var overlay = $("ripz-viewer-giveaway-overlay");
+    if (!overlay) return;
+    var giveaway = data || state.giveawayConfig;
+    if (!giveaway || !giveaway.enabled) { overlay.hidden = true; overlay.innerHTML = ""; return; }
+    var entries = Array.isArray(giveaway.entries) ? giveaway.entries : state.giveawayEntries;
+    var race = giveaway.style === "duck_race";
+    overlay.hidden = false;
+    overlay.innerHTML = '<h3>' + esc(giveaway.title || "Live Giveaway") + '</h3>' + (giveaway.prize ? '<p>Prize: <strong>' + esc(giveaway.prize) + '</strong></p>' : '') + '<p>' + (giveaway.eligibility === "collector_plus" ? "Collector+ members only" : giveaway.eligibility === "followers" ? "Follower giveaway" : "Everyone watching can enter") + '</p>' + (race ? '<div class="ripz-race-lanes">' + entries.slice(0, 8).map(function (name, index) { return '<span>' + ["🦆","🐤","🐥","🪿","🦆","🐤","🐥","🪿"][index] + " " + esc(name) + '</span>'; }).join("") + '</div>' : '<p>🎡 ' + entries.length + ' entries in the wheel</p>') + (giveaway.winner ? '<h3>🏆 Winner: ' + esc(giveaway.winner) + '</h3>' : '<p>Watch to see who wins!</p>');
+  }
+
+  function pollViewerGiveaway(streamId) {
+    if (state.giveawayStateTimer) clearInterval(state.giveawayStateTimer);
+    async function update() { try { var result = await api("POST", { action: "giveaway_state", stream_id: streamId }); renderViewerGiveaway(result.giveaway); } catch (_) {} }
+    update(); state.giveawayStateTimer = window.setInterval(update, 3000);
   }
 
   function renderLiveList() {
@@ -317,9 +336,10 @@
     var modal = $("ripz-giveaway-modal");
     var content = $("ripz-giveaway-modal-content");
     var isLiveHost = !!(state.authenticated && state.myStream && state.myStream.status === "live");
-    if (dock) dock.hidden = !isLiveHost;
-    if (modal && !isLiveHost) modal.hidden = true;
-    if (content && isLiveHost && !content.querySelector("#ripz-giveaway-title")) {
+    var isHostStudio = !!(state.authenticated && state.studioOpen && state.canGoLive && state.myStream && state.myStream.status !== "ended");
+    if (dock) dock.hidden = !(isLiveHost || isHostStudio);
+    if (modal && !(isLiveHost || isHostStudio)) modal.hidden = true;
+    if (content && (isLiveHost || isHostStudio) && !content.querySelector("#ripz-giveaway-title")) {
       content.innerHTML = giveawayMarkup();
       bindGiveawayControls();
     }
@@ -335,7 +355,7 @@
   function openGiveawayModal() {
     var modal = $("ripz-giveaway-modal");
     var content = $("ripz-giveaway-modal-content");
-    if (!modal || !content || !state.myStream || state.myStream.status !== "live") return;
+    if (!modal || !content || !state.myStream || state.myStream.status === "ended") return;
     content.innerHTML = giveawayMarkup();
     bindGiveawayControls();
     modal.hidden = false;
@@ -354,8 +374,12 @@
     var wheelStyle = entries.length ? "background:conic-gradient(" + stops.join(",") + ");" : "background:conic-gradient(#263858 0% 100%);";
     return '<section class="ripz-giveaway ripz-host-span" aria-labelledby="ripz-giveaway-title">' +
       '<div class="ripz-giveaway__heading"><div><span class="ripz-kicker">HOST TOOL</span><h3 id="ripz-giveaway-title">Live giveaway wheel</h3></div><span class="ripz-pill">' + entries.length + ' entr' + (entries.length === 1 ? 'y' : 'ies') + '</span></div>' +
-      '<p class="ripz-note">Add current viewers automatically or enter names yourself. Entries are kept in this page while you run the giveaway.</p>' +
+      '<p class="ripz-note">Configure before going live or while streaming. Turn on the giveaway to display it for viewers.</p>' +
+      '<label>Giveaway title<input id="ripz-giveaway-title-input" maxlength="100" value="' + esc(state.giveawayConfig.title) + '" placeholder="Community giveaway"></label>' +
+      '<label>Prize<input id="ripz-giveaway-prize" maxlength="160" value="' + esc(state.giveawayConfig.prize) + '" placeholder="e.g. Booster bundle"></label>' +
+      '<div class="ripz-giveaway__controls"><label>Giveaway style<select id="ripz-giveaway-style"><option value="wheel" ' + (state.giveawayConfig.style === "wheel" ? "selected" : "") + '>Wheel of names</option><option value="duck_race" ' + (state.giveawayConfig.style === "duck_race" ? "selected" : "") + '>Duck race</option></select></label><label>Who can enter?<select id="ripz-giveaway-eligibility"><option value="everyone" ' + (state.giveawayConfig.eligibility === "everyone" ? "selected" : "") + '>Everyone watching</option><option value="collector_plus" ' + (state.giveawayConfig.eligibility === "collector_plus" ? "selected" : "") + '>Collector+ members only</option><option value="followers" ' + (state.giveawayConfig.eligibility === "followers" ? "selected" : "") + '>Followers (manual list)</option></select></label></div>' +
       '<div class="ripz-giveaway__controls"><button id="ripz-giveaway-add-viewers" class="ripz-button ripz-button--secondary" type="button">Add current viewers</button><div class="ripz-giveaway__manual"><input id="ripz-giveaway-name" maxlength="60" placeholder="Enter a username or name" aria-label="Giveaway participant name"><button id="ripz-giveaway-add-name" class="ripz-button ripz-button--secondary" type="button">Add name</button></div></div>' +
+      '<div class="ripz-giveaway__actions"><button id="ripz-giveaway-save" class="ripz-button ripz-button--secondary" type="button">Save settings</button><button id="ripz-giveaway-toggle" class="ripz-button" type="button">' + (state.giveawayConfig.enabled ? "Hide from viewers" : "Show on stream") + '</button></div>' +
       '<p id="ripz-giveaway-status" class="ripz-status" role="status" aria-live="polite"></p>' +
       '<div class="ripz-giveaway__wheel-area"><div class="ripz-giveaway__pointer" aria-hidden="true"></div><div id="ripz-giveaway-wheel" class="ripz-giveaway__wheel" style="' + wheelStyle + ' transform:rotate(0deg)" aria-label="Giveaway winner wheel with ' + entries.length + ' entries" role="img"></div></div>' +
       '<div class="ripz-giveaway__actions"><button id="ripz-giveaway-spin" class="ripz-button" type="button" ' + (entries.length < 2 ? 'disabled' : '') + '>Spin for a winner</button><button id="ripz-giveaway-clear" class="ripz-button ripz-button--secondary" type="button" ' + (!entries.length ? 'disabled' : '') + '>Clear entries</button></div>' +
@@ -380,11 +404,32 @@
   function bindGiveawayControls() {
     var addName = $("ripz-giveaway-add-name"), nameInput = $("ripz-giveaway-name");
     var addViewers = $("ripz-giveaway-add-viewers"), spin = $("ripz-giveaway-spin"), clear = $("ripz-giveaway-clear");
+    var save = $("ripz-giveaway-save"), toggle = $("ripz-giveaway-toggle");
     if (!addName || !nameInput || !addViewers || !spin || !clear) return;
+    function readConfig(enabled) {
+      state.giveawayConfig.title = ($("ripz-giveaway-title-input") || {}).value || "Live Giveaway";
+      state.giveawayConfig.prize = ($("ripz-giveaway-prize") || {}).value || "";
+      state.giveawayConfig.style = ($("ripz-giveaway-style") || {}).value || "wheel";
+      state.giveawayConfig.eligibility = ($("ripz-giveaway-eligibility") || {}).value || "everyone";
+      if (typeof enabled === "boolean") state.giveawayConfig.enabled = enabled;
+      state.giveawayConfig.entries = state.giveawayEntries.slice();
+    }
+    async function saveConfig(enabled) {
+      if (!state.myStream || state.myStream.status === "ended") { setStatus("ripz-giveaway-status", "Set up your stream first, then save giveaway settings before going live.", true); return; }
+      readConfig(enabled);
+      try {
+        await api("POST", { action: "giveaway_save", stream_id: state.myStream.id, title: state.giveawayConfig.title, prize: state.giveawayConfig.prize, style: state.giveawayConfig.style, eligibility: state.giveawayConfig.eligibility, entries: state.giveawayEntries, enabled: state.giveawayConfig.enabled, winner: state.giveawayConfig.winner || "" });
+        renderViewerGiveaway();
+        setStatus("ripz-giveaway-status", state.giveawayConfig.enabled ? "Saved and displayed on the stream." : "Giveaway settings saved.");
+      } catch (error) { setStatus("ripz-giveaway-status", error.message || "Could not save giveaway settings.", true); }
+    }
+    if (save) save.addEventListener("click", function () { saveConfig(); });
+    if (toggle) toggle.addEventListener("click", function () { saveConfig(!state.giveawayConfig.enabled); });
     addName.addEventListener("click", function () {
       if (!addGiveawayEntry(nameInput.value)) { setStatus("ripz-giveaway-status", nameInput.value.trim() ? "That name is already entered." : "Enter a name first.", true); return; }
       nameInput.value = "";
       renderGiveaway();
+      readConfig(); saveConfig();
       setStatus("ripz-giveaway-status", "Entry added.");
     });
     nameInput.addEventListener("keydown", function (event) { if (event.key === "Enter") { event.preventDefault(); addName.click(); } });
@@ -396,6 +441,7 @@
         var added = 0;
         (result.viewers || []).forEach(function (viewer) { if (addGiveawayEntry(viewer.username)) added++; });
         renderGiveaway();
+        readConfig(); await saveConfig();
         setStatus("ripz-giveaway-status", added ? "Added " + added + " new viewer " + (added === 1 ? "entry." : "entries.") : "No new viewers to add. Only signed-in accounts watching through Ripz can be added.");
       } catch (error) { setStatus("ripz-giveaway-status", error.message || "Could not load current viewers.", true); }
       finally { var button = $("ripz-giveaway-add-viewers"); if (button) button.disabled = false; }
@@ -862,6 +908,8 @@
   async function closePlayback() {
     var previousStreamId = state.playbackStreamId;
     if (state.viewerTimer) { clearInterval(state.viewerTimer); state.viewerTimer = null; }
+    if (state.giveawayStateTimer) { clearInterval(state.giveawayStateTimer); state.giveawayStateTimer = null; }
+    renderViewerGiveaway(null);
     if (previousStreamId) {
       state.playbackStreamId = "";
       api("POST", { action: "viewer_leave", stream_id: previousStreamId }).catch(function () {});
@@ -898,6 +946,7 @@
     $("ripz-chat-form").querySelector("input").disabled = false;
     $("ripz-chat-form").querySelector("button").disabled = false;
     $("ripz-chat-messages").innerHTML = '<p class="ripz-note">Loading chat…</p>';
+    pollViewerGiveaway(stream.id);
     setStatus("ripz-playback-status", "Connecting to the live rip…");
     try {
       var pc = new RTCPeerConnection();
