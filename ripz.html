@@ -82,7 +82,7 @@
     #ripz-viewer-count[hidden]{display:none}
     .ripz-empty{padding:22px;border:1px dashed #3a5071;border-radius:12px;color:#aebed8;line-height:1.65;text-align:center}
     .ripz-stage-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(230px,1fr);min-width:0}
-    .ripz-stage-main{min-width:0;padding:16px;border-right:1px solid #253753}
+    .ripz-stage-main{position:relative;min-width:0;padding:16px;border-right:1px solid #253753}
     .ripz-stage-title{margin:0 0 7px;color:#fff;font-size:1.1rem;line-height:1.35;overflow-wrap:anywhere}
     .ripz-stage-subtitle{margin:0 0 13px;color:#9fb2d0;font-size:.85rem;line-height:1.5}
     .ripz-stage-video{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;border:1px solid #263f64;border-radius:11px;background:#030710}
@@ -130,6 +130,7 @@
     @media(max-width:520px){.ripz-giveaway{padding:13px}.ripz-giveaway__manual{display:grid}.ripz-giveaway__manual input{width:100%;box-sizing:border-box}.ripz-giveaway__actions .ripz-button{flex:1}}
 
   
+    .ripz-guest-video-grid[hidden]{display:none!important}
     .ripz-guest-video-grid{position:absolute;inset:auto 12px 12px auto;z-index:4;display:grid;grid-template-columns:minmax(130px,28%);gap:8px;max-width:44%;pointer-events:none}
     .ripz-guest-video-card{overflow:hidden;border:1px solid #8da7ce;border-radius:12px;background:#07142e;box-shadow:0 8px 24px #0008}
     .ripz-guest-video-card video{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#07142e}
