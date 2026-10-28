@@ -540,12 +540,6 @@
           </div>
         </div>
 
-        <div class="events-note">
-          <strong>Collector tip:</strong>
-          Always confirm the date, venue, admission details, and stock information
-          with the event organizer or retailer before traveling. Restock reports
-          can change quickly and are not guarantees of available inventory.
-        </div>
       </section>
 
       <footer class="events-footer">
@@ -795,8 +789,16 @@
           list.appendChild(empty);
         } else {
           filtered.sort(function (a, b) {
-            return (a.date || '9999-12-31').localeCompare(
-              b.date || '9999-12-31'
+            // Always sort by the event's scheduled date/time, never by when it was added.
+            // Missing dates belong at the end of the calendar.
+            var dateA = String(a.date || '');
+            var dateB = String(b.date || '');
+            if (!dateA && dateB) return 1;
+            if (dateA && !dateB) return -1;
+            var byDate = dateA.localeCompare(dateB);
+            if (byDate) return byDate;
+            return String(a.start_time || '23:59').localeCompare(
+              String(b.start_time || '23:59')
             );
           });
 
