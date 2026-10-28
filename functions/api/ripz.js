@@ -58,6 +58,7 @@ async function ensureSchema(env) {
       account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
       product_name TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'ready' CHECK(status IN ('ready','live','ended')),
       whip_url TEXT NOT NULL,
       playback_url TEXT NOT NULL,
@@ -68,6 +69,7 @@ async function ensureSchema(env) {
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `).run();
+  try { await env.DB.prepare("ALTER TABLE ripz_streams ADD COLUMN description TEXT NOT NULL DEFAULT ''").run(); } catch (_) {}
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_streams_status_created ON ripz_streams(status, live_at DESC, created_at DESC)").run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_streams_account_status ON ripz_streams(account_id, status)").run();
   await env.DB.prepare(`
@@ -109,6 +111,7 @@ function streamShape(row, includePublishUrl = false) {
     id: row.id,
     title: row.title,
     product_name: row.product_name || "",
+    description: row.description || "",
     status: row.status,
     host: row.host || row.display_name || "Collector",
     created_at: row.created_at,
@@ -233,6 +236,18 @@ export async function onRequestGet({ request, env }) {
       ORDER BY COALESCE(s.live_at, s.created_at) DESC
       LIMIT 40
     `).all();
+    const { results: pastRows = [] } = await env.DB.prepare(`
+      SELECT s.id, s.account_id, s.title, s.product_name, s.description, s.status, s.created_at, s.live_at, s.ended_at,
+             r.cloudflare_video_uid, r.recording_status, r.download_status,
+             COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS host
+      FROM ripz_streams s
+      JOIN accounts a ON a.id = s.account_id
+      LEFT JOIN collector_profiles p ON p.account_id = a.id
+      LEFT JOIN ripz_recordings r ON r.stream_id = s.id
+      WHERE s.status = 'ended' AND r.cloudflare_video_uid IS NOT NULL AND r.cloudflare_video_uid <> ''
+      ORDER BY COALESCE(s.ended_at, s.live_at, s.created_at) DESC
+      LIMIT 30
+    `).all();
     const myRow = await env.DB.prepare(`
       SELECT s.*,
              (SELECT COUNT(DISTINCT v.account_id) FROM ripz_viewers v WHERE v.stream_id = s.id AND v.account_id <> s.account_id AND unixepoch(v.last_seen_at) >= unixepoch() - 45) AS viewer_count,
@@ -276,6 +291,7 @@ export async function onRequestGet({ request, env }) {
       can_go_live: Boolean(account.can_go_live),
       streaming_configured: cloudflareConfigured(env),
       live_streams: liveRows.map(row => streamShape(row, false)),
+      past_streams: pastRows.map(row => ({ ...streamShape(row, false), ended_at: row.ended_at || null, replay_url: "https://iframe.videodelivery.net/" + encodeURIComponent(row.cloudflare_video_uid) })),
       my_stream: streamShape(myRow, true),
       ...(messages ? { messages } : {})
     });
@@ -333,6 +349,7 @@ export async function onRequestPost({ request, env }) {
       if (!account.can_go_live) return json({ ok: false, error: "collector_plus_required", message: "Only active Collector+ members can host a Ripz stream." }, 403);
       const title = clean(data.title, 100);
       const productName = clean(data.product_name, 120);
+      const description = clean(data.description, 1000);
       if (title.length < 3 || productName.length < 2) {
         return json({ ok: false, error: "title_and_product_required", message: "Enter a stream title and what you are ripping." }, 400);
       }
@@ -351,7 +368,7 @@ export async function onRequestPost({ request, env }) {
       let providerStream;
       try {
         providerStream = await streamApi(env, "POST", "/live_inputs", {
-          meta: { name: title, app: "PokePrizePool Ripz", product_name: productName, account_id: String(account.id) },
+          meta: { name: title, app: "PokePrizePool Ripz", product_name: productName, description: description, account_id: String(account.id) },
           recording: { mode: "automatic", requireSignedURLs: false, timeoutSeconds: 0 }
         });
       } catch (_) {
@@ -366,9 +383,9 @@ export async function onRequestPost({ request, env }) {
       }
       try {
         await env.DB.prepare(`
-          INSERT INTO ripz_streams (id, account_id, title, product_name, status, whip_url, playback_url, cloudflare_input_uid)
-          VALUES (?, ?, ?, ?, 'ready', ?, ?, ?)
-        `).bind(uid, account.id, title, productName, whipUrl, playbackUrl, uid).run();
+          INSERT INTO ripz_streams (id, account_id, title, product_name, description, status, whip_url, playback_url, cloudflare_input_uid)
+          VALUES (?, ?, ?, ?, ?, 'ready', ?, ?, ?)
+        `).bind(uid, account.id, title, productName, description, whipUrl, playbackUrl, uid).run();
       } catch (error) {
         streamApi(env, "DELETE", "/live_inputs/" + encodeURIComponent(uid)).catch(() => {});
         throw error;
