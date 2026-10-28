@@ -243,6 +243,10 @@
     }
 
     .event-card--boosted{border-color:rgba(255,213,74,.72);box-shadow:0 0 0 1px rgba(255,213,74,.18),0 12px 32px rgba(0,0,0,.22)}
+    .event-card--compact{cursor:default;transition:transform .15s ease,border-color .15s ease}
+    .event-card--compact h3 a:hover{text-decoration:underline!important}
+    .event-card--compact .event-cover{display:block}
+    .event-card--compact .event-details{margin-top:0}
     .event-featured-badge{display:inline-flex;padding:6px 9px;border:1px solid rgba(255,213,74,.55);border-radius:999px;background:rgba(255,213,74,.13);color:#ffe69b;font-size:.75rem;font-weight:900;letter-spacing:.02em}
     .event-card {
       display: flex;
@@ -717,93 +721,52 @@
       }
 
       function renderCard(event) {
+        var detailUrl = event.slug ? '/' + encodeURIComponent(event.slug) : '/event.html?id=' + encodeURIComponent(event.id);
         var card = make('article', {
-          class: 'event-card' + (event.boosted ? ' event-card--boosted' : '')
+          class: 'event-card' + (event.boosted ? ' event-card--boosted' : '') + ' event-card--compact'
         });
 
-        var top = make('div', {
-          class: 'event-card-top'
-        });
-
-        addText(
-          top,
-          'span',
-          'event-type',
-          typeLabels[event.type] || 'Event'
-        );
-
-        if (event.status) {
-          addText(top, 'span', 'event-status', event.status);
+        if (event.image_url) {
+          var coverLink = make('a', { href: detailUrl, 'aria-label': 'View ' + event.title });
+          var cover = make('img', { class: 'event-cover', alt: event.title, loading: 'lazy' });
+          cover.src = event.image_url;
+          cover.style.width = '100%';
+          cover.style.maxHeight = '260px';
+          cover.style.objectFit = 'cover';
+          cover.style.borderRadius = '10px';
+          cover.style.marginBottom = '14px';
+          coverLink.appendChild(cover);
+          card.appendChild(coverLink);
         }
-        if (event.boosted) {
-          addText(top, 'span', 'event-featured-badge', 'Featured · Boosted');
-        }
-
-        card.appendChild(top);
-
-        if (event.image_url) { var cover = make('img', { class: 'event-cover', alt: event.title, loading: 'lazy' }); cover.src = event.image_url; cover.style.width = '100%'; cover.style.maxHeight = '260px'; cover.style.objectFit = 'cover'; cover.style.borderRadius = '10px'; cover.style.marginTop = '14px'; card.appendChild(cover); }
 
         var titleHeading = make('h3');
-        var titleLink = make('a', {
-          href: event.slug ? '/' + encodeURIComponent(event.slug) : '/event.html?id=' + encodeURIComponent(event.id)
-        });
+        titleHeading.style.marginTop = '0';
+        var titleLink = make('a', { href: detailUrl });
         titleLink.textContent = event.title;
         titleLink.style.color = 'inherit';
         titleLink.style.textDecoration = 'none';
         titleHeading.appendChild(titleLink);
         card.appendChild(titleHeading);
 
-        if (event.description) {
-          addText(
-            card,
-            'p',
-            'event-description',
-            event.description
-          );
-        }
-
-        var details = make('ul', {
-          class: 'event-details'
-        });
-
+        var details = make('ul', { class: 'event-details' });
         [
           ['Date', formatDate(event.date) + (event.start_time ? ' · ' + formatTime12(event.start_time) : '') + (event.end_time ? (event.start_time ? '–' : ' · ') + formatTime12(event.end_time) : '')],
           ['Location', [event.city, event.stateName].filter(Boolean).join(', ') || 'Location to be confirmed'],
-          ['Venue', event.venue || 'Venue to be confirmed'],
-          ['Address', event.address || ''],
-          ['Admission', event.price || '']
-        ].filter(function(detail){return Boolean(detail[1]);}).forEach(function (detail) {
+          ['Venue', event.venue || 'Venue to be confirmed']
+        ].forEach(function (detail) {
           var item = make('li');
           var strong = make('strong');
-
           strong.textContent = detail[0] + ': ';
           item.appendChild(strong);
           item.appendChild(document.createTextNode(detail[1]));
           details.appendChild(item);
         });
-
         card.appendChild(details);
 
-        var footer = make('div', {
-          class: 'event-card-footer'
-        });
-
-        var detailLink = make('a', {
-          href: event.slug ? '/' + encodeURIComponent(event.slug) : '/event.html?id=' + encodeURIComponent(event.id)
-        });
+        var footer = make('div', { class: 'event-card-footer' });
+        var detailLink = make('a', { href: detailUrl });
         detailLink.textContent = 'View event details, photos & videos →';
         footer.appendChild(detailLink);
-
-        if (event.url) {
-          var anchor = make('a', {
-            href: event.url,
-            target: '_blank',
-            rel: 'noopener noreferrer'
-          });
-          anchor.textContent = 'Organizer / official details ↗';
-          footer.appendChild(anchor);
-        }
-
         card.appendChild(footer);
         return card;
       }
