@@ -146,6 +146,19 @@ dialog[open]{animation:pop .25s ease}
 </style>
   <link rel="stylesheet" href="/css/styles.css">
 <link rel="stylesheet" href="/css/ad-placements.css">
+
+<style id="giveaways-full-page-gradient">
+/* Keep the original hero gradient visible behind the entire page, even when shared site CSS loads later. */
+html, body { background-color: #0B0E17 !important; }
+body {
+  background-image:
+    radial-gradient(900px 500px at 78% 20%, rgba(155,92,255,.22), transparent 60%),
+    radial-gradient(700px 400px at 10% 0, rgba(45,168,255,.18), transparent 60%) !important;
+  background-attachment: fixed !important;
+}
+body > .hero { background: transparent !important; }
+body > section:not(.gmeter) { background-color: transparent; }
+</style>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
