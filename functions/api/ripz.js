@@ -93,6 +93,8 @@ async function ensureSchema(env) {
     )
   `).run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_chat_stream_id ON ripz_chat_messages(stream_id, id)").run();
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS ripz_viewers (stream_id TEXT NOT NULL REFERENCES ripz_streams(id) ON DELETE CASCADE, account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (stream_id, account_id))").run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_viewers_stream_seen ON ripz_viewers(stream_id, last_seen_at)").run();
   })();
   try {
     await schemaPromise;
@@ -115,6 +117,7 @@ function streamShape(row, includePublishUrl = false) {
     recording_status: row.recording_status || null,
     download_status: row.download_status || null,
     download_url: row.download_url || null,
+    viewer_count: Number(row.viewer_count || 0),
     recording_message: row.recording_message || row.error_message || null
   };
   if (includePublishUrl) out.whip_url = row.whip_url;
@@ -199,6 +202,7 @@ async function streamApi(env, method, path, body) {
 async function findOwnedStream(env, streamId) {
   return env.DB.prepare(`
     SELECT s.*,
+           (SELECT COUNT(DISTINCT v.account_id) FROM ripz_viewers v WHERE v.stream_id = s.id AND v.account_id <> s.account_id AND unixepoch(v.last_seen_at) >= unixepoch() - 45) AS viewer_count,
            COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS host,
            r.cloudflare_video_uid AS recording_uid,
            r.recording_status,
@@ -220,6 +224,7 @@ export async function onRequestGet({ request, env }) {
     await ensureSchema(env);
     const { results: liveRows = [] } = await env.DB.prepare(`
       SELECT s.id, s.account_id, s.title, s.product_name, s.status, s.created_at, s.live_at, s.playback_url,
+             (SELECT COUNT(DISTINCT v.account_id) FROM ripz_viewers v WHERE v.stream_id = s.id AND v.account_id <> s.account_id AND unixepoch(v.last_seen_at) >= unixepoch() - 45) AS viewer_count,
              COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS host
       FROM ripz_streams s
       JOIN accounts a ON a.id = s.account_id
@@ -230,6 +235,7 @@ export async function onRequestGet({ request, env }) {
     `).all();
     const myRow = await env.DB.prepare(`
       SELECT s.*,
+             (SELECT COUNT(DISTINCT v.account_id) FROM ripz_viewers v WHERE v.stream_id = s.id AND v.account_id <> s.account_id AND unixepoch(v.last_seen_at) >= unixepoch() - 45) AS viewer_count,
              COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS host,
              r.recording_status, r.download_status, r.download_url, r.error_message
       FROM ripz_streams s
@@ -287,6 +293,23 @@ export async function onRequestPost({ request, env }) {
     let data;
     try { data = await request.json(); } catch (_) { return json({ ok: false, error: "bad_request" }, 400); }
     const action = clean(data?.action, 30);
+
+    if (action === "viewer_heartbeat" || action === "viewer_leave") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || stream.status !== "live") {
+        await env.DB.prepare("DELETE FROM ripz_viewers WHERE stream_id = ? AND account_id = ?").bind(streamId, account.id).run();
+        return json({ ok: false, error: "stream_not_live", viewer_count: 0 }, 409);
+      }
+      if (action === "viewer_leave" || Number(stream.account_id) === Number(account.id)) {
+        await env.DB.prepare("DELETE FROM ripz_viewers WHERE stream_id = ? AND account_id = ?").bind(streamId, account.id).run();
+      } else {
+        await env.DB.prepare("INSERT INTO ripz_viewers (stream_id, account_id, last_seen_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(stream_id, account_id) DO UPDATE SET last_seen_at = CURRENT_TIMESTAMP").bind(streamId, account.id).run();
+      }
+      const count = await env.DB.prepare("SELECT COUNT(DISTINCT account_id) AS viewer_count FROM ripz_viewers WHERE stream_id = ? AND account_id <> ? AND unixepoch(last_seen_at) >= unixepoch() - 45").bind(streamId, stream.account_id).first();
+      return json({ ok: true, viewer_count: Number(count?.viewer_count || 0) });
+    }
 
     if (action === "start") {
       if (!account.can_go_live) return json({ ok: false, error: "collector_plus_required", message: "Only active Collector+ members can host a Ripz stream." }, 403);
