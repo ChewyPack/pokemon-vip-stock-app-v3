@@ -1060,8 +1060,6 @@
       if (caption) caption.textContent = "Chatting in: " + stream.title;
       loadChat(stream.id);
       refreshGuestState(stream.id);
-      if (state.guestTimer) clearInterval(state.guestTimer);
-      state.guestTimer = window.setInterval(function () { if (state.selectedStream && state.selectedStream.id === stream.id) refreshGuestState(stream.id); }, 3000);
     } catch (error) {
       setStatus("ripz-playback-status", error.message || "Could not connect to this stream.", true);
       $("ripz-watch-video").hidden = true;
