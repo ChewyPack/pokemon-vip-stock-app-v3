@@ -409,7 +409,7 @@ export async function onRequestPost({ request, env }) {
       if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
       const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
       if (!stream || stream.status !== "live") return json({ ok: true, requests: [], own_request: null });
-      if (Number(stream.account_id) === Number(account.id) || account.is_admin) {
+      if (Number(stream.account_id) === Number(account.id)) {
         const { results = [] } = await env.DB.prepare(`
           SELECT r.id, r.status, r.created_at,
                  COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS username
