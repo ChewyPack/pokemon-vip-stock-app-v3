@@ -336,7 +336,7 @@
     var modal = $("ripz-giveaway-modal");
     var content = $("ripz-giveaway-modal-content");
     var isLiveHost = !!(state.authenticated && state.myStream && state.myStream.status === "live");
-    var isHostStudio = !!(state.authenticated && state.studioOpen && state.canGoLive && state.myStream && state.myStream.status !== "ended");
+    var isHostStudio = !!(state.authenticated && state.studioOpen && state.canGoLive && (!state.myStream || state.myStream.status !== "ended"));
     if (dock) dock.hidden = !(isLiveHost || isHostStudio);
     if (modal && !(isLiveHost || isHostStudio)) modal.hidden = true;
     if (content && (isLiveHost || isHostStudio) && !content.querySelector("#ripz-giveaway-title")) {
@@ -355,7 +355,7 @@
   function openGiveawayModal() {
     var modal = $("ripz-giveaway-modal");
     var content = $("ripz-giveaway-modal-content");
-    if (!modal || !content || !state.myStream || state.myStream.status === "ended") return;
+    if (!modal || !content || (state.myStream && state.myStream.status === "ended")) return;
     content.innerHTML = giveawayMarkup();
     bindGiveawayControls();
     modal.hidden = false;
@@ -415,8 +415,12 @@
       state.giveawayConfig.entries = state.giveawayEntries.slice();
     }
     async function saveConfig(enabled) {
-      if (!state.myStream || state.myStream.status === "ended") { setStatus("ripz-giveaway-status", "Set up your stream first, then save giveaway settings before going live.", true); return; }
       readConfig(enabled);
+      if (!state.myStream || state.myStream.status === "ended") {
+        renderViewerGiveaway();
+        setStatus("ripz-giveaway-status", "Settings saved for your next stream. They will sync when you create the stream.");
+        return;
+      }
       try {
         await api("POST", { action: "giveaway_save", stream_id: state.myStream.id, title: state.giveawayConfig.title, prize: state.giveawayConfig.prize, style: state.giveawayConfig.style, eligibility: state.giveawayConfig.eligibility, entries: state.giveawayEntries, enabled: state.giveawayConfig.enabled, winner: state.giveawayConfig.winner || "" });
         renderViewerGiveaway();
@@ -762,6 +766,9 @@
       streamCreatedHere = !result.reused;
       state.myStream = result.stream;
       renderHostPanel();
+      if (state.giveawayConfig.enabled || state.giveawayEntries.length || state.giveawayConfig.prize) {
+        try { await api("POST", { action: "giveaway_save", stream_id: state.myStream.id, title: state.giveawayConfig.title, prize: state.giveawayConfig.prize, style: state.giveawayConfig.style, eligibility: state.giveawayConfig.eligibility, entries: state.giveawayEntries, enabled: state.giveawayConfig.enabled, winner: state.giveawayConfig.winner || "" }); } catch (giveawayError) { console.warn("Ripz giveaway settings sync failed:", giveawayError.message); }
+      }
       var preview = $("ripz-host-preview");
       if (preview) preview.srcObject = state.media;
       setStatus("ripz-host-status", "Connecting your camera to the live room…");
