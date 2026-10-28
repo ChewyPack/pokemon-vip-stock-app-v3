@@ -1164,6 +1164,11 @@
     if (!state.selectedStream || !state.guestRequest || state.guestRequest.status !== "approved" || state.guestPublishBusy || state.guestPublisher) return;
     state.guestPublishBusy = true;
     var startButton = $("ripz-guest-start-camera");
+    var statusNode = $("ripz-guest-request-status");
+    if (statusNode) {
+      statusNode.textContent = "";
+      statusNode.classList.remove("ripz-status--error");
+    }
     if (startButton) startButton.disabled = true;
     try {
       var media = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -1236,7 +1241,7 @@
         state.guestRequest = result.own_request || null;
         var status = $("ripz-guest-request-status");
         var button = $("ripz-guest-request-button");
-        if (status) status.textContent = !state.guestRequest ? "You have not requested to join." :
+        if (status && !status.classList.contains("ripz-status--error")) status.textContent = !state.guestRequest ? "You have not requested to join." :
           state.guestRequest.status === "pending" ? "Request sent. Waiting for the host to respond." :
           state.guestRequest.status === "approved" ? "The host approved your request. Start your camera when you are ready." :
           state.guestRequest.status === "declined" ? "The host declined this request." : "Your request was cancelled.";
