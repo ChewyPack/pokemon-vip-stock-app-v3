@@ -95,6 +95,25 @@
     @media(max-width:980px){.ripz-layout{grid-template-columns:1fr}.ripz-layout>aside{order:0}.ripz-main-stack{order:1}.ripz-host-content{grid-template-columns:repeat(2,minmax(0,1fr))}.ripz-host-content>.ripz-host-span{grid-column:1/-1}}
     @media(max-width:700px){.ripz-page{width:min(100% - 20px,1440px);padding-top:14px}.ripz-hero{grid-template-columns:1fr;padding:24px}.ripz-hero-art{display:none}.ripz-stage-grid{grid-template-columns:1fr}.ripz-stage-main{border-right:0;border-bottom:1px solid #253753}.ripz-chat{min-height:300px}.ripz-host-content{grid-template-columns:1fr}.ripz-host-content>.ripz-host-span{grid-column:auto}.ripz-live-grid{grid-template-columns:1fr}.ripz-panel-body{padding:14px}}
     @media(prefers-reduced-motion:reduce){.ripz-button{transition:none}}
+  
+    .ripz-giveaway{grid-column:1/-1;margin-top:8px;padding:18px;border:1px solid rgba(145,171,213,.24);border-radius:18px;background:rgba(8,24,59,.72);min-width:0}
+    .ripz-giveaway__heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .ripz-giveaway__heading h3{margin:5px 0 0;font-size:1.25rem}
+    .ripz-giveaway__controls{display:grid;gap:10px;margin:14px 0}
+    .ripz-giveaway__manual{display:flex;gap:8px;flex-wrap:wrap}
+    .ripz-giveaway__manual input{flex:1;min-width:160px;padding:11px 12px;border-radius:10px;border:1px solid rgba(145,171,213,.35);background:#071735;color:#fff;font:inherit}
+    .ripz-giveaway__wheel-area{width:min(280px,78vw);aspect-ratio:1;position:relative;margin:18px auto 14px}
+    .ripz-giveaway__wheel{width:100%;height:100%;box-sizing:border-box;border:6px solid #f5c451;border-radius:50%;box-shadow:0 8px 28px rgba(0,0,0,.3),inset 0 0 0 3px rgba(255,255,255,.18);transition:transform 4.2s cubic-bezier(.12,.72,.12,1);position:relative}
+    .ripz-giveaway__wheel:after{content:"";position:absolute;left:50%;top:50%;width:28px;height:28px;transform:translate(-50%,-50%);border-radius:50%;background:#fff;border:5px solid #17315c;box-shadow:0 2px 8px #0005}
+    .ripz-giveaway__pointer{position:absolute;z-index:2;top:-5px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:28px solid #fff;filter:drop-shadow(0 2px 3px #0008)}
+    .ripz-giveaway__actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+    .ripz-giveaway__winner{margin:14px auto 0;padding:13px;text-align:center;border:1px solid rgba(245,196,81,.55);border-radius:12px;background:rgba(245,196,81,.12);font-size:1.15rem;font-weight:800;overflow-wrap:anywhere}
+    .ripz-giveaway__entry-list{display:grid;gap:6px;margin-top:14px;max-height:220px;overflow:auto}
+    .ripz-giveaway__entry{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:9px;background:rgba(255,255,255,.055);overflow-wrap:anywhere}
+    .ripz-giveaway__entry button{flex-shrink:0;border:0;background:transparent;color:#f5c451;text-decoration:underline;cursor:pointer;font:inherit;font-size:.88rem}
+    .ripz-giveaway button:disabled{opacity:.5;cursor:not-allowed}
+    @media(max-width:520px){.ripz-giveaway{padding:13px}.ripz-giveaway__manual{display:grid}.ripz-giveaway__manual input{width:100%;box-sizing:border-box}.ripz-giveaway__actions .ripz-button{flex:1}}
+
   </style>
 </head>
 <body>
