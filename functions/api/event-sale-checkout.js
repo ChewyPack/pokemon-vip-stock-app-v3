@@ -25,7 +25,9 @@ export async function onRequestPost({ request, env }) {
     await cleanupExpiredEventReservations(env.DB);
     const item = await env.DB.prepare("SELECT i.*,e.title AS event_title,e.event_date,e.status AS event_status FROM event_sale_items i JOIN poke_report_events e ON e.id=i.event_id WHERE i.id=? LIMIT 1").bind(itemId).first();
     if (!item || Number(item.is_active) !== 1 || item.event_status !== 'published') return eventPaymentsJson({ ok: false, error: 'sale_item_unavailable', message: 'This ticket or booth reservation is no longer available.' }, 404);
-    const sellerPermission = await getVendorEventSalesPermission(env, Number(item.owner_account_id));
+    const eventOwner = await env.DB.prepare('SELECT owner_account_id FROM poke_report_events WHERE id=? LIMIT 1').bind(item.event_id).first();
+    if (!eventOwner || Number(item.owner_account_id) !== Number(eventOwner.owner_account_id || 0)) return eventPaymentsJson({ ok: false, error: 'event_owner_required', message: 'Only the event owner can sell tickets or booth/table spaces for this event.' }, 403);
+    const sellerPermission = await getVendorEventSalesPermission(env, Number(eventOwner.owner_account_id));
     if (!sellerPermission.can_sell) return eventPaymentsJson({ ok: false, error: 'event_sales_verification_required', message: 'This organizer is not approved to sell admission tickets, tables, or booths yet.' }, 403);
     if (String(item.event_date || '') < new Date().toISOString().slice(0, 10)) return eventPaymentsJson({ ok: false, error: 'event_is_past', message: 'Reservations are closed for this event.' }, 409);
     const connected = await env.DB.prepare('SELECT stripe_account_id,livemode,charges_enabled,payouts_enabled FROM event_connect_accounts WHERE account_id=? LIMIT 1').bind(item.owner_account_id).first();
