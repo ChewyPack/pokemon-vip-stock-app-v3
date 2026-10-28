@@ -14,9 +14,10 @@ async function schema(env){
  id INTEGER PRIMARY KEY AUTOINCREMENT,event_id INTEGER NOT NULL,buyer_account_id INTEGER NOT NULL,
  product_type TEXT NOT NULL DEFAULT 'cards' CHECK(product_type IN ('cards','sealed','graded','other')),
  title TEXT NOT NULL,details TEXT NOT NULL DEFAULT '',quantity INTEGER NOT NULL DEFAULT 1,
- max_budget_cents INTEGER,status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','closed','fulfilled')),
+ max_budget_cents INTEGER,set_name TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','closed','fulfilled')),
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
  )`).run();
+ try{await env.DB.prepare("ALTER TABLE event_buyer_requests ADD COLUMN set_name TEXT NOT NULL DEFAULT ''").run();}catch(e){if(!/duplicate column/i.test(String(e?.message||e)))throw e;}
  await env.DB.prepare("CREATE TABLE IF NOT EXISTS event_vending_registrations (id INTEGER PRIMARY KEY AUTOINCREMENT,event_id INTEGER NOT NULL,account_id INTEGER NOT NULL,booth_location TEXT NOT NULL DEFAULT '',key_items TEXT NOT NULL DEFAULT '',notes TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','withdrawn')),created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(event_id,account_id))").run();
  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_event_buyer_requests_event_status ON event_buyer_requests(event_id,status,created_at DESC)').run();
  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS event_buyer_request_responses (
@@ -46,7 +47,7 @@ async function verifyOnSite(event,data){
  }catch(error){console.error('On-site location verification failed',error);return {ok:false,status:503,error:'location_verification_unavailable',message:'On-site verification is temporarily unavailable. Please try again shortly.'};}
 }
 async function load(env,eventId,user){
- const requests=await env.DB.prepare(`SELECT r.id,r.event_id,r.buyer_account_id,r.product_type,r.title,r.details,r.quantity,r.max_budget_cents,r.status,r.created_at,r.updated_at,
+ const requests=await env.DB.prepare(`SELECT r.id,r.event_id,r.buyer_account_id,r.product_type,r.title,r.set_name,r.details,r.quantity,r.max_budget_cents,r.status,r.created_at,r.updated_at,
  COALESCE(NULLIF(a.display_name,''),'Collector') AS buyer_name
  FROM event_buyer_requests r JOIN accounts a ON a.id=r.buyer_account_id
  WHERE r.event_id=? AND (r.status='open' OR r.buyer_account_id=? OR ?=1)
@@ -96,7 +97,7 @@ export async function onRequestPost({request,env}){
   if(!['cards','sealed','graded','other'].includes(type))return json({ok:false,error:'invalid_product_type'},400);
   if(!Number.isSafeInteger(quantity)||quantity<1||quantity>100)return json({ok:false,error:'invalid_quantity'},400);
   if(budget!==null&&(!Number.isSafeInteger(budget)||budget<0||budget>100000000))return json({ok:false,error:'invalid_budget'},400);
-  const inserted=await env.DB.prepare("INSERT INTO event_buyer_requests(event_id,buyer_account_id,product_type,title,details,quantity,max_budget_cents) VALUES(?,?,?,?,?,?,?)").bind(eventId,user.id,type,title,details,quantity,budget).run();
+  const inserted=await env.DB.prepare("INSERT INTO event_buyer_requests(event_id,buyer_account_id,product_type,title,set_name,details,quantity,max_budget_cents) VALUES(?,?,?,?,?,?,?,?)").bind(eventId,user.id,type,title,clean(d.set_name,120),details,quantity,budget).run();
   const requestId=Number(inserted.meta?.last_row_id||0);
   const vendors=await env.DB.prepare("SELECT account_id FROM event_vending_registrations WHERE event_id=? AND status='active' AND account_id!=?").bind(eventId,user.id).all();
   await Promise.all((vendors.results||[]).map(vendor=>notifyCollector(env,Number(vendor.account_id),{type:'event_buyer_request',title:'New buyer request at your show',body:(event.title||'Your show')+': '+title+' · Qty '+quantity+'.',url:'/show-requests.html?event_id='+eventId,data:{kind:'event_buyer_request_created',event_id:eventId,request_id:requestId}})));
