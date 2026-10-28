@@ -9,6 +9,10 @@
     myStream: null,
     selectedStream: null,
     media: null,
+    cameraDeviceId: "",
+    microphoneDeviceId: "",
+    audioContext: null,
+    audioMeterFrame: null,
     broadcaster: null,
     playback: null,
     playbackStreamId: "",
@@ -113,17 +117,16 @@
     }
     if (state.myStream && state.myStream.status !== "ended") {
       var statusText = state.isPublishing ? "Your camera is connected and you are live." :
-        (state.myStream.status === "live" ? "This stream session is open. Reconnect your camera if you are returning to this page." : "Your stream room is ready. Connect your camera when you are ready to go live.");
+        (state.myStream.status === "live" ? "This stream session is open. Preview your camera and microphone before reconnecting." : "Your stream room is ready. Preview your camera and microphone before going live.");
       host.innerHTML = '<div class="ripz-host-content">' +
-        '<div class="ripz-host-card ripz-host-span"><div class="ripz-live-badge">Your session</div><h3 style="margin-top:10px">' + esc(state.myStream.title) + '</h3><p>' + esc(state.myStream.product_name) + '</p><p id="ripz-host-status" class="ripz-host-status" style="margin-top:10px">' + esc(statusText) + '</p></div>' +
-        '<div class="ripz-host-span"><video id="ripz-host-preview" class="ripz-host-video" autoplay muted playsinline></video></div>' +
+        '<div class="ripz-host-card ripz-host-span"><div class="ripz-live-badge">Your session</div><h3 style="margin-top:10px">' + esc(state.myStream.title) + '</h3><p>' + esc(state.myStream.product_name) + '</p><p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite" style="margin-top:10px">' + esc(statusText) + '</p></div>' +
+        cameraSetupMarkup(true) +
         '<div class="ripz-camera-actions ripz-host-span">' +
-          '<button id="ripz-host-connect" class="ripz-button" type="button" ' + (state.isPublishing ? "disabled" : "") + '>Connect camera &amp; go live</button>' +
+          '<button id="ripz-host-connect" class="ripz-button" type="button" ' + (state.isPublishing || !state.media ? "disabled" : "") + '>' + (state.myStream.status === "live" ? "Reconnect &amp; go live" : "Go live") + '</button>' +
           '<button id="ripz-host-stop" class="ripz-button ripz-button--danger" type="button">End stream</button>' +
-        '</div><p class="ripz-note ripz-host-span">Keep this page open while you rip. Use the End stream button as soon as you finish.</p>' +
+        '</div><p class="ripz-note ripz-host-span">Preview first, then go live when your picture and microphone look right. Keep this page open while you rip.</p>' +
         '</div>';
-      var preview = $("ripz-host-preview");
-      if (preview && state.media) preview.srcObject = state.media;
+      bindCameraControls(true);
       var connect = $("ripz-host-connect");
       if (connect) connect.addEventListener("click", function () { connectExistingStream(); });
       var stop = $("ripz-host-stop");
@@ -133,10 +136,12 @@
     host.innerHTML = '<form class="ripz-form" id="ripz-start-form">' +
       '<label for="ripz-title">Stream title<input id="ripz-title" name="title" maxlength="100" required minlength="3" placeholder="e.g. Chasing the SIR tonight"></label>' +
       '<label for="ripz-product">What are you ripping?<input id="ripz-product" name="product_name" maxlength="120" required minlength="2" placeholder="e.g. Mega Evolution booster packs"></label>' +
-      '<button id="ripz-start-button" class="ripz-button" type="submit">🎥 Start a live rip</button>' +
-      '<p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite">Your browser will ask for camera and microphone access before the stream begins.</p>' +
-      '<p class="ripz-note">A camera and microphone are required. Your preview is muted locally to prevent echo. Streams are recorded for replay, and the MP4 download becomes available after processing.</p>' +
+      cameraSetupMarkup(false) +
+      '<button id="ripz-start-button" class="ripz-button" type="submit" disabled>🎥 Go live</button>' +
+      '<p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite">Start your camera preview first. You can check your picture, microphone, and devices before going live.</p>' +
+      '<p class="ripz-note">Your local preview is muted to prevent echo. A camera and microphone are required. Streams are recorded for replay; the MP4 download becomes available after processing.</p>' +
       '</form>';
+    bindCameraControls(false);
     $("ripz-start-form").addEventListener("submit", function (event) {
       event.preventDefault();
       startNewStream($("ripz-title").value, $("ripz-product").value);
@@ -230,14 +235,208 @@
     }
   }
 
-  async function getCamera() {
+  function cameraSetupMarkup(existingSession) {
+    return '<div class="ripz-camera-setup ripz-host-span">' +
+      '<video id="ripz-host-preview" class="ripz-host-video" autoplay muted playsinline></video>' +
+      '<div class="ripz-device-grid">' +
+        '<label for="ripz-camera-device">Camera<select id="ripz-camera-device" disabled><option value="">Allow camera access to list devices</option></select></label>' +
+        '<label for="ripz-mic-device">Microphone<select id="ripz-mic-device" disabled><option value="">Allow microphone access to list devices</option></select></label>' +
+      '</div>' +
+      '<div class="ripz-mic-test"><strong>Microphone test</strong><span id="ripz-mic-caption">Start preview and speak to check your audio level.</span><div class="ripz-mic-meter" role="meter" aria-label="Microphone input level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="ripz-mic-level"></span></div></div>' +
+      '<div class="ripz-camera-actions"><button id="ripz-preview-start" class="ripz-button ripz-button--secondary" type="button">' + (state.media ? "Refresh preview" : "Start camera preview") + '</button>' +
+      (state.media ? '<button id="ripz-preview-stop" class="ripz-button ripz-button--secondary" type="button">Stop preview</button>' : '') +
+      '</div><p class="ripz-note">Your camera and microphone are only used for your preview until you choose to go live.</p></div>';
+  }
+
+  function selectedDeviceValue(id, fallback) {
+    var node = $(id);
+    return node && node.value ? node.value : (fallback || "");
+  }
+
+  async function getCamera(cameraId, microphoneId) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error("Camera access is unavailable in this browser. Open PokePrizePool over HTTPS in a recent browser.");
     }
-    return navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 }, facingMode: { ideal: "environment" } },
-      audio: true
+    var video = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } };
+    var audio = true;
+    if (cameraId) video.deviceId = { exact: cameraId };
+    else video.facingMode = { ideal: "environment" };
+    if (microphoneId) audio = { deviceId: { exact: microphoneId } };
+    return navigator.mediaDevices.getUserMedia({ video: video, audio: audio });
+  }
+
+  async function populateCameraDevices() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    var devices = await navigator.mediaDevices.enumerateDevices();
+    var cameraSelect = $("ripz-camera-device");
+    var micSelect = $("ripz-mic-device");
+    if (!cameraSelect || !micSelect) return;
+    var currentVideo = state.media && state.media.getVideoTracks()[0];
+    var currentAudio = state.media && state.media.getAudioTracks()[0];
+    var cameraCurrent = state.cameraDeviceId || (currentVideo && currentVideo.getSettings().deviceId) || "";
+    var micCurrent = state.microphoneDeviceId || (currentAudio && currentAudio.getSettings().deviceId) || "";
+    function fill(select, list, current, label) {
+      select.innerHTML = "";
+      if (!list.length) {
+        select.add(new Option("No " + label.toLowerCase() + " found", ""));
+        select.disabled = true;
+        return;
+      }
+      list.forEach(function (device, index) {
+        select.add(new Option(device.label || (label + " " + (index + 1)), device.deviceId));
+      });
+      if (current && list.some(function (device) { return device.deviceId === current; })) select.value = current;
+      else select.selectedIndex = 0;
+      select.disabled = list.length < 2;
+    }
+    fill(cameraSelect, devices.filter(function (d) { return d.kind === "videoinput"; }), cameraCurrent, "Camera");
+    fill(micSelect, devices.filter(function (d) { return d.kind === "audioinput"; }), micCurrent, "Microphone");
+    state.cameraDeviceId = cameraSelect.value || "";
+    state.microphoneDeviceId = micSelect.value || "";
+  }
+
+  function stopAudioMeter() {
+    if (state.audioMeterFrame != null) cancelAnimationFrame(state.audioMeterFrame);
+    state.audioMeterFrame = null;
+    if (state.audioContext) {
+      try { state.audioContext.close(); } catch (_) {}
+      state.audioContext = null;
+    }
+    var level = $("ripz-mic-level");
+    var meter = level && level.parentElement;
+    if (level) level.style.width = "0%";
+    if (meter) meter.setAttribute("aria-valuenow", "0");
+  }
+
+  function startAudioMeter(stream) {
+    stopAudioMeter();
+    var caption = $("ripz-mic-caption");
+    if (!stream || !stream.getAudioTracks().length) {
+      if (caption) caption.textContent = "No microphone audio track was detected.";
+      return;
+    }
+    var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      if (caption) caption.textContent = "Microphone connected. Audio level testing is not supported in this browser.";
+      return;
+    }
+    try {
+      var context = new AudioContextClass();
+      var analyser = context.createAnalyser();
+      analyser.fftSize = 256;
+      context.createMediaStreamSource(stream).connect(analyser);
+      state.audioContext = context;
+      var samples = new Uint8Array(analyser.frequencyBinCount);
+      function update() {
+        if (state.audioContext !== context) return;
+        analyser.getByteTimeDomainData(samples);
+        var sum = 0;
+        for (var i = 0; i < samples.length; i++) {
+          var normalized = (samples[i] - 128) / 128;
+          sum += normalized * normalized;
+        }
+        var rms = Math.sqrt(sum / samples.length);
+        var percent = Math.min(100, Math.round(rms * 300));
+        var level = $("ripz-mic-level");
+        var meter = level && level.parentElement;
+        if (level) level.style.width = percent + "%";
+        if (meter) meter.setAttribute("aria-valuenow", String(percent));
+        if (caption) caption.textContent = percent > 5 ? "Microphone is picking up sound." : "Speak to test your microphone.";
+        state.audioMeterFrame = requestAnimationFrame(update);
+      }
+      if (context.state === "suspended") context.resume().catch(function () {});
+      update();
+    } catch (_) {
+      if (caption) caption.textContent = "Microphone connected, but the audio level test could not start.";
+    }
+  }
+
+  async function startCameraPreview() {
+    var button = $("ripz-preview-start");
+    var statusNode = $("ripz-host-status");
+    if (button) button.disabled = true;
+    if (statusNode) statusNode.textContent = "Requesting camera and microphone access…";
+    try {
+      var cameraId = selectedDeviceValue("ripz-camera-device", state.cameraDeviceId);
+      var micId = selectedDeviceValue("ripz-mic-device", state.microphoneDeviceId);
+      var newMedia = await getCamera(cameraId, micId);
+      var oldMedia = state.media;
+      state.media = newMedia;
+      state.cameraDeviceId = (newMedia.getVideoTracks()[0] && newMedia.getVideoTracks()[0].getSettings().deviceId) || cameraId;
+      state.microphoneDeviceId = (newMedia.getAudioTracks()[0] && newMedia.getAudioTracks()[0].getSettings().deviceId) || micId;
+      var preview = $("ripz-host-preview");
+      if (preview) preview.srcObject = newMedia;
+      if (oldMedia && oldMedia !== newMedia) oldMedia.getTracks().forEach(function (track) { track.stop(); });
+      await populateCameraDevices();
+      startAudioMeter(newMedia);
+      var goLive = $("ripz-start-button") || $("ripz-host-connect");
+      if (goLive) goLive.disabled = false;
+      if (statusNode) statusNode.textContent = "Preview is ready. Check your picture and microphone, then go live when you’re ready.";
+      var previewButton = $("ripz-preview-start");
+      if (previewButton) previewButton.textContent = "Refresh preview";
+      if (!$("ripz-preview-stop")) {
+        var actions = previewButton && previewButton.parentElement;
+        if (actions) {
+          var stopButton = document.createElement("button");
+          stopButton.id = "ripz-preview-stop";
+          stopButton.type = "button";
+          stopButton.className = "ripz-button ripz-button--secondary";
+          stopButton.textContent = "Stop preview";
+          actions.appendChild(stopButton);
+          stopButton.addEventListener("click", stopCameraPreview);
+        }
+      }
+      var stopButtonExisting = $("ripz-preview-stop");
+      if (stopButtonExisting) stopButtonExisting.addEventListener("click", stopCameraPreview);
+    } catch (error) {
+      if (statusNode) statusNode.textContent = error.message || "Could not start your camera preview.";
+      if (button) button.disabled = false;
+      return;
+    }
+    if (button) button.disabled = false;
+  }
+
+  function stopCameraPreview() {
+    if (state.isPublishing) return;
+    if (state.media) state.media.getTracks().forEach(function (track) { track.stop(); });
+    stopAudioMeter();
+    state.media = null;
+    stopAudioMeter();
+    var preview = $("ripz-host-preview");
+    if (preview) preview.srcObject = null;
+    var goLive = $("ripz-start-button") || $("ripz-host-connect");
+    if (goLive) goLive.disabled = true;
+    var level = $("ripz-mic-caption");
+    if (level) level.textContent = "Start preview and speak to check your audio level.";
+    var start = $("ripz-preview-start");
+    if (start) { start.disabled = false; start.textContent = "Start camera preview"; }
+    var stop = $("ripz-preview-stop");
+    if (stop) stop.remove();
+    var statusNode = $("ripz-host-status");
+    if (statusNode) statusNode.textContent = "Preview stopped. Start the camera preview again before going live.";
+  }
+
+  function bindCameraControls(existingSession) {
+    var previewButton = $("ripz-preview-start");
+    if (previewButton) previewButton.addEventListener("click", startCameraPreview);
+    var stopButton = $("ripz-preview-stop");
+    if (stopButton) stopButton.addEventListener("click", stopCameraPreview);
+    var cameraSelect = $("ripz-camera-device");
+    if (cameraSelect) cameraSelect.addEventListener("change", function () {
+      state.cameraDeviceId = cameraSelect.value;
+      if (state.media) startCameraPreview();
     });
+    var micSelect = $("ripz-mic-device");
+    if (micSelect) micSelect.addEventListener("change", function () {
+      state.microphoneDeviceId = micSelect.value;
+      if (state.media) startCameraPreview();
+    });
+    if (state.media) {
+      var preview = $("ripz-host-preview");
+      if (preview) preview.srcObject = state.media;
+      populateCameraDevices().catch(function () {});
+      startAudioMeter(state.media);
+    }
   }
 
   async function negotiate(pc, endpoint, direction) {
@@ -298,7 +497,7 @@
       var titleValue = String(title || "").trim();
       var productValue = String(product || "").trim();
       if (titleValue.length < 3 || productValue.length < 2) throw new Error("Enter a stream title and what you are ripping.");
-      state.media = await getCamera();
+      if (!state.media || !state.media.getVideoTracks().length || !state.media.getAudioTracks().length) throw new Error("Start your camera and microphone preview before going live.");
       if (statusNode) statusNode.textContent = "Preparing your live room…";
       var result = await api("POST", { action: "start", title: titleValue, product_name: productValue });
       streamCreatedHere = !result.reused;
@@ -309,10 +508,6 @@
       setStatus("ripz-host-status", "Connecting your camera to the live room…");
       await beginPublish(state.myStream);
     } catch (error) {
-      if (state.media && !state.broadcaster) {
-        state.media.getTracks().forEach(function (track) { track.stop(); });
-        state.media = null;
-      }
       if (streamCreatedHere && state.myStream) {
         try { await api("POST", { action: "end", stream_id: state.myStream.id }); } catch (_) {}
         state.myStream = null;
@@ -392,16 +587,10 @@
     if (button) button.disabled = true;
     if (statusNode) statusNode.textContent = "Requesting camera and microphone access…";
     try {
-      state.media = await getCamera();
-      var preview = $("ripz-host-preview");
-      if (preview) preview.srcObject = state.media;
+      if (!state.media || !state.media.getVideoTracks().length || !state.media.getAudioTracks().length) throw new Error("Start your camera and microphone preview before reconnecting.");
       if (statusNode) statusNode.textContent = "Connecting to the live room…";
       await beginPublish(state.myStream);
     } catch (error) {
-      if (state.media && !state.broadcaster) {
-        state.media.getTracks().forEach(function (track) { track.stop(); });
-        state.media = null;
-      }
       var currentStatus = $("ripz-host-status");
       if (currentStatus) currentStatus.textContent = error.message || "Could not connect the camera.";
       if (button) button.disabled = false;
@@ -432,6 +621,7 @@
       state.media.getTracks().forEach(function (track) { track.stop(); });
       state.media = null;
     }
+    stopAudioMeter();
     try {
       if (silent && navigator.sendBeacon) {
         navigator.sendBeacon("/api/ripz", new Blob([JSON.stringify({ action: "end", stream_id: stream.id })], { type: "application/json" }));
