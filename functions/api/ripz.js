@@ -110,6 +110,18 @@ async function ensureSchema(env) {
     )
   `).run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_guest_requests_stream_status ON ripz_guest_requests(stream_id, status, created_at)").run();
+  try { await env.DB.prepare("ALTER TABLE ripz_guest_requests ADD COLUMN sfu_session_id TEXT").run(); } catch (_) {}
+  try { await env.DB.prepare("ALTER TABLE ripz_guest_requests ADD COLUMN sfu_ready INTEGER NOT NULL DEFAULT 0").run(); } catch (_) {}
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS ripz_guest_sfu_sessions (
+      session_id TEXT PRIMARY KEY,
+      stream_id TEXT NOT NULL REFERENCES ripz_streams(id) ON DELETE CASCADE,
+      account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      role TEXT NOT NULL CHECK(role IN ('publisher','subscriber')),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_guest_sfu_sessions_account ON ripz_guest_sfu_sessions(account_id, stream_id)").run();
   })();
   try {
     await schemaPromise;
@@ -138,6 +150,37 @@ function streamShape(row, includePublishUrl = false) {
   };
   if (includePublishUrl) out.whip_url = row.whip_url;
   return out;
+}
+
+function realtimeConfigured(env) {
+  return Boolean(env.REALTIME_SFU_APP_ID && env.REALTIME_SFU_BEARER_TOKEN);
+}
+async function realtimeApi(env, method, path, body) {
+  const response = await fetch("https://rtc.live.cloudflare.com/v1/apps/" +
+    encodeURIComponent(env.REALTIME_SFU_APP_ID) + path, {
+      method,
+      headers: {
+        "Authorization": "Bearer " + env.REALTIME_SFU_BEARER_TOKEN,
+        "Content-Type": "application/json"
+      },
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+  let result = {};
+  try { result = await response.json(); } catch (_) {}
+  if (!response.ok || result.errorCode || result.error) {
+    throw new Error("Realtime SFU request failed (" + response.status + "): " +
+      clean(result.errorDescription || result.error || "provider_error", 220));
+  }
+  return result;
+}
+async function requireApprovedGuest(env, streamId, accountId) {
+  return env.DB.prepare(`
+    SELECT r.id, r.stream_id, r.requester_account_id, r.status, r.sfu_session_id, r.sfu_ready,
+           s.account_id AS host_account_id, s.status AS stream_status
+    FROM ripz_guest_requests r
+    JOIN ripz_streams s ON s.id = r.stream_id
+    WHERE r.stream_id = ? AND r.requester_account_id = ? LIMIT 1
+  `).bind(streamId, accountId).first();
 }
 function cloudflareConfigured(env) {
   return Boolean(env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_STREAM_API_TOKEN);
@@ -398,6 +441,114 @@ export async function onRequestPost({ request, env }) {
       if (row.status !== "pending") return json({ ok: false, error: "request_already_decided" }, 409);
       await env.DB.prepare("UPDATE ripz_guest_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'").bind(decision, requestId).run();
       return json({ ok: true, status: decision });
+    }
+
+
+    if (action === "guest_sfu_create") {
+      if (!realtimeConfigured(env)) return json({ ok: false, error: "realtime_not_configured" }, 503);
+      const streamId = clean(data.stream_id, 100);
+      const guest = await requireApprovedGuest(env, streamId, account.id);
+      if (!guest || guest.status !== "approved" || guest.stream_status !== "live") return json({ ok: false, error: "guest_not_approved" }, 403);
+      if (guest.sfu_session_id) {
+        return json({ ok: true, app_id: env.REALTIME_SFU_APP_ID, session_id: guest.sfu_session_id, ready: Number(guest.sfu_ready) === 1 });
+      }
+      const created = await realtimeApi(env, "POST", "/sessions/new");
+      const sessionId = clean(created.sessionId, 200);
+      if (!sessionId) return json({ ok: false, error: "realtime_session_missing" }, 502);
+      await env.DB.prepare("INSERT INTO ripz_guest_sfu_sessions (session_id, stream_id, account_id, role) VALUES (?, ?, ?, 'publisher')").bind(sessionId, streamId, account.id).run();
+      await env.DB.prepare("UPDATE ripz_guest_requests SET sfu_session_id = ?, sfu_ready = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'approved'").bind(sessionId, guest.id).run();
+      return json({ ok: true, app_id: env.REALTIME_SFU_APP_ID, session_id: sessionId, ready: false });
+    }
+
+    if (action === "guest_sfu_publish") {
+      if (!realtimeConfigured(env)) return json({ ok: false, error: "realtime_not_configured" }, 503);
+      const streamId = clean(data.stream_id, 100);
+      const sessionId = clean(data.session_id, 200);
+      const sdp = data.session_description;
+      const tracks = Array.isArray(data.tracks) ? data.tracks.slice(0, 2) : [];
+      const guest = await requireApprovedGuest(env, streamId, account.id);
+      if (!guest || guest.status !== "approved" || guest.stream_status !== "live" || guest.sfu_session_id !== sessionId) return json({ ok: false, error: "guest_session_not_authorized" }, 403);
+      const owned = await env.DB.prepare("SELECT session_id FROM ripz_guest_sfu_sessions WHERE session_id = ? AND stream_id = ? AND account_id = ? AND role = 'publisher' LIMIT 1").bind(sessionId, streamId, account.id).first();
+      if (!owned) return json({ ok: false, error: "guest_session_not_authorized" }, 403);
+      if (!sdp || sdp.type !== "offer" || !clean(sdp.sdp, 30000) || !tracks.length) return json({ ok: false, error: "bad_sdp_offer" }, 400);
+      const safeTracks = tracks.map((track) => ({
+        location: "local",
+        mid: clean(track.mid, 20),
+        trackName: track.kind === "audio" ? "microphone" : "camera"
+      })).filter(track => track.mid);
+      if (!safeTracks.length || safeTracks.some(track => !["camera","microphone"].includes(track.trackName))) return json({ ok: false, error: "bad_track_list" }, 400);
+      const result = await realtimeApi(env, "POST", "/sessions/" + encodeURIComponent(sessionId) + "/tracks/new", {
+        sessionDescription: { type: "offer", sdp: sdp.sdp },
+        tracks: safeTracks
+      });
+      if (!result.sessionDescription || result.sessionDescription.type !== "answer") return json({ ok: false, error: "realtime_answer_missing" }, 502);
+      const successful = Array.isArray(result.tracks) && result.tracks.length > 0 && result.tracks.every(track => !track.errorCode && !track.error);
+      if (!successful) return json({ ok: false, error: "realtime_track_publish_failed", details: (result.tracks || []).map(track => ({ trackName: track.trackName, errorCode: track.errorCode, errorDescription: clean(track.errorDescription, 180) })) }, 502);
+      await env.DB.prepare("UPDATE ripz_guest_requests SET sfu_ready = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(guest.id).run();
+      return json({ ok: true, session_description: result.sessionDescription, tracks: result.tracks });
+    }
+
+    if (action === "guest_sfu_list") {
+      const streamId = clean(data.stream_id, 100);
+      const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || stream.status !== "live") return json({ ok: false, error: "stream_not_live" }, 409);
+      const { results = [] } = await env.DB.prepare(`
+        SELECT r.sfu_session_id AS session_id
+        FROM ripz_guest_requests r
+        WHERE r.stream_id = ? AND r.status = 'approved' AND r.sfu_ready = 1 AND r.sfu_session_id IS NOT NULL
+        ORDER BY r.updated_at ASC LIMIT 4
+      `).bind(streamId).all();
+      return json({ ok: true, publishers: results.map(row => ({ session_id: row.session_id, tracks: ["camera", "microphone"] })) });
+    }
+
+    if (action === "guest_sfu_subscriber_create") {
+      if (!realtimeConfigured(env)) return json({ ok: false, error: "realtime_not_configured" }, 503);
+      const streamId = clean(data.stream_id, 100);
+      const stream = await env.DB.prepare("SELECT id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || stream.status !== "live") return json({ ok: false, error: "stream_not_live" }, 409);
+      const { results = [] } = await env.DB.prepare("SELECT sfu_session_id AS session_id FROM ripz_guest_requests WHERE stream_id = ? AND status = 'approved' AND sfu_ready = 1 AND sfu_session_id IS NOT NULL LIMIT 4").bind(streamId).all();
+      if (!results.length) return json({ ok: true, app_id: env.REALTIME_SFU_APP_ID, session_id: null, publishers: [] });
+      const created = await realtimeApi(env, "POST", "/sessions/new");
+      const sessionId = clean(created.sessionId, 200);
+      if (!sessionId) return json({ ok: false, error: "realtime_session_missing" }, 502);
+      await env.DB.prepare("INSERT INTO ripz_guest_sfu_sessions (session_id, stream_id, account_id, role) VALUES (?, ?, ?, 'subscriber')").bind(sessionId, streamId, account.id).run();
+      return json({ ok: true, app_id: env.REALTIME_SFU_APP_ID, session_id: sessionId, publishers: results.map(row => ({ session_id: row.session_id, tracks: ["camera", "microphone"] })) });
+    }
+
+    if (action === "guest_sfu_subscribe") {
+      if (!realtimeConfigured(env)) return json({ ok: false, error: "realtime_not_configured" }, 503);
+      const streamId = clean(data.stream_id, 100);
+      const sessionId = clean(data.session_id, 200);
+      const sdp = data.session_description;
+      const publishers = Array.isArray(data.publishers) ? data.publishers.slice(0, 8) : [];
+      const owned = await env.DB.prepare("SELECT session_id FROM ripz_guest_sfu_sessions WHERE session_id = ? AND stream_id = ? AND account_id = ? AND role = 'subscriber' LIMIT 1").bind(sessionId, streamId, account.id).first();
+      if (!owned) return json({ ok: false, error: "subscriber_session_not_authorized" }, 403);
+      const stream = await env.DB.prepare("SELECT id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || stream.status !== "live") return json({ ok: false, error: "stream_not_live" }, 409);
+      const { results: allowedRows = [] } = await env.DB.prepare("SELECT sfu_session_id AS session_id FROM ripz_guest_requests WHERE stream_id = ? AND status = 'approved' AND sfu_ready = 1 AND sfu_session_id IS NOT NULL").bind(streamId).all();
+      const allowed = new Set(allowedRows.map(row => row.session_id));
+      const remoteTracks = [];
+      for (const publisher of publishers) {
+        const publisherId = clean(publisher.session_id, 200);
+        if (!allowed.has(publisherId)) continue;
+        for (const trackName of ["camera", "microphone"]) remoteTracks.push({ location: "remote", sessionId: publisherId, trackName });
+      }
+      if (!remoteTracks.length) return json({ ok: true, session_description: null, tracks: [] });
+      const result = await realtimeApi(env, "POST", "/sessions/" + encodeURIComponent(sessionId) + "/tracks/new", { tracks: remoteTracks });
+      if (!result.sessionDescription || result.sessionDescription.type !== "offer") return json({ ok: false, error: "realtime_offer_missing" }, 502);
+      return json({ ok: true, session_description: result.sessionDescription, tracks: result.tracks || [] });
+    }
+
+    if (action === "guest_sfu_subscriber_answer") {
+      if (!realtimeConfigured(env)) return json({ ok: false, error: "realtime_not_configured" }, 503);
+      const streamId = clean(data.stream_id, 100);
+      const sessionId = clean(data.session_id, 200);
+      const sdp = data.session_description;
+      const owned = await env.DB.prepare("SELECT session_id FROM ripz_guest_sfu_sessions WHERE session_id = ? AND stream_id = ? AND account_id = ? AND role = 'subscriber' LIMIT 1").bind(sessionId, streamId, account.id).first();
+      if (!owned) return json({ ok: false, error: "subscriber_session_not_authorized" }, 403);
+      if (!sdp || sdp.type !== "answer" || !clean(sdp.sdp, 30000)) return json({ ok: false, error: "bad_sdp_answer" }, 400);
+      const result = await realtimeApi(env, "PUT", "/sessions/" + encodeURIComponent(sessionId) + "/renegotiate", { sessionDescription: { type: "answer", sdp: sdp.sdp } });
+      return json({ ok: true, result });
     }
 
     if (action === "guest_cancel") {
