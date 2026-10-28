@@ -78,7 +78,10 @@ export async function onRequestPost({request,env}){
   if(!['cards','sealed','graded','other'].includes(type))return json({ok:false,error:'invalid_product_type'},400);
   if(!Number.isSafeInteger(quantity)||quantity<1||quantity>100)return json({ok:false,error:'invalid_quantity'},400);
   if(budget!==null&&(!Number.isSafeInteger(budget)||budget<0||budget>100000000))return json({ok:false,error:'invalid_budget'},400);
-  await env.DB.prepare("INSERT INTO event_buyer_requests(event_id,buyer_account_id,product_type,title,details,quantity,max_budget_cents) VALUES(?,?,?,?,?,?,?)").bind(eventId,user.id,type,title,details,quantity,budget).run();
+  const inserted=await env.DB.prepare("INSERT INTO event_buyer_requests(event_id,buyer_account_id,product_type,title,details,quantity,max_budget_cents) VALUES(?,?,?,?,?,?,?)").bind(eventId,user.id,type,title,details,quantity,budget).run();
+  const requestId=Number(inserted.meta?.last_row_id||0);
+  const vendors=await env.DB.prepare("SELECT account_id FROM event_vending_registrations WHERE event_id=? AND status='active' AND account_id!=?").bind(eventId,user.id).all();
+  await Promise.all((vendors.results||[]).map(vendor=>notifyCollector(env,Number(vendor.account_id),{type:'event_buyer_request',title:'New buyer request at your show',body:(event.title||'Your show')+': '+title+' · Qty '+quantity+'.',url:'/show-requests.html?event_id='+eventId,data:{kind:'event_buyer_request_created',event_id:eventId,request_id:requestId}})));
   return json({ok:true,created:true,...await load(env,eventId,user)});
  }
  const requestId=Number(d.request_id||0);if(!Number.isSafeInteger(requestId)||requestId<1)return json({ok:false,error:'valid_request_id_required'},400);
