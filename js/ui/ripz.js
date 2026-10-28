@@ -19,6 +19,8 @@
     playback: null,
     playbackStreamId: "",
     isPublishing: false,
+    isPaused: false,
+    savedTrackState: null,
     hostBusy: false,
     recordingTimer: null,
     recordingBusy: false,
@@ -72,8 +74,59 @@
     return data;
   }
 
+
+  function syncHostMediaControls() {
+    var audio = state.media && state.media.getAudioTracks()[0];
+    var video = state.media && state.media.getVideoTracks()[0];
+    var mute = $("ripz-host-mute"), camera = $("ripz-host-camera"), pause = $("ripz-host-pause");
+    if (mute) { mute.disabled = !audio; mute.textContent = audio && !audio.enabled ? "Unmute mic" : "Mute mic"; mute.setAttribute("aria-pressed", String(!!(audio && !audio.enabled))); }
+    if (camera) { camera.disabled = !video; camera.textContent = video && !video.enabled ? "Turn camera on" : "Turn camera off"; camera.setAttribute("aria-pressed", String(!!(video && !video.enabled))); }
+    if (pause) { pause.disabled = !audio || !video; pause.textContent = state.isPaused ? "Resume stream" : "Pause stream"; pause.setAttribute("aria-pressed", String(state.isPaused)); }
+    var liveLabel = $("ripz-host-live-label");
+    if (liveLabel) liveLabel.textContent = state.isPaused ? "STREAM PAUSED" : (state.isPublishing ? "YOU’RE LIVE" : "STREAM SETUP");
+  }
+
+  function toggleHostMute() {
+    if (!state.media) return;
+    var track = state.media.getAudioTracks()[0];
+    if (!track) return;
+    track.enabled = !track.enabled;
+    syncHostMediaControls();
+  }
+
+  function toggleHostCamera() {
+    if (!state.media) return;
+    var track = state.media.getVideoTracks()[0];
+    if (!track) return;
+    track.enabled = !track.enabled;
+    syncHostMediaControls();
+  }
+
+  function toggleHostPause() {
+    if (!state.media) return;
+    var tracks = state.media.getTracks();
+    if (!state.isPaused) {
+      state.savedTrackState = tracks.map(function(track){ return { id: track.id, enabled: track.enabled }; });
+      tracks.forEach(function(track){ track.enabled = false; });
+      state.isPaused = true;
+    } else {
+      tracks.forEach(function(track){
+        var saved = (state.savedTrackState || []).find(function(item){ return item.id === track.id; });
+        track.enabled = saved ? saved.enabled : true;
+      });
+      state.isPaused = false;
+      state.savedTrackState = null;
+    }
+    syncHostMediaControls();
+    var status = $("ripz-host-status");
+    if (status) status.textContent = state.isPaused
+      ? "Stream paused. Viewers remain connected, but your camera and microphone are temporarily disabled."
+      : "Stream resumed. Your camera and microphone are back to their previous settings.";
+  }
+
   function renderHostPanel() {
     syncGiveawayDock();
+    syncHostMediaControls();
     var host = $("ripz-host-panel");
     if (!state.authenticated) {
       host.innerHTML = '<div class="ripz-host-card"><h3>Sign in to host</h3><p>Sign in to check your member access and launch a live rip.</p><a class="ripz-button" href="/account.html">Sign in</a></div>';
@@ -617,6 +670,8 @@
       var newMedia = await getCamera(cameraId, micId);
       var oldMedia = state.media;
       state.media = newMedia;
+      state.isPaused = false;
+      state.savedTrackState = null;
       state.cameraDeviceId = (newMedia.getVideoTracks()[0] && newMedia.getVideoTracks()[0].getSettings().deviceId) || cameraId;
       state.microphoneDeviceId = (newMedia.getAudioTracks()[0] && newMedia.getAudioTracks()[0].getSettings().deviceId) || micId;
       var preview = $("ripz-host-preview");
@@ -628,6 +683,7 @@
       if (oldMedia && oldMedia !== newMedia) oldMedia.getTracks().forEach(function (track) { track.stop(); });
       await populateCameraDevices();
       startAudioMeter(newMedia);
+      syncHostMediaControls();
       var goLive = $("ripz-start-button") || $("ripz-host-connect");
       if (goLive) goLive.disabled = false;
       if (statusNode) statusNode.textContent = "Preview is ready. Check your picture and microphone, then go live when you’re ready.";
@@ -661,6 +717,9 @@
     if (state.media) state.media.getTracks().forEach(function (track) { track.stop(); });
     stopAudioMeter();
     state.media = null;
+    state.isPaused = false;
+    state.savedTrackState = null;
+    syncHostMediaControls();
     var preview = $("ripz-host-preview");
     if (preview) preview.srcObject = null;
     var mainVideo = $("ripz-watch-video");
@@ -887,6 +946,9 @@
       state.media.getTracks().forEach(function (track) { track.stop(); });
       state.media = null;
     }
+    state.isPaused = false;
+    state.savedTrackState = null;
+    syncHostMediaControls();
     stopAudioMeter();
     try {
       if (silent && navigator.sendBeacon) {
@@ -1104,6 +1166,9 @@
   });
   var dockEndButton = $("ripz-host-dock-end");
   if (dockEndButton) dockEndButton.addEventListener("click", function () { stopHostStream(false); });
+  var muteButton = $("ripz-host-mute"); if (muteButton) muteButton.addEventListener("click", toggleHostMute);
+  var cameraButton = $("ripz-host-camera"); if (cameraButton) cameraButton.addEventListener("click", toggleHostCamera);
+  var pauseButton = $("ripz-host-pause"); if (pauseButton) pauseButton.addEventListener("click", toggleHostPause);
 
   refreshData().then(function () {
     state.listTimer = window.setInterval(refreshLiveList, 12000);
