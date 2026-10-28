@@ -1024,6 +1024,10 @@
     if (state.selectedStream && state.selectedStream.id === stream.id && state.playback) return;
     await closePlayback();
     state.selectedStream = stream;
+    var guestJoinPanel = $("ripz-guest-join-panel");
+    if (guestJoinPanel) guestJoinPanel.hidden = !!(state.myStream && state.myStream.status === "live" && state.myStream.id === stream.id);
+    state.guestRequest = null;
+    if ($("ripz-guest-request-status")) $("ripz-guest-request-status").textContent = "";
     $("ripz-stage-title").textContent = stream.title;
     $("ripz-stage-subtitle").textContent = "Hosted by @" + stream.host + " · " + (stream.product_name || "Pack opening");
     var viewerCountNode = $("ripz-viewer-count");
@@ -1055,6 +1059,9 @@
       var caption = $("ripz-chat-caption");
       if (caption) caption.textContent = "Chatting in: " + stream.title;
       loadChat(stream.id);
+      refreshGuestState(stream.id);
+      if (state.guestTimer) clearInterval(state.guestTimer);
+      state.guestTimer = window.setInterval(function () { if (state.selectedStream && state.selectedStream.id === stream.id) refreshGuestState(stream.id); }, 3000);
     } catch (error) {
       setStatus("ripz-playback-status", error.message || "Could not connect to this stream.", true);
       $("ripz-watch-video").hidden = true;
