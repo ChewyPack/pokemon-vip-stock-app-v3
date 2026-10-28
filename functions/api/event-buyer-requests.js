@@ -68,8 +68,8 @@ export async function onRequestPost({request,env}){
  try{await schema(env);const d=await request.json().catch(()=>null);if(!d||typeof d!=='object')return json({ok:false,error:'bad_request'},400);
  const eventId=Number(d.event_id||0);if(!Number.isSafeInteger(eventId)||eventId<1)return json({ok:false,error:'valid_event_id_required'},400);
  const event=await eventInfo(env,eventId);if(!event||event.status!=='published')return json({ok:false,error:'event_not_found'},404);
- if(String(event.event_date||'')<new Date().toISOString().slice(0,10))return json({ok:false,error:'event_is_past',message:'Requests are closed for past events.'},409);
  const action=clean(d.action,30);
+ if(['create','respond','response_status'].includes(action)&&String(event.event_date||'')<new Date().toISOString().slice(0,10))return json({ok:false,error:'event_is_past',message:'Requests are closed for past events.'},409);
  if(action==='create'){
   const title=clean(d.title,160),details=clean(d.details,1200),type=clean(d.product_type,20),quantity=Number(d.quantity||1),budget=cents(d.max_budget);
   if(!title)return json({ok:false,error:'title_required'},400);
