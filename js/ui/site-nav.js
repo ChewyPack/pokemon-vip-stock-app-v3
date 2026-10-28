@@ -188,4 +188,42 @@
   document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") beat(); });
  })();
 
+
+ // Add a red live ring to collector avatars wherever public profile links appear.
+ (function(){
+  var liveUsernames = new Set();
+  var style = document.createElement("style");
+  style.textContent = ".ripz-live-profile-ring{outline:3px solid #ff304f!important;outline-offset:2px!important;box-shadow:0 0 0 4px rgba(255,48,79,.18)!important}.ripz-live-profile-ring img,.ripz-live-profile-ring .cp-person-avatar{outline:3px solid #ff304f!important;outline-offset:2px!important}.ripz-live-profile-badge{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 6px;border-radius:5px;background:#b91632;color:#fff;font:900 10px/1.3 system-ui,sans-serif;letter-spacing:.06em;vertical-align:middle}";
+  document.head.appendChild(style);
+  function usernameFromLink(anchor){
+   try{var url=new URL(anchor.getAttribute("href")||"",location.origin);if(!/collector(?:\.html)?\/?$/i.test(url.pathname))return "";return (url.searchParams.get("user")||"").trim().toLowerCase();}catch(_){return "";}
+  }
+  function applyRings(){
+   document.querySelectorAll('a[href*="collector.html"],a[href^="/collector"]').forEach(function(anchor){
+    var username=usernameFromLink(anchor);if(!username)return;
+    var live=liveUsernames.has(username);
+    anchor.classList.toggle("ripz-live-profile-link",live);
+    var avatar=anchor.querySelector("img,.cp-person-avatar,.chat-avatar,.social-comment-avatar,.message-avatar");
+    if(avatar)avatar.classList.toggle("ripz-live-profile-ring",live);
+    if(live && !anchor.querySelector(".ripz-live-profile-badge") && !anchor.querySelector("img,.cp-person-avatar,.chat-avatar,.social-comment-avatar,.message-avatar")){
+     var badge=document.createElement("span");badge.className="ripz-live-profile-badge";badge.textContent="LIVE";anchor.appendChild(badge);
+    } else if(!live){var old=anchor.querySelector(".ripz-live-profile-badge");if(old)old.remove();}
+   });
+   var profileAvatar=document.getElementById("avatar");
+   if(profileAvatar){
+    var handle=document.getElementById("handle");
+    var own=(handle&&handle.textContent||"").replace(/^@/,"").trim().toLowerCase();
+    if(!own){try{own=(new URL(location.href)).searchParams.get("user")||"";}catch(_){}}
+    profileAvatar.classList.toggle("ripz-live-profile-ring",!!own&&liveUsernames.has(own.toLowerCase()));
+   }
+  }
+  async function refreshLiveUsers(){
+   try{var response=await fetch("/api/ripz-live",{credentials:"omit",cache:"no-store"});if(!response.ok)return;var data=await response.json();liveUsernames=new Set((data.live_usernames||[]).map(function(name){return String(name).toLowerCase();}));applyRings();}catch(_){}
+  }
+  var observer = new MutationObserver(function(){applyRings();});
+  if(document.body)observer.observe(document.body,{childList:true,subtree:true});
+  refreshLiveUsers();
+  window.setInterval(refreshLiveUsers,15000);
+ })();
+
 })();
