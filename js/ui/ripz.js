@@ -993,6 +993,7 @@
   var setupButton = $("ripz-setup-stream");
   if (setupButton) setupButton.addEventListener("click", function () {
     if (!state.authenticated) { $("ripz-signed-out").hidden = false; $("ripz-landing").hidden = true; return; }
+    if (state.myStream && state.myStream.status === "ended") state.myStream = null;
     openStudio(true);
     renderHostPanel();
   });
