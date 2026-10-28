@@ -404,7 +404,6 @@
     if (state.media) state.media.getTracks().forEach(function (track) { track.stop(); });
     stopAudioMeter();
     state.media = null;
-    stopAudioMeter();
     var preview = $("ripz-host-preview");
     if (preview) preview.srcObject = null;
     var goLive = $("ripz-start-button") || $("ripz-host-connect");
