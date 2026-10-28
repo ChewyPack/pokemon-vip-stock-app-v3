@@ -62,6 +62,9 @@
     .ripz-live-card h3{margin:0;color:#fff;font-size:1.03rem;line-height:1.35;overflow-wrap:anywhere}
     .ripz-live-card p{margin:0;color:#acbeda;font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
     .ripz-live-card .ripz-button{width:100%;box-sizing:border-box;margin-top:2px}
+    .ripz-viewer-count{display:inline-flex;align-items:center;gap:6px;color:#c4d4ec!important;font-size:.8rem!important;font-weight:700}
+    .ripz-viewer-count:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#43d39e;box-shadow:0 0 0 3px rgba(67,211,158,.12)}
+    #ripz-viewer-count[hidden]{display:none}
     .ripz-empty{padding:22px;border:1px dashed #3a5071;border-radius:12px;color:#aebed8;line-height:1.65;text-align:center}
     .ripz-stage-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(230px,1fr);min-width:0}
     .ripz-stage-main{min-width:0;padding:16px;border-right:1px solid #253753}
@@ -149,6 +152,7 @@
             <div class="ripz-stage-main">
               <h3 id="ripz-stage-title" class="ripz-stage-title">Pick a live rip to watch</h3>
               <p id="ripz-stage-subtitle" class="ripz-stage-subtitle">When a member goes live, their stream will appear here.</p>
+              <p id="ripz-viewer-count" class="ripz-viewer-count" aria-live="polite" hidden>0 watching</p>
               <div id="ripz-stage-placeholder" class="ripz-stage-placeholder"><span style="font-size:2.3rem" aria-hidden="true">🎥</span><strong>No stream selected</strong><span>Choose a live session above to tune in.</span></div>
               <video id="ripz-watch-video" class="ripz-stage-video" autoplay playsinline controls hidden></video>
               <p id="ripz-playback-status" class="ripz-status" role="status" aria-live="polite"></p>
@@ -168,6 +172,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261026-logout-cache-fix-v4"></script>
-  <script src="/js/ui/ripz.js?v=20261028-ripz-camera-preview2"></script>
+  <script src="/js/ui/ripz.js?v=20261028-ripz-viewer-count"></script>
 </body>
 </html>
