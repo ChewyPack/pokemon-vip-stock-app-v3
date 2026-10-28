@@ -131,7 +131,10 @@
 
   
     .ripz-live-video-layout{position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:0;align-items:stretch;width:100%;aspect-ratio:16/9;overflow:hidden;min-width:0;border:1px solid #314769;border-radius:11px;background:#030812}
-    .ripz-live-video-layout--split{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .ripz-live-video-layout--split{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;align-items:stretch!important}
+    .ripz-live-video-layout--split>.ripz-stage-video-tile,.ripz-live-video-layout--split>.ripz-guest-video-grid{grid-row:1!important;position:relative!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-width:none!important;aspect-ratio:auto!important}
+    .ripz-live-video-layout--split>.ripz-stage-video-tile{grid-column:1!important}
+    .ripz-live-video-layout--split>.ripz-guest-video-grid{grid-column:2!important}
     .ripz-stage-video-tile{position:relative;min-width:0;min-height:0;height:100%;overflow:hidden;background:#030812}
     .ripz-stage-video-tile .ripz-stage-video{display:block;width:100%;height:100%;min-height:0;aspect-ratio:auto;object-fit:cover;border:0;border-radius:0;background:#030812}
     .ripz-video-tile-label{position:absolute;left:8px;bottom:8px;z-index:3;padding:5px 8px;border:1px solid #ffffff2b;border-radius:6px;background:#07142edb;color:#fff;font-size:.72rem;font-weight:800;pointer-events:none}
@@ -286,6 +289,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>
-  <script src="/js/ui/ripz.js?v=20261028-ripz-single-frame-split-v1"></script>
+  <script src="/js/ui/ripz.js?v=20261028-ripz-desktop-split-hide-preview-v2"></script>
 </body>
 </html>
