@@ -35,7 +35,10 @@
     .ripz-viewer-giveaway-overlay h3{margin:0 0 6px;color:#f5c451;font-size:clamp(1.2rem,3vw,2rem)}
     .ripz-viewer-giveaway-overlay p{margin:4px 0}
     .ripz-viewer-giveaway-overlay .ripz-race-lanes{display:grid;gap:5px;margin-top:8px}
-    .ripz-viewer-giveaway-overlay .ripz-race-lanes span{display:block;padding:4px 8px;background:#17325a;border-radius:8px;text-align:left}
+    .ripz-viewer-giveaway-overlay .ripz-race-lanes span{display:block;padding:4px 8px;background:#17325a;border-radius:8px;text-align:left;animation:ripz-duck-race 2.6s ease-in-out infinite alternate}
+    .ripz-viewer-giveaway-overlay .ripz-race-lanes span:nth-child(2n){animation-delay:-.8s}
+    .ripz-viewer-giveaway-overlay .ripz-race-lanes span:nth-child(3n){animation-delay:-1.4s}
+    @keyframes ripz-duck-race{from{transform:translateX(0)}to{transform:translateX(14px)}}
     .ripz-panel{min-width:0;border:1px solid #263e63;border-radius:17px;background:#0c1830;box-shadow:0 14px 36px #0002}
     .ripz-panel-head{padding:17px 19px;border-bottom:1px solid #253753}
     .ripz-panel-head h2{margin:0;color:#f7faff;font:400 1.55rem/1.1 var(--font-display,Bangers,Impact,sans-serif);letter-spacing:.02em}
@@ -244,6 +247,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261026-logout-cache-fix-v4"></script>
-  <script src="/js/ui/ripz.js?v=20261028-ripz-stream-tools-overlay-v2"></script>
+  <script src="/js/ui/ripz.js?v=20261028-ripz-stream-tools-overlay-v3"></script>
 </body>
 </html>
