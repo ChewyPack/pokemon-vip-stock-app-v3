@@ -133,7 +133,7 @@
     .ripz-host-dock[hidden],.ripz-giveaway-modal[hidden]{display:none!important}
     .ripz-host-dock{position:fixed;z-index:1200;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);padding:10px 12px;border:1px solid rgba(245,196,81,.5);border-radius:18px;background:rgba(5,16,39,.96);box-shadow:0 12px 38px rgba(0,0,0,.4);backdrop-filter:blur(14px)}
     .ripz-host-dock__live{display:flex;align-items:center;gap:7px;color:#f5c451;font-weight:850;font-size:.76rem;letter-spacing:.07em;padding:0 4px;white-space:nowrap}
-    .ripz-host-dock .ripz-button{white-space:nowrap}
+    .ripz-host-dock .ripz-button{white-space:nowrap}.ripz-host-dock .ripz-button[aria-pressed="true"]{border-color:#a74456;background:#421a2b;color:#ffe5e9}
     .ripz-giveaway-modal{position:fixed;z-index:1300;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,8,22,.82);backdrop-filter:blur(8px)}
     .ripz-giveaway-modal__panel{position:relative;width:min(760px,100%);max-height:calc(100dvh - 32px);overflow:auto;border:1px solid rgba(145,171,213,.3);border-radius:22px;background:#091a3a;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.5);padding:18px}
     .ripz-giveaway-modal__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -234,7 +234,10 @@
     </div>
     </div>
     <div id="ripz-host-dock" class="ripz-host-dock" hidden aria-label="Live stream controls">
-      <span class="ripz-host-dock__live"><span class="ripz-live-dot"></span> YOU’RE LIVE</span>
+      <span class="ripz-host-dock__live"><span class="ripz-live-dot"></span> <span id="ripz-host-live-label">YOU’RE LIVE</span></span>
+      <button id="ripz-host-mute" class="ripz-button ripz-button--secondary" type="button" aria-pressed="false" disabled>Mute mic</button>
+      <button id="ripz-host-camera" class="ripz-button ripz-button--secondary" type="button" aria-pressed="false" disabled>Turn camera off</button>
+      <button id="ripz-host-pause" class="ripz-button ripz-button--secondary" type="button" aria-pressed="false" disabled>Pause stream</button>
       <button id="ripz-host-giveaway" class="ripz-button" type="button" aria-expanded="false" aria-controls="ripz-giveaway-modal"><span aria-hidden="true">🎛️</span> Stream tools & giveaway</button>
       <button id="ripz-host-dock-end" class="ripz-button ripz-button--danger" type="button">End stream</button>
     </div>
@@ -247,6 +250,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261026-logout-cache-fix-v4"></script>
-  <script src="/js/ui/ripz.js?v=20261028-ripz-stream-tools-overlay-v4"></script>
+  <script src="/js/ui/ripz.js?v=20261028-ripz-host-controls-v1"></script>
 </body>
 </html>
