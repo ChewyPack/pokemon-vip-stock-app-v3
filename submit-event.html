@@ -133,14 +133,31 @@ addressInput.addEventListener('input',function(){
   if(searchQuery===lastAddressQuery)return;lastAddressQuery=searchQuery;
   addressController=new AbortController();
   try{
-   var response=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(searchQuery)+'&limit=10&lang=en',{signal:addressController.signal,headers:{'Accept':'application/json'}});
+   // Bias nearby searches toward the entered city/state instead of the center of the country.
+   var localWarwick=/\\bwarwick\\b|\\bri\\b|rhode island/i.test(searchQuery);
+   var photonUrl='https://photon.komoot.io/api/?q='+encodeURIComponent(searchQuery)+'&limit=10&lang=en'+(localWarwick?'&lat=41.7434&lon=-71.4375&zoom=14':'');
+   var response=await fetch(photonUrl,{signal:addressController.signal,headers:{'Accept':'application/json'}});
    if(!response.ok)throw new Error('Address lookup unavailable');
    var result=await response.json();
    if(addressInput.value.trim()!==query)return;
    var features=(result.features||[]).filter(function(f){var p=f.properties||{};return !p.country||p.country==='United States';});
+   // When Photon misses a complete street address, use the US Census geocoder as a fallback.
+   if(!features.length&&/\\d/.test(query)){
+    var censusUrl='https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address='+encodeURIComponent(searchQuery)+'&benchmark=Public_AR_Current&format=json';
+    var censusResponse=await fetch(censusUrl,{signal:addressController.signal,headers:{'Accept':'application/json'}});
+    if(censusResponse.ok){
+     var census=await censusResponse.json();
+     var matches=(census.result&&census.result.addressMatches)||[];
+     features=matches.map(function(match){
+      var c=match.addressComponents||{};
+      return {properties:{name:match.matchedAddress,street:[c.fromAddress,c.preDirection,c.streetName,c.suffixType,c.suffixDirection].filter(Boolean).join(' '),housenumber:c.fromAddress,city:c.city,state:c.state,postcode:c.zip,country:'United States'}};
+     });
+    }
+   }
+   if(addressInput.value.trim()!==query)return;
    renderAddressSuggestions(features);
   }catch(error){if(error.name!=='AbortError')hideAddressSuggestions();}
- },300);
+ },350);
 });
 addressInput.addEventListener('keydown',function(e){
  if(addressSuggestions.hidden||!addressResults.length)return;
