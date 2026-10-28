@@ -130,6 +130,15 @@
     @media(max-width:520px){.ripz-giveaway{padding:13px}.ripz-giveaway__manual{display:grid}.ripz-giveaway__manual input{width:100%;box-sizing:border-box}.ripz-giveaway__actions .ripz-button{flex:1}}
 
   
+    .ripz-guest-join{margin-top:14px;padding:14px;border:1px solid #3a5071;border-radius:12px;background:#0a1730}
+    .ripz-guest-join h3{margin:0 0 6px;color:#fff;font-size:1rem}
+    .ripz-guest-join p{margin:7px 0;color:#b9c9e3;font-size:.86rem;line-height:1.5}
+    .ripz-guest-requests{margin-top:12px;padding:12px;border:1px solid #3a5071;border-radius:12px;background:#09172e}
+    .ripz-guest-requests h3{margin:0 0 8px;color:#fff;font-size:.95rem}
+    .ripz-guest-request-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:9px 0;border-top:1px solid #253753}
+    .ripz-guest-request-row:first-of-type{border-top:0}
+    .ripz-guest-request-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .ripz-guest-request-actions .ripz-button{min-height:36px;padding:8px 10px;font-size:.82rem}
     .ripz-host-dock[hidden],.ripz-giveaway-modal[hidden]{display:none!important}
     .ripz-host-dock{position:fixed;z-index:1200;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);padding:10px 12px;border:1px solid rgba(245,196,81,.5);border-radius:18px;background:rgba(5,16,39,.96);box-shadow:0 12px 38px rgba(0,0,0,.4);backdrop-filter:blur(14px)}
     .ripz-host-dock__live{display:flex;align-items:center;gap:7px;color:#f5c451;font-weight:850;font-size:.76rem;letter-spacing:.07em;padding:0 4px;white-space:nowrap}
@@ -218,6 +227,12 @@
               <video id="ripz-watch-video" class="ripz-stage-video" autoplay playsinline controls hidden></video>
               <div id="ripz-viewer-giveaway-overlay" class="ripz-viewer-giveaway-overlay" hidden aria-live="polite"></div>
               <iframe id="ripz-replay-frame" class="ripz-replay-frame" title="Ripz replay" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen hidden></iframe>
+              <div id="ripz-guest-join-panel" class="ripz-guest-join" hidden>
+                <h3>Join the live rip</h3>
+                <p>Request permission to join on camera. The host must approve you.</p>
+                <button id="ripz-guest-request-button" class="ripz-button" type="button">Request to join</button>
+                <p id="ripz-guest-request-status" class="ripz-status" role="status" aria-live="polite"></p>
+              </div>
               <p id="ripz-playback-status" class="ripz-status" role="status" aria-live="polite"></p>
             </div>
             <aside class="ripz-chat">
@@ -250,6 +265,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>
-  <script src="/js/ui/ripz.js?v=20261028-ripz-host-controls-v2"></script>
+  <script src="/js/ui/ripz.js?v=20261028-ripz-guest-requests-v1"></script>
 </body>
 </html>
