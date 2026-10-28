@@ -939,7 +939,14 @@ export async function onRequestPost({ request, env }) {
 
     return json({ ok: false, error: "unknown_action", message: "This Ripz action is not available in the deployed API version yet." }, 400);
   } catch (error) {
-    console.error("Ripz action failed:", error);
-    return json({ ok: false, error: "ripz_action_failed", message: "That Ripz action could not be completed. Please try again." }, 500);
+    const safeMessage = clean(error && error.message, 220);
+    console.error("Ripz action failed:", safeMessage || "unknown_error");
+    return json({
+      ok: false,
+      error: "ripz_action_failed",
+      message: safeMessage
+        ? "RIPZ could not complete this step: " + safeMessage
+        : "RIPZ could not complete this step. Please try again."
+    }, 500);
   }
 }
