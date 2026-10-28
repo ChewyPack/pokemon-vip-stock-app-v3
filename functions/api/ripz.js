@@ -98,6 +98,18 @@ async function ensureSchema(env) {
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_chat_stream_id ON ripz_chat_messages(stream_id, id)").run();
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS ripz_viewers (stream_id TEXT NOT NULL REFERENCES ripz_streams(id) ON DELETE CASCADE, account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (stream_id, account_id))").run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_viewers_stream_seen ON ripz_viewers(stream_id, last_seen_at)").run();
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS ripz_guest_requests (
+      id TEXT PRIMARY KEY,
+      stream_id TEXT NOT NULL REFERENCES ripz_streams(id) ON DELETE CASCADE,
+      requester_account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','declined','cancelled')),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(stream_id, requester_account_id)
+    )
+  `).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_guest_requests_stream_status ON ripz_guest_requests(stream_id, status, created_at)").run();
   })();
   try {
     await schemaPromise;
@@ -326,6 +338,73 @@ export async function onRequestPost({ request, env }) {
       }
       const count = await env.DB.prepare("SELECT COUNT(DISTINCT account_id) AS viewer_count FROM ripz_viewers WHERE stream_id = ? AND account_id <> ? AND unixepoch(last_seen_at) >= unixepoch() - 45").bind(streamId, stream.account_id).first();
       return json({ ok: true, viewer_count: Number(count?.viewer_count || 0) });
+    }
+
+
+    if (action === "guest_request") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || stream.status !== "live") return json({ ok: false, error: "stream_not_live" }, 409);
+      if (Number(stream.account_id) === Number(account.id)) return json({ ok: false, error: "host_cannot_request" }, 400);
+      const existing = await env.DB.prepare("SELECT id, status FROM ripz_guest_requests WHERE stream_id = ? AND requester_account_id = ? LIMIT 1").bind(streamId, account.id).first();
+      if (existing && ["pending", "approved"].includes(existing.status)) {
+        return json({ ok: true, request: { id: existing.id, status: existing.status } });
+      }
+      const requestId = crypto.randomUUID();
+      await env.DB.prepare(`
+        INSERT INTO ripz_guest_requests (id, stream_id, requester_account_id, status, created_at, updated_at)
+        VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT(stream_id, requester_account_id) DO UPDATE SET id=excluded.id, status='pending', created_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
+      `).bind(requestId, streamId, account.id).run();
+      const saved = await env.DB.prepare("SELECT id, status FROM ripz_guest_requests WHERE stream_id = ? AND requester_account_id = ? LIMIT 1").bind(streamId, account.id).first();
+      return json({ ok: true, request: saved || { id: requestId, status: "pending" } }, 201);
+    }
+
+    if (action === "guest_state") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || stream.status !== "live") return json({ ok: true, requests: [], own_request: null });
+      if (Number(stream.account_id) === Number(account.id) || account.is_admin) {
+        const { results = [] } = await env.DB.prepare(`
+          SELECT r.id, r.status, r.created_at,
+                 COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS username
+          FROM ripz_guest_requests r
+          JOIN accounts a ON a.id = r.requester_account_id
+          LEFT JOIN collector_profiles p ON p.account_id = a.id
+          WHERE r.stream_id = ? AND r.status IN ('pending','approved')
+          ORDER BY CASE WHEN r.status='pending' THEN 0 ELSE 1 END, r.created_at ASC
+          LIMIT 30
+        `).bind(streamId).all();
+        return json({ ok: true, requests: results, own_request: null });
+      }
+      const own = await env.DB.prepare("SELECT id, status, updated_at FROM ripz_guest_requests WHERE stream_id = ? AND requester_account_id = ? LIMIT 1").bind(streamId, account.id).first();
+      return json({ ok: true, requests: [], own_request: own || null });
+    }
+
+    if (action === "guest_decide") {
+      const requestId = clean(data.request_id, 100);
+      const decision = data.decision === "approve" ? "approved" : (data.decision === "decline" ? "declined" : "");
+      if (!requestId || !decision) return json({ ok: false, error: "bad_request" }, 400);
+      const row = await env.DB.prepare(`
+        SELECT r.id, r.stream_id, r.status, s.account_id AS host_account_id, s.status AS stream_status
+        FROM ripz_guest_requests r JOIN ripz_streams s ON s.id = r.stream_id
+        WHERE r.id = ? LIMIT 1
+      `).bind(requestId).first();
+      if (!row) return json({ ok: false, error: "request_not_found" }, 404);
+      if (Number(row.host_account_id) !== Number(account.id) && !account.is_admin) return json({ ok: false, error: "not_stream_owner" }, 403);
+      if (row.stream_status !== "live") return json({ ok: false, error: "stream_not_live" }, 409);
+      if (row.status !== "pending") return json({ ok: false, error: "request_already_decided" }, 409);
+      await env.DB.prepare("UPDATE ripz_guest_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'").bind(decision, requestId).run();
+      return json({ ok: true, status: decision });
+    }
+
+    if (action === "guest_cancel") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      await env.DB.prepare("UPDATE ripz_guest_requests SET status='cancelled', updated_at=CURRENT_TIMESTAMP WHERE stream_id = ? AND requester_account_id = ? AND status IN ('pending','approved')").bind(streamId, account.id).run();
+      return json({ ok: true });
     }
 
     if (action === "giveaway_state") {
