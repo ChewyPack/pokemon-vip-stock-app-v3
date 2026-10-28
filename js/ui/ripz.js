@@ -664,10 +664,6 @@
       state.playbackStreamId = "";
       api("POST", { action: "viewer_leave", stream_id: previousStreamId }).catch(function () {});
     }
-    if (state.playbackStreamId && navigator.sendBeacon) {
-      try { navigator.sendBeacon("/api/ripz", new Blob([JSON.stringify({ action: "viewer_leave", stream_id: state.playbackStreamId })], { type: "application/json" })); } catch (_) {}
-    }
-    if (state.viewerTimer) clearInterval(state.viewerTimer);
     if (state.playback) {
       var active = state.playback;
       state.playback = null;
@@ -798,6 +794,10 @@
       try { liveBroadcast.pc.close(); } catch (_) {}
     }
     if (state.media) state.media.getTracks().forEach(function (track) { track.stop(); });
+    if (state.playbackStreamId && navigator.sendBeacon) {
+      try { navigator.sendBeacon("/api/ripz", new Blob([JSON.stringify({ action: "viewer_leave", stream_id: state.playbackStreamId })], { type: "application/json" })); } catch (_) {}
+    }
+    if (state.viewerTimer) { clearInterval(state.viewerTimer); state.viewerTimer = null; }
     if (state.playback) {
       var active = state.playback;
       try { if (active.sessionUrl) fetch(active.sessionUrl, { method: "DELETE", keepalive: true }); } catch (_) {}
