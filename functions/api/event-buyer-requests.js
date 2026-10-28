@@ -27,7 +27,24 @@ async function schema(env){
  )`).run();
  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_event_buyer_request_responses_request ON event_buyer_request_responses(request_id,status,created_at)').run();
 }
-async function eventInfo(env,id){return env.DB.prepare("SELECT id,title,event_date,status,event_type FROM poke_report_events WHERE id=? LIMIT 1").bind(id).first();}
+async function eventInfo(env,id){return env.DB.prepare("SELECT id,title,event_date,status,event_type,venue,address,city,state,state_name,zip FROM poke_report_events WHERE id=? LIMIT 1").bind(id).first();}
+function distanceMeters(lat1,lon1,lat2,lon2){const rad=v=>v*Math.PI/180,R=6371000,dLat=rad(lat2-lat1),dLon=rad(lon2-lon1),a=Math.sin(dLat/2)**2+Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(a));}
+async function verifyOnSite(event,data){
+ const lat=Number(data.latitude),lon=Number(data.longitude),accuracy=Number(data.accuracy);
+ if(!Number.isFinite(lat)||lat < -90||lat>90||!Number.isFinite(lon)||lon < -180||lon>180||!Number.isFinite(accuracy)||accuracy<0||accuracy>150)return {ok:false,status:400,error:'location_required',message:'Allow precise location access and try again. Your location accuracy must be within 150 metres.'};
+ const query=[event.venue,event.address,event.city,event.state_name||event.state,event.zip].filter(Boolean).join(', ');
+ if(!query||query.length<5)return {ok:false,status:409,error:'event_location_missing',message:'This event does not have a complete venue address, so on-site requests cannot be verified yet. Please contact the event organizer.'};
+ try{
+  const url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(query);
+  const response=await fetch(url,{headers:{'Accept':'application/json','User-Agent':'PokePrizePool-OnSiteRequests/1.0 (pokeprizepool.com)'}});
+  if(!response.ok)throw new Error('geocoder_unavailable');
+  const places=await response.json(),place=Array.isArray(places)?places[0]:null;
+  if(!place||!Number.isFinite(Number(place.lat))||!Number.isFinite(Number(place.lon)))return {ok:false,status:409,error:'event_location_unavailable',message:'We could not verify this event’s venue address. Please try again later or contact the organizer.'};
+  const distance=distanceMeters(lat,lon,Number(place.lat),Number(place.lon));
+  if(distance>250+Math.min(accuracy,50))return {ok:false,status:403,error:'must_be_at_event',message:'You must be within about 250 metres of the event venue to post a buyer request.'};
+  return {ok:true};
+ }catch(error){console.error('On-site location verification failed',error);return {ok:false,status:503,error:'location_verification_unavailable',message:'On-site verification is temporarily unavailable. Please try again shortly.'};}
+}
 async function load(env,eventId,user){
  const requests=await env.DB.prepare(`SELECT r.id,r.event_id,r.buyer_account_id,r.product_type,r.title,r.details,r.quantity,r.max_budget_cents,r.status,r.created_at,r.updated_at,
  COALESCE(NULLIF(a.display_name,''),'Collector') AS buyer_name
@@ -73,6 +90,7 @@ export async function onRequestPost({request,env}){
  const action=clean(d.action,30);
  if(['create','respond','response_status'].includes(action)&&String(event.event_date||'')<new Date().toISOString().slice(0,10))return json({ok:false,error:'event_is_past',message:'Requests are closed for past events.'},409);
  if(action==='create'){
+  const onsite=await verifyOnSite(event,d);if(!onsite.ok)return json({ok:false,error:onsite.error,message:onsite.message},onsite.status);
   const title=clean(d.title,160),details=clean(d.details,1200),type=clean(d.product_type,20),quantity=Number(d.quantity||1),budget=cents(d.max_budget);
   if(!title)return json({ok:false,error:'title_required'},400);
   if(!['cards','sealed','graded','other'].includes(type))return json({ok:false,error:'invalid_product_type'},400);
