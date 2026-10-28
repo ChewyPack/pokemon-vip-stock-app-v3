@@ -311,6 +311,24 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true, viewer_count: Number(count?.viewer_count || 0) });
     }
 
+    if (action === "giveaway_viewers") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || Number(stream.account_id) !== Number(account.id) || stream.status !== "live") {
+        return json({ ok: false, error: "not_live_stream_owner", message: "Only the host of their own live stream can load giveaway entries." }, 403);
+      }
+      const { results: viewers = [] } = await env.DB.prepare(`
+        SELECT DISTINCT v.account_id, COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS username
+        FROM ripz_viewers v
+        JOIN accounts a ON a.id = v.account_id
+        LEFT JOIN collector_profiles p ON p.account_id = a.id
+        WHERE v.stream_id = ? AND v.account_id <> ? AND unixepoch(v.last_seen_at) >= unixepoch() - 45
+        ORDER BY username COLLATE NOCASE LIMIT 500
+      `).bind(streamId, account.id).all();
+      return json({ ok: true, viewers: viewers.map(viewer => ({ username: clean(viewer.username, 60) })) });
+    }
+
     if (action === "start") {
       if (!account.can_go_live) return json({ ok: false, error: "collector_plus_required", message: "Only active Collector+ members can host a Ripz stream." }, 403);
       const title = clean(data.title, 100);
