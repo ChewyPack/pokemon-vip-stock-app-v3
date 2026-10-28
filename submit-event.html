@@ -19,6 +19,12 @@ button,.button{display:inline-block;padding:12px 16px;border:1px solid #7e9bce;b
 button:disabled{opacity:.6;cursor:wait}
 #status{padding:12px 0;white-space:pre-wrap}.error{color:#ffb4bd}.success{color:#b6f3d0}
 .notice{padding:14px;border-radius:10px;border:1px solid #395882;background:#101f3c}
+.address-autocomplete{position:relative;min-width:0}
+.address-suggestions{position:absolute;z-index:50;top:100%;left:0;right:0;margin:4px 0 0;padding:5px;list-style:none;background:#0d2045;border:1px solid #6f8fbe;border-radius:10px;box-shadow:0 12px 28px #0008;max-height:260px;overflow-y:auto}
+.address-suggestions[hidden]{display:none}
+.address-suggestions button{display:block;width:100%;text-align:left;border:0;border-radius:6px;background:transparent;padding:10px;color:#fff;font-weight:500}
+.address-suggestions button:hover,.address-suggestions button:focus{background:#1b3c70;outline:2px solid #83b5ff;outline-offset:-2px}
+.address-help{font-size:.82rem;margin:5px 0 0;color:#bac9e8}
 @media(max-width:650px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -45,7 +51,7 @@ button:disabled{opacity:.6;cursor:wait}
 <div><label for="organizer_contact_email">Organizer contact email (optional)</label><input id="organizer_contact_email" name="organizer_contact_email" type="email" maxlength="254" placeholder="organizer@example.com"></div>
 <div><label for="organizer_contact_phone">Organizer contact phone (optional)</label><input id="organizer_contact_phone" name="organizer_contact_phone" type="tel" maxlength="50" placeholder="Phone number"></div>
 <div><label for="url">Official event details URL</label><input id="url" name="url" type="url" maxlength="1000" placeholder="https://…"></div>
-<div><label for="address">Street address</label><input id="address" name="address" maxlength="300"></div>
+<div><label for="address">Street address</label><div class="address-autocomplete"><input id="address" name="address" maxlength="300" autocomplete="street-address" aria-autocomplete="list" aria-controls="address-suggestions" aria-expanded="false" placeholder="Start typing a street address" role="combobox"><ul id="address-suggestions" class="address-suggestions" role="listbox" hidden></ul></div><p class="address-help">Start typing and choose a suggested address to fill in the city, state, and ZIP code.</p></div>
 <div><label for="city">City / town</label><input id="city" name="city" maxlength="160"></div>
 <div><label for="state">State / area</label><select id="state" name="state"><option value="">Choose state</option><option value="RI">Rhode Island</option><option value="MA">Massachusetts</option><option value="CT">Connecticut</option><option value="NH">New Hampshire</option><option value="VT">Vermont</option><option value="ME">Maine</option><option value="ONLINE">Online / nationwide</option><option value="OTHER">Other</option></select></div>
 <div><label for="zip">ZIP / postal code</label><input id="zip" name="zip" maxlength="12"></div>
@@ -73,6 +79,79 @@ function syncRecurrence(){
 recurrenceSelect.addEventListener('change',syncRecurrence);
 eventDate.addEventListener('change',syncRecurrence);
 syncRecurrence();
+
+// Address autocomplete powered by OpenStreetMap's Photon search service.
+var addressInput=document.getElementById('address');
+var addressSuggestions=document.getElementById('address-suggestions');
+var cityInput=document.getElementById('city');
+var stateInput=document.getElementById('state');
+var zipInput=document.getElementById('zip');
+var addressTimer=null, addressController=null, addressResults=[], addressActiveIndex=-1, lastAddressQuery='';
+var stateCodes={
+ 'alabama':'AL','alaska':'AK','arizona':'AZ','arkansas':'AR','california':'CA','colorado':'CO','connecticut':'CT','delaware':'DE','district of columbia':'DC','florida':'FL','georgia':'GA','hawaii':'HI','idaho':'ID','illinois':'IL','indiana':'IN','iowa':'IA','kansas':'KS','kentucky':'KY','louisiana':'LA','maine':'ME','maryland':'MD','massachusetts':'MA','michigan':'MI','minnesota':'MN','mississippi':'MS','missouri':'MO','montana':'MT','nebraska':'NE','nevada':'NV','new hampshire':'NH','new jersey':'NJ','new mexico':'NM','new york':'NY','north carolina':'NC','north dakota':'ND','ohio':'OH','oklahoma':'OK','oregon':'OR','pennsylvania':'PA','rhode island':'RI','south carolina':'SC','south dakota':'SD','tennessee':'TN','texas':'TX','utah':'UT','vermont':'VT','virginia':'VA','washington':'WA','west virginia':'WV','wisconsin':'WI','wyoming':'WY'
+};
+function hideAddressSuggestions(){
+ addressSuggestions.hidden=true;addressSuggestions.replaceChildren();addressInput.setAttribute('aria-expanded','false');addressInput.removeAttribute('aria-activedescendant');addressActiveIndex=-1;
+}
+function addressLabel(feature){
+ var p=feature.properties||{}, street=[p.housenumber,p.street].filter(Boolean).join(' ');
+ var locality=p.city||p.town||p.village||p.municipality||p.county||'';
+ return [street,locality,p.state,p.postcode].filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', ')||p.name||'Address result';
+}
+function renderAddressSuggestions(features){
+ addressResults=features||[];addressSuggestions.replaceChildren();addressActiveIndex=-1;
+ addressResults.forEach(function(feature,index){
+  var li=document.createElement('li');li.id='address-option-'+index;li.setAttribute('role','option');li.setAttribute('aria-selected','false');
+  var item=document.createElement('button');item.type='button';item.textContent=addressLabel(feature);
+  item.addEventListener('mousedown',function(e){e.preventDefault();chooseAddress(index);});
+  li.appendChild(item);addressSuggestions.appendChild(li);
+ });
+ addressSuggestions.hidden=!addressResults.length;addressInput.setAttribute('aria-expanded',addressResults.length?'true':'false');
+}
+function chooseAddress(index){
+ var feature=addressResults[index];if(!feature)return;
+ var p=feature.properties||{}, street=[p.housenumber,p.street].filter(Boolean).join(' ');
+ addressInput.value=street||p.name||addressLabel(feature);
+ cityInput.value=p.city||p.town||p.village||p.municipality||cityInput.value;
+ var stateName=(p.state||'').toLowerCase(), stateCode=stateCodes[stateName]||'';
+ if(stateCode&&Array.from(stateInput.options).some(function(o){return o.value===stateCode;}))stateInput.value=stateCode;
+ else if(stateName&&Array.from(stateInput.options).some(function(o){return o.textContent.toLowerCase()===stateName;}))stateInput.value=Array.from(stateInput.options).find(function(o){return o.textContent.toLowerCase()===stateName;}).value;
+ if(p.postcode)zipInput.value=p.postcode;
+ hideAddressSuggestions();
+}
+addressInput.addEventListener('input',function(){
+ var query=addressInput.value.trim();clearTimeout(addressTimer);
+ if(addressController){addressController.abort();addressController=null;}
+ if(query.length<3){lastAddressQuery='';hideAddressSuggestions();return;}
+ addressTimer=setTimeout(async function(){
+  if(query===lastAddressQuery)return;lastAddressQuery=query;
+  addressController=new AbortController();
+  try{
+   var response=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(query)+'&limit=6&lang=en&lat=39.5&lon=-98.35&zoom=5',{signal:addressController.signal,headers:{'Accept':'application/json'}});
+   if(!response.ok)throw new Error('Address lookup unavailable');
+   var result=await response.json();
+   if(addressInput.value.trim()!==query)return;
+   var features=(result.features||[]).filter(function(f){var p=f.properties||{};return !p.country||p.country==='United States';});
+   renderAddressSuggestions(features);
+  }catch(error){if(error.name!=='AbortError')hideAddressSuggestions();}
+ },300);
+});
+addressInput.addEventListener('keydown',function(e){
+ if(addressSuggestions.hidden||!addressResults.length)return;
+ if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+  e.preventDefault();addressActiveIndex=(addressActiveIndex+(e.key==='ArrowDown'?1:-1)+addressResults.length)%addressResults.length;
+  Array.from(addressSuggestions.querySelectorAll('li')).forEach(function(li,i){li.setAttribute('aria-selected',i===addressActiveIndex?'true':'false');});
+  var active=addressSuggestions.children[addressActiveIndex];if(active){addressInput.setAttribute('aria-activedescendant',active.id);active.querySelector('button').focus();}
+ }else if(e.key==='Escape'){hideAddressSuggestions();}
+});
+addressSuggestions.addEventListener('keydown',function(e){
+ if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+  e.preventDefault();var next=(addressActiveIndex+(e.key==='ArrowDown'?1:-1)+addressResults.length)%addressResults.length;addressActiveIndex=next;
+  Array.from(addressSuggestions.querySelectorAll('li')).forEach(function(li,i){li.setAttribute('aria-selected',i===next?'true':'false');});
+  addressSuggestions.children[next].querySelector('button').focus();
+ }else if(e.key==='Escape'){addressInput.focus();hideAddressSuggestions();}
+});
+document.addEventListener('click',function(e){if(!e.target.closest('.address-autocomplete'))hideAddressSuggestions();});
 function say(text,kind){status.textContent=text;status.className=kind||'';}
 fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(data){
  if(!data||!data.ok||!data.authenticated){say('Sign in or create a free PokePrizePool account to submit an event. Redirecting to sign in…','');setTimeout(function(){location.href='/account.html?next='+encodeURIComponent('/submit-event.html');},500);return;}
