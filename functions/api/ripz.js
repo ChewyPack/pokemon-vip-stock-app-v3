@@ -70,6 +70,7 @@ async function ensureSchema(env) {
     )
   `).run();
   try { await env.DB.prepare("ALTER TABLE ripz_streams ADD COLUMN description TEXT NOT NULL DEFAULT ''").run(); } catch (_) {}
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS ripz_giveaways (stream_id TEXT PRIMARY KEY REFERENCES ripz_streams(id) ON DELETE CASCADE, enabled INTEGER NOT NULL DEFAULT 0, title TEXT NOT NULL DEFAULT 'Live Giveaway', prize TEXT NOT NULL DEFAULT '', style TEXT NOT NULL DEFAULT 'wheel', eligibility TEXT NOT NULL DEFAULT 'everyone', entries_json TEXT NOT NULL DEFAULT '[]', winner TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_streams_status_created ON ripz_streams(status, live_at DESC, created_at DESC)").run();
   await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_ripz_streams_account_status ON ripz_streams(account_id, status)").run();
   await env.DB.prepare(`
@@ -327,6 +328,27 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true, viewer_count: Number(count?.viewer_count || 0) });
     }
 
+    if (action === "giveaway_state") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const row = await env.DB.prepare("SELECT g.enabled, g.title, g.prize, g.style, g.eligibility, g.entries_json, g.winner FROM ripz_giveaways g JOIN ripz_streams s ON s.id = g.stream_id WHERE g.stream_id = ? AND s.status = 'live' LIMIT 1").bind(streamId).first();
+      if (!row) return json({ ok: true, giveaway: null });
+      let entries = []; try { entries = JSON.parse(row.entries_json || "[]"); } catch (_) {}
+      return json({ ok: true, giveaway: { enabled: Boolean(row.enabled), title: row.title, prize: row.prize, style: row.style, eligibility: row.eligibility, entries, winner: row.winner || "" } });
+    }
+    if (action === "giveaway_save") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || Number(stream.account_id) !== Number(account.id) || !["ready", "live"].includes(stream.status)) return json({ ok: false, error: "not_stream_owner", message: "Only the host can control this stream's giveaway." }, 403);
+      const title = clean(data.title, 100) || "Live Giveaway", prize = clean(data.prize, 160);
+      const style = ["wheel", "duck_race"].includes(data.style) ? data.style : "wheel";
+      const eligibility = ["everyone", "collector_plus", "followers"].includes(data.eligibility) ? data.eligibility : "everyone";
+      const entries = Array.isArray(data.entries) ? data.entries.map(item => clean(item, 60)).filter(Boolean).slice(0, 500) : [];
+      const winner = clean(data.winner, 60), enabled = data.enabled ? 1 : 0;
+      await env.DB.prepare("INSERT INTO ripz_giveaways (stream_id, enabled, title, prize, style, eligibility, entries_json, winner, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(stream_id) DO UPDATE SET enabled=excluded.enabled, title=excluded.title, prize=excluded.prize, style=excluded.style, eligibility=excluded.eligibility, entries_json=excluded.entries_json, winner=excluded.winner, updated_at=CURRENT_TIMESTAMP").bind(streamId, enabled, title, prize, style, eligibility, JSON.stringify(entries), winner).run();
+      return json({ ok: true });
+    }
     if (action === "giveaway_viewers") {
       const streamId = clean(data.stream_id, 100);
       if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
