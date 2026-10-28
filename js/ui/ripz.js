@@ -6,7 +6,9 @@
     canGoLive: false,
     streamingConfigured: false,
     liveStreams: [],
+    pastStreams: [],
     myStream: null,
+    studioOpen: false,
     selectedStream: null,
     media: null,
     cameraDeviceId: "",
@@ -143,6 +145,7 @@
     host.innerHTML = '<form class="ripz-form" id="ripz-start-form">' +
       '<label for="ripz-title">Stream title<input id="ripz-title" name="title" maxlength="100" required minlength="3" placeholder="e.g. Chasing the SIR tonight"></label>' +
       '<label for="ripz-product">What are you ripping?<input id="ripz-product" name="product_name" maxlength="120" required minlength="2" placeholder="e.g. Mega Evolution booster packs"></label>' +
+      '<label for="ripz-description">Stream description<textarea id="ripz-description" name="description" maxlength="1000" rows="3" placeholder="Tell viewers what you are opening or hunting for."></textarea></label>' +
       cameraSetupMarkup(false) +
       '<button id="ripz-start-button" class="ripz-button" type="submit" disabled>🎥 Go live</button>' +
       '<p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite">Start your camera preview first. You can check your picture, microphone, and devices before going live.</p>' +
@@ -151,34 +154,83 @@
     bindCameraControls(false);
     $("ripz-start-form").addEventListener("submit", function (event) {
       event.preventDefault();
-      startNewStream($("ripz-title").value, $("ripz-product").value);
+      startNewStream($("ripz-title").value, $("ripz-product").value, $("ripz-description").value);
     });
   }
 
   function renderLiveList() {
-    var grid = $("ripz-live-grid");
-    if (!state.liveStreams.length) {
-      grid.innerHTML = '<div class="ripz-empty" style="grid-column:1/-1"><strong>No one is live right now.</strong><br>When a Collector+ member starts ripping, their stream will show up here.</div>';
-      setStatus("ripz-live-status", "No live rips at the moment.");
-      return;
-    }
-    setStatus("ripz-live-status", state.liveStreams.length + " live session" + (state.liveStreams.length === 1 ? "" : "s") + " available.");
-    grid.innerHTML = state.liveStreams.map(function (stream) {
-      return '<article class="ripz-live-card">' +
-        '<div class="ripz-live-card__top"><span class="ripz-live-badge"><span class="ripz-live-dot"></span> Live</span><span class="ripz-note">Ripz</span></div>' +
-        '<h3>' + esc(stream.title) + '</h3>' +
-        '<p>Hosted by <strong>@' + esc(stream.host) + '</strong></p>' +
-        '<p>' + esc(stream.product_name || "Pack opening") + '</p>' +
-        '<p class="ripz-viewer-count">' + Number(stream.viewer_count || 0) + ' watching</p>' +
-        '<button class="ripz-button ripz-button--secondary" type="button" data-ripz-watch="' + esc(stream.id) + '">Watch this rip</button>' +
-        '</article>';
-    }).join("");
-    grid.querySelectorAll("[data-ripz-watch]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        var stream = state.liveStreams.find(function (item) { return item.id === button.getAttribute("data-ripz-watch"); });
-        if (stream) watchStream(stream);
+    var grids = [$("ripz-live-grid"), $("ripz-landing-live-grid")].filter(Boolean);
+    var empty = '<div class="ripz-empty" style="grid-column:1/-1"><strong>No one is live right now.</strong><br>When a Collector+ member starts ripping, their stream will show up here.</div>';
+    grids.forEach(function (grid) {
+      if (!state.liveStreams.length) { grid.innerHTML = empty; return; }
+      grid.innerHTML = state.liveStreams.map(function (stream) {
+        return '<article class="ripz-live-card">' +
+          '<div class="ripz-live-card__top"><span class="ripz-live-badge"><span class="ripz-live-dot"></span> Live</span><span class="ripz-note">Ripz</span></div>' +
+          '<h3>' + esc(stream.title) + '</h3><p>Hosted by <strong>@' + esc(stream.host) + '</strong></p>' +
+          '<p>' + esc(stream.product_name || "Pack opening") + '</p>' +
+          (stream.description ? '<p>' + esc(stream.description) + '</p>' : '') +
+          '<p class="ripz-viewer-count">' + Number(stream.viewer_count || 0) + ' watching</p>' +
+          '<button class="ripz-button ripz-button--secondary" type="button" data-ripz-watch="' + esc(stream.id) + '">Watch live</button></article>';
+      }).join("");
+      grid.querySelectorAll("[data-ripz-watch]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var stream = state.liveStreams.find(function (item) { return item.id === button.getAttribute("data-ripz-watch"); });
+          if (stream) { openStudio(false); watchStream(stream); }
+        });
       });
     });
+    setStatus("ripz-live-status", state.liveStreams.length ? state.liveStreams.length + " live session" + (state.liveStreams.length === 1 ? "" : "s") + " available." : "No live rips at the moment.");
+    setStatus("ripz-landing-live-status", state.liveStreams.length ? state.liveStreams.length + " live session" + (state.liveStreams.length === 1 ? "" : "s") + " available." : "No live streams right now. Check back soon or set up your own stream.");
+    var pastGrid = $("ripz-past-grid");
+    if (pastGrid) {
+      if (!state.pastStreams.length) {
+        pastGrid.innerHTML = '<div class="ripz-empty" style="grid-column:1/-1">No replays are available yet. Finished streams will appear here when their recordings are ready.</div>';
+        setStatus("ripz-past-status", "No past streams available yet.");
+      } else {
+        setStatus("ripz-past-status", state.pastStreams.length + " replay" + (state.pastStreams.length === 1 ? "" : "s") + " available.");
+        pastGrid.innerHTML = state.pastStreams.map(function (stream) {
+          var ended = stream.ended_at ? new Date(String(stream.ended_at).replace(" ", "T") + "Z").toLocaleDateString() : "Past stream";
+          return '<article class="ripz-live-card"><div class="ripz-live-card__top"><span class="ripz-pill">Replay</span><span class="ripz-note">' + esc(ended) + '</span></div><h3>' + esc(stream.title) + '</h3><p>Hosted by <strong>@' + esc(stream.host) + '</strong></p><p>' + esc(stream.product_name || "Pack opening") + '</p>' + (stream.description ? '<p>' + esc(stream.description) + '</p>' : '') + '<button class="ripz-button ripz-button--secondary" type="button" data-ripz-replay="' + esc(stream.id) + '">Watch replay</button></article>';
+        }).join("");
+        pastGrid.querySelectorAll("[data-ripz-replay]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            var stream = state.pastStreams.find(function (item) { return item.id === button.getAttribute("data-ripz-replay"); });
+            if (!stream) return;
+            openStudio(false);
+            $("ripz-live-panel").hidden = true;
+            $("ripz-stage-title").textContent = stream.title;
+            $("ripz-stage-subtitle").textContent = "Replay hosted by @" + stream.host + " · " + (stream.product_name || "Pack opening");
+            $("ripz-stage-placeholder").hidden = true;
+            $("ripz-watch-video").hidden = true;
+            $("ripz-replay-frame").src = stream.replay_url;
+            $("ripz-replay-frame").hidden = false;
+            $("ripz-viewer-count").hidden = true;
+            $("ripz-chat-caption").textContent = "Replay mode";
+            $("ripz-chat-form").querySelector("input").disabled = true;
+            $("ripz-chat-form").querySelector("button").disabled = true;
+            $("ripz-chat-messages").innerHTML = '<p class="ripz-note">Chat replay is not available for this stream.</p>';
+            setStatus("ripz-playback-status", "Playing past stream replay.");
+          });
+        });
+      }
+    }
+  }
+
+  function openStudio(setup) {
+    state.studioOpen = true;
+    $("ripz-landing").hidden = true;
+    $("ripz-content").hidden = false;
+    $("ripz-studio-heading").textContent = setup ? "Set up your stream" : "Now watching";
+    $("ripz-live-panel").hidden = !!setup || !!(state.myStream && state.myStream.status !== "ended");
+    if (setup) {
+      $("ripz-stage-title").textContent = "Your stream preview";
+      $("ripz-stage-subtitle").textContent = "Set your title and description, check your camera and microphone, then go live.";
+      $("ripz-stage-placeholder").hidden = false;
+      $("ripz-stage-placeholder").innerHTML = '<strong>Camera preview will appear here</strong><span>Start your camera preview in the setup panel.</span>';
+      $("ripz-watch-video").hidden = true;
+      $("ripz-replay-frame").hidden = true;
+      $("ripz-replay-frame").src = "about:blank";
+    }
   }
 
   function refreshData() {
@@ -187,9 +239,11 @@
       state.canGoLive = !!data.can_go_live;
       state.streamingConfigured = !!data.streaming_configured;
       state.liveStreams = data.live_streams || [];
+      state.pastStreams = data.past_streams || [];
       state.myStream = data.my_stream || null;
       $("ripz-signed-out").hidden = true;
-      $("ripz-content").hidden = false;
+      $("ripz-content").hidden = !(state.studioOpen || (state.myStream && state.myStream.status === "live"));
+      $("ripz-landing").hidden = !$("ripz-content").hidden;
       if (!state.hostBusy) renderHostPanel();
       renderLiveList();
       if (state.selectedStream && !state.liveStreams.some(function (item) { return item.id === state.selectedStream.id; })) {
@@ -216,7 +270,8 @@
       }
       setStatus("ripz-live-status", error.message, true);
       $("ripz-live-grid").innerHTML = '<div class="ripz-empty" style="grid-column:1/-1">Ripz could not load right now. Refresh this page to try again.</div>';
-      $("ripz-content").hidden = false;
+      $("ripz-content").hidden = true;
+      $("ripz-landing").hidden = false;
       return null;
     });
   }
@@ -225,6 +280,7 @@
     try {
       var data = await api("GET");
       state.liveStreams = data.live_streams || [];
+      state.pastStreams = data.past_streams || state.pastStreams;
       if (data.my_stream) state.myStream = data.my_stream;
       var hostViewerCount = $("ripz-host-viewer-count");
       if (hostViewerCount && state.myStream) hostViewerCount.textContent = Number(state.myStream.viewer_count || 0) + " watching";
@@ -515,6 +571,10 @@
       state.microphoneDeviceId = (newMedia.getAudioTracks()[0] && newMedia.getAudioTracks()[0].getSettings().deviceId) || micId;
       var preview = $("ripz-host-preview");
       if (preview) preview.srcObject = newMedia;
+      var mainVideo = $("ripz-watch-video");
+      if (mainVideo) { mainVideo.srcObject = newMedia; mainVideo.muted = true; mainVideo.hidden = false; }
+      $("ripz-stage-placeholder").hidden = true;
+      $("ripz-replay-frame").hidden = true;
       if (oldMedia && oldMedia !== newMedia) oldMedia.getTracks().forEach(function (track) { track.stop(); });
       await populateCameraDevices();
       startAudioMeter(newMedia);
@@ -553,6 +613,9 @@
     state.media = null;
     var preview = $("ripz-host-preview");
     if (preview) preview.srcObject = null;
+    var mainVideo = $("ripz-watch-video");
+    if (mainVideo) { mainVideo.srcObject = null; mainVideo.hidden = true; }
+    $("ripz-stage-placeholder").hidden = false;
     var goLive = $("ripz-start-button") || $("ripz-host-connect");
     if (goLive) goLive.disabled = true;
     var level = $("ripz-mic-caption");
@@ -635,7 +698,7 @@
     }
   }
 
-  async function startNewStream(title, product) {
+  async function startNewStream(title, product, description) {
     var button = $("ripz-start-button");
     var statusNode = $("ripz-host-status");
     state.hostBusy = true;
@@ -645,10 +708,11 @@
     try {
       var titleValue = String(title || "").trim();
       var productValue = String(product || "").trim();
+      var descriptionValue = String(description || "").trim();
       if (titleValue.length < 3 || productValue.length < 2) throw new Error("Enter a stream title and what you are ripping.");
       if (!state.media || !state.media.getVideoTracks().length || !state.media.getAudioTracks().length) throw new Error("Start your camera and microphone preview before going live.");
       if (statusNode) statusNode.textContent = "Preparing your live room…";
-      var result = await api("POST", { action: "start", title: titleValue, product_name: productValue });
+      var result = await api("POST", { action: "start", title: titleValue, product_name: productValue, description: descriptionValue });
       streamCreatedHere = !result.reused;
       state.myStream = result.stream;
       renderHostPanel();
@@ -814,6 +878,12 @@
   }
 
   async function watchStream(stream) {
+    $("ripz-live-panel").hidden = true;
+    $("ripz-studio-heading").textContent = "Watching live";
+    $("ripz-replay-frame").hidden = true;
+    $("ripz-replay-frame").src = "about:blank";
+    $("ripz-watch-video").muted = false;
+    if (state.media && !state.isPublishing) stopCameraPreview();
     if (state.selectedStream && state.selectedStream.id === stream.id && state.playback) return;
     await closePlayback();
     state.selectedStream = stream;
@@ -918,6 +988,24 @@
 
   $("ripz-chat-form").querySelector("input").addEventListener("keydown", function (event) {
     if (event.key === "Escape") this.value = "";
+  });
+
+  var setupButton = $("ripz-setup-stream");
+  if (setupButton) setupButton.addEventListener("click", function () {
+    if (!state.authenticated) { $("ripz-signed-out").hidden = false; $("ripz-landing").hidden = true; return; }
+    openStudio(true);
+    renderHostPanel();
+  });
+  var backButton = $("ripz-back-to-ripz");
+  if (backButton) backButton.addEventListener("click", async function () {
+    if (state.myStream && state.myStream.status === "live") { setStatus("ripz-host-status", "Your stream is live. Keep this studio open to stay on air.", true); return; }
+    await closePlayback();
+    state.studioOpen = false;
+    $("ripz-content").hidden = true;
+    $("ripz-landing").hidden = false;
+    $("ripz-live-panel").hidden = false;
+    $("ripz-replay-frame").hidden = true;
+    $("ripz-replay-frame").src = "about:blank";
   });
 
   window.addEventListener("pagehide", function () {
