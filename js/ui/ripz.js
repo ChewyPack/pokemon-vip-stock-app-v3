@@ -1100,6 +1100,8 @@
     state.guestSubscribedStreamId = "";
     var grid = $("ripz-guest-video-grid");
     if (grid) { grid.innerHTML = ""; grid.hidden = true; }
+    var videoLayout = $("ripz-live-video-layout");
+    if (videoLayout) videoLayout.classList.remove("ripz-live-video-layout--split");
   }
 
   async function ensureGuestSubscription(streamId) {
@@ -1122,6 +1124,8 @@
       if (!grid) { pc.close(); return; }
       grid.innerHTML = '<div class="ripz-guest-video-card"><video id="ripz-guest-remote-video" autoplay playsinline></video><span>Guest on camera</span></div>';
       grid.hidden = false;
+      var videoLayout = $("ripz-live-video-layout");
+      if (videoLayout) videoLayout.classList.add("ripz-live-video-layout--split");
       var remoteVideo = $("ripz-guest-remote-video");
       remoteVideo.srcObject = remote;
       pc.addEventListener("track", function(event) {
