@@ -143,6 +143,12 @@
     .ripz-guest-video-card{position:relative;min-width:0;min-height:0;height:100%;overflow:hidden;border:0;border-left:1px solid #91a7ca;background:#07142e}
     .ripz-guest-video-card video{display:block;width:100%;height:100%;min-height:0;aspect-ratio:auto;object-fit:cover;background:#07142e}
     .ripz-guest-video-card span{position:absolute;left:8px;bottom:8px;z-index:3;padding:5px 8px;border:1px solid #ffffff2b;border-radius:6px;color:#fff;font-size:.72rem;font-weight:800;background:#07142edb;pointer-events:none}
+    .ripz-video-fullscreen{position:absolute;z-index:10;top:8px;right:8px;min-height:36px;padding:7px 10px;border:1px solid #ffffff50;border-radius:8px;background:#07142ee8;color:#fff;font:800 .78rem/1.2 Nunito,system-ui,sans-serif;cursor:pointer}
+    .ripz-live-video-layout:fullscreen{width:100vw;height:100dvh;max-width:none;aspect-ratio:auto;border:0;border-radius:0;background:#030812}
+    .ripz-live-video-layout:fullscreen .ripz-stage-video-tile,.ripz-live-video-layout:fullscreen .ripz-guest-video-grid{height:100%;min-height:0}
+    .ripz-live-video-layout:fullscreen .ripz-stage-video-tile .ripz-stage-video,.ripz-live-video-layout:fullscreen .ripz-guest-video-card video{object-fit:contain}
+    .ripz-live-video-layout.ripz-fullscreen-fallback{position:fixed!important;z-index:99999!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;aspect-ratio:auto!important;border:0!important;border-radius:0!important}
+    .ripz-live-video-layout.ripz-fullscreen-fallback .ripz-stage-video-tile .ripz-stage-video,.ripz-live-video-layout.ripz-fullscreen-fallback .ripz-guest-video-card video{object-fit:contain}
     #ripz-guest-local-preview{display:block;width:min(100%,260px);aspect-ratio:16/9;margin-top:10px;border-radius:10px;background:#07142e;object-fit:cover}
     #ripz-guest-local-preview[hidden]{display:none!important}
     .ripz-guest-join{margin-top:14px;padding:14px;border:1px solid #3a5071;border-radius:12px;background:#0a1730}
@@ -241,10 +247,11 @@
               <div id="ripz-stage-placeholder" class="ripz-stage-placeholder"><span style="font-size:2.3rem" aria-hidden="true">🎥</span><strong>No stream selected</strong><span>Choose a live session above to tune in.</span></div>
               <div id="ripz-live-video-layout" class="ripz-live-video-layout">
                 <div class="ripz-stage-video-tile">
-                  <video id="ripz-watch-video" class="ripz-stage-video" autoplay playsinline controls hidden></video>
+                  <video id="ripz-watch-video" class="ripz-stage-video" autoplay playsinline hidden></video>
                   <span class="ripz-video-tile-label">Host stream</span>
                 </div>
                 <div id="ripz-guest-video-grid" class="ripz-guest-video-grid" hidden aria-label="Guest video feed"></div>
+                <button id="ripz-video-fullscreen" class="ripz-video-fullscreen" type="button" aria-label="View host and guest feeds full screen">⛶ Full screen</button>
               </div>
               <div id="ripz-viewer-giveaway-overlay" class="ripz-viewer-giveaway-overlay" hidden aria-live="polite"></div>
               <iframe id="ripz-replay-frame" class="ripz-replay-frame" title="Ripz replay" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen hidden></iframe>
@@ -289,6 +296,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>
-  <script src="/js/ui/ripz.js?v=20261028-ripz-desktop-split-hide-preview-v2"></script>
+  <script src="/js/ui/ripz.js?v=20261028-ripz-shared-fullscreen-v1"></script>
 </body>
 </html>
