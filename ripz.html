@@ -24,6 +24,13 @@
     .ripz-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border:1px solid #385174;border-radius:999px;background:#0a1830;color:#dce9ff;font-size:.8rem;font-weight:900}
     .ripz-pill--gold{border-color:#796a2c;background:#322b13;color:#ffe18b}
     .ripz-layout{display:grid;grid-template-columns:minmax(270px,340px) minmax(0,1fr);gap:20px;margin-top:20px;align-items:start}
+    .ripz-landing-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+    .ripz-landing-section{margin-top:22px}
+    .ripz-landing-section .ripz-panel{height:100%}
+    .ripz-studio-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 0 0}
+    .ripz-studio-top h2{margin:0;font:400 1.8rem/1.1 var(--font-display,Bangers,Impact,sans-serif)}
+    .ripz-replay-frame{display:block;width:100%;aspect-ratio:16/9;border:1px solid #263f64;border-radius:11px;background:#030710}
+    .ripz-host-video{display:none!important}
     .ripz-panel{min-width:0;border:1px solid #263e63;border-radius:17px;background:#0c1830;box-shadow:0 14px 36px #0002}
     .ripz-panel-head{padding:17px 19px;border-bottom:1px solid #253753}
     .ripz-panel-head h2{margin:0;color:#f7faff;font:400 1.55rem/1.1 var(--font-display,Bangers,Impact,sans-serif);letter-spacing:.02em}
@@ -147,13 +154,26 @@
       <div class="ripz-hero-art" aria-hidden="true">🎴</div>
     </section>
 
+    <section id="ripz-landing" class="ripz-landing">
+      <div class="ripz-landing-actions"><button id="ripz-setup-stream" class="ripz-button" type="button">＋ Set up stream</button><span class="ripz-pill">Watch live and past streams</span></div>
+      <section class="ripz-landing-section ripz-panel">
+        <div class="ripz-panel-head"><h2>Live streams</h2><p>Jump into a live pack opening and join the chat.</p></div>
+        <div class="ripz-panel-body"><p id="ripz-landing-live-status" class="ripz-status" role="status" aria-live="polite">Loading live streams…</p><div id="ripz-landing-live-grid" class="ripz-live-grid"></div></div>
+      </section>
+      <section class="ripz-landing-section ripz-panel">
+        <div class="ripz-panel-head"><h2>Past streams</h2><p>Replay previous rips and collector sessions.</p></div>
+        <div class="ripz-panel-body"><p id="ripz-past-status" class="ripz-status" role="status" aria-live="polite">Loading replays…</p><div id="ripz-past-grid" class="ripz-live-grid"></div></div>
+      </section>
+    </section>
     <section id="ripz-signed-out" class="ripz-gate" hidden>
       <h2>Sign in to enter Ripz</h2>
       <p>Watch live pack openings, join the chat, or host your own rip session with an active Collector+ membership.</p>
       <div class="ripz-gate-actions"><a class="ripz-button" href="/account.html">Sign in / Create account</a><a class="ripz-button ripz-button--secondary" href="/">Back to PokePrizePool</a></div>
     </section>
 
-    <div id="ripz-content" class="ripz-layout" hidden>
+    <div id="ripz-content" hidden>
+      <div class="ripz-studio-top"><h2 id="ripz-studio-heading">Stream studio</h2><button id="ripz-back-to-ripz" class="ripz-button ripz-button--secondary" type="button">← Back to Ripz</button></div>
+      <div class="ripz-layout">
       <aside class="ripz-panel">
         <div class="ripz-panel-head">
           <h2>Host a Rip</h2>
@@ -165,7 +185,7 @@
       </aside>
 
       <div class="ripz-main-stack">
-        <section class="ripz-panel">
+        <section id="ripz-live-panel" class="ripz-panel">
           <div class="ripz-panel-head">
             <h2>Live right now</h2>
             <p>Choose a live rip to watch and join the stream chat.</p>
@@ -188,6 +208,7 @@
               <p id="ripz-viewer-count" class="ripz-viewer-count" aria-live="polite" hidden>0 watching</p>
               <div id="ripz-stage-placeholder" class="ripz-stage-placeholder"><span style="font-size:2.3rem" aria-hidden="true">🎥</span><strong>No stream selected</strong><span>Choose a live session above to tune in.</span></div>
               <video id="ripz-watch-video" class="ripz-stage-video" autoplay playsinline controls hidden></video>
+              <iframe id="ripz-replay-frame" class="ripz-replay-frame" title="Ripz replay" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen hidden></iframe>
               <p id="ripz-playback-status" class="ripz-status" role="status" aria-live="polite"></p>
             </div>
             <aside class="ripz-chat">
@@ -201,6 +222,7 @@
           </div>
         </section>
       </div>
+    </div>
     </div>
     <div id="ripz-host-dock" class="ripz-host-dock" hidden aria-label="Live stream controls">
       <span class="ripz-host-dock__live"><span class="ripz-live-dot"></span> YOU’RE LIVE</span>
@@ -216,6 +238,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261026-logout-cache-fix-v4"></script>
-  <script src="/js/ui/ripz.js?v=20261028-ripz-giveaway-wheel"></script>
+  <script src="/js/ui/ripz.js?v=20261028-ripz-studio-landing-v1"></script>
 </body>
 </html>
