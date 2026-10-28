@@ -269,15 +269,7 @@ body > section:not(.gmeter) { background-color: transparent; }
   </div>
 </section>
 
-<section class="rules" id="rules">
-  <div class="wrap">
-    <div class="sec-h"><div><p class="eyebrow">Transparency</p><h2>Rules &amp; fairness</h2></div></div>
-    <div class="card" style="padding:26px">
-      <ul id="rulesList"></ul>
-      <p style="margin-top:16px"><a class="btn" id="rulesLink" href="#">Read the official giveaway rules</a></p>
-    </div>
-  </div>
-</section>
+
 
 <footer><div class="wrap">PokePrizePool is an independent collector community and is not sponsored, endorsed, or administered by The Pokémon Company.</div></footer>
 
@@ -532,10 +524,10 @@ function renderGrid() {
 }
 
 function renderStatic() {
-  const rl = $('#rulesLink'); if (safeUrl(C.rulesUrl)) rl.href = C.rulesUrl; else rl.hidden = true;
+  const rl = $('#rulesLink'); if (rl) { if (safeUrl(C.rulesUrl)) rl.href = C.rulesUrl; else rl.hidden = true; }
   $('#benefits').innerHTML = ['Real-time Pokémon TCG restock alerts', 'In-store and online product updates', 'Store checks with photos, locations, and quantities', 'Collector community access', 'Vendor directory and collector resources', 'Event and release tracking'].map(t => `<li>${t}</li>`).join('');
   const shown = state.all.filter(g => g.rules || g.eligibility).slice(0, 1)[0];
-  $('#rulesList').innerHTML = shown ? [shown.eligibility && `<li><strong>Eligibility:</strong> ${esc(shown.eligibility)}</li>`, shown.rules && `<li><strong>Rules:</strong> ${esc(shown.rules)}</li>`].filter(Boolean).join('') : '<li>Each giveaway lists its own start trigger, deadline, eligibility, and rules. Open a giveaway to read them.</li>';
+  const rulesList = $('#rulesList'); if (rulesList) rulesList.innerHTML = shown ? [shown.eligibility && `<li><strong>Eligibility:</strong> ${esc(shown.eligibility)}</li>`, shown.rules && `<li><strong>Rules:</strong> ${esc(shown.rules)}</li>`].filter(Boolean).join('') : '<li>Each giveaway lists its own start trigger, deadline, eligibility, and rules. Open a giveaway to read them.</li>';
 }
 
 /* ---------- modal ---------- */
