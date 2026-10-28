@@ -21,7 +21,8 @@
     recordingTimer: null,
     recordingBusy: false,
     chatTimer: null,
-    listTimer: null
+    listTimer: null,
+    viewerTimer: null
   };
 
   function esc(value) {
@@ -119,7 +120,7 @@
       var statusText = state.isPublishing ? "Your camera is connected and you are live." :
         (state.myStream.status === "live" ? "This stream session is open. Preview your camera and microphone before reconnecting." : "Your stream room is ready. Preview your camera and microphone before going live.");
       host.innerHTML = '<div class="ripz-host-content">' +
-        '<div class="ripz-host-card ripz-host-span"><div class="ripz-live-badge">Your session</div><h3 style="margin-top:10px">' + esc(state.myStream.title) + '</h3><p>' + esc(state.myStream.product_name) + '</p><p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite" style="margin-top:10px">' + esc(statusText) + '</p></div>' +
+        '<div class="ripz-host-card ripz-host-span"><div class="ripz-live-badge">Your session</div><h3 style="margin-top:10px">' + esc(state.myStream.title) + '</h3><p>' + esc(state.myStream.product_name) + '</p>' + (state.myStream.status === "live" ? '<p id="ripz-host-viewer-count" class="ripz-viewer-count" aria-live="polite">' + Number(state.myStream.viewer_count || 0) + ' watching</p>' : '') + '<p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite" style="margin-top:10px">' + esc(statusText) + '</p></div>' +
         cameraSetupMarkup(true) +
         '<div class="ripz-camera-actions ripz-host-span">' +
           '<button id="ripz-host-connect" class="ripz-button" type="button" ' + (state.isPublishing || !state.media ? "disabled" : "") + '>' + (state.myStream.status === "live" ? "Reconnect &amp; go live" : "Go live") + '</button>' +
@@ -162,6 +163,7 @@
         '<h3>' + esc(stream.title) + '</h3>' +
         '<p>Hosted by <strong>@' + esc(stream.host) + '</strong></p>' +
         '<p>' + esc(stream.product_name || "Pack opening") + '</p>' +
+        '<p class="ripz-viewer-count">' + Number(stream.viewer_count || 0) + ' watching</p>' +
         '<button class="ripz-button ripz-button--secondary" type="button" data-ripz-watch="' + esc(stream.id) + '">Watch this rip</button>' +
         '</article>';
     }).join("");
@@ -215,6 +217,13 @@
     try {
       var data = await api("GET");
       state.liveStreams = data.live_streams || [];
+      if (data.my_stream) state.myStream = data.my_stream;
+      var hostViewerCount = $("ripz-host-viewer-count");
+      if (hostViewerCount && state.myStream) hostViewerCount.textContent = Number(state.myStream.viewer_count || 0) + " watching";
+      if (state.selectedStream) {
+        var updatedSelected = state.liveStreams.find(function (item) { return item.id === state.selectedStream.id; });
+        if (updatedSelected) state.selectedStream.viewer_count = Number(updatedSelected.viewer_count || 0);
+      }
       renderLiveList();
       if (state.selectedStream && !state.liveStreams.some(function (item) { return item.id === state.selectedStream.id; })) {
         await closePlayback();
@@ -649,6 +658,16 @@
   }
 
   async function closePlayback() {
+    var previousStreamId = state.playbackStreamId;
+    if (state.viewerTimer) { clearInterval(state.viewerTimer); state.viewerTimer = null; }
+    if (previousStreamId) {
+      state.playbackStreamId = "";
+      api("POST", { action: "viewer_leave", stream_id: previousStreamId }).catch(function () {});
+    }
+    if (state.playbackStreamId && navigator.sendBeacon) {
+      try { navigator.sendBeacon("/api/ripz", new Blob([JSON.stringify({ action: "viewer_leave", stream_id: state.playbackStreamId })], { type: "application/json" })); } catch (_) {}
+    }
+    if (state.viewerTimer) clearInterval(state.viewerTimer);
     if (state.playback) {
       var active = state.playback;
       state.playback = null;
@@ -666,6 +685,8 @@
     state.selectedStream = stream;
     $("ripz-stage-title").textContent = stream.title;
     $("ripz-stage-subtitle").textContent = "Hosted by @" + stream.host + " · " + (stream.product_name || "Pack opening");
+    var viewerCountNode = $("ripz-viewer-count");
+    if (viewerCountNode) { viewerCountNode.hidden = false; viewerCountNode.textContent = Number(stream.viewer_count || 0) + " watching"; }
     $("ripz-stage-placeholder").hidden = true;
     $("ripz-watch-video").hidden = false;
     $("ripz-watch-video").srcObject = null;
@@ -685,6 +706,9 @@
       var sessionUrl = await negotiate(pc, stream.playback_url, "watch");
       state.playback = { pc: pc, sessionUrl: sessionUrl };
       state.playbackStreamId = stream.id;
+      await sendViewerHeartbeat(stream.id);
+      if (state.viewerTimer) clearInterval(state.viewerTimer);
+      state.viewerTimer = window.setInterval(function () { sendViewerHeartbeat(stream.id); }, 15000);
       setStatus("ripz-playback-status", "You’re watching @" + stream.host + " live.");
       var caption = $("ripz-chat-caption");
       if (caption) caption.textContent = "Chatting in: " + stream.title;
@@ -698,11 +722,28 @@
     }
   }
 
+  async function sendViewerHeartbeat(streamId) {
+    if (!streamId || !state.selectedStream || state.selectedStream.id !== streamId || !state.playback) return;
+    try {
+      var result = await api("POST", { action: "viewer_heartbeat", stream_id: streamId });
+      if (state.selectedStream && state.selectedStream.id === streamId) {
+        state.selectedStream.viewer_count = Number(result.viewer_count || 0);
+        var node = $("ripz-viewer-count");
+        if (node) node.textContent = state.selectedStream.viewer_count + " watching";
+      }
+    } catch (_) {}
+  }
+
   async function loadChat(streamId) {
     if (!streamId || !state.selectedStream || state.selectedStream.id !== streamId) return;
     try {
       var data = await api("GET", undefined, { stream_id: streamId });
       if (!state.selectedStream || state.selectedStream.id !== streamId) return;
+      if (typeof data.viewer_count === "number") {
+        state.selectedStream.viewer_count = data.viewer_count;
+        var viewerNode = $("ripz-viewer-count");
+        if (viewerNode) viewerNode.textContent = data.viewer_count + " watching";
+      }
       var messages = data.messages || [];
       var list = $("ripz-chat-messages");
       var nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 90;
