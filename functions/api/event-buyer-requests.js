@@ -44,7 +44,7 @@ async function load(env,eventId,user){
   out.push({...r,is_mine:Number(user?.id||0)===Number(r.buyer_account_id),responses:responses.results||[]});
  }
  const myVendor=user&&vendorPlus(user)?await env.DB.prepare("SELECT booth_location FROM event_vending_registrations WHERE event_id=? AND account_id=? AND status='active' LIMIT 1").bind(eventId,user.id).first():null;
- return {requests:out,can_vendor:!!myVendor||!!(user&&Number(user.is_admin||0)===1),vendor_booth_location:myVendor?.booth_location||'',can_post:!!user,user_id:Number(user?.id||0)};
+ return {requests:out,can_vendor:!!myVendor||!!(user&&Number(user.is_admin||0)===1),vendor_booth_location:myVendor?.booth_location||'',can_post:!!user,user_id:Number(user?.id||0),is_vendor_plus:vendorPlus(user),signed_in:!!user};
 }
 export async function onRequestGet({request,env}){
  if(!env.DB)return json({ok:false,error:'database_not_configured'},500);
