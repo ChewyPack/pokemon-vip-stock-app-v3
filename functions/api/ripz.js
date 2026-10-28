@@ -356,14 +356,20 @@ export async function onRequestPost({ request, env }) {
       if (!stream || Number(stream.account_id) !== Number(account.id) || stream.status !== "live") {
         return json({ ok: false, error: "not_live_stream_owner", message: "Only the host of their own live stream can load giveaway entries." }, 403);
       }
+      const giveaway = await env.DB.prepare("SELECT eligibility FROM ripz_giveaways WHERE stream_id = ? LIMIT 1").bind(streamId).first();
+      const eligibility = giveaway?.eligibility || "everyone";
       const { results: viewers = [] } = await env.DB.prepare(`
         SELECT DISTINCT v.account_id, COALESCE(NULLIF(p.username, ''), NULLIF(a.display_name, ''), 'Collector') AS username
         FROM ripz_viewers v
         JOIN accounts a ON a.id = v.account_id
         LEFT JOIN collector_profiles p ON p.account_id = a.id
         WHERE v.stream_id = ? AND v.account_id <> ? AND unixepoch(v.last_seen_at) >= unixepoch() - 45
+          AND (? <> 'collector_plus' OR (
+            lower(COALESCE(a.membership_status, '')) IN ('active','trialing')
+            AND lower(replace(replace(COALESCE(a.membership_entitlement_tier, a.membership_tier, ''), '_', ' '), '-', ' ')) IN ('collector+', 'collector plus')
+          ))
         ORDER BY username COLLATE NOCASE LIMIT 500
-      `).bind(streamId, account.id).all();
+      `).bind(streamId, account.id, eligibility).all();
       return json({ ok: true, viewers: viewers.map(viewer => ({ username: clean(viewer.username, 60) })) });
     }
 
