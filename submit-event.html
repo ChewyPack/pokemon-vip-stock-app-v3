@@ -96,7 +96,7 @@ function hideAddressSuggestions(){
 function addressLabel(feature){
  var p=feature.properties||{}, street=[p.housenumber,p.street].filter(Boolean).join(' ');
  var locality=p.city||p.town||p.village||p.municipality||p.county||'';
- return [street,locality,p.state,p.postcode].filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', ')||p.name||'Address result';
+ return [p.name&&p.name!==street?p.name:'',street,locality,p.state,p.postcode].filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', ')||'Address result';
 }
 function renderAddressSuggestions(features){
  addressResults=features||[];addressSuggestions.replaceChildren();addressActiveIndex=-1;
@@ -124,10 +124,16 @@ addressInput.addEventListener('input',function(){
  if(addressController){addressController.abort();addressController=null;}
  if(query.length<3){lastAddressQuery='';hideAddressSuggestions();return;}
  addressTimer=setTimeout(async function(){
-  if(query===lastAddressQuery)return;lastAddressQuery=query;
+  var stateOption=stateInput.options[stateInput.selectedIndex];
+  var stateText=stateInput.value&&stateOption?stateOption.textContent:'';
+  var cityText=cityInput.value.trim();
+  var context=[cityText,stateText].filter(function(v){return v&&v!=='Choose state'&&v!=='Online / nationwide'&&v!=='Other';}).join(', ');
+  var searchQuery=query;
+  if(context&&!query.toLowerCase().includes(context.toLowerCase()))searchQuery=query+', '+context;
+  if(searchQuery===lastAddressQuery)return;lastAddressQuery=searchQuery;
   addressController=new AbortController();
   try{
-   var response=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(query)+'&limit=6&lang=en&lat=39.5&lon=-98.35&zoom=5',{signal:addressController.signal,headers:{'Accept':'application/json'}});
+   var response=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(searchQuery)+'&limit=10&lang=en',{signal:addressController.signal,headers:{'Accept':'application/json'}});
    if(!response.ok)throw new Error('Address lookup unavailable');
    var result=await response.json();
    if(addressInput.value.trim()!==query)return;
