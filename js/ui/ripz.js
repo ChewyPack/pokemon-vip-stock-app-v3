@@ -71,7 +71,13 @@
         not_live_stream_owner: "Giveaway viewer import is only available for your own live stream.",
         stream_provider_error: "The live video service could not start a stream. Please try again later.",
         stream_provider_unavailable: "The live video provider did not return the required browser streaming links.",
-        stream_not_live: "That stream is no longer live."
+        stream_not_live: "That stream is no longer live.",
+        realtime_not_configured: "RIPZ guest video is not configured yet. Please contact support.",
+        guest_not_approved: "Wait for the host to approve your request before turning on your camera.",
+        guest_session_not_authorized: "Your guest session is no longer authorized. Request to join again.",
+        realtime_session_missing: "Cloudflare Realtime could not create a guest connection.",
+        realtime_answer_missing: "Cloudflare Realtime did not return a valid guest connection answer.",
+        realtime_offer_missing: "Cloudflare Realtime did not return a valid viewer connection offer."
       })[data.error] || "The Ripz request could not be completed.";
       var error = new Error(message);
       error.code = data.error || "request_failed";
