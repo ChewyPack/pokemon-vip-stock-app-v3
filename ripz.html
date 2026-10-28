@@ -114,6 +114,20 @@
     .ripz-giveaway button:disabled{opacity:.5;cursor:not-allowed}
     @media(max-width:520px){.ripz-giveaway{padding:13px}.ripz-giveaway__manual{display:grid}.ripz-giveaway__manual input{width:100%;box-sizing:border-box}.ripz-giveaway__actions .ripz-button{flex:1}}
 
+  
+    .ripz-host-dock[hidden],.ripz-giveaway-modal[hidden]{display:none!important}
+    .ripz-host-dock{position:fixed;z-index:1200;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);padding:10px 12px;border:1px solid rgba(245,196,81,.5);border-radius:18px;background:rgba(5,16,39,.96);box-shadow:0 12px 38px rgba(0,0,0,.4);backdrop-filter:blur(14px)}
+    .ripz-host-dock__live{display:flex;align-items:center;gap:7px;color:#f5c451;font-weight:850;font-size:.76rem;letter-spacing:.07em;padding:0 4px;white-space:nowrap}
+    .ripz-host-dock .ripz-button{white-space:nowrap}
+    .ripz-giveaway-modal{position:fixed;z-index:1300;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,8,22,.82);backdrop-filter:blur(8px)}
+    .ripz-giveaway-modal__panel{position:relative;width:min(760px,100%);max-height:calc(100dvh - 32px);overflow:auto;border:1px solid rgba(145,171,213,.3);border-radius:22px;background:#091a3a;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.5);padding:18px}
+    .ripz-giveaway-modal__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .ripz-giveaway-modal__head h2{font-size:1.35rem;margin:5px 0 0}
+    .ripz-giveaway-modal__close{width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:1.8rem;line-height:1;cursor:pointer}
+    .ripz-giveaway-modal .ripz-giveaway{border:0;padding:0;margin:0;background:transparent}
+    body:has(.ripz-host-dock:not([hidden])){padding-bottom:90px}
+    @media(max-width:520px){.ripz-host-dock{gap:7px;padding:8px 9px;bottom:max(8px,env(safe-area-inset-bottom));width:calc(100vw - 16px);box-sizing:border-box}.ripz-host-dock .ripz-button{padding:10px 12px;font-size:.85rem;flex:1}.ripz-host-dock__live{font-size:.68rem}.ripz-giveaway-modal{padding:8px}.ripz-giveaway-modal__panel{max-height:calc(100dvh - 16px);padding:13px;border-radius:16px}}
+
   </style>
 </head>
 <body>
@@ -186,6 +200,17 @@
             </aside>
           </div>
         </section>
+      </div>
+    </div>
+    <div id="ripz-host-dock" class="ripz-host-dock" hidden aria-label="Live stream controls">
+      <span class="ripz-host-dock__live"><span class="ripz-live-dot"></span> YOU’RE LIVE</span>
+      <button id="ripz-host-giveaway" class="ripz-button" type="button" aria-expanded="false" aria-controls="ripz-giveaway-modal"><span aria-hidden="true">🎡</span> Giveaway</button>
+      <button id="ripz-host-dock-end" class="ripz-button ripz-button--danger" type="button">End stream</button>
+    </div>
+    <div id="ripz-giveaway-modal" class="ripz-giveaway-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ripz-giveaway-modal-title">
+      <div class="ripz-giveaway-modal__panel">
+        <div class="ripz-giveaway-modal__head"><div><span class="ripz-kicker">RIPZ LIVE CONTROLS</span><h2 id="ripz-giveaway-modal-title">Giveaway control room</h2></div><button id="ripz-giveaway-close" class="ripz-giveaway-modal__close" type="button" aria-label="Close giveaway controls">×</button></div>
+        <div id="ripz-giveaway-modal-content"></div>
       </div>
     </div>
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
