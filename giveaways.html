@@ -250,18 +250,8 @@ dialog[open]{animation:pop .25s ease}
       <p class="muted" style="margin-top:14px;max-width:560px">Get closer to the products you want with collector-focused restock intelligence, community access, and exclusive member benefits. VIP does not guarantee a prize; public giveaways stay open to everyone unless marked VIP-only.</p>
       <ul class="ben" id="benefits"></ul>
     </div>
-    <div>
-      <div class="card tier">
-        <span class="badge b-vip" style="margin:0;align-self:start">COLLECTOR+ / VIP</span>
-        <div><span class="price">$5</span><small> / month</small></div>
-        <div><span class="price">$50</span><small> / year</small></div>
-        <a class="btn pri" id="vipCta" href="#">Become a VIP Member</a>
-      </div>
-      <div class="card tier soon">
-        <span class="badge b-ended" style="align-self:start">VENDOR+</span>
-        <strong>COMING SOON</strong>
-        <button class="btn" disabled>Not available yet</button>
-      </div>
+    <div class="cta" style="align-self:center;justify-self:start">
+      <a class="btn pri" href="/account.html?mode=register&amp;plan=collector">Subscribe</a>
     </div>
   </div>
 </section>
@@ -529,8 +519,6 @@ function renderGrid() {
 }
 
 function renderStatic() {
-  const a = $('#vipCta');
-  if (safeUrl(C.checkoutUrl)) a.href = C.checkoutUrl; else { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); a.title = 'Checkout link not configured'; a.onclick = e => e.preventDefault(); }
   const rl = $('#rulesLink'); if (safeUrl(C.rulesUrl)) rl.href = C.rulesUrl; else rl.hidden = true;
   $('#benefits').innerHTML = ['Real-time Pokémon TCG restock alerts', 'In-store and online product updates', 'Store checks with photos, locations, and quantities', 'Collector community access', 'Vendor directory and collector resources', 'Event and release tracking'].map(t => `<li>${t}</li>`).join('');
   const shown = state.all.filter(g => g.rules || g.eligibility).slice(0, 1)[0];
