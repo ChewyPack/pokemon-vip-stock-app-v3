@@ -130,6 +130,12 @@
     @media(max-width:520px){.ripz-giveaway{padding:13px}.ripz-giveaway__manual{display:grid}.ripz-giveaway__manual input{width:100%;box-sizing:border-box}.ripz-giveaway__actions .ripz-button{flex:1}}
 
   
+    .ripz-guest-video-grid{position:absolute;inset:auto 12px 12px auto;z-index:4;display:grid;grid-template-columns:minmax(130px,28%);gap:8px;max-width:44%;pointer-events:none}
+    .ripz-guest-video-card{overflow:hidden;border:1px solid #8da7ce;border-radius:12px;background:#07142e;box-shadow:0 8px 24px #0008}
+    .ripz-guest-video-card video{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#07142e}
+    .ripz-guest-video-card span{display:block;padding:5px 8px;color:#fff;font-size:.78rem;font-weight:700}
+    #ripz-guest-local-preview{display:block;width:min(100%,260px);aspect-ratio:16/9;margin-top:10px;border-radius:10px;background:#07142e;object-fit:cover}
+    #ripz-guest-local-preview[hidden]{display:none!important}
     .ripz-guest-join{margin-top:14px;padding:14px;border:1px solid #3a5071;border-radius:12px;background:#0a1730}
     .ripz-guest-join h3{margin:0 0 6px;color:#fff;font-size:1rem}
     .ripz-guest-join p{margin:7px 0;color:#b9c9e3;font-size:.86rem;line-height:1.5}
@@ -225,12 +231,16 @@
               <p id="ripz-viewer-count" class="ripz-viewer-count" aria-live="polite" hidden>0 watching</p>
               <div id="ripz-stage-placeholder" class="ripz-stage-placeholder"><span style="font-size:2.3rem" aria-hidden="true">🎥</span><strong>No stream selected</strong><span>Choose a live session above to tune in.</span></div>
               <video id="ripz-watch-video" class="ripz-stage-video" autoplay playsinline controls hidden></video>
+              <div id="ripz-guest-video-grid" class="ripz-guest-video-grid" hidden aria-label="Guest video feed"></div>
               <div id="ripz-viewer-giveaway-overlay" class="ripz-viewer-giveaway-overlay" hidden aria-live="polite"></div>
               <iframe id="ripz-replay-frame" class="ripz-replay-frame" title="Ripz replay" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen hidden></iframe>
               <div id="ripz-guest-join-panel" class="ripz-guest-join" hidden>
                 <h3>Join the live rip</h3>
                 <p>Request permission to join on camera. The host must approve you.</p>
                 <button id="ripz-guest-request-button" class="ripz-button" type="button">Request to join</button>
+                <button id="ripz-guest-start-camera" class="ripz-button ripz-button--secondary" type="button" hidden>Start guest camera</button>
+                <button id="ripz-guest-stop-camera" class="ripz-button ripz-button--secondary" type="button" hidden>Stop guest camera</button>
+                <video id="ripz-guest-local-preview" autoplay muted playsinline hidden></video>
                 <p id="ripz-guest-request-status" class="ripz-status" role="status" aria-live="polite"></p>
               </div>
               <p id="ripz-playback-status" class="ripz-status" role="status" aria-live="polite"></p>
