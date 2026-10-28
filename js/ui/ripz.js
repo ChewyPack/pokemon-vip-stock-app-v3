@@ -79,8 +79,8 @@
     var audio = state.media && state.media.getAudioTracks()[0];
     var video = state.media && state.media.getVideoTracks()[0];
     var mute = $("ripz-host-mute"), camera = $("ripz-host-camera"), pause = $("ripz-host-pause");
-    if (mute) { mute.disabled = !audio; mute.textContent = audio && !audio.enabled ? "Unmute mic" : "Mute mic"; mute.setAttribute("aria-pressed", String(!!(audio && !audio.enabled))); }
-    if (camera) { camera.disabled = !video; camera.textContent = video && !video.enabled ? "Turn camera on" : "Turn camera off"; camera.setAttribute("aria-pressed", String(!!(video && !video.enabled))); }
+    if (mute) { mute.disabled = !audio || state.isPaused; mute.textContent = audio && !audio.enabled ? "Unmute mic" : "Mute mic"; mute.setAttribute("aria-pressed", String(!!(audio && !audio.enabled))); }
+    if (camera) { camera.disabled = !video || state.isPaused; camera.textContent = video && !video.enabled ? "Turn camera on" : "Turn camera off"; camera.setAttribute("aria-pressed", String(!!(video && !video.enabled))); }
     if (pause) { pause.disabled = !audio || !video; pause.textContent = state.isPaused ? "Resume stream" : "Pause stream"; pause.setAttribute("aria-pressed", String(state.isPaused)); }
     var liveLabel = $("ripz-host-live-label");
     if (liveLabel) liveLabel.textContent = state.isPaused ? "STREAM PAUSED" : (state.isPublishing ? "YOU’RE LIVE" : "STREAM SETUP");
