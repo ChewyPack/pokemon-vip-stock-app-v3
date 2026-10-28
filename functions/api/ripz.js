@@ -156,11 +156,14 @@ function realtimeConfigured(env) {
   return Boolean(env.REALTIME_SFU_APP_ID && env.REALTIME_SFU_BEARER_TOKEN);
 }
 async function realtimeApi(env, method, path, body) {
+  const bearerToken = String(env.REALTIME_SFU_BEARER_TOKEN || "").trim();
+  if (!bearerToken) throw new Error("Cloudflare Realtime bearer token is missing. Check the production Pages secret.");
+  if (/[\\r\\n]/.test(bearerToken)) throw new Error("Cloudflare Realtime bearer token contains a line break. Re-save the production Pages secret as one line.");
   const response = await fetch("https://rtc.live.cloudflare.com/v1/apps/" +
-    encodeURIComponent(env.REALTIME_SFU_APP_ID) + path, {
+    encodeURIComponent(String(env.REALTIME_SFU_APP_ID || "").trim()) + path, {
       method,
       headers: {
-        "Authorization": "Bearer " + env.REALTIME_SFU_BEARER_TOKEN,
+        "Authorization": "Bearer " + bearerToken,
         "Content-Type": "application/json"
       },
       body: body === undefined ? undefined : JSON.stringify(body)
