@@ -1200,6 +1200,8 @@
       if (startButton) startButton.hidden = true;
       var stopButton = $("ripz-guest-stop-camera");
       if (stopButton) stopButton.hidden = false;
+      var localPreview = $("ripz-guest-local-preview");
+      if (localPreview) { localPreview.pause(); localPreview.srcObject = null; localPreview.hidden = true; }
       setStatus("ripz-guest-request-status", "Your camera and microphone are connected to the live rip.", false);
       await refreshGuestState(state.selectedStream.id);
     } catch (error) {
