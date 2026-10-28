@@ -1,3 +1,4 @@
+import { notifyCollector } from '../_lib/collector-notifications.js';
 const COOKIE='collector_session';
 function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});}
 function cookie(request,name){for(const part of (request.headers.get('Cookie')||'').split(';')){const p=part.trim();if(p.startsWith(name+'='))return p.slice(name.length+1);}return '';}
@@ -5,6 +6,7 @@ function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).r
 async function sha256(value){return b64(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));}
 function clean(v,max=1000){return typeof v==='string'?v.trim().slice(0,max):'';}
 function cents(v){if(v===''||v==null)return null;const n=Number(v);return Number.isFinite(n)?Math.round(n*100):NaN;}
+function moneyText(c){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(c||0)/100);}
 async function account(request,env){const token=cookie(request,COOKIE);if(!token)return null;const a=await env.DB.prepare('SELECT id,display_name,is_admin,session_expires_at,membership_status,membership_tier,membership_entitlement_tier FROM accounts WHERE session_token_hash=? LIMIT 1').bind(await sha256(token)).first();return a&&a.session_expires_at&&Number(a.session_expires_at)>Date.now()?a:null;}
 function vendorPlus(a){const tier=v=>String(v||'').trim().toLowerCase().replace(/[_-]/g,' ').replace(/\s+/g,' ');return !!a&&(Number(a.is_admin||0)===1||(['active','trialing'].includes(String(a.membership_status||'').toLowerCase())&&[a.membership_tier,a.membership_entitlement_tier].some(v=>['vendor','vendor+','vendor plus'].includes(tier(v)))));}
 async function schema(env){
@@ -88,7 +90,7 @@ export async function onRequestPost({request,env}){
   ]);
   return json({ok:true,deleted:true});
  }
- const target=await env.DB.prepare('SELECT id,event_id,buyer_account_id,status FROM event_buyer_requests WHERE id=? AND event_id=? LIMIT 1').bind(requestId,eventId).first();
+ const target=await env.DB.prepare('SELECT id,event_id,buyer_account_id,status,title FROM event_buyer_requests WHERE id=? AND event_id=? LIMIT 1').bind(requestId,eventId).first();
  if(!target)return json({ok:false,error:'request_not_found'},404);
  if(action==='close'){
   if(Number(target.buyer_account_id)!==Number(user.id)&&Number(user.is_admin||0)!==1)return json({ok:false,error:'request_owner_required'},403);
@@ -105,10 +107,12 @@ export async function onRequestPost({request,env}){
    const price=cents(d.price);if(!Number.isSafeInteger(price)||price<0||price>100000000)return json({ok:false,error:'invalid_price'},400);
    const availability=clean(d.availability,160),notes=clean(d.notes,700);
    await env.DB.prepare("INSERT INTO event_buyer_request_responses(request_id,event_id,vendor_account_id,price_cents,availability,notes) VALUES(?,?,?,?,?,?) ON CONFLICT(request_id,vendor_account_id) DO UPDATE SET price_cents=excluded.price_cents,availability=excluded.availability,notes=excluded.notes,status='available',updated_at=CURRENT_TIMESTAMP").bind(requestId,eventId,user.id,price,availability,notes).run();
+   if(Number(target.buyer_account_id)!==Number(user.id)) await notifyCollector(env,Number(target.buyer_account_id),{type:'event_buyer_request',title:'A vendor responded to your request',body:(event.title||'Your show')+': '+target.title+' — '+moneyText(price)+' per item.',url:'/show-requests.html?event_id='+eventId,data:{kind:'event_buyer_request_response',event_id:eventId,request_id:requestId,vendor_account_id:Number(user.id)}});
   }else{
    const status=clean(d.status,30);if(!['available','buyer_on_way','sold','withdrawn'].includes(status))return json({ok:false,error:'invalid_response_status'},400);
    const result=await env.DB.prepare('UPDATE event_buyer_request_responses SET status=?,updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND vendor_account_id=?').bind(status,requestId,user.id).run();
    if(!result.meta?.changes)return json({ok:false,error:'vendor_response_not_found'},404);
+   if(Number(target.buyer_account_id)!==Number(user.id)&&status!=='withdrawn') await notifyCollector(env,Number(target.buyer_account_id),{type:'event_buyer_request',title:status==='sold'?'Vendor marked your request sold':'Vendor updated your request',body:(event.title||'Your show')+': '+target.title+' — '+status.replaceAll('_',' ')+'.',url:'/show-requests.html?event_id='+eventId,data:{kind:'event_buyer_request_status',event_id:eventId,request_id:requestId,vendor_account_id:Number(user.id),status}});
   }
   return json({ok:true,saved:true,...await load(env,eventId,user)});
  }
