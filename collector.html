@@ -149,6 +149,30 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .social-empty-comments{font-size:.86rem;color:var(--muted);text-align:center;padding:10px}
 @media(max-width:640px){.cp-social-composer,.social-post{padding:12px}.cp-social-composer-row{grid-template-columns:1fr}.social-post-type{max-width:100px;overflow:hidden;text-overflow:ellipsis}}
 
+
+/* Match the News Feed composer on collector profiles. */
+.cp-social-composer.social-composer{padding:0;overflow:hidden;border:1px solid #263d60;border-radius:17px;background:linear-gradient(145deg,#0d1d35,#091629);box-shadow:0 12px 30px #06132935;color:#eef4ff}
+.cp-social-composer .composer-brand{display:flex;align-items:center;padding:13px 17px 0}
+.cp-social-composer .composer-brand img{display:block;width:42px;height:42px;object-fit:contain}
+.cp-social-composer .composer-prompt{display:block;margin:13px 17px 8px;color:#fff;font-size:1.02rem;font-weight:900}
+.cp-social-composer #profile-post-body{display:block;box-sizing:border-box;width:calc(100% - 34px);min-height:106px;margin:0 17px;padding:12px 14px;border:1px solid #344d70;border-radius:11px;background:#102541;color:#f4f7ff;font:500 .94rem/1.55 Nunito,system-ui,sans-serif;resize:vertical}
+.cp-social-composer #profile-post-body::placeholder{color:#91a5c3}
+.cp-social-composer #profile-post-body:focus{outline:2px solid #557fb4;outline-offset:1px}
+.cp-social-composer .composer-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:13px 17px 16px}
+.cp-social-composer .composer-upload-tools{display:flex;align-items:center;gap:9px;min-width:0}
+.cp-social-composer .composer-upload{position:relative;display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid #344d70;border-radius:11px;background:#142945;color:#eaf1fc;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.cp-social-composer .composer-upload:hover{background:#1a3558;border-color:#6482aa}
+.cp-social-composer .composer-upload-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#203e61;color:#ffd21f;font-size:1.15rem;font-weight:900}
+.cp-social-composer .composer-upload strong,.cp-social-composer .composer-upload small{display:block}
+.cp-social-composer .composer-upload strong{font-size:.78rem;font-weight:900}
+.cp-social-composer .composer-upload small{margin-top:1px;color:#8fa5c4;font-size:.66rem;font-weight:700}
+.cp-social-composer .composer-upload input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.cp-social-composer .composer-submit{display:flex;align-items:center;justify-content:center;gap:13px;min-width:130px;padding:11px 16px;border:0;border-radius:10px;background:#ffd21f;color:#101d32;font-weight:900;cursor:pointer}
+.cp-social-composer .composer-submit span:last-child{font-size:1.1rem}
+.cp-social-composer .social-media-preview{margin:0 17px 12px}
+.cp-social-composer .social-inline-status{margin:0 17px 14px;color:#aebed4}
+@media(max-width:640px){.cp-social-composer .composer-tools{align-items:stretch;flex-direction:column}.cp-social-composer .composer-upload-tools{display:grid;grid-template-columns:1fr 1fr}.cp-social-composer .composer-upload{padding:8px;gap:7px}.cp-social-composer .composer-upload-icon{width:29px;height:29px;flex:0 0 29px}.cp-social-composer .composer-upload strong{font-size:.74rem}.cp-social-composer .composer-upload small{font-size:.61rem}.cp-social-composer .composer-submit{width:100%}}
+
 /* Modern collector posts feed refresh. */
 #profile-content-panel>.cp-tabs{display:flex;gap:7px;padding:6px;margin:0 0 16px;border:1px solid #dce5f4;border-radius:15px;background:#f3f6fc}
 #profile-content-panel>.cp-tabs [role=tab]{flex:1;min-height:42px;border:1px solid transparent;border-radius:10px;background:transparent;color:#52627e;font-weight:900;transition:background .18s ease,color .18s ease,box-shadow .18s ease}
@@ -427,14 +451,19 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <div id="posts-tab-content" class="cp-social-tab" hidden>
 <div id="profile-social">
 <div data-profile-composer hidden>
-<form class="cp-social-composer" data-social-composer>
-<h3>Share with collectors</h3>
-<label class="cp-social-label">What’s happening in your collection?<textarea name="body" maxlength="2000" rows="3" placeholder="Share a card pull, collection update, question, or new find…"></textarea></label>
-<div class="cp-social-composer-row">
-<label class="cp-social-label">Post type<select name="post_type"><option value="status">Status</option><option value="pull">Card pull</option><option value="collection">Collection update</option><option value="trade">Trade interest</option><option value="question">Question</option><option value="event">Event</option><option value="restock">Restock sighting</option></select></label>
-<div class="cp-social-media-inputs"><label class="cp-social-label">Photos (up to 3, 5 MB each)<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple></label><label class="cp-social-label">Video (1 MP4/WebM, up to 25 MB)<input name="video" type="file" accept="video/mp4,video/webm"></label></div>
-<button class="cp-btn" type="submit">Post</button>
-</div><div class="social-media-preview" data-media-preview aria-live="polite"></div><p class="cp-status" data-composer-status role="status" aria-live="polite"></p>
+<form class="cp-social-composer social-composer" data-social-composer>
+  <div class="composer-brand"><img src="/pokeprizepool-pwa-192.png?v=4" alt="PokePrizePool logo"></div>
+  <label class="composer-prompt" for="profile-post-body">What’s happening in your collection?</label>
+  <textarea id="profile-post-body" name="body" maxlength="2000" rows="4" placeholder="Share a pull, a thought, a question, or a new find…"></textarea>
+  <div class="composer-tools">
+    <div class="composer-upload-tools">
+      <label class="composer-upload composer-photo" for="profile-post-images"><span class="composer-upload-icon">▧</span><span><strong>Add photos</strong><small>Up to 3 · 5 MB each</small></span><input id="profile-post-images" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple></label>
+      <label class="composer-upload composer-video" for="profile-post-video"><span class="composer-upload-icon">▶</span><span><strong>Add short video</strong><small>MP4/WebM · 25 MB · 90 sec max</small></span><input id="profile-post-video" name="video" type="file" accept="video/mp4,video/webm"></label>
+    </div>
+    <button class="social-primary composer-submit" type="submit"><span>Post to feed</span><span aria-hidden="true">→</span></button>
+  </div>
+  <div class="social-media-preview" data-media-preview aria-live="polite"></div>
+  <p class="social-inline-status" data-composer-status role="status" aria-live="polite"></p>
 </form>
 </div>
 <p class="cp-status" data-social-feed-status role="status" aria-live="polite">Loading posts…</p>
