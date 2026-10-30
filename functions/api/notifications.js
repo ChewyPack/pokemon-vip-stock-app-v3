@@ -121,7 +121,7 @@ export async function onRequestGet({ request, env }) {
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: false, error: 'unauthorized' }, 401);
     const url = new URL(request.url);
-    const requestedLimit = Number(url.searchParams.get('limit') || 40);
+    const requestedLimit = Number(url.searchParams.get('limit') || 100);
     const beforeId = Number(url.searchParams.get('before_id') || 0);
     const result = await getState(env.DB, account.id, {
       limit: Number.isFinite(requestedLimit) ? requestedLimit : 40,
