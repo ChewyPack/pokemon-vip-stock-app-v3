@@ -14,6 +14,7 @@
     style.id = 'social-media-layout-style';
     style.textContent = '.social-composer-row,.cp-social-composer-row{grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto!important}.social-composer-media-inputs,.cp-social-media-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}.social-media-preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.social-media-preview:empty{display:none}.social-media-preview__item{min-width:0;display:grid;gap:4px;padding:6px;border:1px solid #dbe4f4;border-radius:9px;background:#f5f7fc;color:#31517f;font-size:.75rem;font-weight:800;overflow:hidden}.social-media-preview__item img,.social-media-preview__item video{display:block;width:100%;height:88px;object-fit:contain;background:#eaf1ff;border-radius:5px}.social-media-preview__note{grid-column:1/-1;margin:0;color:#a32222;font-size:.82rem;font-weight:800}.social-post-media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.social-post-media-grid.is-single{grid-template-columns:minmax(0,1fr)}.social-post-media-item{min-width:0;overflow:hidden;border-radius:11px;background:#f3f6fc}.social-post-media-item .social-post-image,.social-post-video{display:block;width:100%;height:100%;max-height:560px;object-fit:contain;background:#f3f6fc;border-radius:11px;margin:0}.social-post-video{aspect-ratio:16/9;min-height:150px}.social-stat-button{border:0;background:transparent;color:#607096;font:inherit;font-size:.82rem;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}.social-stat-button:hover,.social-stat-button:focus-visible{color:#0b2a6b}.social-view-count{color:#607096;font-size:.82rem}.social-likers-thread{margin:8px 0;padding:11px;border:1px solid #dbe4f4;border-radius:10px;background:#f7faff}.social-likers-thread[hidden]{display:none!important}.social-likers-list{display:grid;gap:8px}.social-liker{display:flex;align-items:center;gap:9px;min-width:0;padding:6px;border-radius:8px;background:#fff}.social-liker-avatar{width:34px;height:34px;flex:0 0 34px;object-fit:cover;border-radius:50%;background:#eaf1ff}.social-liker-name{min-width:0;overflow-wrap:anywhere}.social-liker-name a{color:#0b2a6b;text-decoration:none;font-weight:900}.social-liker-name span{display:block;color:#607096;font-size:.78rem}@media(max-width:640px){.social-composer-row,.cp-social-composer-row{grid-template-columns:1fr!important}.social-composer-media-inputs,.cp-social-media-inputs{grid-template-columns:1fr}.social-media-preview{grid-template-columns:repeat(2,minmax(0,1fr))}.social-post-media-grid{gap:6px}.social-post-video{min-height:100px}}';
     style.textContent += '.social-comment-form{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px}.social-comment-form [data-reply-context]{grid-column:1/-1}.social-comment-form textarea{display:block!important;visibility:visible!important;opacity:1!important;width:100%;min-width:0;min-height:72px;box-sizing:border-box;grid-column:1}.social-comment-form button[type="submit"]{grid-column:2;grid-row:2;align-self:end}';
+    style.textContent += '.social-post-header{position:relative}.social-post-menu{position:relative;margin-left:auto;align-self:flex-start}.social-post-menu-trigger{width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:#607096;font-size:25px;line-height:1;letter-spacing:1px;cursor:pointer}.social-post-menu-trigger:hover,.social-post-menu-trigger:focus-visible{background:#edf3ff;color:#0b2a6b}.social-post-menu-items{position:absolute;z-index:20;right:0;top:36px;min-width:145px;padding:5px;background:#fff;border:1px solid #dbe4f4;border-radius:10px;box-shadow:0 8px 24px #07194d24}.social-post-menu-items[hidden]{display:none!important}.social-post-menu-items button{display:block;width:100%;padding:9px 11px;border:0;border-radius:7px;background:transparent;text-align:left;color:#17386c;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer}.social-post-menu-items button:hover{background:#edf3ff}.social-post-menu-items .social-post-delete{color:#b42318}';
     document.head.appendChild(style);
   }
   ensureMediaStyles();
@@ -67,12 +68,11 @@
     return '<article class="social-post" data-post-card="' + Number(post.id) + '">' +
       '<header class="social-post-header">' + avatar +
       '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">' + safe(post.display_name || post.username) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">@' + safe(post.username) + '</a><span> · ' + safe(dateText(post.created_at)) + '</span></div></div>' +
-      '<span class="social-post-type">' + safe(labels[post.post_type] || 'Status') + '</span></header>' +
+      '<div class="social-post-menu"><button type="button" class="social-post-menu-trigger" data-post-menu-toggle="' + Number(post.id) + '" aria-label="Post options" aria-expanded="false">···</button><div class="social-post-menu-items" data-post-menu="' + Number(post.id) + '" hidden>' + (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report post</button>' : '<button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete post</button>') + '</div></div></header>' +
       (post.body ? '<p class="social-post-body">' + safe(post.body).replace(/\n/g, '<br>') + '</p>' : '') + mediaMarkup +
       '<div class="social-post-stats"><button type="button" class="social-stat-button" data-post-likers="' + Number(post.id) + '" data-like-count aria-label="See post reactions">' + Number(post.like_count || 0) + (Number(post.like_count || 0) === 1 ? ' reaction' : ' reactions') + '</button><button type="button" class="social-stat-button" data-post-open-comments="' + Number(post.id) + '" data-comment-count aria-label="See comments on this post">' + Number(post.comment_count || 0) + (Number(post.comment_count || 0) === 1 ? ' comment' : ' comments') + '</button><span class="social-view-count" data-view-count' + (post.is_own ? '' : ' hidden') + '>' + Number(post.view_count || 0) + (Number(post.view_count || 0) === 1 ? ' view' : ' views') + '</span></div>' +
       '<section class="social-likers-thread" data-likers-thread="' + Number(post.id) + '" hidden><p class="social-inline-status" data-likes-status role="status" aria-live="polite"></p><div class="social-likers-list" data-likes-list></div></section>' +
-      '<div class="social-post-actions"><div class="social-reaction-picker" data-reaction-picker="' + Number(post.id) + '"><button type="button" class="social-reaction-trigger' + (post.my_reaction ? ' is-reacted' : '') + '" data-reaction-trigger="' + Number(post.id) + '" aria-label="Choose a reaction" aria-expanded="false">' + (post.my_reaction ? safe(({like:'👍',love:'❤️',haha:'😂',wow:'😮',sad:'😢',angry:'😡'})[post.my_reaction] || '👍') : '＋') + ' <span>' + (post.my_reaction ? 'Reacted' : 'React') + '</span></button><div class="social-reaction-options" data-reaction-options hidden>' + [{key:'like',emoji:'👍',label:'Like'},{key:'love',emoji:'❤️',label:'Love'},{key:'haha',emoji:'😂',label:'Haha'},{key:'wow',emoji:'😮',label:'Wow'},{key:'sad',emoji:'😢',label:'Sad'},{key:'angry',emoji:'😡',label:'Angry'}].map(x=>'<button type="button" data-reaction="' + x.key + '" data-post-id="' + Number(post.id) + '" aria-label="' + x.label + '" title="' + x.label + '">' + x.emoji + '</button>').join('') + '</div></div><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button>' +
-      (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report</button>' : '<button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete</button>') + '</div>' +
+      '<div class="social-post-actions"><div class="social-reaction-picker" data-reaction-picker="' + Number(post.id) + '"><button type="button" class="social-reaction-trigger' + (post.my_reaction ? ' is-reacted' : '') + '" data-reaction-trigger="' + Number(post.id) + '" aria-label="Choose a reaction" aria-expanded="false">' + (post.my_reaction ? safe(({like:'👍',love:'❤️',haha:'😂',wow:'😮',sad:'😢',angry:'😡'})[post.my_reaction] || '👍') : '＋') + ' <span>' + (post.my_reaction ? 'Reacted' : 'React') + '</span></button><div class="social-reaction-options" data-reaction-options hidden>' + [{key:'like',emoji:'👍',label:'Like'},{key:'love',emoji:'❤️',label:'Love'},{key:'haha',emoji:'😂',label:'Haha'},{key:'wow',emoji:'😮',label:'Wow'},{key:'sad',emoji:'😢',label:'Sad'},{key:'angry',emoji:'😡',label:'Angry'}].map(x=>'<button type="button" data-reaction="' + x.key + '" data-post-id="' + Number(post.id) + '" aria-label="' + x.label + '" title="' + x.label + '">' + x.emoji + '</button>').join('') + '</div></div><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button></div>' +
       '<section class="social-comments" data-comments-thread="' + Number(post.id) + '" hidden><div class="social-comment-list" data-comment-list></div>' +
       '<form class="social-comment-form" data-comment-form="' + Number(post.id) + '"><div class="social-reply-context" data-reply-context hidden>Replying to <strong data-reply-name></strong><button type="button" data-comment-reply-cancel>Cancel</button></div><input type="hidden" name="parent_comment_id" value=""><label class="sr-only" for="social-comment-' + Number(post.id) + '">Write a comment or reply</label><textarea id="social-comment-' + Number(post.id) + '" name="body" maxlength="1000" required rows="2" placeholder="Add a comment…"></textarea><button type="submit">Comment</button></form><p class="social-inline-status" data-comment-status role="status" aria-live="polite"></p></section></article>';
   }
@@ -326,7 +326,6 @@
     form.addEventListener('submit', async event => {
       event.preventDefault();
       const body = $(form, '[name="body"]').value.trim();
-      const type = $(form, '[name="post_type"]').value;
       const imageFiles = Array.from(imagesInput && imagesInput.files || []);
       const videoFile = videoInput && videoInput.files && videoInput.files[0] || null;
       const button = $(form, '[type="submit"]');
@@ -352,7 +351,7 @@
         await api('/api/collector/posts', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({body,post_type:type,media:uploadedMedia})
+          body:JSON.stringify({body,media:uploadedMedia})
         });
         form.reset();
         refreshPreview();
@@ -448,6 +447,19 @@
     const comments = event.target.closest('[data-post-comments]');
     if (comments) {
       await openComments(root, comments.dataset.postComments);
+      return;
+    }
+    const menuToggle = event.target.closest('[data-post-menu-toggle]');
+    if (menuToggle) {
+      const card = menuToggle.closest('[data-post-card]');
+      const menu = card && $(card, '[data-post-menu]');
+      if (menu) {
+        const willOpen = menu.hidden;
+        root.querySelectorAll('[data-post-menu]').forEach(item => { item.hidden = true; });
+        root.querySelectorAll('[data-post-menu-toggle]').forEach(item => item.setAttribute('aria-expanded', 'false'));
+        menu.hidden = !willOpen;
+        menuToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      }
       return;
     }
     const del = event.target.closest('[data-post-delete]');
