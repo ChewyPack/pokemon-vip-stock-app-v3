@@ -271,8 +271,9 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <style>
 /* Profile redesign phase 1: collection spotlight */
 .cp-spotlight{margin:16px 0;padding:18px;border:1px solid #dbe4f4;border-radius:18px;background:linear-gradient(135deg,#fff 0%,#f4f8ff 100%);box-shadow:0 8px 24px #07194d0c}
-.cp-spotlight[hidden]{display:none!important}.cp-spotlight-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:13px}.cp-spotlight-kicker{display:block;margin-bottom:4px;color:#56709c;font-size:.7rem;font-weight:1000;letter-spacing:.13em;text-transform:uppercase}.cp-spotlight h2{margin:0;color:#07194d;font:1.8rem/1 Bangers,cursive}.cp-spotlight-subtitle{margin:5px 0 0;color:#607096;font-size:.85rem}.cp-spotlight-link{border:1px solid #c7d5ed;border-radius:9px;padding:8px 11px;background:#fff;color:#17386c;font:inherit;font-size:.82rem;font-weight:900;cursor:pointer;white-space:nowrap}.cp-spotlight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.cp-spotlight-card{display:flex;align-items:center;gap:11px;min-width:0;padding:10px;border:1px solid #e0e8f5;border-radius:13px;background:#fff;color:#07194d;text-align:left;cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}.cp-spotlight-card:hover,.cp-spotlight-card:focus-visible{transform:translateY(-2px);border-color:#8ca9d8;box-shadow:0 8px 18px #07194d12;outline:none}.cp-spotlight-image{width:68px;height:84px;flex:0 0 68px;display:grid;place-items:center;overflow:hidden;border-radius:9px;background:radial-gradient(ellipse at center,#eaf1ff,#f8faff);color:#6b7fa4;font-weight:1000}.cp-spotlight-image img{width:100%;height:100%;object-fit:contain}.cp-spotlight-copy{min-width:0}.cp-spotlight-copy strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.88rem;line-height:1.25}.cp-spotlight-copy small{display:block;margin-top:5px;color:#607096;font-size:.74rem;line-height:1.35}.cp-spotlight-value{display:block;margin-top:6px;color:#174b9b;font-size:.82rem;font-weight:1000}.cp-spotlight-empty{padding:16px;border:1px dashed #c7d5ed;border-radius:12px;color:#607096;text-align:center;font-size:.86rem}
-@media(max-width:640px){.cp-spotlight{padding:14px}.cp-spotlight-head{align-items:flex-start}.cp-spotlight-grid{grid-template-columns:1fr}.cp-spotlight-card{min-height:88px}.cp-spotlight-image{width:62px;height:76px;flex-basis:62px}}
+.cp-spotlight[hidden]{display:none!important}.cp-spotlight-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:13px}.cp-spotlight-kicker{display:block;margin-bottom:4px;color:#56709c;font-size:.7rem;font-weight:1000;letter-spacing:.13em;text-transform:uppercase}.cp-spotlight h2{margin:0;color:#07194d;font:1.8rem/1 Bangers,cursive}.cp-spotlight-subtitle{margin:5px 0 0;color:#607096;font-size:.85rem}.cp-spotlight-link{border:1px solid #c7d5ed;border-radius:9px;padding:8px 11px;background:#fff;color:#17386c;font:inherit;font-size:.82rem;font-weight:900;cursor:pointer;white-space:nowrap}.cp-spotlight-carousel{position:relative}.cp-spotlight-viewport{overflow:hidden;border-radius:14px}.cp-spotlight-grid{display:flex;gap:11px;transition:transform .55s cubic-bezier(.22,.75,.25,1);will-change:transform}.cp-spotlight-card{display:flex;align-items:center;gap:11px;flex:0 0 calc((100% - 22px)/3);min-width:0;padding:10px;border:1px solid #e0e8f5;border-radius:13px;background:#fff;color:#07194d;text-align:left;cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}.cp-spotlight-card:hover,.cp-spotlight-card:focus-visible{transform:translateY(-2px);border-color:#8ca9d8;box-shadow:0 8px 18px #07194d12;outline:none}.cp-spotlight-image{width:68px;height:84px;flex:0 0 68px;display:grid;place-items:center;overflow:hidden;border-radius:9px;background:radial-gradient(ellipse at center,#eaf1ff,#f8faff);color:#6b7fa4;font-weight:1000}.cp-spotlight-image img{width:100%;height:100%;object-fit:contain}.cp-spotlight-copy{min-width:0}.cp-spotlight-copy strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.88rem;line-height:1.25}.cp-spotlight-copy small{display:block;margin-top:5px;color:#607096;font-size:.74rem;line-height:1.35}.cp-spotlight-value{display:block;margin-top:6px;color:#174b9b;font-size:.82rem;font-weight:1000}.cp-spotlight-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}.cp-spotlight-arrow{width:34px;height:34px;border:1px solid #c7d5ed;border-radius:50%;background:#fff;color:#17386c;font-size:1.1rem;font-weight:900;cursor:pointer}.cp-spotlight-arrow:disabled{opacity:.35;cursor:default}.cp-spotlight-dots{display:flex;align-items:center;gap:6px}.cp-spotlight-dot{width:7px;height:7px;padding:0;border:0;border-radius:50%;background:#c5d2e7;cursor:pointer}.cp-spotlight-dot[aria-current="true"]{width:19px;border-radius:8px;background:#2458a6}.cp-spotlight-empty{padding:16px;border:1px dashed #c7d5ed;border-radius:12px;color:#607096;text-align:center;font-size:.86rem}
+@media(max-width:640px){.cp-spotlight{padding:14px}.cp-spotlight-head{align-items:flex-start}.cp-spotlight-card{flex-basis:100%;min-height:88px}.cp-spotlight-image{width:62px;height:76px;flex-basis:62px}}
+@media(prefers-reduced-motion:reduce){.cp-spotlight-grid{transition:none}}
 </style>
 </head>
 <body>
@@ -295,7 +296,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 
 <section id="collection-spotlight" class="cp-spotlight" aria-label="Collection spotlight" hidden>
  <div class="cp-spotlight-head"><div><span class="cp-spotlight-kicker">From this collector’s collection</span><h2>Collection spotlight</h2><p class="cp-spotlight-subtitle">A quick look at some of the highlights in this collection.</p></div><button id="spotlight-view-all" class="cp-spotlight-link" type="button">View collection</button></div>
- <div id="collection-spotlight-grid" class="cp-spotlight-grid"></div>
+ <div class="cp-spotlight-carousel" id="collection-spotlight-carousel"><div class="cp-spotlight-viewport" id="collection-spotlight-viewport"><div id="collection-spotlight-grid" class="cp-spotlight-grid" aria-live="off"></div></div><div class="cp-spotlight-controls"><button class="cp-spotlight-arrow" id="spotlight-prev" type="button" aria-label="Previous collection items">‹</button><div class="cp-spotlight-dots" id="spotlight-dots" aria-label="Collection carousel position"></div><button class="cp-spotlight-arrow" id="spotlight-next" type="button" aria-label="Next collection items">›</button></div></div>
 </section>
 <section id="profile-badges" class="cp-gym-panel" aria-label="Gym Badge achievements" hidden></section>
 <section id="wishlist-match-dashboard" class="cp-panel cp-wishlist-dashboard" hidden>
@@ -615,25 +616,56 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    badgePanel.appendChild(regionList);
   }
  }
+ let spotlightIndex=0,spotlightTimer=null,spotlightItems=[];
+ function spotlightVisibleCount(){return window.matchMedia('(max-width: 640px)').matches?1:3;}
+ function spotlightMaxIndex(){return Math.max(0,spotlightItems.length-spotlightVisibleCount());}
+ function updateSpotlightCarousel(){
+  const grid=$('collection-spotlight-grid'),count=spotlightVisibleCount(),max=spotlightMaxIndex();
+  spotlightIndex=Math.min(spotlightIndex,max);
+  const card=grid.querySelector('.cp-spotlight-card');
+  if(card){const gap=parseFloat(getComputedStyle(grid).gap)||0;const step=card.getBoundingClientRect().width+gap;grid.style.transform='translateX('+(-spotlightIndex*step)+'px)';}
+  $('spotlight-prev').disabled=spotlightIndex===0;
+  $('spotlight-next').disabled=spotlightIndex>=max;
+  const dots=$('spotlight-dots');dots.replaceChildren();
+  const pages=Math.max(1,max+1);
+  for(let i=0;i<pages;i++){const dot=document.createElement('button');dot.type='button';dot.className='cp-spotlight-dot';dot.setAttribute('aria-label','Show collection items starting at '+(i+1));dot.setAttribute('aria-current',String(i===spotlightIndex));dot.addEventListener('click',()=>{spotlightIndex=i;updateSpotlightCarousel();restartSpotlightTimer();});dots.appendChild(dot);}
+ }
+ function stopSpotlightTimer(){if(spotlightTimer){clearInterval(spotlightTimer);spotlightTimer=null;}}
+ function startSpotlightTimer(){
+  stopSpotlightTimer();
+  if(spotlightItems.length<=spotlightVisibleCount()||window.matchMedia('(prefers-reduced-motion: reduce)').matches||document.hidden)return;
+  spotlightTimer=setInterval(()=>{if($('collection-spotlight-carousel').matches(':hover')||$('collection-spotlight-carousel').contains(document.activeElement))return;spotlightIndex=spotlightIndex>=spotlightMaxIndex()?0:spotlightIndex+1;updateSpotlightCarousel();},4200);
+ }
+ function restartSpotlightTimer(){stopSpotlightTimer();startSpotlightTimer();}
  function renderCollectionSpotlight(){
   const panel=$('collection-spotlight'),grid=$('collection-spotlight-grid');
-  const collection=items.filter(item=>item.list_type==='collection');
-  if(!collection.length){panel.hidden=true;grid.replaceChildren();return;}
-  const worth=item=>item.product_type!=='graded'&&item.tcgcsv_market_price!==null&&item.tcgcsv_market_price!==undefined?Number(item.tcgcsv_market_price)*100:Number(item.estimated_value_cents||0);
-  const featured=collection.slice().sort((a,b)=>worth(b)-worth(a)).slice(0,3);
-  grid.replaceChildren();
-  featured.forEach(item=>{
+  spotlightItems=items.filter(item=>item.list_type==='collection').slice().sort((a,b)=>{
+   const worth=item=>item.product_type!=='graded'&&item.tcgcsv_market_price!==null&&item.tcgcsv_market_price!==undefined?Number(item.tcgcsv_market_price)*100:Number(item.estimated_value_cents||0);
+   return worth(b)-worth(a);
+  });
+  if(!spotlightItems.length){panel.hidden=true;grid.replaceChildren();stopSpotlightTimer();return;}
+  spotlightIndex=0;grid.replaceChildren();
+  spotlightItems.forEach(item=>{
    const button=document.createElement('button');button.type='button';button.className='cp-spotlight-card';
    const imageWrap=document.createElement('span');imageWrap.className='cp-spotlight-image';
    if(item.image_url){const image=document.createElement('img');image.src=item.image_url;image.alt=item.product_name||'Collection item';image.loading='lazy';imageWrap.appendChild(image);}else{imageWrap.textContent='TCG';}
    const copy=document.createElement('span');copy.className='cp-spotlight-copy';
    const name=document.createElement('strong');name.textContent=item.product_name||'Collection item';copy.appendChild(name);
    const detail=document.createElement('small');detail.textContent=[item.set_name,item.card_number,item.product_type==='sealed'?'Sealed':item.product_type==='graded'?'Graded':'Single'].filter(Boolean).join(' · ');copy.appendChild(detail);
-   const value=worth(item);if(value>0){const amount=document.createElement('span');amount.className='cp-spotlight-value';amount.textContent=money(Math.round(value));copy.appendChild(amount);}
+   const value=item.product_type!=='graded'&&item.tcgcsv_market_price!==null&&item.tcgcsv_market_price!==undefined?Number(item.tcgcsv_market_price)*100:Number(item.estimated_value_cents||0);
+   if(value>0){const amount=document.createElement('span');amount.className='cp-spotlight-value';amount.textContent=money(Math.round(value));copy.appendChild(amount);}
    button.append(imageWrap,copy);button.addEventListener('click',()=>{activeList='collection';render();$('collection-view').scrollIntoView({behavior:'smooth',block:'start'});});grid.appendChild(button);
   });
-  panel.hidden=false;
+  panel.hidden=false;updateSpotlightCarousel();startSpotlightTimer();
  }
+ $('spotlight-prev')?.addEventListener('click',()=>{spotlightIndex=Math.max(0,spotlightIndex-1);updateSpotlightCarousel();restartSpotlightTimer();});
+ $('spotlight-next')?.addEventListener('click',()=>{spotlightIndex=spotlightIndex>=spotlightMaxIndex()?0:spotlightIndex+1;updateSpotlightCarousel();restartSpotlightTimer();});
+ $('collection-spotlight-carousel')?.addEventListener('mouseenter',stopSpotlightTimer);
+ $('collection-spotlight-carousel')?.addEventListener('mouseleave',startSpotlightTimer);
+ $('collection-spotlight-carousel')?.addEventListener('focusin',stopSpotlightTimer);
+ $('collection-spotlight-carousel')?.addEventListener('focusout',startSpotlightTimer);
+ document.addEventListener('visibilitychange',()=>document.hidden?stopSpotlightTimer():startSpotlightTimer());
+ window.addEventListener('resize',updateSpotlightCarousel);
  $('spotlight-view-all')?.addEventListener('click',()=>{activeList='collection';render();$('collection-view').scrollIntoView({behavior:'smooth',block:'start'});});
  function stats(){
   const collection=items.filter(x=>x.list_type==='collection');
