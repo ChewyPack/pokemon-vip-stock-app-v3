@@ -3,13 +3,15 @@
   if (!root) return;
 
   const tray = root.querySelector('[data-story-tray]');
+  const highlightTray = root.querySelector('[data-story-highlight-tray]');
+  const highlightSection = root.querySelector('[data-story-highlight-section]');
   const form = root.querySelector('[data-story-create-form]');
   const fileInput = form && form.querySelector('[data-story-file]');
   const captionInput = form && form.querySelector('[data-story-caption]');
   const preview = form && form.querySelector('[data-story-preview]');
   const status = form && form.querySelector('[data-story-status]');
   const storyStatus = root.querySelector('[data-story-feed-status]');
-  if (!tray || !form || !fileInput) return;
+  if (!tray || !highlightTray || !highlightSection || !form || !fileInput) return;
 
   const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
   const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
@@ -78,7 +80,8 @@
       return group;
     }).sort((a,b) => new Date(String(b.stories[b.stories.length-1].created_at).replace(' ','T')+'Z') - new Date(String(a.stories[a.stories.length-1].created_at).replace(' ','T')+'Z'));
   }
-  function tileMarkup(group, own) {
+  function tileMarkup(group, own, showAdd) {
+    if (showAdd === undefined) showAdd = true;
     const latest = group.stories[group.stories.length - 1];
     const seen = !own && group.stories.every(story => story.viewed_by_me);
     const thumbnail = latest.media_type === 'image'
@@ -88,21 +91,25 @@
       '<button type="button" class="story-card' + (seen ? ' is-seen' : '') + '" data-story-open="' + Number(group.account_id) + '" aria-label="View ' + escapeHtml(own ? 'your' : group.display_name) + ' stories">' +
       '<span class="story-card-ring">' + thumbnail + '</span><span class="story-card-label">' + escapeHtml(own ? 'Your story' : (group.display_name || group.username)) + '</span>' +
       '<span class="story-card-count">' + group.stories.length + '</span></button>' +
-      (own ? '<button type="button" class="story-card-add" data-story-create aria-label="Add to your story">+</button>' : '') +
+      (own && showAdd ? '<button type="button" class="story-card-add" data-story-create aria-label="Add to your story">+</button>' : '') +
       '</div>';
   }
   function renderTray() {
     groups = groupsFromStories(stories);
-    const own = groups.find(group => group.stories.some(story => story.is_own));
+    const activeGroups = groupsFromStories(stories.filter(story => !story.is_highlighted));
+    const highlightGroups = groupsFromStories(stories.filter(story => story.is_highlighted));
+    const own = activeGroups.find(group => group.stories.some(story => story.is_own));
     const cards = [];
     if (own) cards.push(tileMarkup(own, true));
     else cards.push('<button type="button" class="story-card story-card--create" data-story-create><span class="story-card-create-icon">+</span><span class="story-card-label">Your story</span><span class="story-card-subtitle">Share an update</span></button>');
-    groups.filter(group => !own || Number(group.account_id) !== Number(own.account_id)).forEach(group => cards.push(tileMarkup(group,false)));
-    if (cards.length === 1 && !own) {
-      // Keep the first tile available as the starting point for a new story.
+    activeGroups.filter(group => !own || Number(group.account_id) !== Number(own.account_id)).forEach(group => cards.push(tileMarkup(group,false)));
+    tray.innerHTML = cards.join('') || '<p class="story-empty">No active stories right now.</p>';
+    highlightSection.hidden = !highlightGroups.length;
+    highlightTray.innerHTML = highlightGroups.map(group => tileMarkup(group,group.stories.some(story => story.is_own),false)).join('');
+    if (storyStatus) {
+      const activeCount = stories.filter(story => !story.is_highlighted).length;
+      storyStatus.textContent = activeCount ? activeCount + (activeCount === 1 ? ' active story' : ' active stories') : 'No new stories';
     }
-    tray.innerHTML = cards.join('') || '<p class="story-empty">No stories yet. Share the first collection update.</p>';
-    if (storyStatus) storyStatus.textContent = stories.length ? stories.length + (stories.length === 1 ? ' active story' : ' active stories') : 'Be the first to share';
   }
   async function loadStories() {
     try {
@@ -193,10 +200,10 @@
       '<header class="story-viewer-header">' +
       (group.avatar_url ? '<img src="' + escapeHtml(group.avatar_url) + '" alt="" class="story-viewer-avatar">' : '<span class="story-viewer-avatar story-viewer-avatar--empty">P</span>') +
       '<div><strong>' + escapeHtml(group.display_name || group.username) + '</strong><span>@' + escapeHtml(group.username) + ' · ' + escapeHtml(relativeTime(story.created_at)) + '</span></div>' +
-      (story.is_own ? '<button type="button" class="story-viewer-delete" data-story-delete="' + Number(story.id) + '">Delete</button>' : '') +
+      (story.is_own ? '<button type="button" class="story-viewer-highlight" data-story-highlight="' + Number(story.id) + '">' + (story.is_highlighted ? 'Remove highlight' : 'Add to Highlights') + '</button><button type="button" class="story-viewer-delete" data-story-delete="' + Number(story.id) + '">Delete</button>' : '') +
       '</header>' +
       '<div class="story-viewer-content" data-story-gesture>' + media + (story.caption ? '<p class="story-viewer-caption">' + escapeHtml(story.caption) + '</p>' : '') + '</div>' +
-      '<div class="story-viewer-hint" aria-hidden="true">Tap sides or swipe to navigate · Stories disappear after 24 hours</div>' +
+      '<div class="story-viewer-hint" aria-hidden="true">Tap sides or swipe to navigate · ' + (story.is_highlighted ? 'Saved in Highlights' : 'Stories disappear after 24 hours unless highlighted') + '</div>' +
       '</section></div>';
   }
   function renderViewer() {
@@ -231,6 +238,22 @@
       });
       gestureArea.addEventListener('pointercancel',() => { pointerStart = null; });
     }
+    const highlight = viewer.querySelector('[data-story-highlight]');
+    if (highlight) highlight.addEventListener('click',async () => {
+      highlight.disabled = true;
+      const next = !story.is_highlighted;
+      try {
+        await request('/api/collector/stories',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:story.id,action:'highlight',highlighted:next})});
+        const storyId = Number(story.id);
+        await loadStories();
+        const nextGroup = groups.findIndex(item => item.stories.some(entry => Number(entry.id) === storyId));
+        if (nextGroup >= 0) {
+          activeGroupIndex = nextGroup;
+          activeStoryIndex = groups[nextGroup].stories.findIndex(entry => Number(entry.id) === storyId);
+          renderViewer();
+        } else closeViewer();
+      } catch (error) { highlight.disabled = false; window.alert(error.message); }
+    });
     const del = viewer.querySelector('[data-story-delete]');
     if (del) del.addEventListener('click',async () => {
       del.disabled = true;
