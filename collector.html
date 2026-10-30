@@ -1094,7 +1094,7 @@ $('collector-search-form').addEventListener('submit',event=>{
   }catch(e){setStatus('view-status',e.message||'Could not load the profile.');$('items').innerHTML='<div class="cp-empty">'+safe(e.message||'Could not load the profile.')+'</div>';}
  }
 
- async function loadProfileStoryHighlights(username){
+ async function loadProfileStoryHighlights(username,isOwn=false){
   const panel=$('profile-story-highlights'),list=$('profile-story-highlight-list');
   if(!panel||!list)return;
   panel.hidden=true;list.replaceChildren();
