@@ -580,20 +580,25 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    ];
    const allAchievements=[...basics,...earned];
    const featuredAchievements=allAchievements.filter(item=>item.earned&&item.featured).slice(0,3);
-   if(featuredAchievements.length){
+   if(featuredAchievements.length||own){
     const featuredPanel=document.createElement('section');featuredPanel.className='cp-featured-achievements';
     const featuredHeading=document.createElement('h3');featuredHeading.textContent='Featured achievements';featuredPanel.appendChild(featuredHeading);
-    const featuredGrid=document.createElement('div');featuredGrid.className='cp-featured-achievements-grid';
-    featuredAchievements.forEach(item=>{
-     const card=document.createElement('div');card.className='cp-featured-achievement';
-     const artworkIndex=basics.findIndex(b=>b.id===item.id);
-     const image=document.createElement('img');image.src=artworkIndex>=0?basicBadgeArtwork[artworkIndex]||'':'/assets/badges/'+item.id+'.png';image.alt='';image.loading='lazy';image.onerror=()=>{image.hidden=true;};card.appendChild(image);
-     const copy=document.createElement('div');const name=document.createElement('strong');name.textContent=item.name;copy.appendChild(name);
-     const meta=document.createElement('small');meta.textContent='Earned achievement';copy.appendChild(meta);card.appendChild(copy);featuredGrid.appendChild(card);
-    });
-    featuredPanel.appendChild(featuredGrid);badgePanel.appendChild(featuredPanel);
+    if(featuredAchievements.length){
+     const featuredGrid=document.createElement('div');featuredGrid.className='cp-featured-achievements-grid';
+     featuredAchievements.forEach(item=>{
+      const card=document.createElement('div');card.className='cp-featured-achievement';
+      const artworkIndex=basics.findIndex(b=>b.id===item.id);
+      const image=document.createElement('img');image.src=artworkIndex>=0?basicBadgeArtwork[artworkIndex]||'':'/assets/badges/'+item.id+'.png';image.alt='';image.loading='lazy';image.onerror=()=>{image.hidden=true;};card.appendChild(image);
+      const copy=document.createElement('div');const name=document.createElement('strong');name.textContent=item.name;copy.appendChild(name);
+      const meta=document.createElement('small');meta.textContent='Earned achievement';copy.appendChild(meta);card.appendChild(copy);featuredGrid.appendChild(card);
+     });
+     featuredPanel.appendChild(featuredGrid);
+    }else{
+     const empty=document.createElement('p');empty.className='cp-gym-progress';empty.textContent=own?'You have not featured an achievement yet. Open a badge group below and select “Feature” on up to 3 achievements you have earned.':'No featured achievements yet.';featuredPanel.appendChild(empty);
+    }
+    badgePanel.appendChild(featuredPanel);
    }
-   if(own){const featureHint=document.createElement('p');featureHint.className='cp-gym-progress';featureHint.textContent='Pin up to 3 earned achievements to showcase them at the top of your profile.';badgePanel.appendChild(featureHint);}
+   if(own){const featureHint=document.createElement('p');featureHint.className='cp-gym-progress';featureHint.textContent='You can feature up to 3 earned achievements. Your selections appear here for visitors.';badgePanel.appendChild(featureHint);}
    const regionList=document.createElement('div');regionList.className='cp-gym-regions';
    const makeGrid=()=>{const grid=document.createElement('div');grid.className='cp-gym-grid';return grid;};
    const makeAchievementTile=(achievement,artworkPath=null)=>{
