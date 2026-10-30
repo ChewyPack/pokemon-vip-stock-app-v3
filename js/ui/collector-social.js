@@ -192,6 +192,7 @@
       ? topLevel.map(comment => renderOne(comment, 0)).join('')
       : '<p class="social-empty-comments">No comments yet. Start the conversation.</p>';
     const form = $(thread, '[data-comment-form]');
+    if (form) attachMentionAutocomplete($(form, '[name="body"]'));
     if (form) form.dataset.supportsReplies = String(!!supportsReplies);
     if (!supportsReplies) {
       const note = $(thread, '[data-comment-status]');
@@ -250,19 +251,11 @@
     }
     state.loaded = true;
   }
-  async function setupComposer(root, state) {
-    const form = $(root, '[data-social-composer]');
-    if (!form || form.dataset.bound === 'true') return;
-    form.dataset.bound = 'true';
-    const status = $(form, '[data-composer-status]');
-    const bodyInput = $(form, '[name="body"]');
+  function attachMentionAutocomplete(bodyInput) {
+    if (!bodyInput || bodyInput.dataset.mentionsBound === 'true') return;
+    bodyInput.dataset.mentionsBound = 'true';
     const suggestionBox = document.createElement('div');
-    suggestionBox.className = 'social-compose-suggestions';
-    suggestionBox.hidden = true;
-    suggestionBox.setAttribute('role','listbox');
-    bodyInput.insertAdjacentElement('afterend', suggestionBox);
-    let suggestionRequest = 0;
-    let suggestionTimer = null;
+    suggestion    attachMentionAutocomplete($(form, '[name="body"]'));imer = null;
     const hashtagSuggestions = ['Pokemon','PokemonTCG','OnePieceTCG','Lorcana','DragonBallSuper','PokemonCards','CardPull','TCGCommunity','PokePrizePool'];
     function closeSuggestions() { suggestionBox.hidden = true; suggestionBox.replaceChildren(); }
     function insertSuggestion(value, start, end) {
