@@ -280,7 +280,7 @@
     bodyInput.addEventListener('input',()=>{
       clearTimeout(suggestionTimer);
       const cursor=bodyInput.selectionStart||0, before=bodyInput.value.slice(0,cursor);
-      const match=before.match(/(^|\\s)([#@])([a-zA-Z0-9_]{0,24})$/);
+      const match=before.match(/(^|\s)([#@])([a-zA-Z0-9_]{0,24})$/);
       if(!match){suggestionRequest++;closeSuggestions();return;}
       const start=cursor-match[2].length-match[3].length, token=match[3].toLowerCase(), requestId=++suggestionRequest;
       if(match[2]==='#'){
