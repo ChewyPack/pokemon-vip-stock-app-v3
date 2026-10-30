@@ -55,6 +55,8 @@ export async function onRequestGet({request, env}) {
   if (!env.DB) return json({ok:false,error:'database_not_configured'}, 500);
   try {
     await env.DB.prepare('DELETE FROM collector_stories WHERE expires_at<=CURRENT_TIMESTAMP AND is_highlighted=0').run();
+    const requestedUsername = new URL(request.url).searchParams.get('user');
+    const usernameFilter = requestedUsername && requestedUsername.trim() ? requestedUsername.trim().slice(0,24) : null;
     const viewer = await currentAccount(request, env).catch(() => null);
     const viewerId = viewer ? viewer.id : null;
     const result = await env.DB.prepare(
@@ -66,8 +68,9 @@ export async function onRequestGet({request, env}) {
       'FROM collector_stories s JOIN collector_profiles p ON p.account_id=s.account_id JOIN accounts a ON a.id=s.account_id ' +
       'WHERE (s.expires_at>CURRENT_TIMESTAMP OR s.is_highlighted=1) AND p.is_public=1 ' +
       'AND (? IS NULL OR NOT EXISTS(SELECT 1 FROM collector_blocks b WHERE (b.blocker_account_id=? AND b.blocked_account_id=s.account_id) OR (b.blocker_account_id=s.account_id AND b.blocked_account_id=?))) ' +
+      'AND (? IS NULL OR p.username=? COLLATE NOCASE) ' +
       'ORDER BY s.created_at DESC,s.id DESC LIMIT 300'
-    ).bind(viewerId,viewerId,viewerId,viewerId,viewerId,viewerId,viewerId).all();
+    ).bind(viewerId,viewerId,viewerId,viewerId,viewerId,viewerId,viewerId,usernameFilter,usernameFilter).all();
     return json({ok:true,stories:(result.results || []).map(row => ({
       id:Number(row.id),account_id:Number(row.account_id),media_type:row.media_type,media_url:row.media_url,
       caption:row.caption || '',created_at:row.created_at,expires_at:row.expires_at,is_highlighted:Number(row.is_highlighted || 0)===1,
