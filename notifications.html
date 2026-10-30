@@ -3,94 +3,289 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#06174A">
-<title>Notifications | PokePrizePool</title>
+<title>Notification Center | PokePrizePool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/styles.css">
 <style>
-body{margin:0;min-height:100vh;background:#eef3ff;color:#07194d;font-family:Nunito,system-ui,sans-serif}
-.notify-main{width:min(1000px,calc(100% - 28px));margin:28px auto 70px}
-.notify-hero,.notify-panel{background:#fff;border:2px solid #d5e0f2;border-radius:16px;padding:clamp(17px,3vw,27px);margin-bottom:16px;box-shadow:0 5px 18px #07194d0a}
-.notify-hero{border:3px solid #0b2a6b;box-shadow:6px 6px 0 #07194d}
-.notify-hero h1{font:400 clamp(2rem,5vw,3rem)/1 Bangers,cursive;color:#0b2a6b;margin:0 0 9px}
-.notify-hero p,.muted{color:#53658a;line-height:1.55}
-.notify-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.notify-btn{border:2px solid #0b2a6b;border-radius:9px;padding:10px 14px;background:#eaf4ff;color:#0b2a6b;font:900  .95rem Nunito,system-ui,sans-serif;cursor:pointer;min-height:42px}
-.notify-btn.primary{background:#ffd21f}.notify-btn:disabled{opacity:.55;cursor:wait}
-.notify-status{min-height:24px;line-height:1.5;color:#31517f;white-space:pre-wrap}
-.notify-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
-.notify-field{border:1px solid #d5e0f2;border-radius:10px;padding:13px;background:#f7faff}
-.notify-field h3{font-size:.92rem;margin:0 0 10px}
-.notify-checks{display:flex;gap:9px 14px;flex-wrap:wrap}
-.notify-checks label{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:.9rem}
-.notify-list{display:grid;gap:10px;margin-top:14px}
-.notify-card{padding:15px;border:1px solid #d5e0f2;border-radius:11px;background:#fff}
-.notify-card.unread{border-left:5px solid #ef233c;background:#fffdfd}
-.notify-card h3{margin:0 0 5px;font-size:1.02rem;overflow-wrap:anywhere}
-.notify-card p{margin:5px 0;color:#405782;line-height:1.5;overflow-wrap:anywhere}
-.notify-card small{color:#6b7b9b}.notify-card a{color:#174b9b;font-weight:900}
-.notify-empty{padding:24px;text-align:center;border:2px dashed #b9c9e6;border-radius:12px;color:#53658a;line-height:1.6}
-@media(max-width:620px){.notify-settings{grid-template-columns:1fr}.notify-main{margin-top:18px}}
+:root{color-scheme:light;--notify-ink:#10254d;--notify-muted:#657796;--notify-line:#e1e8f3;--notify-blue:#174c9a;--notify-bg:#f3f6fc}
+body{margin:0;min-height:100vh;background:var(--notify-bg);color:var(--notify-ink);font-family:Nunito,system-ui,sans-serif}
+.notify-main{width:min(1050px,calc(100% - 30px));margin:30px auto 76px}
+.notify-hero{position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:clamp(22px,4vw,38px);margin-bottom:18px;border-radius:22px;background:linear-gradient(125deg,#071a46,#103b78 62%,#1d5799);color:#fff;box-shadow:0 12px 34px #0b28501a}
+.notify-hero:after{content:"";position:absolute;width:290px;height:290px;border:1px solid #ffffff20;border-radius:50%;right:8%;top:-190px;box-shadow:0 0 0 24px #ffffff09,0 0 0 48px #ffffff06;pointer-events:none}
+.notify-eyebrow{font-size:.72rem;font-weight:900;letter-spacing:.17em;text-transform:uppercase;color:#a9c8f1}
+.notify-hero h1{margin:8px 0 8px;font:400 clamp(2.15rem,5vw,3.35rem)/.98 Bangers,cursive;letter-spacing:.03em}
+.notify-hero p{max-width:570px;margin:0;color:#d3e1f5;line-height:1.55;font-size:.96rem}
+.notify-hero-copy,.notify-hero-actions{position:relative;z-index:1}
+.notify-hero-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.notify-unread-summary{min-width:112px;padding:9px 13px;border:1px solid #ffffff35;border-radius:12px;background:#ffffff10;text-align:center}
+.notify-unread-summary strong{display:block;font-size:1.25rem;line-height:1.1}
+.notify-unread-summary span{display:block;margin-top:3px;color:#d3e1f5;font-size:.72rem;font-weight:800}
+.notify-btn{min-height:42px;padding:9px 14px;border:1px solid #c8d7eb;border-radius:10px;background:#fff;color:#153765;font:900 .86rem Nunito,system-ui,sans-serif;cursor:pointer}
+.notify-btn:hover:not(:disabled){background:#f2f7ff;border-color:#9ab4d9}
+.notify-btn.primary{border-color:#ffdf64;background:#ffdb4a;color:#17294e}
+.notify-btn:disabled{opacity:.48;cursor:not-allowed}
+.notify-toolbar,.notify-feed{border:1px solid var(--notify-line);border-radius:17px;background:#fff;box-shadow:0 5px 20px #122b5010}
+.notify-toolbar{padding:16px 18px;margin-bottom:14px}
+.notify-toolbar-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+.notify-toolbar-title{font-size:.9rem;font-weight:900;color:#28446d}
+.notify-filter-group{display:flex;gap:7px;flex-wrap:wrap}
+.notify-filter{min-height:35px;padding:7px 12px;border:1px solid #dce5f2;border-radius:999px;background:#fff;color:#4d6383;font:900 .78rem Nunito,system-ui,sans-serif;cursor:pointer}
+.notify-filter:hover{border-color:#9bb6db;background:#f6f9ff}
+.notify-filter[aria-pressed=true]{border-color:#123c78;background:#123c78;color:#fff;box-shadow:0 3px 9px #123c7824}
+.notify-category-row{display:flex;gap:7px;overflow-x:auto;padding:1px 1px 3px;scrollbar-width:thin}
+.notify-category-row .notify-filter{white-space:nowrap}
+.notify-feed{overflow:hidden}
+.notify-feed-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 20px;border-bottom:1px solid var(--notify-line)}
+.notify-feed-header h2{margin:0;font-size:1rem;font-weight:900}
+.notify-feed-header p{margin:3px 0 0;color:var(--notify-muted);font-size:.8rem}
+.notify-refresh{display:inline-flex;align-items:center;gap:7px}
+.notify-status{min-height:18px;margin:0;padding:0 20px;color:var(--notify-muted);font-size:.8rem}
+.notify-list{padding:5px 14px 12px}
+.notify-day-heading{margin:16px 7px 8px;color:#71819c;font-size:.7rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.notify-card{position:relative;display:grid;grid-template-columns:42px minmax(0,1fr);gap:13px;padding:15px 13px;margin:8px 0;border:1px solid #e6edf6;border-radius:13px;background:#fff;transition:border-color .16s,background .16s}
+.notify-card:hover{border-color:#c7d8ed}
+.notify-card.unread{border-color:#d3e2f6;background:#f7faff}
+.notify-card.unread:before{content:"";position:absolute;left:-1px;top:15px;bottom:15px;width:3px;border-radius:0 4px 4px 0;background:#2877d4}
+.notify-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#edf3fb;color:#234c81;font-size:1.15rem;font-weight:900}
+.notify-icon.posts{background:#fff0f1;color:#b52f54}.notify-icon.community{background:#f1edff;color:#6549aa}.notify-icon.messages{background:#e9f4ff;color:#1763a5}.notify-icon.marketplace{background:#eaf8f1;color:#16734e}.notify-icon.alerts{background:#fff5e5;color:#966018}.notify-icon.live{background:#ffedf0;color:#bd2848}
+.notify-content{min-width:0}
+.notify-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:1px 0 5px}
+.notify-kind{color:#607493;font-size:.7rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+.notify-time{color:#8a98ad;font-size:.72rem}
+.notify-unread-dot{width:7px;height:7px;border-radius:50%;background:#2676d2}
+.notify-card h3{margin:0 0 5px;color:#152f55;font-size:.94rem;font-weight:900;line-height:1.35;overflow-wrap:anywhere}
+.notify-card p{margin:0;color:#526783;font-size:.85rem;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap}
+.notify-detail{margin-top:6px!important;color:#8190a7!important;font-size:.76rem!important}
+.notify-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:11px}
+.notify-open{color:#17519a;text-decoration:none;font-size:.8rem;font-weight:900}
+.notify-open:hover{text-decoration:underline;text-underline-offset:3px}
+.notify-text-action{padding:2px 0;border:0;background:none;color:#71819c;font:800 .76rem Nunito,system-ui,sans-serif;cursor:pointer}
+.notify-text-action:hover{color:#183e70;text-decoration:underline;text-underline-offset:3px}
+.notify-text-action.danger:hover{color:#b42318}
+.notify-empty{padding:46px 18px;text-align:center}
+.notify-empty-icon{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 12px;border-radius:18px;background:#edf3fb;color:#52719b;font-size:1.45rem}
+.notify-empty h3{margin:0 0 6px;font-size:1rem}
+.notify-empty p{max-width:440px;margin:0 auto;color:var(--notify-muted);font-size:.86rem;line-height:1.55}
+.notify-load-more{display:flex;justify-content:center;padding:0 18px 18px}
+.notify-load-more[hidden]{display:none!important}
+.notify-status:empty{display:none}
+@media(max-width:700px){.notify-main{margin-top:17px;width:min(100% - 20px,1050px)}.notify-hero{display:block;padding:22px;border-radius:17px}.notify-hero-actions{justify-content:flex-start;margin-top:18px}.notify-unread-summary{min-width:90px}.notify-toolbar{padding:14px}.notify-toolbar-top{align-items:flex-start}.notify-feed-header{padding:15px}.notify-list{padding:4px 9px 10px}.notify-card{grid-template-columns:36px minmax(0,1fr);gap:10px;padding:13px 10px}.notify-icon{width:36px;height:36px;border-radius:11px}.notify-card h3{font-size:.9rem}}
 </style>
 </head>
 <body>
 <div id="site-navigation"></div>
 <main class="notify-main">
-<header class="notify-hero"><h1>Notifications</h1><p>Your in-site activity center for stock alerts, post likes, comments, and private messages. Browser push alerts remain optional.</p></header>
-<section class="notify-panel">
-<div class="notify-row"><div><h2>Your notifications</h2><p class="muted" id="unread-count">Loading inbox…</p></div><button class="notify-btn" id="read-all" type="button">Mark all as read</button></div>
-<p class="notify-status" id="inbox-status" role="status" aria-live="polite">Loading notifications…</p><div class="notify-list" id="notify-list"><div class="notify-empty">Loading notifications…</div></div>
-</section>
+  <header class="notify-hero">
+    <div class="notify-hero-copy">
+      <div class="notify-eyebrow">PokePrizePool · Your activity</div>
+      <h1>Notification Center</h1>
+      <p>Keep up with collector activity, messages, marketplace offers, stock alerts, and live Ripz streams in one place.</p>
+    </div>
+    <div class="notify-hero-actions">
+      <div class="notify-unread-summary"><strong id="unread-total">—</strong><span>UNREAD</span></div>
+      <button class="notify-btn primary" id="read-all" type="button">Mark all as read</button>
+    </div>
+  </header>
+
+  <section class="notify-toolbar" aria-label="Notification filters">
+    <div class="notify-toolbar-top">
+      <div class="notify-toolbar-title">Filter activity</div>
+      <div class="notify-filter-group" role="group" aria-label="Read status">
+        <button class="notify-filter" type="button" data-read-filter="all" aria-pressed="true">All activity</button>
+        <button class="notify-filter" type="button" data-read-filter="unread" aria-pressed="false">Unread only</button>
+      </div>
+    </div>
+    <div class="notify-category-row" role="group" aria-label="Notification category">
+      <button class="notify-filter" type="button" data-category="all" aria-pressed="true">Everything</button>
+      <button class="notify-filter" type="button" data-category="posts" aria-pressed="false">Posts</button>
+      <button class="notify-filter" type="button" data-category="community" aria-pressed="false">Community</button>
+      <button class="notify-filter" type="button" data-category="messages" aria-pressed="false">Messages</button>
+      <button class="notify-filter" type="button" data-category="marketplace" aria-pressed="false">Marketplace</button>
+      <button class="notify-filter" type="button" data-category="alerts" aria-pressed="false">Stock alerts</button>
+      <button class="notify-filter" type="button" data-category="live" aria-pressed="false">Live Ripz</button>
+      <button class="notify-filter" type="button" data-category="other" aria-pressed="false">Other</button>
+    </div>
+  </section>
+
+  <section class="notify-feed" aria-label="Your notifications">
+    <header class="notify-feed-header">
+      <div><h2 id="feed-title">All activity</h2><p id="feed-subtitle">Your latest updates, newest first.</p></div>
+      <button class="notify-btn notify-refresh" id="refresh" type="button"><span aria-hidden="true">↻</span> Refresh</button>
+    </header>
+    <p class="notify-status" id="inbox-status" role="status" aria-live="polite"></p>
+    <div class="notify-list" id="notify-list"><div class="notify-empty"><div class="notify-empty-icon">…</div><h3>Loading your activity</h3><p>Checking for new notifications.</p></div></div>
+    <div class="notify-load-more"><button class="notify-btn" id="load-more" type="button" hidden>Load older notifications</button></div>
+  </section>
 </main>
-<script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>
+
+<script src="/js/ui/site-nav.js?v=20261030-notification-center-v1"></script>
 <script>
 (function(){
 'use strict';
-const $=id=>document.getElementById(id);
-let state={notifications:[],unread:0};
-const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-async function api(method='GET',body){
- const response=await fetch('/api/notifications',{method,credentials:'include',cache:'no-store',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
- const data=await response.json().catch(()=>({ok:false,error:'Could not read notifications.'}));
+var $=function(id){return document.getElementById(id);};
+var state={notifications:[],unread:0,unread_non_message:0,has_more:false,next_before_id:null,readFilter:'all',category:'all',loading:false};
+var safe=function(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+var categories={
+ posts:{label:'Post activity',icon:'♥',className:'posts',types:['post_reaction','post_comment','post_comment_reply']},
+ community:{label:'Community',icon:'@',className:'community',types:['mention']},
+ messages:{label:'Direct message',icon:'✉',className:'messages',types:['direct_message']},
+ marketplace:{label:'Marketplace',icon:'⇄',className:'marketplace',types:['trade_offer','trade_completion_confirmation']},
+ alerts:{label:'Stock alert',icon:'⚡',className:'alerts',types:['stock','line']},
+ live:{label:'Live Ripz',icon:'●',className:'live',types:['ripz_live']}
+};
+var typeLabels={
+ post_reaction:'Post reaction',post_comment:'Post comment',post_comment_reply:'Comment reply',
+ mention:'Community mention',direct_message:'Direct message',trade_offer:'Marketplace offer',
+ trade_completion_confirmation:'Trade update',stock:'Stock alert',line:'Store line alert',ripz_live:'Live Ripz'
+};
+function categoryFor(type){
+ for(var key in categories){if(categories[key].types.indexOf(type)>=0)return categories[key];}
+ return {label:'Other update',icon:'•',className:'',types:[]};
+}
+function notificationUrl(value){
+ try{
+  var url=new URL(String(value||'/notifications.html'),location.origin);
+  if((url.protocol==='https:'||url.protocol==='http:')&&!url.username&&!url.password)return url.href;
+ }catch(_){}
+ return location.origin+'/notifications.html';
+}
+function parseDate(value){
+ var raw=String(value||'').trim();
+ if(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(raw))raw=raw.replace(' ','T')+'Z';
+ var date=new Date(raw);
+ return isNaN(date.getTime())?null:date;
+}
+function relativeTime(value){
+ var date=parseDate(value);if(!date)return 'Recently';
+ var seconds=Math.max(0,Math.floor((Date.now()-date.getTime())/1000));
+ if(seconds<45)return 'Just now';
+ if(seconds<3600)return Math.floor(seconds/60)+'m ago';
+ if(seconds<86400)return Math.floor(seconds/3600)+'h ago';
+ if(seconds<604800)return Math.floor(seconds/86400)+'d ago';
+ return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:date.getFullYear()===new Date().getFullYear()?undefined:'numeric'}).format(date);
+}
+function fullTime(value){
+ var date=parseDate(value);return date?new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(date):'';
+}
+function dayGroup(value){
+ var date=parseDate(value);if(!date)return 'Earlier';
+ var now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+ var day=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+ var diff=Math.floor((today-day)/86400000);
+ if(diff===0)return 'Today';
+ if(diff===1)return 'Yesterday';
+ return 'Earlier';
+}
+function extrasFor(item){
+ var data={};try{data=JSON.parse(item.data_json||'{}')||{};}catch(_){}
+ var pieces=[];
+ ['state','retailer','location','channel'].forEach(function(key){if(data[key])pieces.push(String(data[key]));});
+ if(data.reporter)pieces.push('Reported by '+String(data.reporter));
+ if(data.submittedByUsername)pieces.push('By @'+String(data.submittedByUsername));
+ if(data.from&&item.notification_type==='direct_message')pieces.push('From @'+String(data.from));
+ return pieces.join(' · ');
+}
+function renderCard(item){
+ var category=categoryFor(item.notification_type),label=typeLabels[item.notification_type]||category.label;
+ var unread=!item.read_at,id=Number(item.id),url=notificationUrl(item.url);
+ var details=extrasFor(item);
+ return '<article class="notify-card'+(unread?' unread':'')+'" data-notification-id="'+id+'">'+
+  '<div class="notify-icon '+category.className+'" aria-hidden="true">'+category.icon+'</div>'+
+  '<div class="notify-content">'+
+   '<div class="notify-meta"><span class="notify-kind">'+safe(label)+'</span><span aria-hidden="true">·</span><time class="notify-time" datetime="'+safe(item.created_at||'')+'" title="'+safe(fullTime(item.created_at))+'">'+safe(relativeTime(item.created_at))+'</time>'+(unread?'<span class="notify-unread-dot" aria-label="Unread"></span>':'')+'</div>'+
+   '<h3>'+safe(item.title||'PokePrizePool update')+'</h3><p>'+safe(item.body||'')+'</p>'+
+   (details?'<p class="notify-detail">'+safe(details)+'</p>':'')+
+   '<div class="notify-actions"><a class="notify-open" href="'+safe(url)+'" data-open-notification="'+id+'">View activity <span aria-hidden="true">→</span></a>'+
+   (unread?'<button class="notify-text-action" type="button" data-mark-read="'+id+'">Mark as read</button>':'')+
+   '<button class="notify-text-action danger" type="button" data-delete-notification="'+id+'">Delete</button></div>'+
+  '</div></article>';
+}
+function render(){
+ $('unread-total').textContent=Number(state.unread||0)>99?'99+':String(Number(state.unread||0));
+ $('read-all').disabled=Number(state.unread||0)===0;
+ document.querySelectorAll('[data-read-filter]').forEach(function(button){button.setAttribute('aria-pressed',String(button.dataset.readFilter===state.readFilter));});
+ document.querySelectorAll('[data-category]').forEach(function(button){button.setAttribute('aria-pressed',String(button.dataset.category===state.category));});
+ var categoryLabel=state.category==='all'?'All activity':state.category==='other'?'Other updates':(categories[state.category]||{label:'All activity'}).label;
+ $('feed-title').textContent=state.readFilter==='unread'?'Unread · '+categoryLabel:categoryLabel;
+ $('feed-subtitle').textContent=state.readFilter==='unread'?'Only notifications you have not opened yet.':'Your latest updates, newest first.';
+ var items=state.notifications||[];
+ if(!items.length){
+  var message=state.readFilter==='unread'?'You’re all caught up in this view.':state.category==='all'?'New collector activity, offers, alerts, and live streams will show up here.':'No notifications in this category yet.';
+  $('notify-list').innerHTML='<div class="notify-empty"><div class="notify-empty-icon">✓</div><h3>Nothing to show</h3><p>'+safe(message)+'</p></div>';
+ }else{
+  var html='',lastGroup='';
+  items.forEach(function(item){
+   var group=dayGroup(item.created_at);
+   if(group!==lastGroup){html+='<div class="notify-day-heading">'+safe(group)+'</div>';lastGroup=group;}
+   html+=renderCard(item);
+  });
+  $('notify-list').innerHTML=html;
+ }
+ $('load-more').hidden=!state.has_more;
+ $('load-more').disabled=state.loading;
+ $('load-more').textContent=state.loading?'Loading…':'Load older notifications';
+}
+async function api(method,body,url){
+ var response=await fetch(url||'/api/notifications',{method:method||'GET',credentials:'include',cache:'no-store',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+ var data=await response.json().catch(function(){return {ok:false,error:'Could not read notifications.'};});
  if(response.status===401){location.href='/account.html';throw new Error('Please sign in to your collector account.');}
  if(!response.ok||!data.ok)throw new Error(data.error||'Notification request failed.');
  return data;
 }
-function render(){
- $('unread-count').textContent=Number(state.unread||0)+' unread notification'+(Number(state.unread||0)===1?'':'s');
- const items=state.notifications||[];
- if(!items.length){$('notify-list').innerHTML='<div class="notify-empty">Your inbox is clear. New stock and line reports will appear here when they match your preferences.</div>';return;}
- $('notify-list').innerHTML=items.map(n=>{
-  let extra='';try{const data=JSON.parse(n.data_json||'{}');extra=[data.state,data.retailer,data.location].filter(Boolean).join(' · ');}catch(_){}
-  return '<article class="notify-card '+(!n.read_at?'unread':'')+'"><div class="notify-row"><h3>'+safe(n.title)+'</h3>'+(!n.read_at?'<button class="notify-btn" data-read="'+Number(n.id)+'" type="button">Mark read</button>':'')+'</div><p>'+safe(n.body)+'</p>'+(extra?'<p><small>'+safe(extra)+'</small></p>':'')+'<p><small>'+safe(n.created_at||'')+'</small> · <a href="'+safe(n.url||'/market-intelligence.html')+'" data-open-notification="'+Number(n.id)+'">Open update</a></p></article>';
- }).join('');
+function queryUrl(beforeId){
+ var params=new URLSearchParams();params.set('limit','40');params.set('filter',state.readFilter);params.set('category',state.category);
+ if(beforeId)params.set('before_id',String(beforeId));
+ return '/api/notifications?'+params.toString();
 }
-async function reload(){
- try{state=await api();render();$('inbox-status').textContent='Notifications loaded.';}
- catch(error){$('inbox-status').textContent=error.message;$('notify-list').innerHTML='';}
+async function load(reset){
+ if(state.loading)return;
+ state.loading=true;render();$('inbox-status').textContent=reset?'Loading notifications…':'Loading older notifications…';
+ try{
+  var before=reset?null:state.next_before_id;
+  var data=await api('GET',null,queryUrl(before));
+  if(reset)state.notifications=data.notifications||[];
+  else{
+   var known=new Set(state.notifications.map(function(n){return Number(n.id);}));
+   (data.notifications||[]).forEach(function(n){if(!known.has(Number(n.id)))state.notifications.push(n);});
+  }
+  state.unread=Number(data.unread||0);state.unread_non_message=Number(data.unread_non_message||0);
+  state.has_more=!!data.has_more;state.next_before_id=data.next_before_id||null;
+  $('inbox-status').textContent=state.notifications.length?state.notifications.length+' notification'+(state.notifications.length===1?'':'s')+' loaded.':'';
+  window.dispatchEvent(new Event('collector-notifications-updated'));
+ }catch(error){
+  $('inbox-status').textContent=error.message;
+  if(reset)$('notify-list').innerHTML='<div class="notify-empty"><div class="notify-empty-icon">!</div><h3>Couldn’t load notifications</h3><p>'+safe(error.message)+'</p></div>';
+ }finally{state.loading=false;render();}
 }
-$('read-all').addEventListener('click',async()=>{
- const button=$('read-all');button.disabled=true;
- try{state=await api('PATCH',{action:'read_all'});render();$('inbox-status').textContent='All notifications marked as read.';}
- catch(error){$('inbox-status').textContent=error.message;}finally{button.disabled=false;}
+async function markRead(id){
+ await api('PATCH',{action:'read',id:Number(id)});
+ window.dispatchEvent(new Event('collector-notifications-updated'));
+ await load(true);
+}
+document.querySelectorAll('[data-read-filter]').forEach(function(button){
+ button.addEventListener('click',function(){if(state.readFilter===button.dataset.readFilter)return;state.readFilter=button.dataset.readFilter;state.notifications=[];state.next_before_id=null;load(true);});
 });
-$('notify-list').addEventListener('click',async event=>{
- const open=event.target.closest('[data-open-notification]');
- if(open){
-  event.preventDefault();
-  const id=Number(open.dataset.openNotification);
-  try{
-   const item=(state.notifications||[]).find(n=>Number(n.id)===id);
-   if(item&&!item.read_at)state=await api('PATCH',{action:'read',id:id});
-   window.location.href=open.href;
-  }catch(error){$('inbox-status').textContent=error.message;}
-  return;
- }
- const button=event.target.closest('[data-read]');if(!button)return;
- try{state=await api('PATCH',{action:'read',id:Number(button.dataset.read)});render();}
- catch(error){$('inbox-status').textContent=error.message;}
+document.querySelectorAll('[data-category]').forEach(function(button){
+ button.addEventListener('click',function(){if(state.category===button.dataset.category)return;state.category=button.dataset.category;state.notifications=[];state.next_before_id=null;load(true);});
 });
-reload();
+$('read-all').addEventListener('click',async function(){
+ var button=this;button.disabled=true;
+ try{await api('PATCH',{action:'read_all'});state.readFilter='all';state.notifications=[];state.next_before_id=null;$('inbox-status').textContent='All notifications marked as read.';window.dispatchEvent(new Event('collector-notifications-updated'));await load(true);}
+ catch(error){$('inbox-status').textContent=error.message;button.disabled=false;}
+});
+$('refresh').addEventListener('click',function(){load(true);});
+$('load-more').addEventListener('click',function(){load(false);});
+$('notify-list').addEventListener('click',async function(event){
+ var readButton=event.target.closest('[data-mark-read]');
+ if(readButton){readButton.disabled=true;try{await markRead(readButton.dataset.markRead);}catch(error){$('inbox-status').textContent=error.message;readButton.disabled=false;}return;}
+ var deleteButton=event.target.closest('[data-delete-notification]');
+ if(deleteButton){deleteButton.disabled=true;try{await api('DELETE',{id:Number(deleteButton.dataset.deleteNotification)});window.dispatchEvent(new Event('collector-notifications-updated'));await load(true);$('inbox-status').textContent='Notification deleted.';}catch(error){$('inbox-status').textContent=error.message;deleteButton.disabled=false;}return;}
+ var open=event.target.closest('[data-open-notification]');
+ if(open){event.preventDefault();try{var item=state.notifications.find(function(n){return Number(n.id)===Number(open.dataset.openNotification);});if(item&&!item.read_at)await api('PATCH',{action:'read',id:Number(item.id)});window.dispatchEvent(new Event('collector-notifications-updated'));location.href=open.href;}catch(error){$('inbox-status').textContent=error.message;}}
+});
+window.addEventListener('focus',function(){load(true);});
+load(true);
 })();
 </script>
 </body>

@@ -49,16 +49,58 @@ async function ensurePreferences(db, accountId) {
   await db.prepare('INSERT OR IGNORE INTO notification_preferences (account_id) VALUES (?)').bind(accountId).run();
   return db.prepare('SELECT * FROM notification_preferences WHERE account_id = ?').bind(accountId).first();
 }
-async function getState(db, accountId) {
+const NOTIFICATION_CATEGORIES = {
+  posts: ['post_reaction', 'post_comment', 'post_comment_reply'],
+  community: ['mention'],
+  messages: ['direct_message'],
+  marketplace: ['trade_offer', 'trade_completion_confirmation'],
+  alerts: ['stock', 'line'],
+  live: ['ripz_live']
+};
+const KNOWN_NOTIFICATION_TYPES = Object.values(NOTIFICATION_CATEGORIES).flat();
+
+async function getState(db, accountId, options = {}) {
   const prefs = await ensurePreferences(db, accountId);
-  const notifications = await db.prepare(
-    'SELECT id, notification_type, title, body, url, data_json, read_at, created_at FROM notifications WHERE account_id = ? ORDER BY id DESC LIMIT 100'
-  ).bind(accountId).all();
-  const unread = await db.prepare('SELECT COUNT(*) AS count FROM notifications WHERE account_id = ? AND read_at IS NULL').bind(accountId).first();
+  const limit = Math.min(100, Math.max(10, Number(options.limit) || 100));
+  const beforeId = Number.isSafeInteger(Number(options.beforeId)) && Number(options.beforeId) > 0 ? Number(options.beforeId) : null;
+  const filter = options.filter === 'unread' ? 'unread' : 'all';
+  const category = Object.prototype.hasOwnProperty.call(NOTIFICATION_CATEGORIES, options.category) || options.category === 'other'
+    ? options.category : 'all';
+  const where = ['account_id = ?'];
+  const params = [accountId];
+  if (filter === 'unread') where.push('read_at IS NULL');
+  if (category !== 'all') {
+    if (category === 'other') {
+      where.push('notification_type NOT IN (' + KNOWN_NOTIFICATION_TYPES.map(() => '?').join(',') + ')');
+      params.push(...KNOWN_NOTIFICATION_TYPES);
+    } else {
+      const types = NOTIFICATION_CATEGORIES[category];
+      where.push('notification_type IN (' + types.map(() => '?').join(',') + ')');
+      params.push(...types);
+    }
+  }
+  if (beforeId) {
+    where.push('id < ?');
+    params.push(beforeId);
+  }
+  const [page, unread, unreadNonMessage] = await Promise.all([
+    db.prepare(
+      'SELECT id, notification_type, title, body, url, data_json, read_at, created_at FROM notifications WHERE ' +
+      where.join(' AND ') + ' ORDER BY id DESC LIMIT ?'
+    ).bind(...params, limit + 1).all(),
+    db.prepare('SELECT COUNT(*) AS count FROM notifications WHERE account_id = ? AND read_at IS NULL').bind(accountId).first(),
+    db.prepare("SELECT COUNT(*) AS count FROM notifications WHERE account_id = ? AND read_at IS NULL AND notification_type <> 'direct_message'").bind(accountId).first()
+  ]);
+  const rows = page.results || [];
+  const hasMore = rows.length > limit;
+  const notifications = rows.slice(0, limit);
   return {
     ok: true,
     unread: Number(unread?.count || 0),
-    notifications: notifications.results || [],
+    unread_non_message: Number(unreadNonMessage?.count || 0),
+    notifications,
+    has_more: hasMore,
+    next_before_id: hasMore && notifications.length ? Number(notifications[notifications.length - 1].id) : null,
     preferences: {
       in_app_enabled: Number(prefs.in_app_enabled) === 1,
       browser_push_enabled: Number(prefs.browser_push_enabled) === 1,
@@ -78,7 +120,15 @@ export async function onRequestGet({ request, env }) {
   try {
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: false, error: 'unauthorized' }, 401);
-    const result = await getState(env.DB, account.id);
+    const url = new URL(request.url);
+    const requestedLimit = Number(url.searchParams.get('limit') || 100);
+    const beforeId = Number(url.searchParams.get('before_id') || 0);
+    const result = await getState(env.DB, account.id, {
+      limit: Number.isFinite(requestedLimit) ? requestedLimit : 40,
+      beforeId,
+      filter: url.searchParams.get('filter') || 'all',
+      category: url.searchParams.get('category') || 'all'
+    });
     result.vapid_public_key = env.VAPID_PUBLIC_KEY || '';
     return json(result);
   } catch (error) {
