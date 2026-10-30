@@ -62,7 +62,7 @@ export async function onRequestPost({ request, env }) {
   };
   const extension = extensions[contentType];
   const isVideo = contentType.startsWith('video/');
-  if (!extension || (isVideo && kind !== 'post')) return json({ ok: false, error: 'unsupported_media_type' }, 415);
+  if (!extension || (isVideo && kind !== 'post' && kind !== 'story')) return json({ ok: false, error: 'unsupported_media_type' }, 415);
   const maxBytes = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
   const declaredLength = Number(request.headers.get('content-length') || 0);
   if (declaredLength > maxBytes) return json({ ok: false, error: isVideo ? 'video_too_large' : 'image_too_large' }, 413);
