@@ -67,13 +67,15 @@
       return '<div class="social-post-media-item"><img class="social-post-image" src="' + safe(item.url) + '" alt="Photo shared by ' + safe(post.display_name || post.username) + '" loading="lazy"></div>';
     }).join('') + '</div>' : '';
     return '<article class="social-post" data-post-card="' + Number(post.id) + '">' +
-      '<header class="social-post-header">' + avatar +
-      '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">' + safe(post.display_name || post.username) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">@' + safe(post.username) + '</a><span> · ' + safe(dateText(post.created_at)) + '</span></div></div>' +
+      (post.share_type === 'quote' ? '<div class="social-share-attribution">↗ ' + safe(post.sharer_name || post.sharer_username) + ' quoted a post</div>' : '') +
+      '<header class="social-post-header">' + (post.share_type === 'quote' && post.sharer_avatar ? '<img class="social-avatar" src="' + safe(post.sharer_avatar) + '" alt="" loading="lazy">' : avatar) +
+      '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.share_type === 'quote' ? post.sharer_username : post.username) + '">' + safe(post.share_type === 'quote' ? (post.sharer_name || post.sharer_username) : (post.display_name || post.username)) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.share_type === 'quote' ? post.sharer_username : post.username) + '">@' + safe(post.share_type === 'quote' ? post.sharer_username : post.username) + '</a><span> · ' + safe(dateText(post.created_at)) + '</span></div></div>' +
       '<div class="social-post-menu"><button type="button" class="social-post-menu-trigger" data-post-menu-toggle="' + Number(post.id) + '" aria-label="Post options" aria-expanded="false">···</button><div class="social-post-menu-items" data-post-menu="' + Number(post.id) + '" hidden>' + (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report post</button>' : '<button type="button" data-post-edit="' + Number(post.id) + '" data-post-body="' + safe(post.body || '') + '" data-post-media="' + safe(JSON.stringify(media)) + '">Edit post</button><button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete post</button>') + '</div></div></header>' +
-      (post.body ? '<p class="social-post-body">' + safe(post.body).replace(/\n/g, '<br>') + '</p>' : '') + mediaMarkup +
+      (post.quote_body ? '<p class="social-post-body social-quote-body">' + safe(post.quote_body).replace(/\n/g, '<br>') + '</p>' : '') +
+      '<div class="' + (post.share_type === 'quote' ? 'social-quoted-original' : '') + '">' + (post.body ? '<p class="social-post-body">' + safe(post.body).replace(/\n/g, '<br>') + '</p>' : '') + mediaMarkup + '</div>' +
       '<div class="social-post-stats"><button type="button" class="social-stat-button" data-post-likers="' + Number(post.id) + '" data-like-count aria-label="See post reactions">' + Number(post.like_count || 0) + (Number(post.like_count || 0) === 1 ? ' reaction' : ' reactions') + '</button><button type="button" class="social-stat-button" data-post-open-comments="' + Number(post.id) + '" data-comment-count aria-label="See comments on this post">' + Number(post.comment_count || 0) + (Number(post.comment_count || 0) === 1 ? ' comment' : ' comments') + '</button><span class="social-view-count" data-view-count' + (post.is_own ? '' : ' hidden') + '>' + Number(post.view_count || 0) + (Number(post.view_count || 0) === 1 ? ' view' : ' views') + '</span></div>' +
       '<section class="social-likers-thread" data-likers-thread="' + Number(post.id) + '" hidden><p class="social-inline-status" data-likes-status role="status" aria-live="polite"></p><div class="social-likers-list" data-likes-list></div></section>' +
-      '<div class="social-post-actions"><div class="social-reaction-picker" data-reaction-picker="' + Number(post.id) + '"><button type="button" class="social-reaction-trigger' + (post.my_reaction ? ' is-reacted' : '') + '" data-reaction-trigger="' + Number(post.id) + '" aria-label="Choose a reaction" aria-expanded="false">' + (post.my_reaction ? safe(({like:'👍',love:'❤️',haha:'😂',wow:'😮',sad:'😢',angry:'😡'})[post.my_reaction] || '👍') : '＋') + ' <span>' + (post.my_reaction ? 'Reacted' : 'React') + '</span></button><div class="social-reaction-options" data-reaction-options hidden>' + [{key:'like',emoji:'👍',label:'Like'},{key:'love',emoji:'❤️',label:'Love'},{key:'haha',emoji:'😂',label:'Haha'},{key:'wow',emoji:'😮',label:'Wow'},{key:'sad',emoji:'😢',label:'Sad'},{key:'angry',emoji:'😡',label:'Angry'}].map(x=>'<button type="button" data-reaction="' + x.key + '" data-post-id="' + Number(post.id) + '" aria-label="' + x.label + '" title="' + x.label + '">' + x.emoji + '</button>').join('') + '</div></div><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button></div>' +
+      '<div class="social-post-actions"><button type="button" data-post-repost="' + Number(post.id) + '" data-reposted="' + (post.is_reposted_by_me ? 'true' : 'false') + '">' + (post.is_reposted_by_me ? 'Undo repost' : 'Repost') + '</button><button type="button" data-post-quote="' + Number(post.id) + '">Quote</button><div class="social-reaction-picker" data-reaction-picker="' + Number(post.id) + '"><button type="button" class="social-reaction-trigger' + (post.my_reaction ? ' is-reacted' : '') + '" data-reaction-trigger="' + Number(post.id) + '" aria-label="Choose a reaction" aria-expanded="false">' + (post.my_reaction ? safe(({like:'👍',love:'❤️',haha:'😂',wow:'😮',sad:'😢',angry:'😡'})[post.my_reaction] || '👍') : '＋') + ' <span>' + (post.my_reaction ? 'Reacted' : 'React') + '</span></button><div class="social-reaction-options" data-reaction-options hidden>' + [{key:'like',emoji:'👍',label:'Like'},{key:'love',emoji:'❤️',label:'Love'},{key:'haha',emoji:'😂',label:'Haha'},{key:'wow',emoji:'😮',label:'Wow'},{key:'sad',emoji:'😢',label:'Sad'},{key:'angry',emoji:'😡',label:'Angry'}].map(x=>'<button type="button" data-reaction="' + x.key + '" data-post-id="' + Number(post.id) + '" aria-label="' + x.label + '" title="' + x.label + '">' + x.emoji + '</button>').join('') + '</div></div><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button></div>' +
       '<section class="social-comments" data-comments-thread="' + Number(post.id) + '" hidden><div class="social-comment-list" data-comment-list></div>' +
       '<form class="social-comment-form" data-comment-form="' + Number(post.id) + '"><div class="social-reply-context" data-reply-context hidden>Replying to <strong data-reply-name></strong><button type="button" data-comment-reply-cancel>Cancel</button></div><input type="hidden" name="parent_comment_id" value=""><label class="sr-only" for="social-comment-' + Number(post.id) + '">Write a comment or reply</label><textarea id="social-comment-' + Number(post.id) + '" name="body" maxlength="1000" required rows="2" placeholder="Add a comment…"></textarea><button type="submit">Comment</button></form><p class="social-inline-status" data-comment-status role="status" aria-live="polite"></p></section></article>';
   }
@@ -519,6 +521,37 @@
         menu.hidden = !willOpen;
         menuToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
       }
+      return;
+    }
+    const repost = event.target.closest('[data-post-repost]');
+    if (repost) {
+      const id=Number(repost.dataset.postRepost), undo=repost.dataset.reposted==='true';
+      repost.disabled=true;
+      try {
+        if (undo) {
+          const shareId=Number(repost.dataset.shareId || 0);
+          if (!shareId) throw new Error('Could not find your repost to undo. Refresh and try again.');
+          await api('/api/collector/post-shares?id='+shareId,{method:'DELETE'});
+        } else {
+          const saved=await api('/api/collector/post-shares',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:id,share_type:'repost'})});
+          repost.dataset.shareId=String(saved.share_id || '');
+        }
+        repost.dataset.reposted=undo?'false':'true';
+        repost.textContent=undo?'Repost':'Undo repost';
+      } catch(e) { alert(e.message); }
+      finally { repost.disabled=false; }
+      return;
+    }
+    const quote = event.target.closest('[data-post-quote]');
+    if (quote) {
+      const body=prompt('Add your thoughts to this quote post (up to 2,000 characters):','');
+      if (body===null)return;
+      quote.disabled=true;
+      try {
+        await api('/api/collector/post-shares',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:Number(quote.dataset.postQuote),share_type:'quote',body})});
+        await loadPosts(root,state);
+      } catch(e) { alert(e.message); }
+      finally { quote.disabled=false; }
       return;
     }
     const edit = event.target.closest('[data-post-edit]');
