@@ -32,7 +32,7 @@
   };
   function renderLinkedText(value) {
     const text = String(value ?? '');
-    const pattern = /https?:\\/\\/[^\\s<>\"']+|www\\.[^\\s<>\"']+|(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}(?::\\d+)?(?:[/?#][^\\s<>\"']*)?/gi;
+    const pattern = /https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?::\d+)?(?:[/?#][^\s<>"']*)?/gi;
     let html = '';
     let cursor = 0;
     let match;
@@ -60,7 +60,7 @@
         }
       }
       html += safe(text.slice(cursor, match.index));
-      const href = /^(?:https?:\\/\\/)/i.test(candidate) ? candidate : 'https://' + candidate;
+      const href = /^(?:https?:\/\/)/i.test(candidate) ? candidate : 'https://' + candidate;
       let validHref = '';
       try {
         const parsed = new URL(href);
@@ -71,7 +71,7 @@
       cursor = match.index + raw.length;
     }
     html += safe(text.slice(cursor));
-    return html.replace(/\\n/g, '<br>');
+    return html.replace(/\n/g, '<br>');
   }
   async function api(url, options) {
     const response = await fetch(url, Object.assign({credentials:'include',cache:'no-store'}, options || {}));
