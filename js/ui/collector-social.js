@@ -16,7 +16,7 @@
     style.textContent += '.social-comment-form{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px}.social-comment-form [data-reply-context]{grid-column:1/-1}.social-comment-form textarea{display:block!important;visibility:visible!important;opacity:1!important;width:100%;min-width:0;min-height:72px;box-sizing:border-box;grid-column:1}.social-comment-form button[type="submit"]{grid-column:2;grid-row:2;align-self:end}';
     style.textContent += '.social-post-header{position:relative}.social-post-menu{position:relative;margin-left:auto;align-self:flex-start}.social-post-menu-trigger{width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:#607096;font-size:25px;line-height:1;letter-spacing:1px;cursor:pointer}.social-post-menu-trigger:hover,.social-post-menu-trigger:focus-visible{background:#edf3ff;color:#0b2a6b}.social-post-menu-items{position:absolute;z-index:20;right:0;top:36px;min-width:145px;padding:5px;background:#fff;border:1px solid #dbe4f4;border-radius:10px;box-shadow:0 8px 24px #07194d24}.social-post-menu-items[hidden]{display:none!important}.social-post-menu-items button{display:block;width:100%;padding:9px 11px;border:0;border-radius:7px;background:transparent;text-align:left;color:#17386c;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer}.social-post-menu-items button:hover{background:#edf3ff}.social-post-menu-items .social-post-delete{color:#b42318}';
     style.textContent += '.social-compose-suggestion-anchor{position:relative;display:block;width:100%;min-width:0}.social-compose-suggestion-anchor>textarea{display:block;width:100%;box-sizing:border-box}.social-compose-suggestions{position:absolute;z-index:1000;left:0;right:0;top:calc(100% + 7px);display:grid;gap:3px;max-height:260px;overflow-y:auto;padding:6px;background:#101f38;border:1px solid #3b567c;border-radius:12px;box-shadow:0 16px 38px #0008;backdrop-filter:blur(16px)}.social-compose-suggestions[hidden]{display:none!important}.social-compose-suggestion{display:flex;align-items:center;width:100%;min-height:40px;padding:9px 12px;border:0;border-radius:8px;background:transparent;color:#eef4ff;text-align:left;font:800 .9rem Nunito,system-ui,sans-serif;cursor:pointer}.social-compose-suggestion:hover,.social-compose-suggestion:focus-visible{outline:none;background:#203b60;color:#ffd21f}.social-compose-suggestion-anchor:has(.social-compose-suggestions:not([hidden])){z-index:50}';
-    style.textContent += '.social-post-permalink{color:inherit;text-decoration:none}.social-post-permalink:hover,.social-post-permalink:focus-visible{text-decoration:underline;text-underline-offset:3px}.social-share-status{margin:6px 0 0;color:#607096;font-size:.78rem;min-height:1em}.social-single-post-view .social-composer,.social-single-post-view .community-filter{display:none!important}';
+    style.textContent += '.social-post-permalink{color:inherit;text-decoration:none}.social-post-permalink:hover,.social-post-permalink:focus-visible{text-decoration:underline;text-underline-offset:3px}.social-share-status{margin:6px 0 0;color:#607096;font-size:.78rem;min-height:1em}.social-single-post-view .social-composer,.social-single-post-view .community-filter{display:none!important}.social-post-body a{color:inherit;text-decoration:underline;text-decoration-color:#7da9e8;text-underline-offset:3px;overflow-wrap:anywhere}.social-post-body a:hover,.social-post-body a:focus-visible{text-decoration-color:currentColor}';
     document.head.appendChild(style);
   }
   ensureMediaStyles();
@@ -30,6 +30,49 @@
     const d = new Date(timestamp);
     return Number.isNaN(d.getTime()) ? '' : d.toLocaleString([], {month:'short',day:'numeric',year:d.getFullYear()===new Date().getFullYear()?undefined:'numeric',hour:'numeric',minute:'2-digit'});
   };
+  function renderLinkedText(value) {
+    const text = String(value ?? '');
+    const pattern = /https?:\\/\\/[^\\s<>\"']+|www\\.[^\\s<>\"']+|(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}(?::\\d+)?(?:[/?#][^\\s<>\"']*)?/gi;
+    let html = '';
+    let cursor = 0;
+    let match;
+    while ((match = pattern.exec(text))) {
+      const raw = match[0];
+      const before = text[match.index - 1] || '';
+      if (/[a-z0-9_@.-]/i.test(before)) continue;
+      let candidate = raw;
+      let trailing = '';
+      while (/[.,!?;:]/.test(candidate.slice(-1))) {
+        trailing = candidate.slice(-1) + trailing;
+        candidate = candidate.slice(0, -1);
+      }
+      let trimmed = true;
+      while (trimmed && candidate) {
+        trimmed = false;
+        const pairs = [[')', '('], [']', '['], ['}', '{']];
+        for (const pair of pairs) {
+          if (candidate.endsWith(pair[0]) && candidate.split(pair[0]).length > candidate.split(pair[1]).length) {
+            candidate = candidate.slice(0, -1);
+            trailing = pair[0] + trailing;
+            trimmed = true;
+            break;
+          }
+        }
+      }
+      html += safe(text.slice(cursor, match.index));
+      const href = /^(?:https?:\\/\\/)/i.test(candidate) ? candidate : 'https://' + candidate;
+      let validHref = '';
+      try {
+        const parsed = new URL(href);
+        if ((parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.hostname.includes('.') && !parsed.username && !parsed.password) validHref = parsed.href;
+      } catch (_) {}
+      if (validHref) html += '<a href="' + safe(validHref) + '" target="_blank" rel="noopener noreferrer nofollow">' + safe(candidate) + '</a>' + safe(trailing);
+      else html += safe(raw);
+      cursor = match.index + raw.length;
+    }
+    html += safe(text.slice(cursor));
+    return html.replace(/\\n/g, '<br>');
+  }
   async function api(url, options) {
     const response = await fetch(url, Object.assign({credentials:'include',cache:'no-store'}, options || {}));
     const data = await response.json().catch(() => ({}));
@@ -71,7 +114,7 @@
       '<header class="social-post-header">' + avatar +
       '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">' + safe(post.display_name || post.username) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">@' + safe(post.username) + '</a><span> · <a class="social-post-permalink" href="/post/' + Number(post.id) + '" aria-label="Open this post directly">' + safe(dateText(post.created_at)) + '</a></span></div></div>' +
       '<div class="social-post-menu"><button type="button" class="social-post-menu-trigger" data-post-menu-toggle="' + Number(post.id) + '" aria-label="Post options" aria-expanded="false">···</button><div class="social-post-menu-items" data-post-menu="' + Number(post.id) + '" hidden>' + (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report post</button>' : '<button type="button" data-post-edit="' + Number(post.id) + '" data-post-body="' + safe(post.body || '') + '" data-post-media="' + safe(JSON.stringify(media)) + '">Edit post</button><button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete post</button>') + '</div></div></header>' +
-      (post.body ? '<p class="social-post-body">' + safe(post.body).replace(/\n/g, '<br>') + '</p>' : '') + mediaMarkup +
+      (post.body ? '<p class="social-post-body">' + renderLinkedText(post.body) + '</p>' : '') + mediaMarkup +
       '<div class="social-post-stats"><button type="button" class="social-stat-button" data-post-likers="' + Number(post.id) + '" data-like-count aria-label="See post reactions">' + Number(post.like_count || 0) + (Number(post.like_count || 0) === 1 ? ' reaction' : ' reactions') + '</button><button type="button" class="social-stat-button" data-post-open-comments="' + Number(post.id) + '" data-comment-count aria-label="See comments on this post">' + Number(post.comment_count || 0) + (Number(post.comment_count || 0) === 1 ? ' comment' : ' comments') + '</button><span class="social-view-count" data-view-count' + (post.is_own ? '' : ' hidden') + '>' + Number(post.view_count || 0) + (Number(post.view_count || 0) === 1 ? ' view' : ' views') + '</span></div>' +
       '<section class="social-likers-thread" data-likers-thread="' + Number(post.id) + '" hidden><p class="social-inline-status" data-likes-status role="status" aria-live="polite"></p><div class="social-likers-list" data-likes-list></div></section>' +
       '<div class="social-post-actions"><div class="social-reaction-picker" data-reaction-picker="' + Number(post.id) + '"><button type="button" class="social-reaction-trigger' + (post.my_reaction ? ' is-reacted' : '') + '" data-reaction-trigger="' + Number(post.id) + '" aria-label="Choose a reaction" aria-expanded="false">' + (post.my_reaction ? safe(({like:'👍',love:'❤️',haha:'😂',wow:'😮',sad:'😢',angry:'😡'})[post.my_reaction] || '👍') : '＋') + ' <span>' + (post.my_reaction ? 'Reacted' : 'React') + '</span></button><div class="social-reaction-options" data-reaction-options hidden>' + [{key:'like',emoji:'👍',label:'Like'},{key:'love',emoji:'❤️',label:'Love'},{key:'haha',emoji:'😂',label:'Haha'},{key:'wow',emoji:'😮',label:'Wow'},{key:'sad',emoji:'😢',label:'Sad'},{key:'angry',emoji:'😡',label:'Angry'}].map(x=>'<button type="button" data-reaction="' + x.key + '" data-post-id="' + Number(post.id) + '" aria-label="' + x.label + '" title="' + x.label + '">' + x.emoji + '</button>').join('') + '</div></div><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button><button type="button" data-post-share="' + Number(post.id) + '" aria-label="Share this post">Share</button></div><p class="social-share-status" data-share-status role="status" aria-live="polite"></p>' +
