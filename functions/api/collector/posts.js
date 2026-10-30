@@ -186,7 +186,7 @@ export async function onRequestGet({request, env}) {
       if (ids.length) {
         const marks = ids.map(() => '?').join(',');
         const shares = await env.DB.prepare(
-          "SELECT s.id AS share_id,s.account_id AS sharer_id,s.post_id,s.body AS quote_body,s.created_at AS shared_at," +
+          "SELECT s.id AS share_id,s.account_id AS sharer_id,s.post_id,s.share_type,s.body AS quote_body,s.created_at AS shared_at," +
           "sp.username AS sharer_username,sp.avatar_url AS sharer_avatar,sa.display_name AS sharer_name " +
           "FROM collector_post_shares s JOIN collector_profiles sp ON sp.account_id=s.account_id " +
           "JOIN accounts sa ON sa.id=s.account_id WHERE s.post_id IN (" + marks + ") AND sp.is_public=1 " +
