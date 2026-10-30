@@ -14,9 +14,9 @@ export async function onRequestGet({request,env}){
  if(!viewer)return json({ok:false,error:'login_required'},401);
  const url=new URL(request.url),query=String(url.searchParams.get('q')||'').trim().replace(/^@/,'').slice(0,24);
  if(!/^[a-zA-Z0-9_]{0,24}$/.test(query))return json({ok:true,members:[]});
- if(!query)return json({ok:true,members:[]});
+ 
  try{
-  const pattern=query.toLowerCase()+'%';
+  const pattern=query ? query.toLowerCase()+'%' : '%';
   const result=await env.DB.prepare(`
    SELECT cp.username,cp.avatar_url,a.display_name
    FROM collector_profiles cp JOIN accounts a ON a.id=cp.account_id
