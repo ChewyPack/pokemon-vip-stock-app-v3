@@ -92,7 +92,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-catalog-result small{color:var(--muted);margin-top:3px}
 .cp-catalog-status{font-size:.82rem;color:var(--muted);margin:8px 0 0;line-height:1.4}
 @media(max-width:820px){.cp-layout{grid-template-columns:1fr}.cp-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:520px){.cp-hero{align-items:flex-start;gap:15px;min-height:220px;padding:20px 16px}.cp-avatar{width:76px;height:76px;flex-basis:76px;border-radius:20px}.cp-hero h1{font-size:2rem}.cp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-items{grid-template-columns:1fr 1fr}.cp-item-image{height:210px;padding:10px 6px 6px}.cp-item-image img{max-height:190px}.cp-stat strong{font-size:1.35rem}}
+.cp-profile-highlights{margin:0 0 14px}.cp-profile-highlights-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.cp-profile-highlights-heading h2{margin:0;color:var(--navy)}.cp-profile-highlights-heading p{margin:3px 0 0;color:var(--muted);font-size:.8rem}.cp-profile-highlights-heading>span{color:var(--blue);font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.cp-profile-highlight-list{display:flex;gap:14px;overflow-x:auto;padding:2px 2px 8px}.cp-profile-highlight{display:flex;flex:0 0 92px;flex-direction:column;align-items:center;gap:7px;color:var(--navy);text-decoration:none;text-align:center}.cp-profile-highlight img,.cp-profile-highlight .cp-profile-highlight-video{display:grid;place-items:center;width:76px;height:76px;object-fit:cover;border:3px solid #ffd21f;border-radius:50%;background:#10264b;color:#ffd21f;font-size:1.5rem}.cp-profile-highlight span:last-child{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem;font-weight:900}.cp-profile-highlight:hover span:last-child{text-decoration:underline}@media(max-width:520px){.cp-hero{align-items:flex-start;gap:15px;min-height:220px;padding:20px 16px}.cp-avatar{width:76px;height:76px;flex-basis:76px;border-radius:20px}.cp-hero h1{font-size:2rem}.cp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-items{grid-template-columns:1fr 1fr}.cp-item-image{height:210px;padding:10px 6px 6px}.cp-item-image img{max-height:190px}.cp-stat strong{font-size:1.35rem}}
 [hidden]{display:none!important}
 /* Compatibility nodes for legacy profile controls; shared navigation owns sign-in and logout UI. */
 #collector-logout,#collector-signin,#collector-settings{display:none!important}
@@ -299,6 +299,10 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  <div class="cp-spotlight-carousel" id="collection-spotlight-carousel"><div class="cp-spotlight-viewport" id="collection-spotlight-viewport"><div id="collection-spotlight-grid" class="cp-spotlight-grid" aria-live="off"></div></div><div class="cp-spotlight-controls"><button class="cp-spotlight-arrow" id="spotlight-prev" type="button" aria-label="Previous collection items">‹</button><div class="cp-spotlight-dots" id="spotlight-dots" aria-label="Collection carousel position"></div><button class="cp-spotlight-arrow" id="spotlight-next" type="button" aria-label="Next collection items">›</button></div></div>
 </section>
 <section id="profile-badges" class="cp-gym-panel" aria-label="Gym Badge achievements" hidden></section>
+<section id="profile-story-highlights" class="cp-panel cp-profile-highlights" aria-label="Story Highlights" hidden>
+ <div class="cp-profile-highlights-heading"><div><h2>Story Highlights</h2><p>Favorite moments from this collector, saved beyond 24 hours.</p></div><span>Highlights</span></div>
+ <div id="profile-story-highlight-list" class="cp-profile-highlight-list"></div>
+</section>
 <section id="wishlist-match-dashboard" class="cp-panel cp-wishlist-dashboard" hidden>
  <div class="cp-match-header"><h2>Wishlist Matches</h2><p class="cp-status" id="wishlist-match-status" role="status" aria-live="polite"></p></div>
  <div id="wishlist-match-results" class="cp-match-grid"><div class="cp-match-empty">Checking your wishlist…</div></div>
@@ -1089,6 +1093,27 @@ $('collector-search-form').addEventListener('submit',event=>{
    window.collectorSocialProfile={own:own,username:profile?.username||viewUsername};window.dispatchEvent(new CustomEvent('collector-profile-loaded',{detail:window.collectorSocialProfile}));stats();if(location.hash==='#shop')activeList='shop';render();if(own)await loadWishlistMatchDashboard();if(activeList==='shop')loadShopTab();
   }catch(e){setStatus('view-status',e.message||'Could not load the profile.');$('items').innerHTML='<div class="cp-empty">'+safe(e.message||'Could not load the profile.')+'</div>';}
  }
+
+ async function loadProfileStoryHighlights(username){
+  const panel=$('profile-story-highlights'),list=$('profile-story-highlight-list');
+  if(!panel||!list)return;
+  panel.hidden=true;list.replaceChildren();
+  if(!username)return;
+  try{
+   const response=await fetch('/api/collector/stories?user='+encodeURIComponent(username),{credentials:'include',cache:'no-store'});
+   const data=await response.json().catch(()=>({ok:false}));
+   if(!response.ok||!data.ok)return;
+   const highlights=(data.stories||[]).filter(story=>story.is_highlighted);
+   if(!highlights.length)return;
+   list.innerHTML=highlights.map(story=>{
+    const media=story.media_type==='image'?'<img src="'+safe(story.media_url)+'" alt="" loading="lazy">':'<span class="cp-profile-highlight-video" aria-hidden="true">▶</span>';
+    const label=story.caption||new Date(String(story.created_at).replace(' ','T')+'Z').toLocaleDateString();
+    return '<a class="cp-profile-highlight" href="/newsfeed.html?story='+Number(story.id)+'" aria-label="View highlighted story">'+media+'<span>'+safe(label)+'</span></a>';
+   }).join('');
+   panel.hidden=false;
+  }catch(_){panel.hidden=true;}
+ }
+ window.addEventListener('collector-profile-loaded',event=>loadProfileStoryHighlights(event.detail?.username||''));
  function openBioEditor(){if(!own)return;$('bio-input').value=profile?.bio||'';$('bio-editor').hidden=false;$('bio-input').focus();}
  $('edit-bio').addEventListener('click',openBioEditor);$('bio-display').addEventListener('click',openBioEditor);
 
