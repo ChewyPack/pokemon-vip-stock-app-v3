@@ -81,7 +81,7 @@
     if (!section) return;
     const status = $(section, '[data-likes-status]');
     const list = $(section, '[data-likes-list]');
-    status.textContent = 'Loading likes…';
+    status.textContent = 'Loading reactions…';
     list.replaceChildren();
     try {
       const data = await api('/api/collector/post-reaction?id=' + encodeURIComponent(postId));
@@ -91,7 +91,7 @@
       status.textContent = users.length ? (summary ? summary + ' — ' : '') + users.length + (users.length === 1 ? ' collector reacted.' : ' collectors reacted.') : 'No reactions yet.';
       list.innerHTML = users.map(user => '<article class="social-liker">' +
         (user.avatar_url ? '<img class="social-liker-avatar" src="' + safe(user.avatar_url) + '" alt="" loading="lazy">' : '<span class="social-liker-avatar social-avatar-placeholder">P</span>') +
-        '<div class="social-liker-name"><a href="/collector.html?user=' + encodeURIComponent(user.username) + '">' + safe(user.display_name || user.username) + '</a><span>@' + safe(user.username) + '</span></div></article>').join('');
+        '<div class="social-liker-name"><a href="/collector.html?user=' + encodeURIComponent(user.username) + '">' + safe(user.display_name || user.username) + '</a><span>@' + safe(user.username) + ' · ' + safe(({like:'👍 Like',love:'❤️ Love',haha:'😂 Haha',wow:'😮 Wow',sad:'😢 Sad',angry:'😡 Angry'})[user.reaction] || '👍 Like') + '</span></div></article>').join('');
       section.dataset.loaded = 'true';
     } catch (error) { status.textContent = error.message || 'Could not load who liked this post.'; }
   }
