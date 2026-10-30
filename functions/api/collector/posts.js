@@ -213,6 +213,7 @@ export async function onRequestGet({request, env}) {
             sharer_name:share.sharer_name || share.sharer_username,
             sharer_avatar:share.sharer_avatar || '',
             shared_at:share.shared_at,
+            is_own:!!viewerId && Number(share.sharer_id)===Number(viewerId),
             created_at:share.shared_at
           });
         }
