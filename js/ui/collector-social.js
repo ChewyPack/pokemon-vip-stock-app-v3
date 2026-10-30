@@ -148,6 +148,7 @@
     if (!thread.hidden && thread.dataset.loaded !== 'true') await loadComments(root, postId);
   }
   let viewObserver = null;
+  let shortVideoObserver = null;
   const attemptedPostViews = new Set();
   function browserViewerKey() {
     try {
@@ -186,6 +187,36 @@
         if (count) count.textContent = Number(data.view_count || 0) + ' views';
       } else { attemptedPostViews.delete(postId); }
     } catch (_) { attemptedPostViews.delete(postId); }
+  }
+  function observeShortVideos(root, enabled) {
+    if (shortVideoObserver) {
+      shortVideoObserver.disconnect();
+      shortVideoObserver = null;
+    }
+    const videos = Array.from(root.querySelectorAll('.social-post-video'));
+    if (!enabled) {
+      videos.forEach(video => video.pause());
+      return;
+    }
+    videos.forEach(video => {
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+    });
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!('IntersectionObserver' in window)) return;
+    shortVideoObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        const video = entry.target;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.65) {
+          const attempt = video.play();
+          if (attempt && typeof attempt.catch === 'function') attempt.catch(() => {});
+        } else {
+          video.pause();
+        }
+      });
+    }, {threshold:[0,0.65]});
+    videos.forEach(video => shortVideoObserver.observe(video));
   }
   function observePostViews(root, posts) {
     if (viewObserver) viewObserver.disconnect();
@@ -302,6 +333,7 @@
         status.textContent = '';
       }
       observePostViews(root, posts);
+      observeShortVideos(root, state.feed === 'video');
       if (requestedPost) {
         const focusCard = $(list, '[data-post-card="' + Number(requestedPost) + '"]');
         if (focusCard) focusCard.scrollIntoView({behavior:'smooth',block:'center'});
