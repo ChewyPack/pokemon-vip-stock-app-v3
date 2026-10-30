@@ -129,6 +129,34 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
 #community-feed> .social-inline-status:last-child{padding:10px 4px;color:#8296b5!important;font-size:.78rem}
 @media(max-width:640px){.community-wrap{width:calc(100% - 20px);margin:14px auto 48px}.community-heading{border-radius:15px;padding:23px 19px}.community-filter{top:4px}.community-filter button{padding:10px 6px;font-size:.82rem}.social-composer,.social-post{padding:14px!important;border-radius:14px!important}.social-post-actions button{flex:1;padding:9px 7px!important}.social-post-header{gap:9px}}
 @media(prefers-reduced-motion:reduce){.social-post,.social-primary,.social-post-actions button{transition:none}}
+
+/* Collector post composer */
+.social-composer{padding:0!important;overflow:hidden;background:linear-gradient(145deg,#122541,#0b192e)!important;border:1px solid #385477!important;border-radius:18px!important;box-shadow:0 16px 38px #0004!important}
+.composer-heading{display:flex;align-items:center;gap:13px;padding:19px 20px 15px;border-bottom:1px solid #293f61}
+.composer-avatar{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;border-radius:14px;background:linear-gradient(145deg,#ffd21f,#f2a900);color:#0a1930;font:900 1.35rem Nunito,system-ui,sans-serif;box-shadow:0 5px 16px #ffd21f25}
+.composer-heading h2{margin:0!important;color:#fff!important;font:900 1.08rem Nunito,system-ui,sans-serif!important}
+.composer-heading p{margin:3px 0 0;color:#9fb2d0;font-size:.8rem}
+.composer-prompt{display:block;margin:17px 20px 8px;color:#dce7f6;font-size:.84rem;font-weight:900}
+.social-composer #community-post-body{display:block;box-sizing:border-box;width:calc(100% - 40px);margin:0 20px;min-height:112px;padding:14px 15px!important;background:#08162a!important;border:1px solid #344d70!important;border-radius:12px!important;color:#f4f7ff!important;font:500 .98rem/1.55 Nunito,system-ui,sans-serif;resize:vertical}
+.social-composer #community-post-body:focus{outline:2px solid #ffd21f80;outline-offset:1px;border-color:#d4ad31!important}
+.social-composer #community-post-body::placeholder{color:#7f94b2}
+.composer-type-row{display:flex;align-items:center;gap:12px;margin:14px 20px 0}
+.composer-type-row>label{color:#8298b8;font-size:.67rem;font-weight:900;letter-spacing:.12em}
+.social-composer #community-post-type{width:auto;min-width:190px;min-height:38px;padding:7px 34px 7px 11px!important;border-radius:9px!important;background:#172d4b!important;border:1px solid #385477!important;color:#edf4ff!important;font-size:.83rem;font-weight:800}
+.composer-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 20px 18px;padding-top:14px;border-top:1px solid #293f61}
+.composer-upload-tools{display:flex;align-items:center;gap:9px;min-width:0}
+.composer-upload{position:relative;display:flex!important;align-items:center;gap:9px;padding:9px 12px;border:1px solid #344d70;border-radius:11px;background:#142945;color:#eaf1fc!important;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.composer-upload:hover{background:#1a3558;border-color:#6482aa}
+.composer-upload-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#203e61;color:#ffd21f;font-size:1.15rem;font-weight:900}
+.composer-upload strong,.composer-upload small{display:block}
+.composer-upload strong{font-size:.78rem;font-weight:900}
+.composer-upload small{margin-top:1px;color:#8fa5c4;font-size:.66rem;font-weight:700}
+.composer-upload input[type=file]{position:absolute!important;inset:0;width:100%!important;height:100%;opacity:0;cursor:pointer;font-size:0}
+.composer-submit{display:flex;align-items:center;justify-content:center;gap:13px;min-width:130px;padding:11px 16px!important}
+.composer-submit span:last-child{font-size:1.1rem}
+.social-composer .social-media-preview{margin:0 20px 12px}
+.social-composer .social-inline-status{margin:0 20px 14px!important}
+@media(max-width:600px){.composer-heading{padding:16px}.composer-prompt{margin:15px 16px 8px}.social-composer #community-post-body{width:calc(100% - 32px);margin:0 16px}.composer-type-row{margin:12px 16px 0;align-items:flex-start;flex-direction:column;gap:6px}.social-composer #community-post-type{width:100%}.composer-tools{margin:14px 16px 16px;align-items:stretch;flex-direction:column}.composer-upload-tools{display:grid;grid-template-columns:1fr 1fr}.composer-upload{padding:8px;gap:7px}.composer-upload-icon{width:29px;height:29px;flex:0 0 29px}.composer-upload strong{font-size:.74rem}.composer-upload small{font-size:.61rem}.composer-submit{width:100%}.social-composer .social-media-preview{margin:0 16px 12px}.social-composer .social-inline-status{margin:0 16px 14px!important}}
 </style>
 </head>
 <body>
@@ -137,13 +165,27 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
 <header class="community-heading"><p class="eyebrow">Collector community</p><h1>News Feed</h1><p>Share your pulls, collection updates, questions, trade interests, event photos, and restock sightings with fellow collectors.</p></header>
 <section id="community-feed">
 <form class="social-composer" data-social-composer hidden>
-<h2>Share with collectors</h2>
-<label>What’s happening in your collection?<textarea name="body" maxlength="2000" rows="3" placeholder="Share a pull, a thought, a question, or a new find…"></textarea></label>
-<div class="social-composer-row">
-<label class="social-composer-label">Post type<select name="post_type"><option value="status">Status</option><option value="pull">Card pull</option><option value="collection">Collection update</option><option value="trade">Trade interest</option><option value="question">Question</option><option value="event">Event</option><option value="restock">Restock sighting</option></select></label>
-<div class="social-composer-media-inputs"><label>Photos (up to 3, 5 MB each)<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple></label><label>Video (1 MP4/WebM, up to 25 MB)<input name="video" type="file" accept="video/mp4,video/webm"></label></div>
-<button class="social-primary" type="submit">Post</button>
-</div><div class="social-media-preview" data-media-preview aria-live="polite"></div><p class="social-inline-status" data-composer-status role="status" aria-live="polite"></p>
+  <div class="composer-heading">
+    <div class="composer-avatar" aria-hidden="true">P</div>
+    <div><h2>Share with collectors</h2><p>Show the community what’s happening in your collection.</p></div>
+  </div>
+  <label class="composer-prompt" for="community-post-body">What’s happening in your collection?</label>
+  <textarea id="community-post-body" name="body" maxlength="2000" rows="4" placeholder="Share a pull, a thought, a question, or a new find…"></textarea>
+  <div class="composer-type-row">
+    <label for="community-post-type">POST TYPE</label>
+    <select id="community-post-type" name="post_type">
+      <option value="status">✦ Status</option><option value="pull">✧ Card pull</option><option value="collection">▣ Collection update</option><option value="trade">⇄ Trade interest</option><option value="question">? Question</option><option value="event">⌖ Event</option><option value="restock">◉ Restock sighting</option>
+    </select>
+  </div>
+  <div class="composer-tools">
+    <div class="composer-upload-tools">
+      <label class="composer-upload composer-photo" for="community-post-images"><span class="composer-upload-icon">▧</span><span><strong>Add photos</strong><small>Up to 3 · 5 MB each</small></span><input id="community-post-images" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple></label>
+      <label class="composer-upload composer-video" for="community-post-video"><span class="composer-upload-icon">▶</span><span><strong>Add video</strong><small>MP4/WebM · 25 MB max</small></span><input id="community-post-video" name="video" type="file" accept="video/mp4,video/webm"></label>
+    </div>
+    <button class="social-primary composer-submit" type="submit"><span>Post to feed</span><span aria-hidden="true">→</span></button>
+  </div>
+  <div class="social-media-preview" data-media-preview aria-live="polite"></div>
+  <p class="social-inline-status" data-composer-status role="status" aria-live="polite"></p>
 </form>
 <nav class="community-filter" aria-label="Choose feed">
 <button type="button" data-feed-mode="for-you" aria-pressed="false">For You</button>
