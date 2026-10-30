@@ -554,7 +554,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   const buddyImg=$('buddy-pokemon-image');buddyImg.alt=buddyName+' partner Pokémon';if(buddyImage){buddyImg.src=buddyImage;buddyImg.hidden=false;}else{buddyImg.removeAttribute('src');buddyImg.hidden=true;}
   renderBuddyPokemonOptions(p?.buddy_pokemon||'pikachu');
   const featured=buddyOptions.find(item=>item.key===(p?.featured_pokemon||''));
-  $('featured-identity').hidden=!p;
+  $('featured-identity').hidden=!p||(!own&&!p.featured_pokemon&&!p.favorite_set);
   $('featured-identity-editor').hidden=!own;
   $('featured-pokemon-name').textContent=p?.featured_pokemon_name||featured?.name||'Not selected';
   $('favorite-set-name').textContent=p?.favorite_set||'Not selected';
