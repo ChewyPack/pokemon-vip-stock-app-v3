@@ -634,7 +634,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  function startSpotlightTimer(){
   stopSpotlightTimer();
   if(spotlightItems.length<=spotlightVisibleCount()||window.matchMedia('(prefers-reduced-motion: reduce)').matches||document.hidden)return;
-  spotlightTimer=setInterval(()=>{if($('collection-spotlight-carousel').matches(':hover')||$('collection-spotlight-carousel').contains(document.activeElement))return;spotlightIndex=spotlightIndex>=spotlightMaxIndex()?0:spotlightIndex+1;updateSpotlightCarousel();},4200);
+  spotlightTimer=setInterval(()=>{if($('collection-spotlight-carousel').matches(':hover')||$('collection-spotlight-carousel').contains(document.activeElement))return;spotlightIndex=spotlightIndex>=spotlightMaxIndex()?0:spotlightIndex+1;updateSpotlightCarousel();},3800);
  }
  function restartSpotlightTimer(){stopSpotlightTimer();startSpotlightTimer();}
  function renderCollectionSpotlight(){
