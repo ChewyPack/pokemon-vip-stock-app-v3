@@ -389,16 +389,16 @@
         await setupComposer(root,state);
       }
     } catch (_) {}
-    root.querySelectorAll('[data-feed-mode]').forEach(button => button.addEventListener('click', async () => {
-      const feed = button.dataset.feedMode;
+    const feedSort = $(root, '#community-feed-sort');
+    if (feedSort) feedSort.addEventListener('change', async () => {
+      const feed = feedSort.value;
       if (feed === 'following') {
         try { const me=await fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(r=>r.json()); if(!me.authenticated){location.href='/account.html';return;} }
         catch (_) { location.href='/account.html'; return; }
       }
       state.feed=feed;
-      root.querySelectorAll('[data-feed-mode]').forEach(b => { const selected=b===button; b.setAttribute('aria-pressed',String(selected));b.classList.toggle('is-active',selected); });
       await loadPosts(root,state);
-    }));
+    });
     root.addEventListener('click', event => handleClick(event,root,state));
     root.addEventListener('submit', event => handleCommentSubmit(event,root,state));
     await loadPosts(root,state);
