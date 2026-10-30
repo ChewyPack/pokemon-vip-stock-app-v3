@@ -15,6 +15,7 @@
     style.textContent = '.social-composer-row,.cp-social-composer-row{grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto!important}.social-composer-media-inputs,.cp-social-media-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}.social-media-preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.social-media-preview:empty{display:none}.social-media-preview__item{min-width:0;display:grid;gap:4px;padding:6px;border:1px solid #dbe4f4;border-radius:9px;background:#f5f7fc;color:#31517f;font-size:.75rem;font-weight:800;overflow:hidden}.social-media-preview__item img,.social-media-preview__item video{display:block;width:100%;height:88px;object-fit:contain;background:#eaf1ff;border-radius:5px}.social-media-preview__note{grid-column:1/-1;margin:0;color:#a32222;font-size:.82rem;font-weight:800}.social-post-media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.social-post-media-grid.is-single{grid-template-columns:minmax(0,1fr)}.social-post-media-item{min-width:0;overflow:hidden;border-radius:11px;background:#f3f6fc}.social-post-media-item .social-post-image,.social-post-video{display:block;width:100%;height:100%;max-height:560px;object-fit:contain;background:#f3f6fc;border-radius:11px;margin:0}.social-post-video{aspect-ratio:16/9;min-height:150px}.social-stat-button{border:0;background:transparent;color:#607096;font:inherit;font-size:.82rem;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}.social-stat-button:hover,.social-stat-button:focus-visible{color:#0b2a6b}.social-view-count{color:#607096;font-size:.82rem}.social-likers-thread{margin:8px 0;padding:11px;border:1px solid #dbe4f4;border-radius:10px;background:#f7faff}.social-likers-thread[hidden]{display:none!important}.social-likers-list{display:grid;gap:8px}.social-liker{display:flex;align-items:center;gap:9px;min-width:0;padding:6px;border-radius:8px;background:#fff}.social-liker-avatar{width:34px;height:34px;flex:0 0 34px;object-fit:cover;border-radius:50%;background:#eaf1ff}.social-liker-name{min-width:0;overflow-wrap:anywhere}.social-liker-name a{color:#0b2a6b;text-decoration:none;font-weight:900}.social-liker-name span{display:block;color:#607096;font-size:.78rem}@media(max-width:640px){.social-composer-row,.cp-social-composer-row{grid-template-columns:1fr!important}.social-composer-media-inputs,.cp-social-media-inputs{grid-template-columns:1fr}.social-media-preview{grid-template-columns:repeat(2,minmax(0,1fr))}.social-post-media-grid{gap:6px}.social-post-video{min-height:100px}}';
     style.textContent += '.social-comment-form{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px}.social-comment-form [data-reply-context]{grid-column:1/-1}.social-comment-form textarea{display:block!important;visibility:visible!important;opacity:1!important;width:100%;min-width:0;min-height:72px;box-sizing:border-box;grid-column:1}.social-comment-form button[type="submit"]{grid-column:2;grid-row:2;align-self:end}';
     style.textContent += '.social-post-header{position:relative}.social-post-menu{position:relative;margin-left:auto;align-self:flex-start}.social-post-menu-trigger{width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:#607096;font-size:25px;line-height:1;letter-spacing:1px;cursor:pointer}.social-post-menu-trigger:hover,.social-post-menu-trigger:focus-visible{background:#edf3ff;color:#0b2a6b}.social-post-menu-items{position:absolute;z-index:20;right:0;top:36px;min-width:145px;padding:5px;background:#fff;border:1px solid #dbe4f4;border-radius:10px;box-shadow:0 8px 24px #07194d24}.social-post-menu-items[hidden]{display:none!important}.social-post-menu-items button{display:block;width:100%;padding:9px 11px;border:0;border-radius:7px;background:transparent;text-align:left;color:#17386c;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer}.social-post-menu-items button:hover{background:#edf3ff}.social-post-menu-items .social-post-delete{color:#b42318}';
+    style.textContent += '.social-compose-suggestion-anchor{position:relative;display:block;width:100%;min-width:0}.social-compose-suggestion-anchor>textarea{display:block;width:100%;box-sizing:border-box}.social-compose-suggestions{position:absolute;z-index:1000;left:0;right:0;top:calc(100% + 7px);display:grid;gap:3px;max-height:260px;overflow-y:auto;padding:6px;background:#101f38;border:1px solid #3b567c;border-radius:12px;box-shadow:0 16px 38px #0008;backdrop-filter:blur(16px)}.social-compose-suggestions[hidden]{display:none!important}.social-compose-suggestion{display:flex;align-items:center;width:100%;min-height:40px;padding:9px 12px;border:0;border-radius:8px;background:transparent;color:#eef4ff;text-align:left;font:800 .9rem Nunito,system-ui,sans-serif;cursor:pointer}.social-compose-suggestion:hover,.social-compose-suggestion:focus-visible{outline:none;background:#203b60;color:#ffd21f}.social-compose-suggestion-anchor:has(.social-compose-suggestions:not([hidden])){z-index:50}';
     document.head.appendChild(style);
   }
   ensureMediaStyles();
@@ -253,10 +254,14 @@
   function attachMentionAutocomplete(bodyInput) {
     if (!bodyInput || bodyInput.dataset.mentionsBound === 'true') return;
     bodyInput.dataset.mentionsBound = 'true';
+    const suggestionAnchor = document.createElement('div');
+    suggestionAnchor.className = 'social-compose-suggestion-anchor';
+    bodyInput.parentNode.insertBefore(suggestionAnchor, bodyInput);
+    suggestionAnchor.appendChild(bodyInput);
     const suggestionBox = document.createElement('div');
     suggestionBox.className = 'social-compose-suggestions';
     suggestionBox.hidden = true;
-    bodyInput.insertAdjacentElement('afterend', suggestionBox);
+    suggestionAnchor.appendChild(suggestionBox);
     let suggestionTimer = null;
     let suggestionRequest = 0;
     const starterTags = ['Pokemon','PokemonTCG','OnePieceTCG','Lorcana','DragonBallSuper','PokemonCards','CardPull','TCGCommunity','PokePrizePool'];
@@ -271,7 +276,6 @@
       items.slice(0,8).forEach(item => {
         const button=document.createElement('button'); button.type='button'; button.className='social-compose-suggestion';
         const label=document.createElement('span'); label.textContent=item.label;
-        if(item.detail){const small=document.createElement('small');small.textContent=item.detail;label.appendChild(small);}
         button.appendChild(label); button.addEventListener('mousedown',e=>e.preventDefault());
         button.addEventListener('click',()=>insertSuggestion(item.insert,start,end)); suggestionBox.appendChild(button);
       });
@@ -296,7 +300,7 @@
       const everyone=token&&'everyone'.startsWith(token)?[{label:'@Everyone',detail:'Mention the community',insert:'@Everyone'}]:[];
       suggestionTimer=setTimeout(async()=>{
         try{const r=await fetch('/api/collector/mentions?q='+encodeURIComponent(token),{credentials:'include',cache:'no-store'});const d=await r.json();if(requestId!==suggestionRequest)return;
-          const members=(d.members||[]).map(m=>({label:'@'+m.username,detail:m.display_name||'PokePrizePool member',insert:'@'+m.username}));
+          const members=(d.members||[]).map(m=>({label:'@'+m.username,insert:'@'+m.username}));
           show([...everyone,...members],start,cursor);
         }catch(_){if(requestId===suggestionRequest)show(everyone,start,cursor);}
       },150);
