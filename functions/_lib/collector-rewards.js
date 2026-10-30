@@ -1077,9 +1077,16 @@ export async function ensureCollectorRewardSchema(env) {
       account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
       badge_id TEXT NOT NULL,
       earned_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      is_featured INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (account_id, badge_id)
     )
   `).run();
+  try {
+    await env.DB.prepare("ALTER TABLE collector_earned_badges ADD COLUMN is_featured INTEGER NOT NULL DEFAULT 0").run();
+  } catch (error) {
+    const message = String(error?.message || "").toLowerCase();
+    if (!message.includes("duplicate column name") && !message.includes("already exists")) throw error;
+  }
 }
 
 export async function awardCollectorBasicAchievement(env, accountId, achievementId) {
@@ -1148,9 +1155,9 @@ export async function getCollectorAchievements(env, accountId) {
     }
   }
   const earnedResult = await env.DB.prepare(
-    "SELECT badge_id, earned_at FROM collector_earned_badges WHERE account_id = ?"
+    "SELECT badge_id, earned_at, is_featured FROM collector_earned_badges WHERE account_id = ?"
   ).bind(accountId).all();
-  const earned = new Map((earnedResult.results || []).map(item => [item.badge_id, item.earned_at]));
+  const earned = new Map((earnedResult.results || []).map(item => [item.badge_id, { earned_at: item.earned_at, is_featured: Number(item.is_featured || 0) === 1 }]));
   return {
     collection_items: total,
     earned_count: COLLECTOR_GYM_BADGES.filter(badge => earned.has(badge.id)).length,
@@ -1160,7 +1167,8 @@ export async function getCollectorAchievements(env, accountId) {
     basic_achievements: COLLECTOR_BASIC_BADGES.map(badge => ({
       ...badge,
       earned: earned.has(badge.id),
-      earned_at: earned.get(badge.id) || null
+      earned_at: earned.get(badge.id)?.earned_at || null,
+      featured: earned.get(badge.id)?.is_featured || false
     })),
     badges: COLLECTOR_GYM_BADGES.map(badge => ({
       ...badge,
