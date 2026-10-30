@@ -292,6 +292,15 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
 }
 @media(prefers-reduced-motion:reduce){.story-viewer-panel{scroll-behavior:auto}}
 
+
+/* Facebook-style story navigation: invisible side tap zones and swipe gestures */
+.story-viewer-content[data-story-gesture]{touch-action:pan-y;cursor:pointer}
+.story-viewer-content[data-story-gesture]::before,.story-viewer-content[data-story-gesture]::after{content:"";position:absolute;z-index:2;top:0;bottom:58px;width:35%;background:transparent}
+.story-viewer-content[data-story-gesture]::before{left:0}
+.story-viewer-content[data-story-gesture]::after{right:0}
+.story-viewer-hint{padding:8px 12px 10px;color:#8fa5c4;text-align:center;font-size:.65rem;line-height:1.3}
+@media(max-width:640px){.story-viewer-hint{padding:7px 10px calc(10px + env(safe-area-inset-bottom));font-size:.62rem}}
+
 </style>
 </head>
 <body>
