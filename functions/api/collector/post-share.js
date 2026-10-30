@@ -12,7 +12,7 @@ function cookie(request, name) {
   return '';
 }
 function b64(bytes) {
-  return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+  return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 async function sha256(value) {
   return b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
@@ -24,16 +24,13 @@ async function currentAccount(request, env) {
   return account && account.session_expires_at && Number(account.session_expires_at) > Date.now() ? account : null;
 }
 async function visiblePost(env, id, viewerId) {
-  return env.DB.prepare(`SELECT p.id
-    FROM collector_posts p
-    JOIN collector_profiles cp ON cp.account_id = p.account_id
-    WHERE p.id = ? AND p.deleted_at IS NULL AND cp.is_public = 1
-      AND (? IS NULL OR NOT EXISTS (
-        SELECT 1 FROM collector_blocks b
-        WHERE (b.blocker_account_id = ? AND b.blocked_account_id = p.account_id)
-           OR (b.blocker_account_id = p.account_id AND b.blocked_account_id = ?)
-      ))
-    LIMIT 1`).bind(id, viewerId, viewerId, viewerId).first();
+  const sql = 'SELECT p.id FROM collector_posts p ' +
+    'JOIN collector_profiles cp ON cp.account_id = p.account_id ' +
+    'WHERE p.id = ? AND p.deleted_at IS NULL AND cp.is_public = 1 ' +
+    'AND (? IS NULL OR NOT EXISTS (SELECT 1 FROM collector_blocks b ' +
+    'WHERE (b.blocker_account_id = ? AND b.blocked_account_id = p.account_id) ' +
+    'OR (b.blocker_account_id = p.account_id AND b.blocked_account_id = ?))) LIMIT 1';
+  return env.DB.prepare(sql).bind(id, viewerId, viewerId, viewerId).first();
 }
 export async function onRequestPost({request, env}) {
   if (!env.DB) return json({ok:false,error:'database_not_configured'}, 500);
