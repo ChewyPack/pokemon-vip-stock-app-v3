@@ -168,4 +168,39 @@ export async function onRequestPost({request,env}) {
     return json({ok:false,error:'direct_message_send_failed'},500);
   }
 }
+
+export async function onRequestDelete({request,env}) {
+  if (!env.DB) return json({ok:false,error:'database_not_configured'},500);
+  const account=await currentAccount(request,env).catch(()=>null);
+  if (!account) return json({ok:false,error:'login_required'},401);
+  let data;
+  try { data=await request.json(); } catch (_) { return json({ok:false,error:'invalid_json'},400); }
+  const id=Number(data.id);
+  if (!Number.isSafeInteger(id) || id < 1) return json({ok:false,error:'invalid_message_id'},400);
+  try {
+    await ensureTable(env.DB);
+    const existing=await env.DB.prepare(
+      'SELECT id,sender_account_id,recipient_account_id,read_at FROM collector_direct_messages WHERE id=? LIMIT 1'
+    ).bind(id).first();
+    if (!existing) return json({ok:false,error:'message_not_found'},404);
+    if (Number(existing.sender_account_id)!==Number(account.id)) return json({ok:false,error:'not_message_sender'},403);
+    if (existing.read_at) return json({ok:false,error:'message_already_read',message:'This message has already been seen and can no longer be deleted.'},409);
+    // The read-state condition is repeated in the DELETE itself to make the check atomic
+    // against the recipient opening the conversation at the same time.
+    const removed=await env.DB.prepare(
+      'DELETE FROM collector_direct_messages WHERE id=? AND sender_account_id=? AND read_at IS NULL'
+    ).bind(id,account.id).run();
+    if (Number(removed.meta?.changes||0)!==1) {
+      return json({ok:false,error:'message_already_read',message:'This message has already been seen and can no longer be deleted.'},409);
+    }
+    await env.DB.prepare(
+      "DELETE FROM notifications WHERE account_id=? AND notification_type='direct_message' AND json_extract(data_json,'$.message_id')=?"
+    ).bind(existing.recipient_account_id,id).run().catch(()=>{});
+    return json({ok:true,id,deleted:true});
+  } catch(error) {
+    console.error('Direct message delete failed:',error);
+    return json({ok:false,error:'direct_message_delete_failed'},500);
+  }
+}
+
 export async function onRequest(){return json({ok:false,error:'method_not_allowed'},405);}
