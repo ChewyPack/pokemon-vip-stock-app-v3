@@ -70,7 +70,7 @@
       (post.share_type === 'quote' ? '<div class="social-share-attribution">↗ ' + safe(post.sharer_name || post.sharer_username) + ' quoted a post</div>' : '') +
       '<header class="social-post-header">' + (post.share_type === 'quote' && post.sharer_avatar ? '<img class="social-avatar" src="' + safe(post.sharer_avatar) + '" alt="" loading="lazy">' : avatar) +
       '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.share_type === 'quote' ? post.sharer_username : post.username) + '">' + safe(post.share_type === 'quote' ? (post.sharer_name || post.sharer_username) : (post.display_name || post.username)) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.share_type === 'quote' ? post.sharer_username : post.username) + '">@' + safe(post.share_type === 'quote' ? post.sharer_username : post.username) + '</a><span> · ' + safe(dateText(post.created_at)) + '</span></div></div>' +
-      '<div class="social-post-menu"><button type="button" class="social-post-menu-trigger" data-post-menu-toggle="' + Number(post.id) + '" aria-label="Post options" aria-expanded="false">···</button><div class="social-post-menu-items" data-post-menu="' + Number(post.id) + '" hidden>' + (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report post</button>' : '<button type="button" data-post-edit="' + Number(post.id) + '" data-post-body="' + safe(post.body || '') + '" data-post-media="' + safe(JSON.stringify(media)) + '">Edit post</button><button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete post</button>') + '</div></div></header>' +
+      '<div class="social-post-menu"><button type="button" class="social-post-menu-trigger" data-post-menu-toggle="' + Number(post.id) + '" aria-label="Post options" aria-expanded="false">···</button><div class="social-post-menu-items" data-post-menu="' + Number(post.id) + '" hidden>' + (post.share_type === 'quote' ? (post.is_own ? '<button type="button" data-quote-delete="' + Number(post.feed_share_id) + '" class="social-post-delete">Delete quote</button>' : '<button type="button" data-post-report="' + Number(post.id) + '">Report post</button>') : (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report post</button>' : '<button type="button" data-post-edit="' + Number(post.id) + '" data-post-body="' + safe(post.body || '') + '" data-post-media="' + safe(JSON.stringify(media)) + '">Edit post</button><button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete post</button>')) + '</div></div></header>' +
       (post.quote_body ? '<p class="social-post-body social-quote-body">' + safe(post.quote_body).replace(/\n/g, '<br>') + '</p>' : '') +
       '<div class="' + (post.share_type === 'quote' ? 'social-quoted-original' : '') + '">' + (post.body ? '<p class="social-post-body">' + safe(post.body).replace(/\n/g, '<br>') + '</p>' : '') + mediaMarkup + '</div>' +
       '<div class="social-post-stats"><button type="button" class="social-stat-button" data-post-likers="' + Number(post.id) + '" data-like-count aria-label="See post reactions">' + Number(post.like_count || 0) + (Number(post.like_count || 0) === 1 ? ' reaction' : ' reactions') + '</button><button type="button" class="social-stat-button" data-post-open-comments="' + Number(post.id) + '" data-comment-count aria-label="See comments on this post">' + Number(post.comment_count || 0) + (Number(post.comment_count || 0) === 1 ? ' comment' : ' comments') + '</button><span class="social-view-count" data-view-count' + (post.is_own ? '' : ' hidden') + '>' + Number(post.view_count || 0) + (Number(post.view_count || 0) === 1 ? ' view' : ' views') + '</span></div>' +
@@ -552,6 +552,15 @@
         await loadPosts(root,state);
       } catch(e) { alert(e.message); }
       finally { quote.disabled=false; }
+      return;
+    }
+    const quoteDelete=event.target.closest('[data-quote-delete]');
+    if(quoteDelete){
+      if(!confirm('Delete your quote post?'))return;
+      quoteDelete.disabled=true;
+      try{await api('/api/collector/post-shares?id='+encodeURIComponent(quoteDelete.dataset.quoteDelete),{method:'DELETE'});await loadPosts(root,state);}
+      catch(e){alert(e.message);}
+      finally{quoteDelete.disabled=false;}
       return;
     }
     const edit = event.target.closest('[data-post-edit]');
