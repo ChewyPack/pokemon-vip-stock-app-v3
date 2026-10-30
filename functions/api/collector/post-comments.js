@@ -59,7 +59,7 @@ export async function onRequestPost({request,env}){
       ? await env.DB.prepare('INSERT INTO collector_post_comments(post_id,account_id,body,parent_comment_id) VALUES(?,?,?,?)').bind(postId,a.id,body,parentId).run()
       : await env.DB.prepare('INSERT INTO collector_post_comments(post_id,account_id,body) VALUES(?,?,?)').bind(postId,a.id,body).run();
     const commentId=Number(r.meta?.last_row_id||0);
-    try { const tags=[...new Set((body.match(/(^|\\s)#[a-zA-Z0-9_]{2,30}/g)||[]).map(x=>x.trim().slice(1)))]; for (const display of tags) await env.DB.prepare(\`INSERT INTO collector_hashtags(tag,display_tag,usage_count) VALUES(?,?,1) ON CONFLICT(tag) DO UPDATE SET usage_count=collector_hashtags.usage_count+1,display_tag=excluded.display_tag,updated_at=CURRENT_TIMESTAMP\`).bind(display.toLowerCase(),display).run(); } catch (tagError) { console.error('Hashtag tracking skipped:',tagError); }
+    try { const tags=[...new Set((body.match(/(^|\s)#[a-zA-Z0-9_]{2,30}/g)||[]).map(x=>x.trim().slice(1)))]; for (const display of tags) await env.DB.prepare(\`INSERT INTO collector_hashtags(tag,display_tag,usage_count) VALUES(?,?,1) ON CONFLICT(tag) DO UPDATE SET usage_count=collector_hashtags.usage_count+1,display_tag=excluded.display_tag,updated_at=CURRENT_TIMESTAMP\`).bind(display.toLowerCase(),display).run(); } catch (tagError) { console.error('Hashtag tracking skipped:',tagError); }
     const actor=await env.DB.prepare('SELECT p.username,a.display_name FROM collector_profiles p JOIN accounts a ON a.id=p.account_id WHERE p.account_id=? LIMIT 1').bind(a.id).first();
     if(actor?.username){
       const excerpt=body.length>160?body.slice(0,157)+'…':body;
