@@ -195,8 +195,8 @@
       '<div><strong>' + escapeHtml(group.display_name || group.username) + '</strong><span>@' + escapeHtml(group.username) + ' · ' + escapeHtml(relativeTime(story.created_at)) + '</span></div>' +
       (story.is_own ? '<button type="button" class="story-viewer-delete" data-story-delete="' + Number(story.id) + '">Delete</button>' : '') +
       '</header>' +
-      '<div class="story-viewer-content">' + media + (story.caption ? '<p class="story-viewer-caption">' + escapeHtml(story.caption) + '</p>' : '') + '</div>' +
-      '<footer class="story-viewer-footer"><button type="button" data-story-prev' + (storyIndex === 0 && activeGroupIndex === 0 ? ' disabled' : '') + '>Previous</button><span>Stories disappear after 24 hours</span><button type="button" data-story-next>Next</button></footer>' +
+      '<div class="story-viewer-content" data-story-gesture>' + media + (story.caption ? '<p class="story-viewer-caption">' + escapeHtml(story.caption) + '</p>' : '') + '</div>' +
+      '<div class="story-viewer-hint" aria-hidden="true">Tap sides or swipe to navigate · Stories disappear after 24 hours</div>' +
       '</section></div>';
   }
   function renderViewer() {
@@ -207,10 +207,30 @@
     viewer.innerHTML = viewerMarkup(group,story,activeStoryIndex);
     const close = viewer.querySelector('[data-story-close]');
     if (close) close.addEventListener('click',closeViewer);
-    const prev = viewer.querySelector('[data-story-prev]');
-    if (prev) prev.addEventListener('click',() => moveStory(-1));
-    const next = viewer.querySelector('[data-story-next]');
-    if (next) next.addEventListener('click',() => moveStory(1));
+    const gestureArea = viewer.querySelector('[data-story-gesture]');
+    if (gestureArea) {
+      let pointerStart = null;
+      gestureArea.addEventListener('pointerdown',event => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        pointerStart = {x:event.clientX,y:event.clientY};
+      });
+      gestureArea.addEventListener('pointerup',event => {
+        if (!pointerStart) return;
+        const start = pointerStart;
+        pointerStart = null;
+        const dx = event.clientX - start.x;
+        const dy = event.clientY - start.y;
+        if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          moveStory(dx < 0 ? 1 : -1);
+          return;
+        }
+        if (event.target.closest('button,[data-story-close]')) return;
+        if (event.target.closest('video') && event.clientY > gestureArea.getBoundingClientRect().bottom - 58) return;
+        const bounds = gestureArea.getBoundingClientRect();
+        moveStory(event.clientX < bounds.left + bounds.width / 2 ? -1 : 1);
+      });
+      gestureArea.addEventListener('pointercancel',() => { pointerStart = null; });
+    }
     const del = viewer.querySelector('[data-story-delete]');
     if (del) del.addEventListener('click',async () => {
       del.disabled = true;
@@ -254,7 +274,8 @@
     let nextStory = activeStoryIndex + direction;
     if (nextStory >= groups[nextGroup].stories.length) { nextGroup++; nextStory = 0; }
     if (nextStory < 0) { nextGroup--; nextStory = nextGroup >= 0 ? groups[nextGroup].stories.length - 1 : -1; }
-    if (nextGroup < 0 || nextGroup >= groups.length || nextStory < 0) { closeViewer(); return; }
+    if (nextGroup < 0 || nextStory < 0) return;
+    if (nextGroup >= groups.length) { closeViewer(); return; }
     activeGroupIndex = nextGroup;
     activeStoryIndex = nextStory;
     renderViewer();
