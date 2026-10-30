@@ -1173,7 +1173,8 @@ export async function getCollectorAchievements(env, accountId) {
     badges: COLLECTOR_GYM_BADGES.map(badge => ({
       ...badge,
       earned: earned.has(badge.id),
-      earned_at: earned.get(badge.id) || null
+      earned_at: earned.get(badge.id)?.earned_at || null,
+      featured: earned.get(badge.id)?.is_featured || false
     })),
     buddy_options: COLLECTOR_BUDDY_POKEMON.map(({ key, name, id }) => ({
       key, name, image_url: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png"
