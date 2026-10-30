@@ -152,7 +152,23 @@ export async function onRequestGet({request, env}) {
       'CASE WHEN ? IS NOT NULL AND ?=p.account_id THEN 1 ELSE 0 END AS is_own ' +
       'FROM collector_posts p JOIN collector_profiles cp ON cp.account_id=p.account_id JOIN accounts a ON a.id=p.account_id ' +
       'WHERE ' + whereClause + ' ORDER BY ' + order + ' LIMIT ?';
-    const result = await env.DB.prepare(sql).bind(viewerId, viewerId, viewerId, viewerId, viewerId, ...whereParams, limitValue).all();
+    let result;
+    try {
+      result = await env.DB.prepare(sql).bind(viewerId, viewerId, viewerId, viewerId, viewerId, ...whereParams, limitValue).all();
+    } catch (reactionSchemaError) {
+      // Keep the feed readable until the production reaction migration is applied.
+      if (!String(reactionSchemaError && reactionSchemaError.message || '').toLowerCase().includes('no such table')) throw reactionSchemaError;
+      const legacySql = 'SELECT p.id,p.account_id,p.body,p.post_type,p.image_url,p.created_at,p.updated_at,' +
+        'cp.username,cp.avatar_url,a.display_name,' +
+        '(SELECT COUNT(*) FROM collector_post_likes l WHERE l.post_id=p.id) AS like_count,' +
+        '(SELECT COUNT(*) FROM collector_post_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL) AS comment_count,' +
+        '(SELECT COUNT(*) FROM collector_post_views v WHERE v.post_id=p.id) AS view_count,' +
+        'CASE WHEN ? IS NOT NULL AND EXISTS (SELECT 1 FROM collector_post_likes ml WHERE ml.post_id=p.id AND ml.account_id=?) THEN 1 ELSE 0 END AS liked_by_me,' +
+        'CASE WHEN ? IS NOT NULL AND ?=p.account_id THEN 1 ELSE 0 END AS is_own ' +
+        'FROM collector_posts p JOIN collector_profiles cp ON cp.account_id=p.account_id JOIN accounts a ON a.id=p.account_id ' +
+        'WHERE ' + whereClause + ' ORDER BY ' + order + ' LIMIT ?';
+      result = await env.DB.prepare(legacySql).bind(viewerId,viewerId,viewerId,viewerId,...whereParams,limitValue).all();
+    }
     const posts = (result.results || []).map(p => {
       const media = mediaFromStored(p.image_url);
       const firstImage = media.find(item => item.type === 'image');
@@ -162,7 +178,7 @@ export async function onRequestGet({request, env}) {
         created_at:p.created_at, updated_at:p.updated_at, username:p.username,
         display_name:p.display_name || p.username, avatar_url:p.avatar_url || '',
         like_count:Number(p.like_count || 0), comment_count:Number(p.comment_count || 0), view_count:Number(p.is_own || 0) === 1 ? Number(p.view_count || 0) : 0,
-        liked_by_me:Number(p.liked_by_me || 0) === 1, my_reaction:p.my_reaction || '', is_own:Number(p.is_own || 0) === 1
+        liked_by_me:Number(p.liked_by_me || 0) === 1, my_reaction:p.my_reaction || (Number(p.liked_by_me || 0) === 1 ? 'like' : ''), is_own:Number(p.is_own || 0) === 1
       };
     });
     return json({ok:true, posts, feed:username ? 'profile' : mode});
