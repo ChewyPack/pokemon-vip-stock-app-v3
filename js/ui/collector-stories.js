@@ -274,7 +274,8 @@
     let nextStory = activeStoryIndex + direction;
     if (nextStory >= groups[nextGroup].stories.length) { nextGroup++; nextStory = 0; }
     if (nextStory < 0) { nextGroup--; nextStory = nextGroup >= 0 ? groups[nextGroup].stories.length - 1 : -1; }
-    if (nextGroup < 0 || nextGroup >= groups.length || nextStory < 0) { closeViewer(); return; }
+    if (nextGroup < 0 || nextStory < 0) return;
+    if (nextGroup >= groups.length) { closeViewer(); return; }
     activeGroupIndex = nextGroup;
     activeStoryIndex = nextStory;
     renderViewer();
