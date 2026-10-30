@@ -28,7 +28,7 @@ function addPostMetadata(html, post, origin) {
   const username = String(post.username || "collector");
   const author = String(post.display_name || username);
   const title = author + " shared a post | PokePrizePool";
-  const body = String(post.body || "").replace(/\\s+/g, " ").trim();
+  const body = String(post.body || "").replace(/\s+/g, " ").trim();
   const description = (body || "See this collector post on PokePrizePool.").slice(0, 260);
   const canonical = new URL("/post/" + Number(post.id), origin).href;
   const image = absoluteImageUrl(post.image_url, origin);
@@ -46,10 +46,10 @@ function addPostMetadata(html, post, origin) {
     '<meta name="twitter:title" content="' + escapeHtml(title) + '">',
     '<meta name="twitter:description" content="' + escapeHtml(description) + '">',
     '<meta name="twitter:image" content="' + escapeHtml(image) + '">'
-  ].join("\\n");
-  html = html.replace(/<title>[\\s\\S]*?<\\/title>/i, "<title>" + escapeHtml(title) + "</title>");
-  html = html.replace(/<meta\\s+name=["']description["'][^>]*>/i, "");
-  return html.replace(/<\\/head>/i, tags + "\\n</head>");
+  ].join("\n");
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, "<title>" + escapeHtml(title) + "</title>");
+  html = html.replace(/<meta\s+name=["']description["'][^>]*>/i, "");
+  return html.replace(/<\/head>/i, tags + "\n</head>");
 }
 
 function postPageShell() {
@@ -103,7 +103,7 @@ function postPageShell() {
     '<script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>',
     '</body>',
     '</html>'
-  ].join("\\n");
+  ].join("\n");
 }
 
 export async function onRequestGet({ request, env, params }) {
@@ -150,7 +150,8 @@ export async function onRequestGet({ request, env, params }) {
 }
 
 export async function onRequestHead(context) {
-  return onRequestGet(context);
+  const response = await onRequestGet(context);
+  return new Response(null, { status: response.status, statusText: response.statusText, headers: response.headers });
 }
 
 export async function onRequest() {
