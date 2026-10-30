@@ -189,13 +189,21 @@ export async function onRequestGet({request, env}) {
           "SELECT s.id AS share_id,s.account_id AS sharer_id,s.post_id,s.body AS quote_body,s.created_at AS shared_at," +
           "sp.username AS sharer_username,sp.avatar_url AS sharer_avatar,sa.display_name AS sharer_name " +
           "FROM collector_post_shares s JOIN collector_profiles sp ON sp.account_id=s.account_id " +
-          "JOIN accounts sa ON sa.id=s.account_id WHERE s.share_type='quote' AND s.post_id IN (" + marks + ") AND sp.is_public=1 " +
+          "JOIN accounts sa ON sa.id=s.account_id WHERE s.post_id IN (" + marks + ") AND sp.is_public=1 " +
           "ORDER BY s.created_at DESC,s.id DESC"
         ).bind(...ids).all();
         const originals = new Map(posts.map(post => [post.id, post]));
         for (const share of shares.results || []) {
           const original = originals.get(Number(share.post_id));
           if (!original) continue;
+          if (share.share_type === 'repost') {
+            original.share_count = Number(original.share_count || 0) + 1;
+            if (viewerId && Number(share.sharer_id) === Number(viewerId)) {
+              original.is_reposted_by_me = true;
+              original.my_repost_id = Number(share.share_id);
+            }
+            continue;
+          }
           posts.push({
             ...original,
             feed_share_id:Number(share.share_id),
