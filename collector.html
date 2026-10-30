@@ -213,6 +213,44 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 @media(max-width:760px){.cp-social-composer-row{grid-template-columns:1fr}.cp-social-composer button[type=submit]{width:100%}}
 @media(max-width:640px){#profile-content-panel>.cp-tabs{gap:3px;padding:4px}#profile-content-panel>.cp-tabs [role=tab]{min-height:40px;padding:8px 5px;font-size:.82rem}.cp-social-composer{padding:16px}.cp-social-media-inputs{grid-template-columns:1fr}.social-post{padding:14px}.social-post-actions{gap:5px}.social-post-actions button{padding:7px 4px;font-size:.77rem}.social-post-type{max-width:105px}}
 
+/* Collector post cards: carry the same premium navy-and-blue visual language as the composer. */
+#posts-tab-content [data-social-post-list]{display:grid;gap:14px;min-width:0}
+#posts-tab-content .social-post{position:relative;isolation:isolate;overflow:visible;margin:0;padding:18px 19px 15px;border:1px solid #dce5f1;border-radius:17px;background:linear-gradient(180deg,#fff 0%,#fff 78%,#fbfcff 100%);box-shadow:0 7px 22px #102b610c;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+#posts-tab-content .social-post:before{content:"";position:absolute;z-index:-1;inset:0 0 auto;height:3px;border-radius:17px 17px 0 0;background:linear-gradient(90deg,#102b61,#397bd0 65%,#9fc5f5)}
+#posts-tab-content .social-post:hover{transform:translateY(-2px);border-color:#c7d7ec;box-shadow:0 13px 30px #102b6115}
+#posts-tab-content .social-post-header{gap:11px;min-height:48px}
+#posts-tab-content .social-avatar{width:46px;height:46px;flex-basis:46px;border:2px solid #e5edf8;background:#f1f5fb}
+#posts-tab-content .social-post-author>a{font-size:.96rem;letter-spacing:-.01em}
+#posts-tab-content .social-post-author div{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:3px;font-size:.76rem;line-height:1.4}
+#posts-tab-content .social-post-author div a{color:#71829a}
+#posts-tab-content .social-post-menu{z-index:5}
+#posts-tab-content .social-post-menu-trigger{width:36px;height:36px;color:#526987}
+#posts-tab-content .social-post-body{margin:15px 1px 13px;color:#25364f;font-size:.99rem;line-height:1.72;letter-spacing:.002em}
+#posts-tab-content .social-post-image{max-height:650px;margin:12px 0;border:1px solid #e8edf5;border-radius:13px;background:#f4f7fb}
+#posts-tab-content .social-post-stats{display:flex;align-items:center;gap:8px 15px;margin-top:12px;padding:11px 1px;border-top:1px solid #edf1f7;border-bottom:1px solid #edf1f7;color:#8290a3;font-size:.77rem}
+#posts-tab-content .social-post-stats button{padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}
+#posts-tab-content .social-post-stats button:hover{color:#1c559f;text-decoration:underline;text-underline-offset:3px}
+#posts-tab-content .social-post-stats [data-view-count]{margin-left:auto}
+#posts-tab-content .social-post-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-top:12px}
+#posts-tab-content .social-post-actions>button,#posts-tab-content .social-post-actions .social-reaction-trigger{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:41px;padding:8px 10px;border:1px solid #e2eaf5;border-radius:11px;background:#f7f9fd;color:#405675;font-size:.82rem;font-weight:900}
+#posts-tab-content .social-post-actions>button:hover,#posts-tab-content .social-post-actions .social-reaction-trigger:hover{border-color:#c7d9f2;background:#edf4ff;color:#174783}
+#posts-tab-content .social-post-actions .social-reaction-trigger.is-reacted{border-color:#f7d6df;background:#fff1f4;color:#c0264a}
+#posts-tab-content .social-post-actions .social-reaction-options{bottom:calc(100% + 8px);box-shadow:0 10px 28px #102b6126}
+#posts-tab-content .social-post .social-share-status{padding:0 2px}
+#posts-tab-content .social-comments{margin-top:13px;padding-top:13px;border-top:1px solid #e9eef6}
+#posts-tab-content .social-comment-content{background:#f3f6fb;border:1px solid #e9eef6}
+#posts-tab-content .social-comment-form textarea{border-color:#d8e2ef;border-radius:11px;background:#fff}
+#posts-tab-content .social-comment-form button{border-radius:10px;background:#153b78}
+@media(max-width:640px){
+ #posts-tab-content .social-post{padding:15px 13px 12px;border-radius:15px}
+ #posts-tab-content .social-post-header{gap:9px}
+ #posts-tab-content .social-avatar{width:42px;height:42px;flex-basis:42px}
+ #posts-tab-content .social-post-body{font-size:.94rem;line-height:1.65}
+ #posts-tab-content .social-post-stats{gap:7px 11px;font-size:.72rem}
+ #posts-tab-content .social-post-actions{gap:5px}
+ #posts-tab-content .social-post-actions>button,#posts-tab-content .social-post-actions .social-reaction-trigger{min-height:39px;padding:7px 4px;font-size:.76rem}
+}
+
 
 /* Partner Pokémon and earned Gym Badge profile rewards. */
 .cp-buddy-display{display:flex;align-items:center;gap:12px;width:max-content;max-width:100%;margin:13px 0;padding:9px 14px 9px 9px;border:1px solid #ffffff45;border-radius:15px;background:#061744a8;box-shadow:0 4px 16px #020b2440}
