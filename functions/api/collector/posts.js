@@ -110,7 +110,10 @@ function postQueryWhere(viewerId, mode, username) {
   } else if (mode === 'following') {
     where += ' AND (p.account_id = ? OR EXISTS (SELECT 1 FROM collector_follows f WHERE f.follower_account_id = ? AND f.followed_account_id = p.account_id))';
     params.push(viewerId, viewerId);
+  } else if (mode === 'video') {
+    where += ' AND (p.image_url LIKE \'%"type":"video"%\' OR p.image_url LIKE \'%.mp4%\' OR p.image_url LIKE \'%.webm%\')';
   }
+  if (!username && mode === 'trending') where += " AND p.created_at >= datetime('now','-7 days')";
   where += ' AND (? IS NULL OR NOT EXISTS (SELECT 1 FROM collector_blocks b WHERE (b.blocker_account_id = ? AND b.blocked_account_id = p.account_id) OR (b.blocker_account_id = p.account_id AND b.blocked_account_id = ?)))';
   params.push(viewerId, viewerId, viewerId);
   return {where, params};
@@ -125,7 +128,7 @@ export async function onRequestGet({request, env}) {
     const viewer = await currentAccount(request, env).catch(() => null);
     const username = (url.searchParams.get('username') || '').trim().slice(0, 24);
     const mode = (url.searchParams.get('feed') || 'latest').toLowerCase();
-    if (!username && !['latest','following','for-you'].includes(mode)) return json({ok:false,error:'invalid_feed'}, 400);
+    if (!username && !['latest','following','for-you','trending','video'].includes(mode)) return json({ok:false,error:'invalid_feed'}, 400);
     if (!username && mode === 'following' && !viewer) return json({ok:false,error:'login_required'}, 401);
     if (username) {
       const exists = await env.DB.prepare('SELECT account_id FROM collector_profiles WHERE username = ? COLLATE NOCASE AND is_public = 1 LIMIT 1').bind(username).first();
@@ -140,11 +143,15 @@ export async function onRequestGet({request, env}) {
       whereClause += ' AND p.id = ?';
       whereParams.push(requestedPostId);
     }
-    const order = mode === 'for-you' && !username
-      ? '(SELECT COUNT(*) FROM collector_post_reactions lx WHERE lx.post_id=p.id) * 3 + (SELECT COUNT(*) FROM collector_post_comments cx WHERE cx.post_id=p.id AND cx.deleted_at IS NULL) * 2 DESC, p.created_at DESC, p.id DESC'
+    const order = (mode === 'for-you' || mode === 'trending') && !username
+      ? (mode === 'trending'
+        ? '(SELECT COUNT(*) FROM collector_post_reactions lx WHERE lx.post_id=p.id) * 3 + (SELECT COUNT(*) FROM collector_post_comments cx WHERE cx.post_id=p.id AND cx.deleted_at IS NULL) * 2 + (SELECT COUNT(*) FROM collector_post_shares sx WHERE sx.post_id=p.id) * 2 + (SELECT COUNT(*) FROM collector_post_views vx WHERE vx.post_id=p.id) * 0.25 DESC, p.created_at DESC, p.id DESC'
+        : '(SELECT COUNT(*) FROM collector_post_reactions lx WHERE lx.post_id=p.id) * 3 + (SELECT COUNT(*) FROM collector_post_comments cx WHERE cx.post_id=p.id AND cx.deleted_at IS NULL) * 2 DESC, p.created_at DESC, p.id DESC')
       : 'p.created_at DESC, p.id DESC';
-    const legacyOrder = mode === 'for-you' && !username
-      ? '(SELECT COUNT(*) FROM collector_post_likes lx WHERE lx.post_id=p.id) * 3 + (SELECT COUNT(*) FROM collector_post_comments cx WHERE cx.post_id=p.id AND cx.deleted_at IS NULL) * 2 DESC, p.created_at DESC, p.id DESC'
+    const legacyOrder = (mode === 'for-you' || mode === 'trending') && !username
+      ? (mode === 'trending'
+        ? '(SELECT COUNT(*) FROM collector_post_likes lx WHERE lx.post_id=p.id) * 3 + (SELECT COUNT(*) FROM collector_post_comments cx WHERE cx.post_id=p.id AND cx.deleted_at IS NULL) * 2 + (SELECT COUNT(*) FROM collector_post_shares sx WHERE sx.post_id=p.id) * 2 + (SELECT COUNT(*) FROM collector_post_views vx WHERE vx.post_id=p.id) * 0.25 DESC, p.created_at DESC, p.id DESC'
+        : '(SELECT COUNT(*) FROM collector_post_likes lx WHERE lx.post_id=p.id) * 3 + (SELECT COUNT(*) FROM collector_post_comments cx WHERE cx.post_id=p.id AND cx.deleted_at IS NULL) * 2 DESC, p.created_at DESC, p.id DESC')
       : 'p.created_at DESC, p.id DESC';
     const requestedLimit = Number(url.searchParams.get('limit') || 30);
     const limitValue = Math.min(40, Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : 30));

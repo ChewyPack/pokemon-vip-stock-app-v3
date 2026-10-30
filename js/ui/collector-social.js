@@ -111,7 +111,7 @@
       }
       return '<div class="social-post-media-item"><img class="social-post-image" src="' + safe(item.url) + '" alt="Photo shared by ' + safe(post.display_name || post.username) + '" loading="lazy"></div>';
     }).join('') + '</div>' : '';
-    return '<article class="social-post" data-post-card="' + Number(post.id) + '">' +
+    return '<article class="social-post' + (media.some(item => item.type === 'video') ? ' social-post--video' : '') + '" data-post-card="' + Number(post.id) + '">' +
       '<header class="social-post-header">' + avatar +
       '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">' + safe(post.display_name || post.username) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">@' + safe(post.username) + '</a><span> · <a class="social-post-permalink" href="/post/' + Number(post.id) + '" aria-label="Open this post directly">' + safe(dateText(post.created_at)) + '</a></span></div></div>' +
       '<div class="social-post-menu"><button type="button" class="social-post-menu-trigger" data-post-menu-toggle="' + Number(post.id) + '" aria-label="Post options" aria-expanded="false">···</button><div class="social-post-menu-items" data-post-menu="' + Number(post.id) + '" hidden>' + (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report post</button>' : '<button type="button" data-post-edit="' + Number(post.id) + '" data-post-body="' + safe(post.body || '') + '" data-post-media="' + safe(JSON.stringify(media)) + '">Edit post</button><button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete post</button>') + '</div></div></header>' +
@@ -148,6 +148,7 @@
     if (!thread.hidden && thread.dataset.loaded !== 'true') await loadComments(root, postId);
   }
   let viewObserver = null;
+  let shortVideoObserver = null;
   const attemptedPostViews = new Set();
   function browserViewerKey() {
     try {
@@ -186,6 +187,36 @@
         if (count) count.textContent = Number(data.view_count || 0) + ' views';
       } else { attemptedPostViews.delete(postId); }
     } catch (_) { attemptedPostViews.delete(postId); }
+  }
+  function observeShortVideos(root, enabled) {
+    if (shortVideoObserver) {
+      shortVideoObserver.disconnect();
+      shortVideoObserver = null;
+    }
+    const videos = Array.from(root.querySelectorAll('.social-post-video'));
+    if (!enabled) {
+      videos.forEach(video => video.pause());
+      return;
+    }
+    videos.forEach(video => {
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+    });
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!('IntersectionObserver' in window)) return;
+    shortVideoObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        const video = entry.target;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.65) {
+          const attempt = video.play();
+          if (attempt && typeof attempt.catch === 'function') attempt.catch(() => {});
+        } else {
+          video.pause();
+        }
+      });
+    }, {threshold:[0,0.65]});
+    videos.forEach(video => shortVideoObserver.observe(video));
   }
   function observePostViews(root, posts) {
     if (viewObserver) viewObserver.disconnect();
@@ -302,6 +333,7 @@
         status.textContent = '';
       }
       observePostViews(root, posts);
+      observeShortVideos(root, state.feed === 'video');
       if (requestedPost) {
         const focusCard = $(list, '[data-post-card="' + Number(requestedPost) + '"]');
         if (focusCard) focusCard.scrollIntoView({behavior:'smooth',block:'center'});
@@ -367,6 +399,17 @@
       },150);
     });
     bodyInput.addEventListener('keydown',e=>{if(e.key==='Escape')closeSuggestions();});
+  }
+  function readVideoDuration(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      const cleanup = () => URL.revokeObjectURL(url);
+      video.onloadedmetadata = () => { const duration = video.duration; cleanup(); resolve(duration); };
+      video.onerror = () => { cleanup(); reject(new Error('Video metadata unavailable')); };
+      video.src = url;
+    });
   }
   async function setupComposer(root, state) {
     const form = $(root, '[data-social-composer]');
@@ -453,6 +496,15 @@
       if (imageFiles.some(file => !IMAGE_TYPES.includes(file.type))) { status.textContent = 'Use JPG, PNG, WebP, or AVIF photos.'; return; }
       if (imageFiles.some(file => file.size > MAX_IMAGE_BYTES)) { status.textContent = 'Each photo must be 5 MB or smaller.'; return; }
       if (videoFile && !VIDEO_TYPES.includes(videoFile.type)) { status.textContent = 'Use an MP4 or WebM video.'; return; }
+      if (videoFile) {
+        let duration = 0;
+        try { duration = await readVideoDuration(videoFile); }
+        catch (_) { status.textContent = 'This video could not be previewed. Try a standard MP4 or WebM clip.'; return; }
+        if (!Number.isFinite(duration) || duration <= 0 || duration > 90) {
+          status.textContent = 'Short-form videos must be 90 seconds or shorter.';
+          return;
+        }
+      }
       if (videoFile && videoFile.size > MAX_VIDEO_BYTES) { status.textContent = 'The video must be 25 MB or smaller.'; return; }
       if (!body && !imageFiles.length && !videoFile) { status.textContent = 'Write something or add at least one photo or video before posting.'; return; }
       if (body.length > 2000) { status.textContent = 'Posts can be up to 2,000 characters.'; return; }
@@ -501,7 +553,7 @@
     const root = document.getElementById('community-feed');
     if (!root || root.dataset.socialInitialized === 'true') return;
     root.dataset.socialInitialized = 'true';
-    const state = {mode:'feed',feed:'latest'};
+    const state = {mode:'feed',feed:'for-you'};
     try {
       const me = await fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(r=>r.json()).catch(()=>({}));
       const form = $(root, '[data-social-composer]');
@@ -510,18 +562,46 @@
         await setupComposer(root,state);
       }
     } catch (_) {}
-    const feedSort = $(root, '#community-feed-sort');
-    if (feedSort) feedSort.addEventListener('change', async () => {
-      const feed = feedSort.value;
-      if (feed === 'following') {
-        try { const me=await fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(r=>r.json()); if(!me.authenticated){location.href='/account.html';return;} }
-        catch (_) { location.href='/account.html'; return; }
+    const tabs = Array.from(root.querySelectorAll('[data-feed-tab]'));
+    const postList = $(root, '[data-social-post-list]');
+    const feedStatus = $(root, '[data-social-feed-status]');
+    function syncFeedTab() {
+      root.dataset.activeFeed = state.feed;
+      root.classList.toggle('social-stories-mode', state.feed === 'stories');
+      root.classList.toggle('social-video-feed', state.feed === 'video');
+      tabs.forEach(tab => {
+        const active = tab.dataset.feedTab === state.feed;
+        tab.classList.toggle('is-active', active);
+        tab.setAttribute('aria-selected', String(active));
+        tab.tabIndex = active ? 0 : -1;
+      });
+      if (postList) postList.hidden = state.feed === 'stories';
+      if (feedStatus) {
+        feedStatus.hidden = state.feed === 'stories';
+        if (state.feed === 'stories') feedStatus.textContent = '';
       }
-      state.feed=feed;
-      await loadPosts(root,state);
+    }
+    async function selectFeed(feed) {
+      if (!['for-you','following','latest','trending','video','stories'].includes(feed)) return;
+      if (feed === 'following') {
+        try {
+          const me = await fetch('/api/account/me',{credentials:'include',cache:'no-store'}).then(r=>r.json());
+          if (!me || !me.authenticated) { location.href='/account.html'; return; }
+        } catch (_) { location.href='/account.html'; return; }
+      }
+      state.feed = feed;
+      syncFeedTab();
+      if (feed !== 'stories') await loadPosts(root,state);
+    }
+    root.addEventListener('click', event => {
+      const tab = event.target.closest('[data-feed-tab]');
+      if (!tab || !root.contains(tab)) return;
+      event.preventDefault();
+      selectFeed(tab.dataset.feedTab);
     });
     root.addEventListener('click', event => handleClick(event,root,state));
     root.addEventListener('submit', event => handleCommentSubmit(event,root,state));
+    syncFeedTab();
     await loadPosts(root,state);
   }
   async function copyToClipboard(value) {
