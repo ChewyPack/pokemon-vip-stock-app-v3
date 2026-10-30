@@ -54,23 +54,23 @@ function migrationError(error) {
 export async function onRequestGet({request, env}) {
   if (!env.DB) return json({ok:false,error:'database_not_configured'}, 500);
   try {
-    await env.DB.prepare('DELETE FROM collector_stories WHERE expires_at<=CURRENT_TIMESTAMP').run();
+    await env.DB.prepare('DELETE FROM collector_stories WHERE expires_at<=CURRENT_TIMESTAMP AND is_highlighted=0').run();
     const viewer = await currentAccount(request, env).catch(() => null);
     const viewerId = viewer ? viewer.id : null;
     const result = await env.DB.prepare(
-      'SELECT s.id,s.account_id,s.media_type,s.media_url,s.caption,s.created_at,s.expires_at,' +
+      'SELECT s.id,s.account_id,s.media_type,s.media_url,s.caption,s.created_at,s.expires_at,s.is_highlighted,' +
       'p.username,p.avatar_url,a.display_name,' +
       '(SELECT COUNT(*) FROM collector_story_views v WHERE v.story_id=s.id) AS view_count,' +
       'CASE WHEN ? IS NOT NULL AND EXISTS(SELECT 1 FROM collector_story_views v WHERE v.story_id=s.id AND v.viewer_account_id=?) THEN 1 ELSE 0 END AS viewed_by_me,' +
       'CASE WHEN ? IS NOT NULL AND ?=s.account_id THEN 1 ELSE 0 END AS is_own ' +
       'FROM collector_stories s JOIN collector_profiles p ON p.account_id=s.account_id JOIN accounts a ON a.id=s.account_id ' +
-      'WHERE s.expires_at>CURRENT_TIMESTAMP AND p.is_public=1 ' +
+      'WHERE (s.expires_at>CURRENT_TIMESTAMP OR s.is_highlighted=1) AND p.is_public=1 ' +
       'AND (? IS NULL OR NOT EXISTS(SELECT 1 FROM collector_blocks b WHERE (b.blocker_account_id=? AND b.blocked_account_id=s.account_id) OR (b.blocker_account_id=s.account_id AND b.blocked_account_id=?))) ' +
       'ORDER BY s.created_at DESC,s.id DESC LIMIT 300'
     ).bind(viewerId,viewerId,viewerId,viewerId,viewerId,viewerId,viewerId).all();
     return json({ok:true,stories:(result.results || []).map(row => ({
       id:Number(row.id),account_id:Number(row.account_id),media_type:row.media_type,media_url:row.media_url,
-      caption:row.caption || '',created_at:row.created_at,expires_at:row.expires_at,
+      caption:row.caption || '',created_at:row.created_at,expires_at:row.expires_at,is_highlighted:Number(row.is_highlighted || 0)===1,
       username:row.username,display_name:row.display_name || row.username,avatar_url:row.avatar_url || '',
       view_count:Number(row.view_count || 0),viewed_by_me:Number(row.viewed_by_me || 0)===1,is_own:Number(row.is_own || 0)===1
     }))});
@@ -113,10 +113,16 @@ export async function onRequestPatch({request, env}) {
   const id = Number(data.id);
   if (!Number.isSafeInteger(id) || id < 1) return json({ok:false,error:'invalid_story_id'}, 400);
   try {
+    if (data.action === 'highlight') {
+      const highlighted = data.highlighted === true ? 1 : 0;
+      const result = await env.DB.prepare('UPDATE collector_stories SET is_highlighted=? WHERE id=? AND account_id=?').bind(highlighted,id,account.id).run();
+      if (!result.meta || !result.meta.changes) return json({ok:false,error:'story_not_found'}, 404);
+      return json({ok:true,is_highlighted:highlighted===1});
+    }
     await env.DB.prepare(
       'INSERT OR IGNORE INTO collector_story_views(story_id,viewer_account_id) ' +
       'SELECT s.id,? FROM collector_stories s JOIN collector_profiles p ON p.account_id=s.account_id ' +
-      'WHERE s.id=? AND s.expires_at>CURRENT_TIMESTAMP AND p.is_public=1 AND s.account_id<>? ' +
+      'WHERE s.id=? AND (s.expires_at>CURRENT_TIMESTAMP OR s.is_highlighted=1) AND p.is_public=1 AND s.account_id<>? ' +
       'AND NOT EXISTS(SELECT 1 FROM collector_blocks b WHERE (b.blocker_account_id=? AND b.blocked_account_id=s.account_id) OR (b.blocker_account_id=s.account_id AND b.blocked_account_id=?))'
     ).bind(account.id,id,account.id,account.id,account.id).run();
     return json({ok:true});
