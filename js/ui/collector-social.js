@@ -111,7 +111,7 @@
       }
       return '<div class="social-post-media-item"><img class="social-post-image" src="' + safe(item.url) + '" alt="Photo shared by ' + safe(post.display_name || post.username) + '" loading="lazy"></div>';
     }).join('') + '</div>' : '';
-    return '<article class="social-post" data-post-card="' + Number(post.id) + '">' +
+    return '<article class="social-post' + (media.some(item => item.type === 'video') ? ' social-post--video' : '') + '" data-post-card="' + Number(post.id) + '">' +
       '<header class="social-post-header">' + avatar +
       '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">' + safe(post.display_name || post.username) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">@' + safe(post.username) + '</a><span> · <a class="social-post-permalink" href="/post/' + Number(post.id) + '" aria-label="Open this post directly">' + safe(dateText(post.created_at)) + '</a></span></div></div>' +
       '<div class="social-post-menu"><button type="button" class="social-post-menu-trigger" data-post-menu-toggle="' + Number(post.id) + '" aria-label="Post options" aria-expanded="false">···</button><div class="social-post-menu-items" data-post-menu="' + Number(post.id) + '" hidden>' + (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report post</button>' : '<button type="button" data-post-edit="' + Number(post.id) + '" data-post-body="' + safe(post.body || '') + '" data-post-media="' + safe(JSON.stringify(media)) + '">Edit post</button><button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete post</button>') + '</div></div></header>' +
