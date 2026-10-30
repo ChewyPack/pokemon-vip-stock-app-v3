@@ -116,6 +116,11 @@
       const data = await request('/api/collector/stories');
       stories = Array.isArray(data.stories) ? data.stories : [];
       renderTray();
+      const requestedStoryId = Number(new URLSearchParams(location.search).get('story'));
+      if (Number.isSafeInteger(requestedStoryId) && requestedStoryId > 0) {
+        const requested = groups.find(group => group.stories.some(story => Number(story.id) === requestedStoryId));
+        if (requested) openViewer(requested.account_id,requestedStoryId);
+      }
     } catch (error) {
       if (storyStatus) storyStatus.textContent = error.message;
       tray.innerHTML = '<p class="story-empty">Stories could not be loaded.</p>';
@@ -278,11 +283,12 @@
     }
     markViewed(story);
   }
-  function openViewer(accountId) {
+  function openViewer(accountId, storyId) {
     const index = groups.findIndex(group => Number(group.account_id) === Number(accountId));
     if (index < 0) return;
     activeGroupIndex = index;
-    activeStoryIndex = 0;
+    const requestedIndex = storyId ? groups[index].stories.findIndex(story => Number(story.id) === Number(storyId)) : 0;
+    activeStoryIndex = requestedIndex >= 0 ? requestedIndex : 0;
     if (!viewer) {
       viewer = document.createElement('div');
       viewer.className = 'story-viewer';
