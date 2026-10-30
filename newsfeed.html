@@ -234,6 +234,10 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
 .story-card-create-icon{display:grid;place-items:center;width:70px;height:70px;border:1px dashed #6782a7;border-radius:50%;background:#172b49;color:#ffd21f;font-size:2rem;font-weight:500}
 .story-card-subtitle{margin-top:-5px;color:#8298b8;font-size:.62rem}
 .story-card-add{position:absolute;right:1px;top:43px;display:grid;place-items:center;width:25px;height:25px;border:2px solid #101f38;border-radius:50%;background:#ffd21f;color:#09172b;font-size:1.15rem;font-weight:900;cursor:pointer}
+.story-highlight-section{margin:0 0 14px;padding:0 0 13px;border-bottom:1px solid #293f61}
+.story-highlight-section[hidden]{display:none!important}
+.story-viewer-highlight{border:1px solid #8b7430;border-radius:8px;padding:6px 9px;background:#302a19;color:#ffe18a;font-size:.72rem;font-weight:900;cursor:pointer}
+.story-viewer-highlight:disabled{opacity:.55;cursor:wait}
 .story-empty{margin:0;padding:15px 8px;color:#8fa5c4;font-size:.8rem}
 .story-create-form{display:grid;gap:10px;margin-top:12px;padding:13px;background:#0a172b;border:1px solid #344d70;border-radius:12px}
 .story-create-form[hidden]{display:none!important}
@@ -320,7 +324,11 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
   <button type="button" role="tab" data-feed-tab="stories" aria-selected="false">Stories</button>
 </nav>
 <section class="community-stories" aria-label="Collector stories">
-  <div class="story-section-heading"><div><h2>Stories</h2><p>Quick collection updates that disappear after 24 hours.</p></div><span data-story-feed-status role="status" aria-live="polite">Loading stories…</span></div>
+  <div class="story-highlight-section" data-story-highlight-section hidden>
+    <div class="story-section-heading"><div><h2>Story Highlights</h2><p>Saved stories that stay on your profile.</p></div><span>Featured</span></div>
+    <div class="story-tray" data-story-highlight-tray aria-label="Story Highlights"></div>
+  </div>
+  <div class="story-section-heading"><div><h2>Stories</h2><p>Quick updates disappear after 24 hours unless you add them to Highlights.</p></div><span data-story-feed-status role="status" aria-live="polite">Loading stories…</span></div>
   <div class="story-tray" data-story-tray aria-live="polite"><p class="story-empty">Loading collector stories…</p></div>
   <form class="story-create-form" data-story-create-form hidden>
     <div class="story-create-heading"><strong>Share a story</strong><span>Visible for 24 hours · Up to 90 seconds for video</span></div>
