@@ -1104,7 +1104,12 @@ $('collector-search-form').addEventListener('submit',event=>{
    const data=await response.json().catch(()=>({ok:false}));
    if(!response.ok||!data.ok)return;
    const highlights=(data.stories||[]).filter(story=>story.is_highlighted);
-   if(!highlights.length)return;
+   if(!highlights.length){
+    if(!isOwn)return;
+    list.innerHTML='<div class="cp-profile-highlights-empty" style="padding:18px 4px;color:var(--muted,#9ca3af);font-size:14px;line-height:1.6">Your saved stories will appear here. Post a story in the <a href="/newsfeed.html" style="color:var(--accent,#8b5cf6);font-weight:700;text-decoration:underline">News Feed</a>, then choose <strong>Add to Highlights</strong> to keep it on your profile beyond 24 hours.</div>';
+    panel.hidden=false;
+    return;
+   }
    list.innerHTML=highlights.map(story=>{
     const media=story.media_type==='image'?'<img src="'+safe(story.media_url)+'" alt="" loading="lazy">':'<span class="cp-profile-highlight-video" aria-hidden="true">▶</span>';
     const label=story.caption||new Date(String(story.created_at).replace(' ','T')+'Z').toLocaleDateString();
@@ -1113,7 +1118,7 @@ $('collector-search-form').addEventListener('submit',event=>{
    panel.hidden=false;
   }catch(_){panel.hidden=true;}
  }
- window.addEventListener('collector-profile-loaded',event=>loadProfileStoryHighlights(event.detail?.username||''));
+ window.addEventListener('collector-profile-loaded',event=>loadProfileStoryHighlights(event.detail?.username||'',!!event.detail?.own));
  function openBioEditor(){if(!own)return;$('bio-input').value=profile?.bio||'';$('bio-editor').hidden=false;$('bio-input').focus();}
  $('edit-bio').addEventListener('click',openBioEditor);$('bio-display').addEventListener('click',openBioEditor);
 
