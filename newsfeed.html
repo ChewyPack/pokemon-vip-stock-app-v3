@@ -205,13 +205,124 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
 .community-filter select{display:block;width:auto!important;min-width:155px;margin:0}
 @media(max-width:640px){.community-filter{width:max-content!important;padding:0!important}.community-filter select{min-width:145px}}
 
+
+/* News Feed tabs, Stories, and short-form video */
+.community-feed-title{display:flex;align-items:flex-end;justify-content:space-between;margin:0 0 15px;padding:4px 2px}
+.community-feed-title span{color:#ffd21f;font-size:.68rem;letter-spacing:.16em;font-weight:900}
+.community-feed-title h1{margin:4px 0 3px;color:#fff;font-size:clamp(1.9rem,4vw,2.5rem);line-height:1.05;letter-spacing:-.045em}
+.community-feed-title p{margin:0;color:#9fb2d0;font-size:.88rem}
+.community-tabs{position:sticky;top:8px;z-index:30;display:flex;gap:5px;padding:6px;margin:0 0 15px;background:#0b1930ed;border:1px solid #263d60;border-radius:13px;box-shadow:0 8px 24px #0004;backdrop-filter:blur(14px);overflow-x:auto;scrollbar-width:none}
+.community-tabs::-webkit-scrollbar{display:none}
+.community-tabs button{flex:1 0 auto;min-width:82px;border:1px solid transparent;border-radius:9px;padding:11px 13px;background:transparent;color:#a9bad4;font:800 .86rem Nunito,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+.community-tabs button:hover{background:#172b49;color:#fff}
+.community-tabs button.is-active{background:#ffd21f;color:#09172b;border-color:#ffd21f;box-shadow:0 3px 12px #ffd21f25}
+.community-stories{padding:15px 16px 13px;margin:0 0 15px;background:linear-gradient(145deg,#101f38,#0c192e);border:1px solid #293f61;border-radius:17px;box-shadow:0 10px 30px #0003}
+.story-section-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.story-section-heading h2{margin:0;color:#f3f7ff;font-size:1rem;font-weight:900}
+.story-section-heading p{margin:3px 0 0;color:#8fa5c4;font-size:.75rem}
+.story-section-heading>span{color:#8fa5c4;font-size:.7rem;text-align:right}
+.story-tray{display:flex;gap:13px;overflow-x:auto;padding:2px 1px 7px;scrollbar-width:thin;scrollbar-color:#385477 transparent}
+.story-card-wrap{position:relative;flex:0 0 86px;min-width:0}
+.story-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;padding:0;border:0;background:transparent;color:#edf4ff;font:inherit;text-align:center;cursor:pointer}
+.story-card-ring{display:grid;place-items:center;width:70px;height:70px;padding:3px;border:2px solid #ffd21f;border-radius:50%;background:#172b49;overflow:hidden}
+.story-card.is-seen .story-card-ring{border-color:#60728e}
+.story-card-ring img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.story-tile-video{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:linear-gradient(145deg,#29476b,#09172b);color:#ffd21f;font-size:1.35rem}
+.story-card-label{display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e4ecf8;font-size:.72rem;font-weight:800}
+.story-card-count{position:absolute;top:0;right:3px;display:grid;place-items:center;min-width:19px;height:19px;padding:0 4px;border-radius:999px;background:#ffd21f;color:#09172b;font-size:.65rem;font-weight:900}
+.story-card--create{flex:0 0 86px;min-height:98px;justify-content:center}
+.story-card-create-icon{display:grid;place-items:center;width:70px;height:70px;border:1px dashed #6782a7;border-radius:50%;background:#172b49;color:#ffd21f;font-size:2rem;font-weight:500}
+.story-card-subtitle{margin-top:-5px;color:#8298b8;font-size:.62rem}
+.story-card-add{position:absolute;right:1px;top:43px;display:grid;place-items:center;width:25px;height:25px;border:2px solid #101f38;border-radius:50%;background:#ffd21f;color:#09172b;font-size:1.15rem;font-weight:900;cursor:pointer}
+.story-empty{margin:0;padding:15px 8px;color:#8fa5c4;font-size:.8rem}
+.story-create-form{display:grid;gap:10px;margin-top:12px;padding:13px;background:#0a172b;border:1px solid #344d70;border-radius:12px}
+.story-create-form[hidden]{display:none!important}
+.story-create-heading{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.story-create-heading strong{color:#fff;font-size:.9rem}
+.story-create-heading span{color:#8fa5c4;font-size:.68rem}
+.story-file-picker{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;border:1px solid #385477;border-radius:9px;background:#172b49;color:#eaf1fc;font-size:.8rem;font-weight:900;cursor:pointer}
+.story-file-picker input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.story-media-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.story-media-preview:empty{display:none}
+.story-media-preview img,.story-media-preview video{display:block;width:100%;max-height:230px;aspect-ratio:4/5;object-fit:contain;background:#050d1b;border-radius:9px}
+.story-caption-label{color:#9fb2d0;font-size:.73rem;font-weight:900}
+.story-create-form input[data-story-caption]{box-sizing:border-box;width:100%;min-height:39px;padding:9px 11px;border:1px solid #344d70;border-radius:9px;background:#08162a;color:#fff;font:inherit;font-size:.82rem}
+.story-create-actions{display:flex;gap:8px}
+.story-create-actions button{min-height:38px;padding:8px 14px;border:1px solid #385477;border-radius:9px;background:#172b49;color:#edf4ff;font:800 .8rem Nunito,system-ui,sans-serif;cursor:pointer}
+.story-create-actions button.social-primary{border:0;background:#ffd21f;color:#09172b}
+.story-create-actions button:disabled{opacity:.55;cursor:wait}
+.story-viewer{position:fixed;inset:0;z-index:10000}
+.story-viewer-backdrop{display:grid;place-items:center;width:100%;height:100%;padding:16px;background:#020713eF;backdrop-filter:blur(12px)}
+.story-viewer-panel{display:flex;flex-direction:column;width:min(100%,520px);height:min(92vh,850px);overflow:hidden;border:1px solid #385477;border-radius:18px;background:#0b1930;box-shadow:0 24px 80px #0009;color:#fff}
+.story-viewer-progress{display:flex;justify-content:space-between;align-items:center;padding:10px 13px 5px;color:#9fb2d0;font-size:.72rem}
+.story-viewer-progress button{width:32px;height:32px;border:0;border-radius:50%;background:#203858;color:#fff;font-size:1.5rem;cursor:pointer}
+.story-viewer-header{display:flex;align-items:center;gap:9px;padding:8px 14px 12px}
+.story-viewer-avatar{width:35px;height:35px;flex:0 0 35px;object-fit:cover;border-radius:50%;border:1px solid #52749b}
+.story-viewer-avatar--empty{display:grid;place-items:center;background:#203858;color:#ffd21f;font-weight:900}
+.story-viewer-header>div{display:grid;gap:2px;min-width:0;flex:1}
+.story-viewer-header strong{font-size:.82rem}
+.story-viewer-header span{color:#9fb2d0;font-size:.68rem}
+.story-viewer-delete{border:1px solid #69445a;border-radius:8px;padding:6px 9px;background:#3b2334;color:#ffb4c5;font-size:.72rem;font-weight:900;cursor:pointer}
+.story-viewer-content{position:relative;display:grid;place-items:center;flex:1;min-height:0;background:#030914;overflow:hidden}
+.story-viewer-media{display:block;width:100%;height:100%;max-height:100%;object-fit:contain}
+.story-viewer-caption{position:absolute;left:12px;right:12px;bottom:12px;margin:0;padding:9px 12px;border-radius:10px;background:#020713bc;color:#fff;font-size:.84rem;line-height:1.45;overflow-wrap:anywhere}
+.story-viewer-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;color:#8fa5c4;font-size:.65rem}
+.story-viewer-footer button{border:1px solid #385477;border-radius:8px;padding:7px 10px;background:#172b49;color:#fff;font:800 .72rem Nunito,system-ui,sans-serif;cursor:pointer}
+.story-viewer-footer button:disabled{opacity:.3;cursor:default}
+.social-stories-mode [data-social-composer],.social-stories-mode [data-social-feed-status],.social-stories-mode [data-social-post-list],.social-stories-mode>p:last-child{display:none!important}
+.social-stories-mode .community-stories{min-height:210px}
+.social-stories-mode .story-tray{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));overflow:visible;gap:16px}
+.social-video-feed .social-post--video .social-post-media-grid{display:flex;justify-content:center}
+.social-video-feed .social-post--video .social-post-media-item:has(.social-post-video){width:min(100%,390px);height:auto;aspect-ratio:9/16;margin:0 auto;overflow:hidden;background:#030914;border-radius:13px}
+.social-video-feed .social-post--video .social-post-video{width:100%;height:100%;max-height:72vh;object-fit:contain;background:#030914}
+.social-video-feed .social-post--video .social-post-body{margin-top:10px}
+.social-video-feed [data-social-post-list]:empty:after{content:"No short videos yet. Share a vertical clip with the community.";display:block;padding:30px 16px;color:#9fb2d0;text-align:center}
+@media(max-width:640px){
+ .community-feed-title{margin-bottom:11px}
+ .community-tabs{top:4px;gap:3px;padding:5px}
+ .community-tabs button{min-width:72px;padding:10px 9px;font-size:.77rem}
+ .community-stories{padding:12px 11px}
+ .story-section-heading{align-items:flex-start}
+ .story-section-heading>span{max-width:100px}
+ .story-tray{gap:10px}
+ .story-viewer-backdrop{padding:0}
+ .story-viewer-panel{width:100%;height:100%;max-height:none;border:0;border-radius:0}
+ .story-create-heading{align-items:flex-start;flex-direction:column;gap:3px}
+ .story-viewer-footer span{max-width:135px;text-align:center}
+}
+@media(prefers-reduced-motion:reduce){.story-viewer-panel{scroll-behavior:auto}}
+
 </style>
 </head>
 <body>
 <div id="site-navigation"></div>
 <main class="community-wrap">
 
-<section id="community-feed">
+<section id="community-feed" data-active-feed="for-you">
+<header class="community-feed-title">
+  <div><span>POKEPRIZEPOOL COMMUNITY</span><h1>News Feed</h1><p>Share pulls, collection updates, and the moments worth showing off.</p></div>
+</header>
+<nav class="community-tabs" role="tablist" aria-label="News Feed">
+  <button type="button" role="tab" data-feed-tab="for-you" aria-selected="true" class="is-active">For You</button>
+  <button type="button" role="tab" data-feed-tab="following" aria-selected="false">Following</button>
+  <button type="button" role="tab" data-feed-tab="latest" aria-selected="false">Latest</button>
+  <button type="button" role="tab" data-feed-tab="trending" aria-selected="false">Trending</button>
+  <button type="button" role="tab" data-feed-tab="video" aria-selected="false">Video</button>
+  <button type="button" role="tab" data-feed-tab="stories" aria-selected="false">Stories</button>
+</nav>
+<section class="community-stories" aria-label="Collector stories">
+  <div class="story-section-heading"><div><h2>Stories</h2><p>Quick collection updates that disappear after 24 hours.</p></div><span data-story-feed-status role="status" aria-live="polite">Loading stories…</span></div>
+  <div class="story-tray" data-story-tray aria-live="polite"><p class="story-empty">Loading collector stories…</p></div>
+  <form class="story-create-form" data-story-create-form hidden>
+    <div class="story-create-heading"><strong>Share a story</strong><span>Visible for 24 hours · Up to 90 seconds for video</span></div>
+    <label class="story-file-picker">Choose photo or video<input type="file" data-story-file accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"></label>
+    <div class="story-media-preview" data-story-preview aria-live="polite"></div>
+    <label class="story-caption-label" for="collector-story-caption">Caption (optional)</label>
+    <input id="collector-story-caption" data-story-caption type="text" maxlength="180" placeholder="Add a little context…">
+    <div class="story-create-actions"><button type="submit" class="social-primary">Share story</button><button type="button" data-story-cancel>Cancel</button></div>
+    <p class="social-inline-status" data-story-status role="status" aria-live="polite"></p>
+  </form>
+</section>
 <form class="social-composer" data-social-composer hidden>
   <div class="composer-brand"><img src="/pokeprizepool-pwa-192.png?v=4" alt="PokePrizePool logo"></div>
   <label class="composer-prompt" for="community-post-body">What’s happening in your collection?</label>
@@ -219,26 +330,20 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
   <div class="composer-tools">
     <div class="composer-upload-tools">
       <label class="composer-upload composer-photo" for="community-post-images"><span class="composer-upload-icon">▧</span><span><strong>Add photos</strong><small>Up to 3 · 5 MB each</small></span><input id="community-post-images" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple></label>
-      <label class="composer-upload composer-video" for="community-post-video"><span class="composer-upload-icon">▶</span><span><strong>Add video</strong><small>MP4/WebM · 25 MB max</small></span><input id="community-post-video" name="video" type="file" accept="video/mp4,video/webm"></label>
+      <label class="composer-upload composer-video" for="community-post-video"><span class="composer-upload-icon">▶</span><span><strong>Add short video</strong><small>MP4/WebM · 25 MB · 90 sec max</small></span><input id="community-post-video" name="video" type="file" accept="video/mp4,video/webm"></label>
     </div>
     <button class="social-primary composer-submit" type="submit"><span>Post to feed</span><span aria-hidden="true">→</span></button>
   </div>
   <div class="social-media-preview" data-media-preview aria-live="polite"></div>
   <p class="social-inline-status" data-composer-status role="status" aria-live="polite"></p>
 </form>
-<div class="community-filter">
-<select id="community-feed-sort" aria-label="Sort community feed">
-<option value="latest" selected>Most recent</option>
-<option value="for-you">Most relevant</option>
-<option value="following">Recent activity</option>
-</select>
-</div>
 <p class="social-inline-status" data-social-feed-status role="status" aria-live="polite">Loading community posts…</p>
 <div data-social-post-list></div>
 <p class="social-inline-status">Please keep posts respectful. Use Report on a post to flag spam, scams, harassment, or other concerns.</p>
 </section>
 </main>
-<script src="/js/ui/collector-social.js?v=20261030-shareable-post-links-2"></script>
+<script src="/js/ui/collector-social.js?v=20261030-stories-short-video-1"></script>
+<script src="/js/ui/collector-stories.js?v=20261030-stories-short-video-1"></script>
 <script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>
 </body>
 </html>
