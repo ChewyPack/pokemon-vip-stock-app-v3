@@ -216,12 +216,7 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
   <div class="composer-brand"><img src="/pokeprizepool-pwa-192.png?v=4" alt="PokePrizePool logo"></div>
   <label class="composer-prompt" for="community-post-body">What’s happening in your collection?</label>
   <textarea id="community-post-body" name="body" maxlength="2000" rows="4" placeholder="Share a pull, a thought, a question, or a new find…"></textarea>
-  <div class="composer-type-row">
-    <label for="community-post-type">POST TYPE</label>
-    <select id="community-post-type" name="post_type">
-      <option value="status">✦ Status</option><option value="pull">✧ Card pull</option><option value="collection">▣ Collection update</option><option value="trade">⇄ Trade interest</option><option value="question">? Question</option><option value="event">⌖ Event</option><option value="restock">◉ Restock sighting</option>
-    </select>
-  </div>
+  <input type="hidden" name="post_type" value="status">
   <div class="composer-tools">
     <div class="composer-upload-tools">
       <label class="composer-upload composer-photo" for="community-post-images"><span class="composer-upload-icon">▧</span><span><strong>Add photos</strong><small>Up to 3 · 5 MB each</small></span><input id="community-post-images" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple></label>
