@@ -69,9 +69,9 @@
       '<div class="social-post-author"><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">' + safe(post.display_name || post.username) + '</a><div><a href="/collector.html?user=' + encodeURIComponent(post.username) + '">@' + safe(post.username) + '</a><span> · ' + safe(dateText(post.created_at)) + '</span></div></div>' +
       '<span class="social-post-type">' + safe(labels[post.post_type] || 'Status') + '</span></header>' +
       (post.body ? '<p class="social-post-body">' + safe(post.body).replace(/\n/g, '<br>') + '</p>' : '') + mediaMarkup +
-      '<div class="social-post-stats"><button type="button" class="social-stat-button" data-post-likers="' + Number(post.id) + '" data-like-count aria-label="See who liked this post">' + Number(post.like_count || 0) + (Number(post.like_count || 0) === 1 ? ' like' : ' likes') + '</button><button type="button" class="social-stat-button" data-post-open-comments="' + Number(post.id) + '" data-comment-count aria-label="See comments on this post">' + Number(post.comment_count || 0) + (Number(post.comment_count || 0) === 1 ? ' comment' : ' comments') + '</button><span class="social-view-count" data-view-count' + (post.is_own ? '' : ' hidden') + '>' + Number(post.view_count || 0) + (Number(post.view_count || 0) === 1 ? ' view' : ' views') + '</span></div>' +
+      '<div class="social-post-stats"><button type="button" class="social-stat-button" data-post-likers="' + Number(post.id) + '" data-like-count aria-label="See post reactions">' + Number(post.like_count || 0) + (Number(post.like_count || 0) === 1 ? ' reaction' : ' reactions') + '</button><button type="button" class="social-stat-button" data-post-open-comments="' + Number(post.id) + '" data-comment-count aria-label="See comments on this post">' + Number(post.comment_count || 0) + (Number(post.comment_count || 0) === 1 ? ' comment' : ' comments') + '</button><span class="social-view-count" data-view-count' + (post.is_own ? '' : ' hidden') + '>' + Number(post.view_count || 0) + (Number(post.view_count || 0) === 1 ? ' view' : ' views') + '</span></div>' +
       '<section class="social-likers-thread" data-likers-thread="' + Number(post.id) + '" hidden><p class="social-inline-status" data-likes-status role="status" aria-live="polite"></p><div class="social-likers-list" data-likes-list></div></section>' +
-      '<div class="social-post-actions"><button type="button" data-post-like="' + Number(post.id) + '" data-liked="' + String(!!post.liked_by_me) + '" aria-pressed="' + String(!!post.liked_by_me) + '" class="' + (post.liked_by_me ? 'is-liked' : '') + '">♥ ' + (post.liked_by_me ? 'Liked' : 'Like') + '</button><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button>' +
+      '<div class="social-post-actions"><div class="social-reaction-picker" data-reaction-picker="' + Number(post.id) + '"><button type="button" class="social-reaction-trigger' + (post.my_reaction ? ' is-reacted' : '') + '" data-reaction-trigger="' + Number(post.id) + '" aria-label="Choose a reaction" aria-expanded="false">' + (post.my_reaction ? safe(({like:'👍',love:'❤️',haha:'😂',wow:'😮',sad:'😢',angry:'😡'})[post.my_reaction] || '👍') : '＋') + ' <span>' + (post.my_reaction ? 'Reacted' : 'React') + '</span></button><div class="social-reaction-options" data-reaction-options hidden>' + [{key:'like',emoji:'👍',label:'Like'},{key:'love',emoji:'❤️',label:'Love'},{key:'haha',emoji:'😂',label:'Haha'},{key:'wow',emoji:'😮',label:'Wow'},{key:'sad',emoji:'😢',label:'Sad'},{key:'angry',emoji:'😡',label:'Angry'}].map(x=>'<button type="button" data-reaction="' + x.key + '" data-post-id="' + Number(post.id) + '" aria-label="' + x.label + '" title="' + x.label + '">' + x.emoji + '</button>').join('') + '</div></div><button type="button" data-post-comments="' + Number(post.id) + '">Comment</button>' +
       (!post.is_own ? '<button type="button" data-post-report="' + Number(post.id) + '">Report</button>' : '<button type="button" data-post-delete="' + Number(post.id) + '" class="social-post-delete">Delete</button>') + '</div>' +
       '<section class="social-comments" data-comments-thread="' + Number(post.id) + '" hidden><div class="social-comment-list" data-comment-list></div>' +
       '<form class="social-comment-form" data-comment-form="' + Number(post.id) + '"><div class="social-reply-context" data-reply-context hidden>Replying to <strong data-reply-name></strong><button type="button" data-comment-reply-cancel>Cancel</button></div><input type="hidden" name="parent_comment_id" value=""><label class="sr-only" for="social-comment-' + Number(post.id) + '">Write a comment or reply</label><textarea id="social-comment-' + Number(post.id) + '" name="body" maxlength="1000" required rows="2" placeholder="Add a comment…"></textarea><button type="submit">Comment</button></form><p class="social-inline-status" data-comment-status role="status" aria-live="polite"></p></section></article>';
@@ -84,9 +84,11 @@
     status.textContent = 'Loading likes…';
     list.replaceChildren();
     try {
-      const data = await api('/api/collector/post-like?id=' + encodeURIComponent(postId));
+      const data = await api('/api/collector/post-reaction?id=' + encodeURIComponent(postId));
       const users = data.users || [];
-      status.textContent = users.length ? users.length + (users.length === 1 ? ' collector liked this post.' : ' collectors liked this post.') : 'No likes yet.';
+      const counts = data.counts || {};
+      const summary = Object.entries(counts).filter(([,count])=>Number(count)>0).map(([type,count])=>({like:'👍',love:'❤️',haha:'😂',wow:'😮',sad:'😢',angry:'😡'}[type] + ' ' + count)).join(' · ');
+      status.textContent = users.length ? (summary ? summary + ' — ' : '') + users.length + (users.length === 1 ? ' collector reacted.' : ' collectors reacted.') : 'No reactions yet.';
       list.innerHTML = users.map(user => '<article class="social-liker">' +
         (user.avatar_url ? '<img class="social-liker-avatar" src="' + safe(user.avatar_url) + '" alt="" loading="lazy">' : '<span class="social-liker-avatar social-avatar-placeholder">P</span>') +
         '<div class="social-liker-name"><a href="/collector.html?user=' + encodeURIComponent(user.username) + '">' + safe(user.display_name || user.username) + '</a><span>@' + safe(user.username) + '</span></div></article>').join('');
@@ -404,15 +406,28 @@
     await loadPosts(root,state);
   }
   async function handleClick(event, root, state) {
-    const like = event.target.closest('[data-post-like]');
-    if (like) {
-      const id=like.dataset.postLike, was=like.dataset.liked==='true'; like.disabled=true;
+    const reactionTrigger = event.target.closest('[data-reaction-trigger]');
+    if (reactionTrigger) {
+      const picker = reactionTrigger.closest('[data-reaction-picker]');
+      const options = picker && $(picker,'[data-reaction-options]');
+      if (options) { options.hidden = !options.hidden; reactionTrigger.setAttribute('aria-expanded',String(!options.hidden)); }
+      return;
+    }
+    const reactionButton = event.target.closest('[data-reaction][data-post-id]');
+    if (reactionButton) {
+      const id=reactionButton.dataset.postId, reaction=reactionButton.dataset.reaction;
+      reactionButton.disabled=true;
       try {
-        const d=await api('/api/collector/post-like?id='+encodeURIComponent(id),{method:was?'DELETE':'POST'});
-        like.dataset.liked=String(d.liked);like.setAttribute('aria-pressed',String(d.liked));like.classList.toggle('is-liked',d.liked);like.textContent=d.liked?'♥ Liked':'♥ Like';
-        const card=like.closest('[data-post-card]'),count=card.querySelector('[data-like-count]');if(count)count.textContent=Number(d.like_count)+(Number(d.like_count)===1?' like':' likes');const likesThread=card.querySelector('[data-likers-thread]');if(likesThread&&likesThread.dataset.loaded==='true')loadLikers(root,id);
+        const d=await api('/api/collector/post-reaction?id='+encodeURIComponent(id),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reaction})});
+        const card=reactionButton.closest('[data-post-card]');
+        const picker=card&&$(card,'[data-reaction-picker]');
+        const trigger=picker&&$(picker,'[data-reaction-trigger]');
+        if(trigger){const emoji=({like:'👍',love:'❤️',haha:'😂',wow:'😮',sad:'😢',angry:'😡'})[d.my_reaction]||'＋';trigger.innerHTML=emoji+' <span>'+(d.my_reaction?'Reacted':'React')+'</span>';trigger.classList.toggle('is-reacted',!!d.my_reaction);}
+        if(picker){const options=$(picker,'[data-reaction-options]');if(options)options.hidden=true;const t=$(picker,'[data-reaction-trigger]');if(t)t.setAttribute('aria-expanded','false');}
+        const count=card&&$(card,'[data-like-count]');if(count)count.textContent=Number(d.reaction_count)+(Number(d.reaction_count)===1?' reaction':' reactions');
+        const thread=card&&$(card,'[data-likers-thread]');if(thread&&thread.dataset.loaded==='true')loadLikers(root,id);
       } catch(e) { if(e.message==='Please sign in to do that.')location.href='/account.html';else alert(e.message); }
-      finally {like.disabled=false;}
+      finally {reactionButton.disabled=false;}
       return;
     }
     const likers = event.target.closest('[data-post-likers]');
