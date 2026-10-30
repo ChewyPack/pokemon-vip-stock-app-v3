@@ -1,7 +1,7 @@
 const COOKIE='collector_session';
 function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});}
 function cookie(request,name){for(const part of (request.headers.get('Cookie')||'').split(';')){const value=part.trim();if(value.startsWith(name+'='))return value.slice(name.length+1);}return '';}
-function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');}
+function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 async function sha256(value){return b64(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));}
 async function currentAccount(request,env){
  const token=cookie(request,COOKIE);if(!token)return null;
