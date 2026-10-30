@@ -208,7 +208,7 @@ export async function onRequestPost({request, env}) {
     const profile = await ensureCollectorProfile(env, account.id);
     if (!profile) return json({ok:false,error:'collector_profile_missing'}, 400);
     const result = await env.DB.prepare('INSERT INTO collector_posts(account_id,body,post_type,image_url) VALUES(?,?,?,?)').bind(account.id, body, type, mediaValue).run();
-    try { const tags=[...new Set((body.match(/(^|\\s)#[a-zA-Z0-9_]{2,30}/g)||[]).map(x=>x.trim().slice(1)))]; for (const display of tags) await env.DB.prepare(\`INSERT INTO collector_hashtags(tag,display_tag,usage_count) VALUES(?,?,1) ON CONFLICT(tag) DO UPDATE SET usage_count=collector_hashtags.usage_count+1,display_tag=excluded.display_tag,updated_at=CURRENT_TIMESTAMP\`).bind(display.toLowerCase(),display).run(); } catch (tagError) { console.error('Hashtag tracking skipped:',tagError); }
+    try { const tags=[...new Set((body.match(/(^|\s)#[a-zA-Z0-9_]{2,30}/g)||[]).map(x=>x.trim().slice(1)))]; for (const display of tags) await env.DB.prepare(\`INSERT INTO collector_hashtags(tag,display_tag,usage_count) VALUES(?,?,1) ON CONFLICT(tag) DO UPDATE SET usage_count=collector_hashtags.usage_count+1,display_tag=excluded.display_tag,updated_at=CURRENT_TIMESTAMP\`).bind(display.toLowerCase(),display).run(); } catch (tagError) { console.error('Hashtag tracking skipped:',tagError); }
     return json({ok:true,id:Number(result.meta && result.meta.last_row_id || 0)}, 201);
   } catch (error) {
     console.error('Collector post create failed:', error);
