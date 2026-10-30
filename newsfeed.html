@@ -187,6 +187,11 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
  .social-composer .social-media-preview{margin:0 12px 8px}
  .social-composer .social-inline-status{margin:0 12px 9px!important}
 }
+
+/* PokePrizePool logo replaces the placeholder letter in the composer */
+.composer-brand{display:flex;align-items:center;padding:8px 14px 0}
+.composer-brand img{display:block;width:42px;height:42px;object-fit:contain;border-radius:0}
+
 </style>
 </head>
 <body>
@@ -195,6 +200,7 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
 
 <section id="community-feed">
 <form class="social-composer" data-social-composer hidden>
+  <div class="composer-brand"><img src="/pokeprizepool-pwa-192.png?v=4" alt="PokePrizePool logo"></div>
   <label class="composer-prompt" for="community-post-body">What’s happening in your collection?</label>
   <textarea id="community-post-body" name="body" maxlength="2000" rows="4" placeholder="Share a pull, a thought, a question, or a new find…"></textarea>
   <div class="composer-type-row">
