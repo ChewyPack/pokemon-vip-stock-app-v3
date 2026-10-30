@@ -61,7 +61,7 @@ const KNOWN_NOTIFICATION_TYPES = Object.values(NOTIFICATION_CATEGORIES).flat();
 
 async function getState(db, accountId, options = {}) {
   const prefs = await ensurePreferences(db, accountId);
-  const limit = Math.min(100, Math.max(10, Number(options.limit) || 40));
+  const limit = Math.min(100, Math.max(10, Number(options.limit) || 100));
   const beforeId = Number.isSafeInteger(Number(options.beforeId)) && Number(options.beforeId) > 0 ? Number(options.beforeId) : null;
   const filter = options.filter === 'unread' ? 'unread' : 'all';
   const category = Object.prototype.hasOwnProperty.call(NOTIFICATION_CATEGORIES, options.category) || options.category === 'other'
