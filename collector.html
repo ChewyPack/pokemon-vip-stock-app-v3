@@ -267,6 +267,13 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-catalog-selected{border:1px solid #a8c9f7;background:#fff;border-radius:9px;padding:9px;margin-top:8px}
 .cp-catalog-selected .cp-catalog-result{border:0;padding:0;cursor:default}
 </style>
+
+<style>
+/* Profile redesign phase 1: collection spotlight */
+.cp-spotlight{margin:16px 0;padding:18px;border:1px solid #dbe4f4;border-radius:18px;background:linear-gradient(135deg,#fff 0%,#f4f8ff 100%);box-shadow:0 8px 24px #07194d0c}
+.cp-spotlight[hidden]{display:none!important}.cp-spotlight-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:13px}.cp-spotlight-kicker{display:block;margin-bottom:4px;color:#56709c;font-size:.7rem;font-weight:1000;letter-spacing:.13em;text-transform:uppercase}.cp-spotlight h2{margin:0;color:#07194d;font:1.8rem/1 Bangers,cursive}.cp-spotlight-subtitle{margin:5px 0 0;color:#607096;font-size:.85rem}.cp-spotlight-link{border:1px solid #c7d5ed;border-radius:9px;padding:8px 11px;background:#fff;color:#17386c;font:inherit;font-size:.82rem;font-weight:900;cursor:pointer;white-space:nowrap}.cp-spotlight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.cp-spotlight-card{display:flex;align-items:center;gap:11px;min-width:0;padding:10px;border:1px solid #e0e8f5;border-radius:13px;background:#fff;color:#07194d;text-align:left;cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}.cp-spotlight-card:hover,.cp-spotlight-card:focus-visible{transform:translateY(-2px);border-color:#8ca9d8;box-shadow:0 8px 18px #07194d12;outline:none}.cp-spotlight-image{width:68px;height:84px;flex:0 0 68px;display:grid;place-items:center;overflow:hidden;border-radius:9px;background:radial-gradient(ellipse at center,#eaf1ff,#f8faff);color:#6b7fa4;font-weight:1000}.cp-spotlight-image img{width:100%;height:100%;object-fit:contain}.cp-spotlight-copy{min-width:0}.cp-spotlight-copy strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.88rem;line-height:1.25}.cp-spotlight-copy small{display:block;margin-top:5px;color:#607096;font-size:.74rem;line-height:1.35}.cp-spotlight-value{display:block;margin-top:6px;color:#174b9b;font-size:.82rem;font-weight:1000}.cp-spotlight-empty{padding:16px;border:1px dashed #c7d5ed;border-radius:12px;color:#607096;text-align:center;font-size:.86rem}
+@media(max-width:640px){.cp-spotlight{padding:14px}.cp-spotlight-head{align-items:flex-start}.cp-spotlight-grid{grid-template-columns:1fr}.cp-spotlight-card{min-height:88px}.cp-spotlight-image{width:62px;height:76px;flex-basis:62px}}
+</style>
 </head>
 <body>
 <div id="site-navigation"></div>
@@ -284,6 +291,11 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <form id="buddy-pokemon-editor" class="cp-buddy-editor" hidden><label for="buddy-pokemon-select">Choose your Buddy Pokémon<select id="buddy-pokemon-select"></select></label><button class="cp-btn" type="submit" id="buddy-pokemon-save">Save Buddy Pokémon</button><p id="buddy-pokemon-status" class="cp-status" role="status" aria-live="polite"></p></form>
 <div class="cp-follow-row"><button class="cp-follow-count cp-follow-list-trigger" id="followers-trigger" type="button"><strong id="followers-count">0</strong> followers</button><button class="cp-follow-count cp-follow-list-trigger" id="following-trigger" type="button"><strong id="following-count">0</strong> following</button><button id="follow-button" class="cp-follow-btn" type="button" hidden>Follow</button><div id="profile-menu-wrap" class="cp-profile-menu-wrap" hidden><button id="profile-menu-trigger" class="cp-profile-menu-trigger" type="button" aria-label="More profile options" aria-haspopup="menu" aria-expanded="false">···</button><div id="profile-menu" class="cp-profile-menu" role="menu" hidden><button id="menu-unfollow" type="button" role="menuitem">Unfollow</button><button id="menu-block" class="danger" type="button" role="menuitem">Block</button></div></div></div></div>
 </section>
+</section>
+
+<section id="collection-spotlight" class="cp-spotlight" aria-label="Collection spotlight" hidden>
+ <div class="cp-spotlight-head"><div><span class="cp-spotlight-kicker">From this collector’s collection</span><h2>Collection spotlight</h2><p class="cp-spotlight-subtitle">A quick look at some of the highlights in this collection.</p></div><button id="spotlight-view-all" class="cp-spotlight-link" type="button">View collection</button></div>
+ <div id="collection-spotlight-grid" class="cp-spotlight-grid"></div>
 </section>
 <section id="profile-badges" class="cp-gym-panel" aria-label="Gym Badge achievements" hidden></section>
 <section id="wishlist-match-dashboard" class="cp-panel cp-wishlist-dashboard" hidden>
@@ -603,6 +615,26 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
    badgePanel.appendChild(regionList);
   }
  }
+ function renderCollectionSpotlight(){
+  const panel=$('collection-spotlight'),grid=$('collection-spotlight-grid');
+  const collection=items.filter(item=>item.list_type==='collection');
+  if(!collection.length){panel.hidden=true;grid.replaceChildren();return;}
+  const worth=item=>item.product_type!=='graded'&&item.tcgcsv_market_price!==null&&item.tcgcsv_market_price!==undefined?Number(item.tcgcsv_market_price)*100:Number(item.estimated_value_cents||0);
+  const featured=collection.slice().sort((a,b)=>worth(b)-worth(a)).slice(0,3);
+  grid.replaceChildren();
+  featured.forEach(item=>{
+   const button=document.createElement('button');button.type='button';button.className='cp-spotlight-card';
+   const imageWrap=document.createElement('span');imageWrap.className='cp-spotlight-image';
+   if(item.image_url){const image=document.createElement('img');image.src=item.image_url;image.alt=item.product_name||'Collection item';image.loading='lazy';imageWrap.appendChild(image);}else{imageWrap.textContent='TCG';}
+   const copy=document.createElement('span');copy.className='cp-spotlight-copy';
+   const name=document.createElement('strong');name.textContent=item.product_name||'Collection item';copy.appendChild(name);
+   const detail=document.createElement('small');detail.textContent=[item.set_name,item.card_number,item.product_type==='sealed'?'Sealed':item.product_type==='graded'?'Graded':'Single'].filter(Boolean).join(' · ');copy.appendChild(detail);
+   const value=worth(item);if(value>0){const amount=document.createElement('span');amount.className='cp-spotlight-value';amount.textContent=money(Math.round(value));copy.appendChild(amount);}
+   button.append(imageWrap,copy);button.addEventListener('click',()=>{activeList='collection';render();$('collection-view').scrollIntoView({behavior:'smooth',block:'start'});});grid.appendChild(button);
+  });
+  panel.hidden=false;
+ }
+ $('spotlight-view-all')?.addEventListener('click',()=>{activeList='collection';render();$('collection-view').scrollIntoView({behavior:'smooth',block:'start'});});
  function stats(){
   const collection=items.filter(x=>x.list_type==='collection');
   $('stat-items').textContent=collection.length.toLocaleString();
@@ -610,6 +642,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   $('stat-sealed').textContent=collection.filter(x=>x.product_type==='sealed').reduce((n,x)=>n+Number(x.quantity||1),0).toLocaleString();
   const value=collection.reduce((n,x)=>{const cents=x.product_type!=='graded'&&x.tcgcsv_market_price!==null&&x.tcgcsv_market_price!==undefined?Math.round(Number(x.tcgcsv_market_price)*100):(Number(x.estimated_value_cents)||0);return n+cents*Number(x.quantity||1);},0);
   $('stat-value').textContent=collection.some(x=>(x.product_type!=='graded'&&x.tcgcsv_market_price!==null&&x.tcgcsv_market_price!==undefined)||(x.estimated_value_cents!==null&&x.estimated_value_cents!==undefined))?money(value):'Not set';
+  renderCollectionSpotlight();
  }
  async function loadCatalogSets(){
   const select=$('catalog-set');
