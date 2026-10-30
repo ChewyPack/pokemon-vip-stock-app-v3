@@ -192,6 +192,13 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
 .composer-brand{display:flex;align-items:center;padding:8px 14px 0}
 .composer-brand img{display:block;width:42px;height:42px;object-fit:contain;border-radius:0}
 
+
+/* Compact feed sorting dropdown */
+.community-filter{position:sticky;top:8px;z-index:20;display:flex;align-items:center;justify-content:flex-end;gap:9px;padding:7px 10px;margin:0 0 14px;background:#0b1930ed;border:1px solid #263d60;border-radius:11px;box-shadow:0 6px 18px #0003;backdrop-filter:blur(14px)}
+.community-filter label{color:#9fb2d0;font-size:.75rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.community-filter select{width:auto;min-width:155px;max-width:100%;border:1px solid #344d70;border-radius:8px;padding:8px 32px 8px 10px;background:#142846;color:#fff;font:700 .84rem system-ui,sans-serif;cursor:pointer}
+@media(max-width:640px){.community-filter{top:4px;padding:6px 9px}.community-filter select{min-width:145px;padding:8px 28px 8px 9px}}
+
 </style>
 </head>
 <body>
@@ -219,11 +226,14 @@ body{background:radial-gradient(ellipse at 50% 0%,#142d52 0%,#08162b 48%,#050d1b
   <div class="social-media-preview" data-media-preview aria-live="polite"></div>
   <p class="social-inline-status" data-composer-status role="status" aria-live="polite"></p>
 </form>
-<nav class="community-filter" aria-label="Choose feed">
-<button type="button" data-feed-mode="for-you" aria-pressed="false">For You</button>
-<button type="button" data-feed-mode="following" aria-pressed="false">Following</button>
-<button class="is-active" type="button" data-feed-mode="latest" aria-pressed="true">Latest</button>
-</nav>
+<div class="community-filter">
+<label for="community-feed-sort">Feed</label>
+<select id="community-feed-sort" aria-label="Sort community feed">
+<option value="latest" selected>Most recent</option>
+<option value="for-you">Most relevant</option>
+<option value="following">Recent activity</option>
+</select>
+</div>
 <p class="social-inline-status" data-social-feed-status role="status" aria-live="polite">Loading community posts…</p>
 <div data-social-post-list></div>
 <p class="social-inline-status">Please keep posts respectful. Use Report on a post to flag spam, scams, harassment, or other concerns.</p>
