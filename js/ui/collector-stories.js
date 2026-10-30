@@ -195,7 +195,7 @@
       '<div><strong>' + escapeHtml(group.display_name || group.username) + '</strong><span>@' + escapeHtml(group.username) + ' · ' + escapeHtml(relativeTime(story.created_at)) + '</span></div>' +
       (story.is_own ? '<button type="button" class="story-viewer-delete" data-story-delete="' + Number(story.id) + '">Delete</button>' : '') +
       '</header>' +
-      '<div class="story-viewer-content" data-story-gesture>' + media + '<button type="button" class="story-viewer-nav story-viewer-nav--prev" data-story-prev aria-label="Previous story"></button><button type="button" class="story-viewer-nav story-viewer-nav--next" data-story-next aria-label="Next story"></button>' + (story.caption ? '<p class="story-viewer-caption">' + escapeHtml(story.caption) + '</p>' : '') + '</div>' +
+      '<div class="story-viewer-content" data-story-gesture>' + media + (story.caption ? '<p class="story-viewer-caption">' + escapeHtml(story.caption) + '</p>' : '') + '</div>' +
       '<div class="story-viewer-hint" aria-hidden="true">Tap sides or swipe to navigate · Stories disappear after 24 hours</div>' +
       '</section></div>';
   }
@@ -207,10 +207,6 @@
     viewer.innerHTML = viewerMarkup(group,story,activeStoryIndex);
     const close = viewer.querySelector('[data-story-close]');
     if (close) close.addEventListener('click',closeViewer);
-    const prev = viewer.querySelector('[data-story-prev]');
-    if (prev) prev.addEventListener('click',event => { event.stopPropagation(); moveStory(-1); });
-    const next = viewer.querySelector('[data-story-next]');
-    if (next) next.addEventListener('click',event => { event.stopPropagation(); moveStory(1); });
     const gestureArea = viewer.querySelector('[data-story-gesture]');
     if (gestureArea) {
       let pointerStart = null;
