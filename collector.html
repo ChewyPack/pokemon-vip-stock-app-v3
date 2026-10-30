@@ -92,7 +92,7 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .cp-catalog-result small{color:var(--muted);margin-top:3px}
 .cp-catalog-status{font-size:.82rem;color:var(--muted);margin:8px 0 0;line-height:1.4}
 @media(max-width:820px){.cp-layout{grid-template-columns:1fr}.cp-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.cp-profile-highlights{margin:0 0 14px}.cp-profile-highlights-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.cp-profile-highlights-heading h2{margin:0;color:var(--navy)}.cp-profile-highlights-heading p{margin:3px 0 0;color:var(--muted);font-size:.8rem}.cp-profile-highlights-heading>span{color:var(--blue);font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.cp-profile-highlight-list{display:flex;gap:14px;overflow-x:auto;padding:2px 2px 8px}.cp-profile-highlight{display:flex;flex:0 0 92px;flex-direction:column;align-items:center;gap:7px;color:var(--navy);text-decoration:none;text-align:center}.cp-profile-highlight img,.cp-profile-highlight .cp-profile-highlight-video{display:grid;place-items:center;width:76px;height:76px;object-fit:cover;border:3px solid #ffd21f;border-radius:50%;background:#10264b;color:#ffd21f;font-size:1.5rem}.cp-profile-highlight span:last-child{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem;font-weight:900}.cp-profile-highlight:hover span:last-child{text-decoration:underline}@media(max-width:520px){.cp-hero{align-items:flex-start;gap:15px;min-height:220px;padding:20px 16px}.cp-avatar{width:76px;height:76px;flex-basis:76px;border-radius:20px}.cp-hero h1{font-size:2rem}.cp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-items{grid-template-columns:1fr 1fr}.cp-item-image{height:210px;padding:10px 6px 6px}.cp-item-image img{max-height:190px}.cp-stat strong{font-size:1.35rem}}
+.cp-featured-identity{margin:0 0 14px}.cp-featured-identity-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}.cp-featured-pokemon{display:flex;align-items:center;gap:12px;min-width:0;padding:12px;border:1px solid #dbe4f4;border-radius:12px;background:linear-gradient(135deg,#f7faff,#fff)}.cp-featured-pokemon img{width:76px;height:76px;object-fit:contain;flex:0 0 76px}.cp-featured-pokemon strong{display:block;font-size:1rem}.cp-featured-pokemon small,.cp-favorite-set small{display:block;color:var(--muted);font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em}.cp-favorite-set{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:14px;border:1px solid #dbe4f4;border-radius:12px;background:#f7faff}.cp-favorite-set strong{margin-top:5px;overflow-wrap:anywhere}.cp-featured-editor{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end;margin-top:12px}.cp-featured-editor label{display:grid;gap:5px;color:var(--muted);font-size:.8rem;font-weight:900}.cp-featured-editor input,.cp-featured-editor select{width:100%;min-height:40px;padding:8px 10px;border:1px solid #b9c9e6;border-radius:8px;background:#fff;color:var(--navy);font:inherit}.cp-featured-editor[hidden]{display:none!important}.cp-featured-identity .cp-status{grid-column:1/-1;margin:0}@media(max-width:640px){.cp-featured-identity-grid{grid-template-columns:1fr}.cp-featured-editor{grid-template-columns:1fr}.cp-featured-editor button{width:100%}}.cp-profile-highlights{margin:0 0 14px}.cp-profile-highlights-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.cp-profile-highlights-heading h2{margin:0;color:var(--navy)}.cp-profile-highlights-heading p{margin:3px 0 0;color:var(--muted);font-size:.8rem}.cp-profile-highlights-heading>span{color:var(--blue);font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.cp-profile-highlight-list{display:flex;gap:14px;overflow-x:auto;padding:2px 2px 8px}.cp-profile-highlight{display:flex;flex:0 0 92px;flex-direction:column;align-items:center;gap:7px;color:var(--navy);text-decoration:none;text-align:center}.cp-profile-highlight img,.cp-profile-highlight .cp-profile-highlight-video{display:grid;place-items:center;width:76px;height:76px;object-fit:cover;border:3px solid #ffd21f;border-radius:50%;background:#10264b;color:#ffd21f;font-size:1.5rem}.cp-profile-highlight span:last-child{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem;font-weight:900}.cp-profile-highlight:hover span:last-child{text-decoration:underline}@media(max-width:520px){.cp-hero{align-items:flex-start;gap:15px;min-height:220px;padding:20px 16px}.cp-avatar{width:76px;height:76px;flex-basis:76px;border-radius:20px}.cp-hero h1{font-size:2rem}.cp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cp-items{grid-template-columns:1fr 1fr}.cp-item-image{height:210px;padding:10px 6px 6px}.cp-item-image img{max-height:190px}.cp-stat strong{font-size:1.35rem}}
 [hidden]{display:none!important}
 /* Compatibility nodes for legacy profile controls; shared navigation owns sign-in and logout UI. */
 #collector-logout,#collector-signin,#collector-settings{display:none!important}
@@ -303,6 +303,11 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  <div class="cp-profile-highlights-heading"><div><h2>Story Highlights</h2><p>Favorite moments from this collector, saved beyond 24 hours.</p></div><span>Highlights</span></div>
  <div id="profile-story-highlight-list" class="cp-profile-highlight-list"></div>
 </section>
+<section id="featured-identity" class="cp-panel cp-featured-identity" aria-label="Featured Pokémon and favorite set" hidden>
+ <div class="cp-profile-highlights-heading"><div><h2>Collector Favorites</h2><p>A snapshot of what this collector loves most.</p></div><span>My TCG identity</span></div>
+ <div class="cp-featured-identity-grid"><div class="cp-featured-pokemon"><img id="featured-pokemon-image" alt="" hidden><div><small>Featured Pokémon</small><strong id="featured-pokemon-name">Not selected</strong></div></div><div class="cp-favorite-set"><small>Favorite TCG set</small><strong id="favorite-set-name">Not selected</strong></div></div>
+ <form id="featured-identity-editor" class="cp-featured-editor" hidden><label for="featured-pokemon-select">Featured Pokémon<select id="featured-pokemon-select"><option value="">Choose a Pokémon</option></select></label><label for="favorite-set-input">Favorite TCG set<input id="favorite-set-input" maxlength="80" placeholder="e.g. Evolving Skies"></label><button class="cp-btn" id="featured-identity-save" type="submit">Save favorites</button><p class="cp-status" id="featured-identity-status" role="status" aria-live="polite"></p></form>
+</section>
 <section id="wishlist-match-dashboard" class="cp-panel cp-wishlist-dashboard" hidden>
  <div class="cp-match-header"><h2>Wishlist Matches</h2><p class="cp-status" id="wishlist-match-status" role="status" aria-live="polite"></p></div>
  <div id="wishlist-match-results" class="cp-match-grid"><div class="cp-match-empty">Checking your wishlist…</div></div>
@@ -461,6 +466,11 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  const money=cents=>cents===null||cents===undefined?'Not set':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(cents)/100);
  const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function setStatus(id,text){$(id).textContent=text||'';}
+ function renderFeaturedPokemonOptions(selectedKey){
+  const selector=$('featured-pokemon-select');const sorted=buddyOptions.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base'}));
+  selector.replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent='Choose a Pokémon';selector.appendChild(empty);
+  sorted.forEach(item=>{const option=document.createElement('option');option.value=item.key;option.textContent=item.name;selector.appendChild(option);});selector.value=sorted.some(item=>item.key===selectedKey)?selectedKey:'';
+ }
  function renderBuddyPokemonOptions(selectedKey){
   const selector=$('buddy-pokemon-select');
   const sorted=buddyOptions.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base'}));
@@ -543,6 +553,14 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
   $('buddy-pokemon-caption').textContent='Your profile companion';
   const buddyImg=$('buddy-pokemon-image');buddyImg.alt=buddyName+' partner Pokémon';if(buddyImage){buddyImg.src=buddyImage;buddyImg.hidden=false;}else{buddyImg.removeAttribute('src');buddyImg.hidden=true;}
   renderBuddyPokemonOptions(p?.buddy_pokemon||'pikachu');
+  const featured=buddyOptions.find(item=>item.key===(p?.featured_pokemon||''));
+  $('featured-identity').hidden=!p;
+  $('featured-identity-editor').hidden=!own;
+  $('featured-pokemon-name').textContent=p?.featured_pokemon_name||featured?.name||'Not selected';
+  $('favorite-set-name').textContent=p?.favorite_set||'Not selected';
+  const featuredImage=$('featured-pokemon-image');const featuredUrl=p?.featured_pokemon_image_url||(featured?'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/'+featured.id+'.png':'');
+  if(featuredUrl){featuredImage.src=featuredUrl;featuredImage.alt=(p?.featured_pokemon_name||featured?.name||'Featured Pokémon');featuredImage.hidden=false;}else{featuredImage.removeAttribute('src');featuredImage.hidden=true;}
+  renderFeaturedPokemonOptions(p?.featured_pokemon||'');$('favorite-set-input').value=p?.favorite_set||'';$('featured-identity-status').textContent='';
   const earned=Array.isArray(p?.achievements)?p.achievements:[];
   const basics=Array.isArray(p?.basic_achievements)?p.basic_achievements:[];
   const progress=p?.achievement_progress||{};
@@ -1122,6 +1140,14 @@ $('collector-search-form').addEventListener('submit',event=>{
  function openBioEditor(){if(!own)return;$('bio-input').value=profile?.bio||'';$('bio-editor').hidden=false;$('bio-input').focus();}
  $('edit-bio').addEventListener('click',openBioEditor);$('bio-display').addEventListener('click',openBioEditor);
 
+ $('featured-identity-editor').addEventListener('submit',async e=>{
+  e.preventDefault();if(!own||!profile)return;const button=$('featured-identity-save');button.disabled=true;setStatus('featured-identity-status','Saving your collector favorites…');
+  try{const payload={username:profile.username,bio:profile.bio||'',avatar_url:profile.avatar_url||'',cover_url:profile.cover_url||'',is_public:Number(profile.is_public??1)===1,featured_pokemon:$('featured-pokemon-select').value,favorite_set:$('favorite-set-input').value.trim()};
+   const response=await fetch('/api/collector/profile',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await response.json();
+   if(!response.ok||!data.ok)throw new Error(data.error==='invalid_featured_pokemon'?'Choose a Pokémon from the list.':data.error==='favorite_set_too_long'?'Favorite set must be 80 characters or fewer.':'Could not save your favorites. Please try again.');
+   profile={...profile,...data.profile};const selected=buddyOptions.find(item=>item.key===profile.featured_pokemon);profile.featured_pokemon_name=selected?.name||'';profile.featured_pokemon_image_url=selected?'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/'+selected.id+'.png':'';showProfile(profile,$('display-name').textContent);setStatus('featured-identity-status','Your collector favorites are updated.');
+  }catch(error){setStatus('featured-identity-status',error.message||'Could not save your favorites.');}finally{button.disabled=false;}
+ });
  $('buddy-pokemon-editor').addEventListener('submit',async e=>{
   e.preventDefault();if(!own||!profile)return;
   const button=$('buddy-pokemon-save');button.disabled=true;setStatus('buddy-pokemon-status','Saving your Buddy Pokémon…');
