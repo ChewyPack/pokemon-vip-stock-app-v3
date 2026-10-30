@@ -1,4 +1,4 @@
-import { COLLECTOR_BUDDY_POKEMON, ensureCollectorRewardSchema, getCollectorAchievements } from "../../_lib/collector-rewards.js";
+import { COLLECTOR_BUDDY_POKEMON, COLLECTOR_BASIC_BADGES, COLLECTOR_GYM_BADGES, ensureCollectorRewardSchema, getCollectorAchievements } from "../../_lib/collector-rewards.js";
 const COOKIE='collector_session';
 function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});}
 function cookie(request,name){for(const part of (request.headers.get('Cookie')||'').split(';')){const p=part.trim();if(p.startsWith(name+'='))return p.slice(name.length+1);}return '';}
@@ -60,6 +60,9 @@ export async function onRequestPost({request,env}){
  const featured=featuredPokemon?COLLECTOR_BUDDY_POKEMON.find(item=>item.key===featuredPokemon):null;
  const chatNameColor=existingProfile?.chat_name_color||'#ffd54a';
  const isPublic=data.is_public===false?0:1;
+ const featuredBadgeIds=Array.isArray(data.featured_badge_ids)?[...new Set(data.featured_badge_ids.filter(value=>typeof value==='string'))]:null;
+ const allowedBadgeIds=new Set([...COLLECTOR_BASIC_BADGES,...COLLECTOR_GYM_BADGES].map(badge=>badge.id));
+ if(featuredBadgeIds&&(featuredBadgeIds.length>3||featuredBadgeIds.some(id=>!allowedBadgeIds.has(id))))return json({ok:false,error:'invalid_featured_badges'},400);
  if(!safeUsername(username))return json({ok:false,error:'invalid_username'},400);
  if(!buddy)return json({ok:false,error:'invalid_buddy_pokemon'},400);
  if(featuredPokemon&&!featured)return json({ok:false,error:'invalid_featured_pokemon'},400);
@@ -70,6 +73,12 @@ export async function onRequestPost({request,env}){
  if(!validImage(cover,850000))return json({ok:false,error:'invalid_cover_url'},400);
  try{
   const result=await env.DB.prepare(`INSERT INTO collector_profiles (account_id,username,bio,avatar_url,cover_url,buddy_pokemon,featured_pokemon,favorite_set,chat_name_color,is_public,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(account_id) DO UPDATE SET username=excluded.username,bio=excluded.bio,avatar_url=excluded.avatar_url,cover_url=excluded.cover_url,buddy_pokemon=excluded.buddy_pokemon,featured_pokemon=excluded.featured_pokemon,favorite_set=excluded.favorite_set,chat_name_color=excluded.chat_name_color,is_public=excluded.is_public,updated_at=CURRENT_TIMESTAMP`).bind(account.id,username,bio,avatar,cover,buddy.key,featuredPokemon,favoriteSet,chatNameColor,isPublic).run();
+  if(featuredBadgeIds){
+   await env.DB.prepare("UPDATE collector_earned_badges SET is_featured=0 WHERE account_id=?").bind(account.id).run();
+   for(const badgeId of featuredBadgeIds){
+    await env.DB.prepare("UPDATE collector_earned_badges SET is_featured=1 WHERE account_id=? AND badge_id=?").bind(account.id,badgeId).run();
+   }
+  }
   return json({ok:true,profile:{username,bio,avatar_url:avatar,cover_url:cover,buddy_pokemon:buddy.key,featured_pokemon:featured?.key||'',featured_pokemon_name:featured?.name||'',featured_pokemon_image_url:featured?'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/'+featured.id+'.png':'',favorite_set:favoriteSet,buddy_name:buddy.name,buddy_image_url:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/'+buddy.id+'.png',is_public:isPublic}},200);
  }catch(error){
   if(String(error&&error.message||'').toLowerCase().includes('unique'))return json({ok:false,error:'username_taken'},409);
