@@ -181,6 +181,39 @@ export async function onRequestGet({request, env}) {
         liked_by_me:Number(p.liked_by_me || 0) === 1, my_reaction:p.my_reaction || (Number(p.liked_by_me || 0) === 1 ? 'like' : ''), is_own:Number(p.is_own || 0) === 1
       };
     });
+    try {
+      const ids = posts.map(post => post.id).filter(id => Number.isSafeInteger(id) && id > 0);
+      if (ids.length) {
+        const marks = ids.map(() => '?').join(',');
+        const shares = await env.DB.prepare(
+          "SELECT s.id AS share_id,s.account_id AS sharer_id,s.post_id,s.body AS quote_body,s.created_at AS shared_at," +
+          "sp.username AS sharer_username,sp.avatar_url AS sharer_avatar,sa.display_name AS sharer_name " +
+          "FROM collector_post_shares s JOIN collector_profiles sp ON sp.account_id=s.account_id " +
+          "JOIN accounts sa ON sa.id=s.account_id WHERE s.share_type='quote' AND s.post_id IN (" + marks + ") AND sp.is_public=1 " +
+          "ORDER BY s.created_at DESC,s.id DESC"
+        ).bind(...ids).all();
+        const originals = new Map(posts.map(post => [post.id, post]));
+        for (const share of shares.results || []) {
+          const original = originals.get(Number(share.post_id));
+          if (!original) continue;
+          posts.push({
+            ...original,
+            feed_share_id:Number(share.share_id),
+            share_type:'quote',
+            quote_body:share.quote_body,
+            sharer_username:share.sharer_username,
+            sharer_name:share.sharer_name || share.sharer_username,
+            sharer_avatar:share.sharer_avatar || '',
+            shared_at:share.shared_at,
+            created_at:share.shared_at
+          });
+        }
+        posts.sort((a,b) => String(b.created_at).localeCompare(String(a.created_at)) || Number(b.feed_share_id || b.id)-Number(a.feed_share_id || a.id));
+      }
+    } catch (shareReadError) {
+      if (!String(shareReadError && shareReadError.message || '').toLowerCase().includes('no such table')) throw shareReadError;
+      // The feed remains readable before the dedicated shares migration is applied.
+    }
     return json({ok:true, posts, feed:username ? 'profile' : mode});
   } catch (error) {
     console.error('Collector posts read failed:', error);
