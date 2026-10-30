@@ -149,6 +149,46 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 .social-empty-comments{font-size:.86rem;color:var(--muted);text-align:center;padding:10px}
 @media(max-width:640px){.cp-social-composer,.social-post{padding:12px}.cp-social-composer-row{grid-template-columns:1fr}.social-post-type{max-width:100px;overflow:hidden;text-overflow:ellipsis}}
 
+/* Modern collector posts feed refresh. */
+#profile-content-panel>.cp-tabs{display:flex;gap:7px;padding:6px;margin:0 0 16px;border:1px solid #dce5f4;border-radius:15px;background:#f3f6fc}
+#profile-content-panel>.cp-tabs [role=tab]{flex:1;min-height:42px;border:1px solid transparent;border-radius:10px;background:transparent;color:#52627e;font-weight:900;transition:background .18s ease,color .18s ease,box-shadow .18s ease}
+#profile-content-panel>.cp-tabs [role=tab][aria-selected=true],#profile-content-panel>.cp-tabs button[aria-pressed=true]{background:#102b61;color:#fff;border-color:#102b61;box-shadow:0 3px 9px #102b6130}
+#posts-tab-content{gap:16px}
+.cp-social-composer{position:relative;overflow:hidden;padding:20px;border:1px solid #d8e3f3;border-radius:19px;background:linear-gradient(135deg,#fff 0%,#f8fbff 58%,#edf4ff 100%);box-shadow:0 10px 28px #0c28500d}
+.cp-social-composer:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#2c65c8,#64a8ff)}
+.cp-social-composer h3{font:900 1.25rem Nunito,system-ui,sans-serif;letter-spacing:-.025em;color:#102b61;margin:0 0 13px}
+.cp-social-label{gap:7px;margin:10px 0;color:#344765;font-size:.82rem;font-weight:900}
+.cp-social-composer textarea{min-height:112px;padding:14px 15px;border:1px solid #d4deed;border-radius:13px;background:#fff;font:500 .98rem/1.55 Nunito,system-ui,sans-serif;box-shadow:inset 0 1px 2px #102b6108;transition:border-color .18s ease,box-shadow .18s ease}
+.cp-social-composer textarea:focus,.cp-social-composer select:focus,.cp-social-composer input:focus{outline:none;border-color:#5686d1;box-shadow:0 0 0 3px #5686d126}
+.cp-social-composer textarea::placeholder{color:#8795aa}
+.cp-social-composer-row{grid-template-columns:minmax(150px,.65fr) minmax(0,2fr) auto;gap:12px;align-items:end}
+.cp-social-composer select{min-height:44px;border-color:#d4deed;border-radius:11px;font-weight:800}
+.cp-social-media-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cp-social-media-inputs .cp-social-label{min-width:0;margin:0}
+.cp-social-composer input[type=file]{box-sizing:border-box;min-width:0;min-height:44px;padding:6px;border:1px dashed #b8c9e2;border-radius:11px;background:#fff;color:#64748b;font-size:.76rem}
+.cp-social-composer input[type=file]::file-selector-button{margin-right:8px;padding:7px 10px;border:0;border-radius:8px;background:#eaf1ff;color:#183b70;font:800 .76rem Nunito,system-ui,sans-serif;cursor:pointer}
+.cp-social-composer button[type=submit]{min-height:44px;padding:0 22px;border:0;border-radius:11px;background:linear-gradient(135deg,#17458c,#2769c7);color:#fff;font-weight:900;box-shadow:0 5px 12px #17458c25;transition:transform .18s ease,box-shadow .18s ease}
+.cp-social-composer button[type=submit]:hover{transform:translateY(-1px);box-shadow:0 8px 16px #17458c30}
+.social-media-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}
+.social-post{padding:18px;border:1px solid #e0e7f1;border-radius:18px;background:#fff;box-shadow:0 7px 22px #102b610a;transition:border-color .18s ease,box-shadow .18s ease}
+.social-post:hover{border-color:#c7d6ec;box-shadow:0 12px 28px #102b6112}
+.social-post-header{gap:12px}
+.social-avatar{width:48px;height:48px;flex-basis:48px;border:2px solid #e7eef9;padding:2px}
+.social-post-author>a{color:#142f61;font-size:.96rem}
+.social-post-author div{margin-top:2px;font-size:.78rem;color:#8190a5}
+.social-post-type{margin-left:auto;padding:6px 10px;background:#eef4ff;color:#315b98;border:1px solid #dce8fa;font-size:.7rem;letter-spacing:.025em}
+.social-post-body{margin:15px 0;font-size:.98rem;line-height:1.7;color:#26364d}
+.social-post-image{max-height:620px;border-radius:13px;background:#f3f6fb;margin:12px 0}
+.social-post-stats{gap:16px;padding:11px 2px;border-bottom:1px solid #edf1f6;color:#8290a3;font-size:.78rem}
+.social-post-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-top:11px}
+.social-post-actions button{min-height:39px;border:1px solid #e4eaf3;border-radius:10px;background:#f8faff;color:#425775;font-size:.82rem;transition:background .16s ease,border-color .16s ease,color .16s ease}
+.social-post-actions button:hover{background:#edf4ff;border-color:#cbdcf5;color:#173f7c}
+.social-post-actions button.is-liked{background:#fff0f3;border-color:#ffd5df;color:#c0264a}
+#posts-tab-content [data-social-feed-status]:empty{display:none}
+#posts-tab-content [data-social-feed-status]{margin:0;padding:4px 2px;color:#7b8ba2;font-size:.82rem}
+@media(max-width:760px){.cp-social-composer-row{grid-template-columns:1fr}.cp-social-composer button[type=submit]{width:100%}}
+@media(max-width:640px){#profile-content-panel>.cp-tabs{gap:3px;padding:4px}#profile-content-panel>.cp-tabs [role=tab]{min-height:40px;padding:8px 5px;font-size:.82rem}.cp-social-composer{padding:16px}.cp-social-media-inputs{grid-template-columns:1fr}.social-post{padding:14px}.social-post-actions{gap:5px}.social-post-actions button{padding:7px 4px;font-size:.77rem}.social-post-type{max-width:105px}}
+
 
 /* Partner Pokémon and earned Gym Badge profile rewards. */
 .cp-buddy-display{display:flex;align-items:center;gap:12px;width:max-content;max-width:100%;margin:13px 0;padding:9px 14px 9px 9px;border:1px solid #ffffff45;border-radius:15px;background:#061744a8;box-shadow:0 4px 16px #020b2440}
