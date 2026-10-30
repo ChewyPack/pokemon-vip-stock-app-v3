@@ -81,9 +81,9 @@
   function tileMarkup(group, own) {
     const latest = group.stories[group.stories.length - 1];
     const seen = !own && group.stories.every(story => story.viewed_by_me);
-    const thumbnail = latest.media_type === 'image'
-      ? '<img src="' + escapeHtml(latest.media_url) + '" alt="" loading="lazy">'
-      : '<span class="story-tile-video" aria-hidden="true">▶</span>';
+    const thumbnail = latest.media_type === 'video'
+      ? '<video src="' + escapeHtml(latest.media_url) + '" muted autoplay loop playsinline preload="metadata" aria-hidden="true"></video>'
+      : '<img src="' + escapeHtml(latest.media_url) + '" alt="" loading="lazy">';
     return '<div class="story-card-wrap' + (own ? ' is-own' : '') + '">' +
       '<button type="button" class="story-card' + (seen ? ' is-seen' : '') + '" data-story-open="' + Number(group.account_id) + '" aria-label="View ' + escapeHtml(own ? 'your' : group.display_name) + ' stories">' +
       '<span class="story-card-ring">' + thumbnail + '</span><span class="story-card-label">' + escapeHtml(own ? 'Your story' : (group.display_name || group.username)) + '</span>' +
