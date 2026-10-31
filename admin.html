@@ -15,7 +15,7 @@
 <h1>PokePrizePool Admin</h1><p>Manage website accounts, moderate stock alerts, and notify members in community chat.</p>
 <div id="status" role="status">Checking admin access…</div>
 <div class="tabs" role="tablist">
-<button data-tab="members" aria-selected="true">Members</button><button data-tab="alerts" aria-selected="false">Stock alerts</button><button data-tab="announce" aria-selected="false">Tag / announce</button><button data-tab="line-requests" aria-selected="false">Line-service requests</button><button data-tab="news-tool" aria-selected="false">News &amp; Updates</button><button data-tab="events-tool" aria-selected="false">Events Calendar</button><button data-tab="giveaways-tool" aria-selected="false">Giveaways</button><button data-tab="requests-tool" aria-selected="false">Show Buyer Requests</button><button data-tab="sales-tool" aria-selected="false">Event Sales &amp; Verification</button><button data-tab="advertising-tool" aria-selected="false">Advertising</button><button data-tab="store-tool" aria-selected="false">Store Admin</button><button data-tab="buyout-tool" aria-selected="false">Instant Buyout</button>
+<button data-tab="members" aria-selected="true">Members</button><button data-tab="alerts" aria-selected="false">Stock alerts</button><button data-tab="announce" aria-selected="false">Tag / announce</button><button data-tab="email-center" aria-selected="false">Email Center</button><button data-tab="line-requests" aria-selected="false">Line-service requests</button><button data-tab="news-tool" aria-selected="false">News &amp; Updates</button><button data-tab="events-tool" aria-selected="false">Events Calendar</button><button data-tab="giveaways-tool" aria-selected="false">Giveaways</button><button data-tab="requests-tool" aria-selected="false">Show Buyer Requests</button><button data-tab="sales-tool" aria-selected="false">Event Sales &amp; Verification</button><button data-tab="advertising-tool" aria-selected="false">Advertising</button><button data-tab="store-tool" aria-selected="false">Store Admin</button><button data-tab="buyout-tool" aria-selected="false">Instant Buyout</button>
 </div>
 <section id="members" class="panel">
 <h2>Website members</h2><div class="stats"><div class="stat"><strong id="total">—</strong><span>Total accounts</span></div><div class="stat"><strong id="active">—</strong><span>Active membership entitlements</span></div><div class="stat"><strong id="free">—</strong><span>Free / inactive</span></div><div class="stat"><strong id="online">—</strong><span>Collectors online now</span></div><div class="stat"><strong id="inChat">—</strong><span>Currently in community chat</span></div></div>
@@ -31,6 +31,20 @@
 <label for="channel">Chat channel</label><select id="channel"><option value="general">General</option><option value="restocks">Restocks & Finds</option><option value="market">Market Talk</option><option value="trades">Trades & Collections</option><option value="help">Help Desk</option></select>
 <label for="message">Message</label><textarea id="message" maxlength="900" placeholder="Write your announcement or message…"></textarea>
 <p class="small">The message will be posted publicly in the selected chat channel. Group tags notify matching accounts but do not create a separate message for every member.</p><button class="primary" id="sendAnnouncement">Post message and notify</button></section>
+<section id="email-center" class="panel hidden">
+<h2>Member Email Center</h2>
+<p>Compose a PokePrizePool email and send it only to the members you select. Search and filter the recipient list, then review the selected count before sending.</p>
+<div class="row"><div><label for="emailMemberSearch">Find members</label><input id="emailMemberSearch" placeholder="Search name, username, or email"></div><div><label for="emailTierFilter">Membership filter</label><select id="emailTierFilter"><option value="all">All accounts</option><option value="collector+">Collector+</option><option value="vendor+">Vendor+</option><option value="paid">All active paid members</option><option value="free">Free / inactive</option></select></div></div>
+<div class="row" style="margin:12px 0"><button id="emailSelectVisible">Select visible</button><button id="emailClearSelection">Clear selection</button><span id="emailRecipientCount" class="muted">0 selected</span></div>
+<div class="tablewrap" style="max-height:340px;overflow:auto"><table style="min-width:600px"><thead><tr><th>Select</th><th>Member</th><th>Email</th><th>Membership</th></tr></thead><tbody id="emailRecipientRows"><tr><td colspan="4">Loading recipients…</td></tr></tbody></table></div>
+<label for="emailSubject">Email subject</label><input id="emailSubject" maxlength="180" placeholder="Write your subject line">
+<label for="emailMessage">Your message</label><textarea id="emailMessage" maxlength="12000" rows="10" placeholder="Write your PokePrizePool message…"></textarea>
+<p class="small">Messages are sent individually through Resend. Keep promotional messages compliant with applicable email laws and include an unsubscribe process before sending marketing campaigns.</p>
+<button class="primary" id="sendMemberEmail">Review and send email</button>
+<hr style="border-color:var(--line);margin:24px 0">
+<div class="row"><h3 style="margin:0">Recent email campaigns</h3><button id="refreshEmailHistory">Refresh history</button></div>
+<div class="tablewrap"><table style="min-width:620px"><thead><tr><th>Date</th><th>Subject</th><th>Recipients</th><th>Sent</th><th>Failed</th></tr></thead><tbody id="emailCampaignRows"><tr><td colspan="5">No campaign history loaded.</td></tr></tbody></table></div>
+</section>
 <section id="line-requests" class="panel hidden"><h2>Line-service requests</h2><p>Reservation inquiries submitted from the public Line Services page. Requests are not confirmed bookings until accepted. Email notifications go to pokeprizepool@gmail.com.</p><div class="row"><button class="primary" id="reloadLineRequests">Refresh requests</button><span id="lineRequestCount" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th>Request</th><th>Customer / contact</th><th>Store / date</th><th>Email notification</th><th>Actions</th></tr></thead><tbody id="lineRequestRows"><tr><td colspan="5">Open this tab to load requests.</td></tr></tbody></table></div></section>
 <section id="news-tool" class="panel hidden admin-tool-panel"><h2>News &amp; Updates</h2><p>Manage stories without leaving the main admin dashboard.</p><iframe id="news-tool-frame" class="admin-embed" data-src="/news-admin.html" title="News and Updates administration" loading="lazy"></iframe></section>
 <section id="events-tool" class="panel hidden admin-tool-panel"><h2>Events Calendar</h2><p>Manage calendar events and member event submissions here.</p><iframe id="events-tool-frame" class="admin-embed" data-src="/events-admin.html" title="Events Calendar administration" loading="lazy"></iframe></section>
@@ -48,7 +62,7 @@ let membersOffset=0;
 const MEMBER_PAGE_SIZE=100;
 let filteredMemberCount=0;
 let totalAccountCount=0;
-let memberSearchTimer=null;
+let memberSearchTimer=null;\nlet emailRecipients=[];\nlet emailSelected=new Map();\nlet emailSearchTimer=null;
 function status(message){$('status').textContent=message}
 async function api(url,options={}){const response=await fetch(url,{credentials:'same-origin',cache:'no-store',...options,headers:{'content-type':'application/json',...(options.headers||{})}});const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));if(!response.ok||data.ok===false)throw new Error(data.message||data.error||'Request failed');return data}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -154,11 +168,51 @@ async function loadAlerts(){
   }));
 }
 
-async function loadLineRequests(){const data=await api('/api/line-service-requests');const rows=data.requests||[];$('lineRequestCount').textContent=rows.length+' requests';$('lineRequestRows').innerHTML=rows.map(r=>'<tr><td><strong>#'+esc(r.id)+' · '+esc(r.release)+'</strong><br><span class="small muted">'+esc(r.created_at)+'</span><br><details><summary>Full request</summary><pre style="white-space:pre-wrap;max-width:520px">'+esc(r.summary)+'</pre></details></td><td>'+esc(r.name)+'<br>'+esc(r.email)+'<br><span class="muted">'+esc(r.discord)+'</span></td><td>'+esc(r.store)+'<br>'+esc(r.address)+'<br>'+esc(r.request_date)+(r.opening_time?' · '+esc(r.opening_time):'')+'</td><td><span class="pill '+(r.email_status==='sent'?'':'off')+'">'+esc(r.email_status||'pending')+'</span>'+(r.email_error?'<br><span class="small muted">'+esc(r.email_error)+'</span>':'')+(r.email_sent_at?'<br><span class="small muted">'+esc(r.email_sent_at)+'</span>':'')+'</td><td><button class="retryLineEmail" data-id="'+esc(r.id)+'" '+(r.email_status==='sent'?'disabled':'')+'>Retry email</button></td></tr>').join('')||'<tr><td colspan="5">No line-service requests yet.</td></tr>';document.querySelectorAll('.retryLineEmail').forEach(b=>b.addEventListener('click',async()=>{b.disabled=true;try{const result=await api('/api/line-service-requests',{method:'POST',body:JSON.stringify({action:'resend_email',id:Number(b.dataset.id)})});status('Notification email sent for request #'+b.dataset.id+'.');await loadLineRequests()}catch(e){status('Email retry failed: '+e.message);b.disabled=false}}))}
+
+async function loadEmailRecipients(){
+  const q=$('emailMemberSearch').value.trim(),tier=$('emailTierFilter').value;
+  $('emailRecipientRows').innerHTML='<tr><td colspan="4">Loading recipients…</td></tr>';
+  const data=await api('/api/admin-email?q='+encodeURIComponent(q)+'&tier='+encodeURIComponent(tier));
+  emailRecipients=data.recipients||[];
+  $('emailRecipientRows').innerHTML=emailRecipients.map(r=>'<tr><td><input type="checkbox" class="emailRecipientCheck" data-id="'+esc(r.id)+'" style="width:auto" '+(emailSelected.has(Number(r.id))?'checked':'')+'></td><td>'+esc(r.display_name)+'<br><span class="small muted">@'+esc(r.username||'no-username')+'</span></td><td>'+esc(r.email)+'</td><td>'+esc(tierLabel(r.membership_tier))+'</td></tr>').join('')||'<tr><td colspan="4">No matching accounts with email addresses.</td></tr>';
+  document.querySelectorAll('.emailRecipientCheck').forEach(box=>box.addEventListener('change',()=>{
+    const id=Number(box.dataset.id),row=emailRecipients.find(x=>Number(x.id)===id);
+    if(box.checked&&row)emailSelected.set(id,row);else emailSelected.delete(id);
+    updateEmailSelection();
+  }));
+  updateEmailSelection();
+  if(data.capped)status('Recipient search is limited to the first 500 matches. Narrow your search to reach a specific member.');
+}
+function updateEmailSelection(){$('emailRecipientCount').textContent=emailSelected.size+' selected (maximum 100 per send)';$('sendMemberEmail').disabled=emailSelected.size===0||emailSelected.size>100;}
+async function loadEmailHistory(){
+  const data=await api('/api/admin-email?view=history');
+  $('emailCampaignRows').innerHTML=(data.campaigns||[]).map(c=>'<tr><td>'+esc(fmtDateTime(c.created_at))+'</td><td>'+esc(c.subject)+'</td><td>'+Number(c.recipient_count||0)+'</td><td>'+Number(c.sent_count||0)+'</td><td>'+Number(c.failed_count||0)+'</td></tr>').join('')||'<tr><td colspan="5">No campaigns have been sent yet.</td></tr>';
+}
+$('emailMemberSearch').addEventListener('input',()=>{clearTimeout(emailSearchTimer);emailSearchTimer=setTimeout(()=>loadEmailRecipients().catch(e=>status('Could not load email recipients: '+e.message)),250)});
+$('emailTierFilter').addEventListener('change',()=>loadEmailRecipients().catch(e=>status('Could not filter recipients: '+e.message)));
+$('emailSelectVisible').addEventListener('click',()=>{emailRecipients.forEach(r=>emailSelected.set(Number(r.id),r));document.querySelectorAll('.emailRecipientCheck').forEach(b=>b.checked=true);updateEmailSelection()});
+$('emailClearSelection').addEventListener('click',()=>{emailSelected.clear();document.querySelectorAll('.emailRecipientCheck').forEach(b=>b.checked=false);updateEmailSelection()});
+$('refreshEmailHistory').addEventListener('click',()=>loadEmailHistory().then(()=>status('Email campaign history refreshed.')).catch(e=>status('Could not load campaign history: '+e.message)));
+$('sendMemberEmail').addEventListener('click',async()=>{
+  const subject=$('emailSubject').value.trim(),message=$('emailMessage').value.trim(),ids=[...emailSelected.keys()];
+  if(!subject||!message){status('Enter an email subject and message before sending.');return}
+  if(!ids.length||ids.length>100){status('Select between 1 and 100 recipients per send.');return}
+  const preview='Subject: '+subject+'\nRecipients: '+ids.length+'\n\n'+message;
+  if(!confirm('Send this email to '+ids.length+' selected member(s)?\n\n'+preview))return;
+  const button=$('sendMemberEmail');button.disabled=true;
+  try{
+    const result=await api('/api/admin-email',{method:'POST',body:JSON.stringify({subject,message,account_ids:ids})});
+    status('Email campaign #'+result.campaign_id+' finished. Sent: '+result.sent+'. Failed: '+result.failed+'.');
+    emailSelected.clear();$('emailSubject').value='';$('emailMessage').value='';
+    await loadEmailRecipients();await loadEmailHistory();
+  }catch(e){status('Email campaign could not be sent: '+e.message)}
+  finally{updateEmailSelection()}
+});
+\nasync function loadLineRequests(){const data=await api('/api/line-service-requests');const rows=data.requests||[];$('lineRequestCount').textContent=rows.length+' requests';$('lineRequestRows').innerHTML=rows.map(r=>'<tr><td><strong>#'+esc(r.id)+' · '+esc(r.release)+'</strong><br><span class="small muted">'+esc(r.created_at)+'</span><br><details><summary>Full request</summary><pre style="white-space:pre-wrap;max-width:520px">'+esc(r.summary)+'</pre></details></td><td>'+esc(r.name)+'<br>'+esc(r.email)+'<br><span class="muted">'+esc(r.discord)+'</span></td><td>'+esc(r.store)+'<br>'+esc(r.address)+'<br>'+esc(r.request_date)+(r.opening_time?' · '+esc(r.opening_time):'')+'</td><td><span class="pill '+(r.email_status==='sent'?'':'off')+'">'+esc(r.email_status||'pending')+'</span>'+(r.email_error?'<br><span class="small muted">'+esc(r.email_error)+'</span>':'')+(r.email_sent_at?'<br><span class="small muted">'+esc(r.email_sent_at)+'</span>':'')+'</td><td><button class="retryLineEmail" data-id="'+esc(r.id)+'" '+(r.email_status==='sent'?'disabled':'')+'>Retry email</button></td></tr>').join('')||'<tr><td colspan="5">No line-service requests yet.</td></tr>';document.querySelectorAll('.retryLineEmail').forEach(b=>b.addEventListener('click',async()=>{b.disabled=true;try{const result=await api('/api/line-service-requests',{method:'POST',body:JSON.stringify({action:'resend_email',id:Number(b.dataset.id)})});status('Notification email sent for request #'+b.dataset.id+'.');await loadLineRequests()}catch(e){status('Email retry failed: '+e.message);b.disabled=false}}))}
 $('reloadLineRequests').addEventListener('click',()=>loadLineRequests().then(()=>status('Line-service requests refreshed.')).catch(e=>status('Could not load line-service requests: '+e.message)));
 function toggleTarget(){const isUser=$('targetType').value==='username';$('userWrap').classList.toggle('hidden',!isUser);$('groupWrap').classList.toggle('hidden',isUser)}
 const adminToolRoutes={'news-tool':'/news-admin.html','events-tool':'/events-admin.html','giveaways-tool':'/giveaways-admin.html','sales-tool':'/event-sales-admin.html','advertising-tool':'/advertising-admin.html','store-tool':'/store-admin.html','buyout-tool':'/instant-buyout.html?tab=requests'};
-document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));['members','alerts','announce','line-requests','news-tool','events-tool','giveaways-tool','sales-tool','advertising-tool','store-tool','buyout-tool','requests-tool'].forEach(id=>$(id).classList.toggle('hidden',id!==b.dataset.tab));if(adminToolRoutes[b.dataset.tab]){const frame=$(b.dataset.tab+'-frame');if(frame&&!frame.getAttribute('src'))frame.setAttribute('src',adminToolRoutes[b.dataset.tab]);}if(b.dataset.tab==='alerts')loadAlerts().catch(e=>status('Could not load alerts: '+e.message));if(b.dataset.tab==='line-requests')loadLineRequests().catch(e=>status('Could not load line-service requests: '+e.message));if(adminToolRoutes[b.dataset.tab])status('Opening '+b.textContent.trim()+' inside the admin dashboard.');}));
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));['members','alerts','announce','email-center','line-requests','news-tool','events-tool','giveaways-tool','sales-tool','advertising-tool','store-tool','buyout-tool','requests-tool'].forEach(id=>$(id).classList.toggle('hidden',id!==b.dataset.tab));if(adminToolRoutes[b.dataset.tab]){const frame=$(b.dataset.tab+'-frame');if(frame&&!frame.getAttribute('src'))frame.setAttribute('src',adminToolRoutes[b.dataset.tab]);}if(b.dataset.tab==='email-center'){loadEmailRecipients().catch(e=>status('Could not load email recipients: '+e.message));loadEmailHistory().catch(e=>status('Could not load email history: '+e.message));}if(b.dataset.tab==='alerts')loadAlerts().catch(e=>status('Could not load alerts: '+e.message));if(b.dataset.tab==='line-requests')loadLineRequests().catch(e=>status('Could not load line-service requests: '+e.message));if(adminToolRoutes[b.dataset.tab])status('Opening '+b.textContent.trim()+' inside the admin dashboard.');}));
 $('memberSearch').addEventListener('input',()=>{window.clearTimeout(memberSearchTimer);memberSearchTimer=window.setTimeout(()=>{loadMembers(0).catch(e=>status('Could not search members: '+e.message));},250);});
 $('membersPrev').addEventListener('click',()=>loadMembers(Math.max(0,membersOffset-MEMBER_PAGE_SIZE)).catch(e=>status('Could not load previous members: '+e.message)));
 $('membersNext').addEventListener('click',()=>loadMembers(membersOffset+MEMBER_PAGE_SIZE).catch(e=>status('Could not load next members: '+e.message)));$('reloadAlerts').addEventListener('click',()=>loadAlerts().then(()=>status('Alerts refreshed.')).catch(e=>status('Could not load alerts: '+e.message)));$('targetType').addEventListener('change',toggleTarget);
