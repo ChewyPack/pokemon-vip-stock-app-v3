@@ -221,19 +221,19 @@ $('emailClearSelection').addEventListener('click',()=>{emailSelected.clear();doc
 $('refreshEmailHistory').addEventListener('click',()=>loadEmailHistory().then(()=>status('Email campaign history refreshed.')).catch(e=>status('Could not load campaign history: '+e.message)));
 $('sendPersonalizedEmail').addEventListener('click',async()=>{
   const subject=$('emailSubject').value.trim()||'Quick update regarding your VIP membership billing';
-  const rows=$('personalizedRows').value.split(/\\r?\\n/).map(line=>line.trim()).filter(Boolean);
+  const rows=$('personalizedRows').value.split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
   const recipients=rows.map((line,index)=>{
     const parts=line.split('|').map(part=>part.trim());
-    return {name:parts[0]||'',email:parts[1]||'',amount:(parts[2]||'').replace(/^\\$/,'')};
+    return {name:parts[0]||'',email:parts[1]||'',amount:(parts[2]||'').replace(/^\$/,'')};
   });
   if(!recipients.length||recipients.length>100){status('Enter between 1 and 100 personalized recipient lines.');return}
-  const invalid=recipients.find(r=>!r.name||!/^\\S+@\\S+\\.\\S+$/.test(r.email)||!/^\\d+\\.\\d{2}$/.test(r.amount));
+  const invalid=recipients.find(r=>!r.name||!/^\S+@\S+\.\S+$/.test(r.email)||!/^\d+\.\d{2}$/.test(r.amount));
   if(invalid){status('Check each line. Required format: Name | email | amount (example: PokePrizePool Test | lasttime9423@gmail.com | 3.20).');return}
   const emails=new Set(recipients.map(r=>r.email.toLowerCase()));
   if(emails.size!==recipients.length){status('Duplicate email address found. Each recipient must appear only once.');return}
   const template=$('personalizedTemplate').value.trim();
   if(!template.includes('{{name}}')||!template.includes('{{amount}}')){status('The message must include both {{name}} and {{amount}} placeholders.');return}
-  const preview='Subject: '+subject+'\\nIndividual emails: '+recipients.length+'\\n\\n'+recipients.map(r=>r.name+' <'+r.email+'> — 
+  const preview='Subject: '+subject+'\nIndividual emails: '+recipients.length+'\n\n'+recipients.map(r=>r.name+' <'+r.email+'> — 
   const subject=$('emailSubject').value.trim(),message=$('emailMessage').value.trim(),ids=[...emailSelected.keys()];
   if(!subject||!message){status('Enter an email subject and message before sending.');return}
   if(!ids.length||ids.length>100){status('Select between 1 and 100 recipients per send.');return}
@@ -260,8 +260,8 @@ $('membersNext').addEventListener('click',()=>loadMembers(membersOffset+MEMBER_P
 $('sendAnnouncement').addEventListener('click',async()=>{const message=$('message').value.trim();if(!message){status('Please enter a message first.');return}const targetType=$('targetType').value;const target=targetType==='username'?$ ('targetUser').value.trim():$('targetGroup').value;if(!target){status('Please choose a username or group.');return}if(!confirm('Post this message in '+$('channel').selectedOptions[0].text+' and notify the selected accounts?'))return;const button=$('sendAnnouncement');button.disabled=true;try{const result=await api('/api/admin-tools',{method:'POST',body:JSON.stringify({target_type:targetType,target,message,channel:$('channel').value})});status('Message posted. '+result.notified+' of '+result.recipients+' targeted accounts were notified.'+(result.realtime?'':' Live chat broadcast did not confirm; refresh the channel to verify.'));$('message').value=''}catch(e){status('Could not post message: '+e.message)}finally{button.disabled=false}});
 (async()=>{try{await loadMembers();status('Admin access confirmed. Live presence refreshes every 30 seconds.');window.setInterval(()=>loadPresence().catch(()=>{}),30000);}catch(e){status('Admin access unavailable: '+e.message+' — sign in with your admin account, then refresh this page.')}})();
 </script><script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>
-</body></html>+r.amount).join('\\n')+'\\n\\nEach recipient receives only their own personalized email.';
-  if(!confirm('Send this personalized batch?\\n\\n'+preview))return;
+</body></html>+r.amount).join('\n')+'\n\nEach recipient receives only their own personalized email.';
+  if(!confirm('Send this personalized batch?\n\n'+preview))return;
   const button=$('sendPersonalizedEmail');button.disabled=true;
   try{
     const result=await api('/api/admin-email',{method:'POST',body:JSON.stringify({subject,message_template:template,personalized_recipients:recipients})});
