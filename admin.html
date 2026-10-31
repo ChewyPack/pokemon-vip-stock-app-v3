@@ -39,6 +39,29 @@
 <div class="tablewrap" style="max-height:340px;overflow:auto"><table style="min-width:600px"><thead><tr><th>Select</th><th>Member</th><th>Email</th><th>Membership</th></tr></thead><tbody id="emailRecipientRows"><tr><td colspan="4">Loading recipients…</td></tr></tbody></table></div>
 <label for="emailSubject">Email subject</label><input id="emailSubject" maxlength="180" placeholder="Write your subject line">
 <label for="emailMessage">Your message</label><textarea id="emailMessage" maxlength="12000" rows="10" placeholder="Write your PokePrizePool message…"></textarea>
+<hr style="border-color:var(--line);margin:24px 0">
+<h3>Personalized individual batch</h3>
+<p>Paste one recipient per line using <code>Name | email | amount</code>. Each person receives a separate email with their own name and adjusted charge. No CC or BCC.</p>
+<label for="personalizedRows">Recipients (one per line)</label>
+<textarea id="personalizedRows" rows="8" placeholder="Baeli Carroll | baejea@gmail.com | 3.36&#10;PokePrizePool Test | lasttime9423@gmail.com | 3.20"></textarea>
+<label for="personalizedTemplate">Personalized email message</label>
+<textarea id="personalizedTemplate" rows="12">Hey {{name}},
+
+First off, thank you for being an active VIP member!
+
+To keep our platform billing simple and consistent across the board, I am aligning all active member renewal dates to the 1st of every month.
+
+Here is how this impacts your account:
+
+- Account Update Date: November 5, 2026
+- Adjusted Charge for Nov 5: ${{amount}} (Prorated to credit your unused days from October and bridge access through Nov 30)
+- Standard Monthly Rate: $5.00/month starting December 1st
+
+You don't need to take any action on your end—Stripe will apply the prorated credit automatically!
+
+Thanks for being part of the community, and feel free to reach out if you have any questions!</textarea>
+<button class="primary" id="sendPersonalizedEmail">Review personalized batch</button>
+<p class="small muted">This sends one separate message per line. The preview/confirmation lists every recipient and amount before sending.</p>
 <p class="small">Messages are sent individually through Resend. Keep promotional messages compliant with applicable email laws and include an unsubscribe process before sending marketing campaigns.</p>
 <button class="primary" id="sendMemberEmail">Review and send email</button>
 <hr style="border-color:var(--line);margin:24px 0">
@@ -196,6 +219,58 @@ $('emailTierFilter').addEventListener('change',()=>loadEmailRecipients().catch(e
 $('emailSelectVisible').addEventListener('click',()=>{emailRecipients.forEach(r=>emailSelected.set(Number(r.id),r));document.querySelectorAll('.emailRecipientCheck').forEach(b=>b.checked=true);updateEmailSelection()});
 $('emailClearSelection').addEventListener('click',()=>{emailSelected.clear();document.querySelectorAll('.emailRecipientCheck').forEach(b=>b.checked=false);updateEmailSelection()});
 $('refreshEmailHistory').addEventListener('click',()=>loadEmailHistory().then(()=>status('Email campaign history refreshed.')).catch(e=>status('Could not load campaign history: '+e.message)));
+$('sendPersonalizedEmail').addEventListener('click',async()=>{
+  const subject=$('emailSubject').value.trim()||'Quick update regarding your VIP membership billing';
+  const rows=$('personalizedRows').value.split(/\\r?\\n/).map(line=>line.trim()).filter(Boolean);
+  const recipients=rows.map((line,index)=>{
+    const parts=line.split('|').map(part=>part.trim());
+    return {name:parts[0]||'',email:parts[1]||'',amount:(parts[2]||'').replace(/^\\$/,'')};
+  });
+  if(!recipients.length||recipients.length>100){status('Enter between 1 and 100 personalized recipient lines.');return}
+  const invalid=recipients.find(r=>!r.name||!/^\\S+@\\S+\\.\\S+$/.test(r.email)||!/^\\d+\\.\\d{2}$/.test(r.amount));
+  if(invalid){status('Check each line. Required format: Name | email | amount (example: PokePrizePool Test | lasttime9423@gmail.com | 3.20).');return}
+  const emails=new Set(recipients.map(r=>r.email.toLowerCase()));
+  if(emails.size!==recipients.length){status('Duplicate email address found. Each recipient must appear only once.');return}
+  const template=$('personalizedTemplate').value.trim();
+  if(!template.includes('{{name}}')||!template.includes('{{amount}}')){status('The message must include both {{name}} and {{amount}} placeholders.');return}
+  const preview='Subject: '+subject+'\\nIndividual emails: '+recipients.length+'\\n\\n'+recipients.map(r=>r.name+' <'+r.email+'> — 
+  const subject=$('emailSubject').value.trim(),message=$('emailMessage').value.trim(),ids=[...emailSelected.keys()];
+  if(!subject||!message){status('Enter an email subject and message before sending.');return}
+  if(!ids.length||ids.length>100){status('Select between 1 and 100 recipients per send.');return}
+  const preview='Subject: '+subject+'\nRecipients: '+ids.length+'\n\n'+message;
+  if(!confirm('Send this email to '+ids.length+' selected member(s)?\n\n'+preview))return;
+  const button=$('sendMemberEmail');button.disabled=true;
+  try{
+    const result=await api('/api/admin-email',{method:'POST',body:JSON.stringify({subject,message,account_ids:ids})});
+    status('Email campaign #'+result.campaign_id+' finished. Sent: '+result.sent+'. Failed: '+result.failed+'.');
+    emailSelected.clear();$('emailSubject').value='';$('emailMessage').value='';
+    await loadEmailRecipients();await loadEmailHistory();
+  }catch(e){status('Email campaign could not be sent: '+e.message)}
+  finally{updateEmailSelection()}
+});
+
+async function loadLineRequests(){const data=await api('/api/line-service-requests');const rows=data.requests||[];$('lineRequestCount').textContent=rows.length+' requests';$('lineRequestRows').innerHTML=rows.map(r=>'<tr><td><strong>#'+esc(r.id)+' · '+esc(r.release)+'</strong><br><span class="small muted">'+esc(r.created_at)+'</span><br><details><summary>Full request</summary><pre style="white-space:pre-wrap;max-width:520px">'+esc(r.summary)+'</pre></details></td><td>'+esc(r.name)+'<br>'+esc(r.email)+'<br><span class="muted">'+esc(r.discord)+'</span></td><td>'+esc(r.store)+'<br>'+esc(r.address)+'<br>'+esc(r.request_date)+(r.opening_time?' · '+esc(r.opening_time):'')+'</td><td><span class="pill '+(r.email_status==='sent'?'':'off')+'">'+esc(r.email_status||'pending')+'</span>'+(r.email_error?'<br><span class="small muted">'+esc(r.email_error)+'</span>':'')+(r.email_sent_at?'<br><span class="small muted">'+esc(r.email_sent_at)+'</span>':'')+'</td><td><button class="retryLineEmail" data-id="'+esc(r.id)+'" '+(r.email_status==='sent'?'disabled':'')+'>Retry email</button></td></tr>').join('')||'<tr><td colspan="5">No line-service requests yet.</td></tr>';document.querySelectorAll('.retryLineEmail').forEach(b=>b.addEventListener('click',async()=>{b.disabled=true;try{const result=await api('/api/line-service-requests',{method:'POST',body:JSON.stringify({action:'resend_email',id:Number(b.dataset.id)})});status('Notification email sent for request #'+b.dataset.id+'.');await loadLineRequests()}catch(e){status('Email retry failed: '+e.message);b.disabled=false}}))}
+$('reloadLineRequests').addEventListener('click',()=>loadLineRequests().then(()=>status('Line-service requests refreshed.')).catch(e=>status('Could not load line-service requests: '+e.message)));
+function toggleTarget(){const isUser=$('targetType').value==='username';$('userWrap').classList.toggle('hidden',!isUser);$('groupWrap').classList.toggle('hidden',isUser)}
+const adminToolRoutes={'news-tool':'/news-admin.html','events-tool':'/events-admin.html','giveaways-tool':'/giveaways-admin.html','sales-tool':'/event-sales-admin.html','advertising-tool':'/advertising-admin.html','store-tool':'/store-admin.html','buyout-tool':'/instant-buyout.html?tab=requests'};
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));['members','alerts','announce','email-center','line-requests','news-tool','events-tool','giveaways-tool','sales-tool','advertising-tool','store-tool','buyout-tool','requests-tool'].forEach(id=>$(id).classList.toggle('hidden',id!==b.dataset.tab));if(adminToolRoutes[b.dataset.tab]){const frame=$(b.dataset.tab+'-frame');if(frame&&!frame.getAttribute('src'))frame.setAttribute('src',adminToolRoutes[b.dataset.tab]);}if(b.dataset.tab==='email-center'){loadEmailRecipients().catch(e=>status('Could not load email recipients: '+e.message));loadEmailHistory().catch(e=>status('Could not load email history: '+e.message));}if(b.dataset.tab==='alerts')loadAlerts().catch(e=>status('Could not load alerts: '+e.message));if(b.dataset.tab==='line-requests')loadLineRequests().catch(e=>status('Could not load line-service requests: '+e.message));if(adminToolRoutes[b.dataset.tab])status('Opening '+b.textContent.trim()+' inside the admin dashboard.');}));
+$('memberSearch').addEventListener('input',()=>{window.clearTimeout(memberSearchTimer);memberSearchTimer=window.setTimeout(()=>{loadMembers(0).catch(e=>status('Could not search members: '+e.message));},250);});
+$('membersPrev').addEventListener('click',()=>loadMembers(Math.max(0,membersOffset-MEMBER_PAGE_SIZE)).catch(e=>status('Could not load previous members: '+e.message)));
+$('membersNext').addEventListener('click',()=>loadMembers(membersOffset+MEMBER_PAGE_SIZE).catch(e=>status('Could not load next members: '+e.message)));$('reloadAlerts').addEventListener('click',()=>loadAlerts().then(()=>status('Alerts refreshed.')).catch(e=>status('Could not load alerts: '+e.message)));$('targetType').addEventListener('change',toggleTarget);
+$('sendAnnouncement').addEventListener('click',async()=>{const message=$('message').value.trim();if(!message){status('Please enter a message first.');return}const targetType=$('targetType').value;const target=targetType==='username'?$ ('targetUser').value.trim():$('targetGroup').value;if(!target){status('Please choose a username or group.');return}if(!confirm('Post this message in '+$('channel').selectedOptions[0].text+' and notify the selected accounts?'))return;const button=$('sendAnnouncement');button.disabled=true;try{const result=await api('/api/admin-tools',{method:'POST',body:JSON.stringify({target_type:targetType,target,message,channel:$('channel').value})});status('Message posted. '+result.notified+' of '+result.recipients+' targeted accounts were notified.'+(result.realtime?'':' Live chat broadcast did not confirm; refresh the channel to verify.'));$('message').value=''}catch(e){status('Could not post message: '+e.message)}finally{button.disabled=false}});
+(async()=>{try{await loadMembers();status('Admin access confirmed. Live presence refreshes every 30 seconds.');window.setInterval(()=>loadPresence().catch(()=>{}),30000);}catch(e){status('Admin access unavailable: '+e.message+' — sign in with your admin account, then refresh this page.')}})();
+</script><script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>
+</body></html>+r.amount).join('\\n')+'\\n\\nEach recipient receives only their own personalized email.';
+  if(!confirm('Send this personalized batch?\\n\\n'+preview))return;
+  const button=$('sendPersonalizedEmail');button.disabled=true;
+  try{
+    const result=await api('/api/admin-email',{method:'POST',body:JSON.stringify({subject,message_template:template,personalized_recipients:recipients})});
+    status('Personalized campaign #'+result.campaign_id+' finished. Sent: '+result.sent+'. Failed: '+result.failed+'.');
+    $('personalizedRows').value='';
+    await loadEmailHistory();
+  }catch(e){status('Personalized batch could not be sent: '+e.message)}
+  finally{button.disabled=false}
+});
 $('sendMemberEmail').addEventListener('click',async()=>{
   const subject=$('emailSubject').value.trim(),message=$('emailMessage').value.trim(),ids=[...emailSelected.keys()];
   if(!subject||!message){status('Enter an email subject and message before sending.');return}
