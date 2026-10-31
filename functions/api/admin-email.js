@@ -114,7 +114,7 @@ export async function onRequestPost({ request, env }) {
       amount: clean(item?.amount, 20),
       line: index + 1
     }));
-    if (recipients.some(r => !r.display_name || !validEmail(r.email) || !/^\\$?\\d+\\.\\d{2}$/.test(r.amount))) {
+    if (recipients.some(r => !r.display_name || !validEmail(r.email) || !/^\$?\d+\.\d{2}$/.test(r.amount))) {
       return json({ ok: false, error: "invalid_personalized_recipient", message: "Each row needs a name, valid email, and amount such as 3.20." }, 400);
     }
     const seen = new Set();
@@ -149,10 +149,10 @@ export async function onRequestPost({ request, env }) {
     let sent = 0, failed = 0;
     for (const recipient of recipients) {
       const recipientMessage = personalized
-        ? template.replaceAll("{{name}}", recipient.display_name).replaceAll("{{amount}}", recipient.amount.replace(/^\\$/, ""))
+        ? template.replaceAll("{{name}}", recipient.display_name).replaceAll("{{amount}}", recipient.amount.replace(/^\$/, ""))
         : message;
-      const paragraphs = recipientMessage.split(/\\n{2,}/).map(part => "<p style=\\"margin:0 0 16px;line-height:1.65\\">" + escapeHtml(part).replace(/\\n/g, "<br>") + "</p>").join("");
-      const html = "<!doctype html><html><body style=\\"margin:0;background:#f3f5f8;padding:28px 12px;font-family:Arial,sans-serif;color:#172033\\"><div style=\\"max-width:620px;margin:auto;background:#fff;border-radius:14px;overflow:hidden\\"><div style=\\"background:#0b1730;padding:22px 28px;color:#fff;font-size:20px;font-weight:700\\">PokePrizePool</div><div style=\\"padding:28px\\">" + paragraphs + "<p style=\\"margin-top:28px;color:#667085;font-size:12px\\">You are receiving this message from PokePrizePool.</p></div></div></body></html>";
+      const paragraphs = recipientMessage.split(/\n{2,}/).map(part => "<p style=\"margin:0 0 16px;line-height:1.65\">" + escapeHtml(part).replace(/\n/g, "<br>") + "</p>").join("");
+      const html = "<!doctype html><html><body style=\"margin:0;background:#f3f5f8;padding:28px 12px;font-family:Arial,sans-serif;color:#172033\"><div style=\"max-width:620px;margin:auto;background:#fff;border-radius:14px;overflow:hidden\"><div style=\"background:#0b1730;padding:22px 28px;color:#fff;font-size:20px;font-weight:700\">PokePrizePool</div><div style=\"padding:28px\">" + paragraphs + "<p style=\"margin-top:28px;color:#667085;font-size:12px\">You are receiving this message from PokePrizePool.</p></div></div></body></html>";
       let status = "failed", resendId = "", errorText = "";
       try {
         const response = await fetch("https://api.resend.com/emails", {
