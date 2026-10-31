@@ -62,7 +62,10 @@ let membersOffset=0;
 const MEMBER_PAGE_SIZE=100;
 let filteredMemberCount=0;
 let totalAccountCount=0;
-let memberSearchTimer=null;\nlet emailRecipients=[];\nlet emailSelected=new Map();\nlet emailSearchTimer=null;
+let memberSearchTimer=null;
+let emailRecipients=[];
+let emailSelected=new Map();
+let emailSearchTimer=null;
 function status(message){$('status').textContent=message}
 async function api(url,options={}){const response=await fetch(url,{credentials:'same-origin',cache:'no-store',...options,headers:{'content-type':'application/json',...(options.headers||{})}});const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));if(!response.ok||data.ok===false)throw new Error(data.message||data.error||'Request failed');return data}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
