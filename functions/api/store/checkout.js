@@ -1,4 +1,4 @@
-import { json, wrap, readJson, HttpError, stripe, randomId, orderNumber, assertStoreStripeMode, ensureCollectorPlusPriceColumn, isCollectorPlusViewer } from '../../_lib/store.js';
+import { json, wrap, readJson, HttpError, stripe, randomId, orderNumber, assertStoreStripeMode, ensureCollectorPlusPriceColumn, ensureSoldOutColumn, isCollectorPlusViewer } from '../../_lib/store.js';
 import { PRINTIFY_SHOP_ID, normalizePrintifyAddress, parseVariants, quotePrintifyShipping, printifyCommerceReady } from '../../_lib/printify.js';
 
 // POST /api/store/checkout body: { items:[{productId,variantId?,quantity}], email?, shippingAddress?, quotedShippingCents? }
@@ -9,6 +9,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   }
   assertStoreStripeMode(env);
   await ensureCollectorPlusPriceColumn(env.DB);
+  await ensureSoldOutColumn(env.DB);
   const collectorPlusEligible = await isCollectorPlusViewer(request, env);
   const origin = new URL(request.url).origin;
   const body = await readJson(request, 25000);
@@ -43,7 +44,7 @@ export const onRequestPost = wrap(async ({ request, env }) => {
   const lines = [];
   for (const item of wanted.values()) {
     const product = byId.get(item.productId);
-    if (!product || !product.active) throw new HttpError(409, 'An item in your cart is no longer available');
+    if (!product || !product.active || Number(product.sold_out) === 1) throw new HttpError(409, 'An item in your cart is no longer available');
     if (product.coming_soon) throw new HttpError(409, 'This product is coming soon and cannot be purchased yet');
 
     if (product.printify_product_id) {
