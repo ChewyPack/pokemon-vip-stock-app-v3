@@ -353,6 +353,49 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 @media(max-width:540px){.cp-catalog{padding:12px}.cp-catalog-heading{flex-direction:column;gap:8px}.cp-catalog-source{max-width:none}.cp-sealed-category{font-size:.74rem;padding:8px 10px}.cp-catalog-refine{grid-template-columns:1fr}.cp-catalog-results,.cp-catalog-results.is-sealed{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cp-catalog-results.is-sealed .cp-catalog-result img{height:125px;flex-basis:125px}.cp-catalog-results.is-sealed .cp-catalog-result-actions{grid-template-columns:1fr}.cp-catalog-result-actions button{font-size:.69rem;padding:7px 5px}}
 
 
+
+/* Bold storefront dashboard direction: branded hero, stronger contrast, and visual merchandising. */
+#shop-tab-content{gap:20px}
+#shop-owner-editor{gap:20px}
+#shop-owner-editor:before{content:"YOUR SHOP  /  SELL • SHOWCASE • CONNECT";display:flex;align-items:flex-end;min-height:154px;padding:25px 28px;box-sizing:border-box;border:1px solid #203f70;border-radius:20px;background:radial-gradient(ellipse at 88% 12%,#4778c955 0,transparent 34%),radial-gradient(ellipse at 8% 110%,#f3c94b33 0,transparent 38%),linear-gradient(118deg,#081a38 0%,#102e5c 55%,#1a477c 100%);color:#fff;font-size:clamp(1.35rem,3vw,2rem);font-weight:950;letter-spacing:.045em;text-shadow:0 2px 15px #0005;box-shadow:0 12px 30px #0b234326;position:relative;overflow:hidden}
+#shop-owner-editor:after{content:"Build your storefront. List your cards. Meet your next buyer.";display:block;position:absolute;left:29px;top:27px;color:#c9d9f2;font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+#shop-owner-editor .cp-shop-editor-card{position:relative;overflow:hidden;border:1px solid #d8e3f2;border-radius:19px;background:#fff;box-shadow:0 9px 28px #102b5510}
+#shop-owner-editor .cp-shop-editor-card:before{content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,#f3c94b 0%,#e5a928 35%,#4778c9 100%)}
+#shop-owner-editor .cp-shop-editor-card>h3,#shop-owner-editor .cp-shop-profile-heading h3{font-family:inherit;font-size:1.25rem;font-weight:900;letter-spacing:-.035em;color:#102b55}
+#shop-owner-editor .cp-shop-editor-card>h3{display:flex;align-items:center;gap:10px}
+#shop-owner-editor .cp-shop-editor-card>h3:before{content:"";width:9px;height:22px;border-radius:5px;background:#f0bd37;box-shadow:0 2px 7px #e8b33355}
+#shop-owner-editor .cp-shop-profile-heading{padding:2px 0 12px;border-bottom:1px solid #edf1f7}
+#shop-owner-editor .cp-shop-profile-heading p{margin-bottom:0}
+#profile-shop-edit-toggle{background:#102e5c;color:#fff;border:1px solid #102e5c;box-shadow:0 5px 13px #102e5c24}
+#profile-shop-edit-toggle:hover{background:#1d477f}
+#profile-shop-form-wrap{background:linear-gradient(145deg,#f8faff,#fff);border:1px solid #e1e9f5;padding:20px}
+#shop-owner-editor section[aria-label="Find product details in TCGCSV"]{position:relative;overflow:hidden;border:1px solid #cbdaf0;border-radius:16px;padding:21px;background:radial-gradient(ellipse at 100% 0%,#dce9ff 0,transparent 45%),linear-gradient(135deg,#f2f7ff 0%,#eaf1fc 100%)}
+#profile-listing-catalog .cp-catalog-title{font-size:1.08rem;font-weight:950;color:#102e5c;letter-spacing:-.02em}
+#profile-listing-catalog-search{min-height:52px;border:1px solid #b9cbe7;box-shadow:0 4px 12px #17386c0d;padding-left:42px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23647da5' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") no-repeat 14px center}
+#profile-listing-catalog .cp-shop-form-row{grid-template-columns:1fr 1fr}
+#profile-listing-catalog select{min-height:48px;border-color:#c4d3e9;box-shadow:0 3px 9px #17386c09}
+#profile-listing-catalog-status{border:1px solid #e0e8f4;background:#fff;padding:10px 12px}
+#profile-listing-catalog-results>*{border:1px solid #d5e1f2;border-radius:13px;box-shadow:0 3px 10px #142f5508;transition:transform .16s,border-color .16s,box-shadow .16s}
+#profile-listing-catalog-results>*:hover{transform:translateY(-2px);border-color:#9bb7e3;box-shadow:0 8px 18px #142f5514}
+#profile-listing-form{margin-top:18px;padding-top:18px;border-top:1px solid #dce6f4}
+#profile-listing-form>label:first-of-type{margin-top:2px}
+#profile-listing-form input:not([type=file]):not([type=checkbox]),#profile-listing-form textarea,#profile-listing-form select{background:#fff;border-color:#d1ddec}
+#profile-listing-save{background:linear-gradient(135deg,#f4ce58,#eab633);color:#152b4c;box-shadow:0 6px 15px #d9a92e35;font-weight:950}
+#profile-listing-save:hover{background:linear-gradient(135deg,#ffdc73,#f0bd3c)}
+#profile-shop-listings{padding-top:19px;border-top:1px solid #edf1f7}
+#profile-shop-listings>.cp-shop-listing{position:relative;overflow:hidden;border:1px solid #dce5f1;border-radius:17px;padding:12px;box-shadow:0 5px 18px #102b550c}
+#profile-shop-listings .cp-shop-listing img{height:190px;border:0;border-radius:12px;background:radial-gradient(ellipse at center,#fff 0%,#f1f5fb 100%)}
+#profile-shop-listings .cp-shop-listing h4{font-size:1.02rem;font-weight:900;letter-spacing:-.015em}
+#profile-shop-listings .cp-shop-listing p:nth-of-type(2){font-size:1.22rem;color:#102e5c}
+#profile-shop-listings .cp-shop-listing-actions button{min-height:37px}
+#shop-tab-status{margin-bottom:0}
+@media(max-width:680px){
+ #shop-owner-editor:before{min-height:125px;padding:20px;font-size:1.3rem}
+ #shop-owner-editor:after{left:21px;top:20px;font-size:.65rem}
+ #shop-owner-editor section[aria-label="Find product details in TCGCSV"]{padding:15px}
+ #profile-listing-catalog .cp-shop-form-row{grid-template-columns:1fr}
+ #profile-listing-catalog-search{min-height:48px}
+}
 /* Shop workspace refresh: clearer hierarchy, modern catalog tools, and polished listing cards. */
 #shop-tab-content{gap:18px;padding-top:4px}
 #shop-tab-status{display:flex;align-items:center;gap:9px;width:fit-content;max-width:100%;margin:0;padding:9px 13px;border:1px solid #cce8da;border-radius:999px;background:#f0fbf5;color:#17643d;font-size:.84rem;font-weight:800}
