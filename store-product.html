@@ -149,7 +149,7 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
      const description=String(product.description||'').trim();
      $('product-title').textContent=product.name||'Product';
      $('product-price').innerHTML=productPriceHtml(product);
-     $('product-badge').textContent=productIsComingSoon(product)?'Currently Unavailable':(product.preorder?'Available to Preorder':(product.manualOrderRequest?'Available to Request':(Number(product.available)>0?'In Stock':'Currently Unavailable')));
+     $('product-badge').textContent=product.soldOut?'Sold Out':(productIsComingSoon(product)?'Currently Unavailable':(product.preorder?'Available to Preorder':(product.manualOrderRequest?'Available to Request':(Number(product.available)>0?'In Stock':'Currently Unavailable'))));
      $('product-description').textContent=description||'Product details are limited; contact PokePrizePool with questions.';
      const meta=[];
      if(product.category)meta.push(['Category',product.category==='merch'?'Clothing':product.category.charAt(0).toUpperCase()+product.category.slice(1)]);
@@ -169,7 +169,13 @@ body{background:#f5f8ff;color:var(--st-navy);font-family:Nunito,system-ui,sans-s
        $('product-main-image').style.cursor='default';
      }
      $('product-thumbs').addEventListener('click',event=>{const button=event.target.closest('[data-image-index]');if(button)setImage(Number(button.dataset.imageIndex));});
-     if(product.isPrintify){
+     if(product.soldOut){
+       if(product.isPrintify)renderVariantOptions(product);
+       $('product-badge').textContent='Sold Out';
+       $('product-buy').textContent='Sold Out';
+       $('product-buy').disabled=true;
+       $('product-note').textContent='This item has sold out. It is still listed for reference, but cannot be ordered until it is restocked.';
+     }else if(product.isPrintify){
        renderVariantOptions(product);
        if(productIsComingSoon(product)){
          $('product-badge').textContent='Currently Unavailable';
