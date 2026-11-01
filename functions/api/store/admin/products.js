@@ -21,7 +21,7 @@ function clean(b, partial) {
   if (!partial || b.collectorPlusPriceCents !== undefined) o.collector_plus_price_cents = b.collectorPlusPriceCents == null ? null : int(b.collectorPlusPriceCents);
   set('inventory', () => int(b.inventory));
   set('active', () => (b.active ? 1 : 0));
-  set('soldOut', () => (b.soldOut ? 1 : 0));
+  if (!partial || b.soldOut !== undefined) o.sold_out = b.soldOut ? 1 : 0;
   set('preorder', () => (b.preorder ? 1 : 0));
   if (!partial || b.comingSoon !== undefined) o.coming_soon = b.comingSoon ? 1 : 0;
   set('images', () => { const a = Array.isArray(b.images) ? b.images.filter((x) => typeof x === 'string' && x.startsWith('https://')).slice(0, 10) : []; return JSON.stringify(a); });
