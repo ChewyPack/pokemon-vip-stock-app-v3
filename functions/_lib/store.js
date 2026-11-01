@@ -140,6 +140,17 @@ export function plainTextDescription(value) {
 }
 
 // Additive, idempotent guard for production D1 instances receiving Collector+ pricing.
+export async function ensureSoldOutColumn(db) {
+  let columns = await db.prepare('PRAGMA table_info(store_products)').all();
+  if ((columns.results || []).some((column) => column.name === 'sold_out')) return;
+  try {
+    await db.prepare('ALTER TABLE store_products ADD COLUMN sold_out INTEGER NOT NULL DEFAULT 0').run();
+  } catch (error) {
+    columns = await db.prepare('PRAGMA table_info(store_products)').all();
+    if (!(columns.results || []).some((column) => column.name === 'sold_out')) throw error;
+  }
+}
+
 export async function ensureCollectorPlusPriceColumn(db) {
   let columns = await db.prepare('PRAGMA table_info(store_products)').all();
   if ((columns.results || []).some((column) => column.name === 'collector_plus_price_cents')) return;
@@ -183,7 +194,8 @@ export const publicProduct = (r) => {
     condition: r.condition, gradeCompany: r.grade_company, grade: r.grade,
     priceCents: r.price_cents, compareAtCents: r.compare_at_cents,
     collectorPlusPriceCents: r.collector_plus_price_cents == null ? null : Number(r.collector_plus_price_cents),
-    available: isPrintify ? (makeableVariants.length ? 1 : 0) : r.inventory,
+    available: Number(r.sold_out) === 1 ? 0 : (isPrintify ? (makeableVariants.length ? 1 : 0) : r.inventory),
+    soldOut: Number(r.sold_out) === 1,
     preorder: !!r.preorder, comingSoon: !!r.coming_soon, releaseDate: r.release_date,
     externalCheckoutUrl: r.external_checkout_url || null,
     isPrintify,
