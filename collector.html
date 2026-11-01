@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#06174A"><title>Collector Profile | PokePrizePool</title>
+<meta name="theme-color" content="#06174A"><meta name="description" content="Showcase your trading card collection, share your collector story, build your wishlist, and connect with the PokePrizePool community."><meta property="og:type" content="website"><meta property="og:site_name" content="PokePrizePool"><meta property="og:title" content="Collector Profile | PokePrizePool"><meta property="og:description" content="Showcase your collection, share your collector story, and connect with fellow TCG collectors."><title>Collector Profile | PokePrizePool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/styles.css">
@@ -464,6 +464,47 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
  .cp-tabs{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
  .cp-tabs [role=tab]{min-width:0;padding:10px 5px;font-size:.82rem}
 }
+
+/* Collector profile visual foundation — cohesive responsive refresh */
+.cp-wrap{width:min(1240px,calc(100% - 40px));margin:28px auto 76px}
+.cp-nav{padding:13px 17px;border:1px solid #dce5f2;border-radius:15px;box-shadow:0 5px 18px #102b6109}
+.cp-discover{margin:0 0 18px}
+.cp-discover-form .cp-search{min-height:50px;border-radius:12px;padding:12px 15px;background:#fff;box-shadow:0 3px 12px #102b6108}
+.cp-hero{min-height:285px;gap:26px;padding:clamp(26px,4vw,46px);border:1px solid #173e7e;border-radius:22px;background-color:#071a4b;background-image:radial-gradient(ellipse at 82% 12%,#397bd04a 0,transparent 42%),linear-gradient(118deg,#061638 0%,#0b2c68 58%,#16488c 100%);box-shadow:0 16px 38px #07194d24}
+.cp-hero:before{background:linear-gradient(90deg,#061638d9 0%,#07194d8c 62%,#07194d35 100%)}
+.cp-avatar{width:122px;height:122px;flex-basis:122px;border:4px solid #fff;outline:3px solid #f5ca2e;border-radius:25px;box-shadow:0 9px 24px #0004}
+.cp-hero h1{font-size:clamp(2.55rem,4.4vw,3.45rem);letter-spacing:.015em;margin-bottom:10px}
+.cp-handle{font-size:.86rem;letter-spacing:.12em;text-transform:uppercase;color:#ffda55!important}
+.cp-hero-main>p:not(.cp-handle){max-width:64ch}
+.cp-follow-row{gap:12px;margin-top:17px}
+.cp-follow-count{padding:7px 10px;border:1px solid #ffffff35;border-radius:9px;background:#ffffff0d;text-decoration:none}
+.cp-follow-btn{min-height:40px;padding:9px 17px;border-radius:10px;box-shadow:0 3px 0 #b18a16}
+.cp-follow-btn.secondary{border-color:#ffffff66;background:#ffffff12}
+.cp-stats{gap:13px;margin:18px 0 20px}
+.cp-stat{position:relative;min-width:0;min-height:108px;padding:18px 19px;border:1px solid #dce5f2;border-radius:15px;background:linear-gradient(145deg,#fff 0%,#f8faff 100%);box-shadow:0 5px 17px #102b6109}
+.cp-stat:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;border-radius:15px 0 0 15px;background:linear-gradient(180deg,#1a4b91,#8eb4e8)}
+.cp-stat span{font-size:.72rem;letter-spacing:.09em;color:#657795}
+.cp-stat strong{margin-top:9px;font-size:clamp(1.35rem,2.3vw,1.8rem);line-height:1.1;letter-spacing:-.025em;overflow-wrap:anywhere}
+.cp-spotlight{margin:0 0 18px}
+.cp-profile-social-panels{gap:16px;margin:0 0 18px}
+.cp-profile-social-panels>.cp-panel{padding:18px}
+.cp-panel{border-color:#dce5f2;border-radius:16px;box-shadow:0 6px 20px #102b610a}
+.cp-panel h2{font-size:1.8rem;letter-spacing:.01em}
+.cp-layout{grid-template-columns:minmax(265px,300px) minmax(0,1fr);gap:18px}
+#owner-tools{position:sticky;top:16px}
+#profile-content-panel{min-width:0;padding:18px}
+#profile-content-panel>.cp-tabs{display:flex;gap:7px;padding:6px;margin:0 0 18px;border:1px solid #e0e8f4;border-radius:13px;background:#f5f8fd}
+#profile-content-panel>.cp-tabs [role=tab]{flex:1 1 0;min-height:43px;padding:10px 13px;border:1px solid transparent;border-radius:9px;background:transparent;color:#50627f;font-size:.9rem;font-weight:900;transition:background .16s ease,color .16s ease,box-shadow .16s ease}
+#profile-content-panel>.cp-tabs [role=tab]:hover{background:#e9f0fb;color:#17386c}
+#profile-content-panel>.cp-tabs [role=tab][aria-selected=true]{background:#0b2a6b;color:#fff;border-color:#0b2a6b;box-shadow:0 3px 8px #0b2a6b24}
+.cp-tabs [role=tab]:focus-visible,.cp-btn:focus-visible,.cp-follow-btn:focus-visible{outline:3px solid #f3c928;outline-offset:2px}
+#owner-tools h2{font-size:1.85rem}
+#owner-tools .cp-btn{min-height:42px}
+#posts-tab-content,#collection-tab-content,#wishlist-tab-content{min-width:0}
+@media(max-width:900px){.cp-layout{grid-template-columns:minmax(0,1fr)}#owner-tools{position:static}.cp-layout.cp-shop-active>section{grid-column:auto}}
+@media(max-width:640px){.cp-wrap{width:calc(100% - 24px);margin:14px auto 46px}.cp-hero{min-height:0;align-items:flex-start;gap:15px;padding:21px 17px;border-radius:17px}.cp-avatar{width:82px;height:82px;flex-basis:82px;border-radius:19px}.cp-hero h1{font-size:2.25rem}.cp-handle{font-size:.73rem}.cp-follow-row{gap:7px}.cp-follow-count{padding:6px 7px;font-size:.8rem}.cp-follow-btn{padding:8px 11px}.cp-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0 15px}.cp-stat{min-height:88px;padding:13px 14px}.cp-stat span{font-size:.66rem}.cp-stat strong{font-size:1.35rem;margin-top:7px}.cp-profile-social-panels{gap:10px}.cp-profile-social-panels>.cp-panel{padding:13px}#profile-content-panel{padding:13px}#profile-content-panel>.cp-tabs{gap:3px;padding:4px;margin-bottom:13px}#profile-content-panel>.cp-tabs [role=tab]{min-width:0;min-height:42px;padding:8px 4px;font-size:.78rem}.cp-layout{gap:12px}}
+@media(prefers-reduced-motion:reduce){#profile-content-panel>.cp-tabs [role=tab],.cp-follow-btn{transition:none}}
+
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="mobile-web-app-capable" content="yes">
@@ -507,7 +548,6 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <div id="buddy-pokemon-display" class="cp-buddy-display" hidden><img id="buddy-pokemon-image" alt=""><div><span class="cp-buddy-kicker">PARTNER POKÉMON</span><strong id="buddy-pokemon-name">Pikachu</strong><small id="buddy-pokemon-caption">Your profile companion</small></div></div>
 <form id="buddy-pokemon-editor" class="cp-buddy-editor" hidden><label for="buddy-pokemon-select">Choose your Buddy Pokémon<select id="buddy-pokemon-select"></select></label><button class="cp-btn" type="submit" id="buddy-pokemon-save">Save Buddy Pokémon</button><p id="buddy-pokemon-status" class="cp-status" role="status" aria-live="polite"></p></form>
 <div class="cp-follow-row"><button class="cp-follow-count cp-follow-list-trigger" id="followers-trigger" type="button"><strong id="followers-count">0</strong> followers</button><button class="cp-follow-count cp-follow-list-trigger" id="following-trigger" type="button"><strong id="following-count">0</strong> following</button><button id="follow-button" class="cp-follow-btn" type="button" hidden>Follow</button><div id="profile-menu-wrap" class="cp-profile-menu-wrap" hidden><button id="profile-menu-trigger" class="cp-profile-menu-trigger" type="button" aria-label="More profile options" aria-haspopup="menu" aria-expanded="false">···</button><div id="profile-menu" class="cp-profile-menu" role="menu" hidden><button id="menu-unfollow" type="button" role="menuitem">Unfollow</button><button id="menu-block" class="danger" type="button" role="menuitem">Block</button></div></div></div></div>
-</section>
 </section>
 
 <div class="cp-stats">
