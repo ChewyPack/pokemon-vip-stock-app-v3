@@ -517,7 +517,8 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <p id="shop-tab-status" class="cp-status" role="status" aria-live="polite">Loading shop…</p>
 <section id="shop-upgrade-panel" class="cp-shop-notice" hidden><h3>Open your collector shop</h3><p>Any signed-in PokePrizePool member, including free members, can create a shop profile and publish marketplace listings. Buyers and sellers arrange local in-person exchanges directly; PokePrizePool does not collect marketplace payments.</p><a class="cp-btn" href="/account.html">Sign in or create an account</a></section>
 <div id="shop-owner-editor" hidden>
-<section class="cp-shop-editor-card"><h3>Shop profile</h3><p class="cp-shop-muted">This profile appears on your public shop page and in the marketplace.</p>
+<section class="cp-shop-editor-card"><div class="cp-shop-profile-heading"><div><h3>Shop profile</h3><p class="cp-shop-muted">This profile appears on your public shop page and in the marketplace.</p></div><button class="cp-btn secondary" id="profile-shop-edit-toggle" type="button" hidden>Edit shop</button></div>
+<div id="profile-shop-form-wrap">
 <form id="profile-shop-form" class="cp-shop-form">
 <label>Shop name *<input name="shop_name" maxlength="100" required placeholder="Your shop name"></label>
 <input type="hidden" name="logo_key"><input type="hidden" name="cover_key"><input type="hidden" name="logo_url"><input type="hidden" name="cover_url">
@@ -525,7 +526,8 @@ body{background:transparent;color:var(--navy);font-family:Nunito,system-ui,sans-
 <label>About your shop<textarea name="bio" maxlength="1000" placeholder="What do you collect or specialize in?"></textarea></label>
 <label>Website URL<input name="website_url" type="url" placeholder="https://…"></label><label>Social profile URL<input name="social_links" type="url" placeholder="https://…"></label>
 <button class="cp-btn" id="profile-shop-save" type="submit">Save shop profile</button><p id="profile-shop-status" class="cp-status" role="status" aria-live="polite"></p>
-</form></section>
+</form>
+</div></section>
 <section class="cp-shop-editor-card"><h3>Marketplace listings</h3><p class="cp-shop-muted">Add a listing here and it can appear on the public marketplace while marked for sale.</p>
 <form id="profile-listing-form" class="cp-shop-form">
 <input type="hidden" name="id"><input type="hidden" name="image_key"><input type="hidden" name="tcgcsv_product_id">
@@ -1336,6 +1338,10 @@ $('collector-search-form').addEventListener('submit',event=>{
   function renderOwnerShop(data){
    shopState=data;$('shop-upgrade-panel').hidden=true;$('shop-public-view').hidden=true;$('shop-owner-editor').hidden=false;
    fillShopForm($('profile-shop-form'),data.shop||{});
+   const hasSavedShop=!!String(data.shop?.shop_name||'').trim();
+   $('profile-shop-edit-toggle').hidden=!hasSavedShop;
+   $('profile-shop-form-wrap').hidden=hasSavedShop;
+   $('profile-shop-edit-toggle').textContent='Edit shop';
    const inventory=data.inventory||[];
    $('profile-shop-listings').innerHTML=inventory.length?inventory.map(item=>'<article class="cp-shop-listing">'+(item.image_key?'<img loading="lazy" alt="'+safe(item.item_name)+'" src="/api/vendor/image?key='+encodeURIComponent(item.image_key)+'">':'')+'<h4>'+safe(item.item_name)+'</h4><p>'+safe(item.category||'Other')+(item.condition_label?' · '+safe(item.condition_label):'')+'</p><p>'+(item.price_cents===null||item.price_cents===undefined?'Contact for price':'$'+(Number(item.price_cents)/100).toFixed(2))+(item.quantity_hint?' · '+safe(item.quantity_hint):'')+'</p><p>'+safe(item.notes||'')+'</p><p>'+(Number(item.is_for_sale)===1?'Published to marketplace':'Hidden from marketplace')+'</p><div class="cp-shop-listing-actions"><button class="cp-btn secondary" type="button" data-edit-shop-listing="'+Number(item.id)+'">Edit</button><button class="cp-btn danger" type="button" data-remove-shop-listing="'+Number(item.id)+'">Delete</button></div></article>').join(''):'<div class="cp-empty">No listings yet. Add your first item above.</div>';
    $('profile-shop-listings').querySelectorAll('[data-edit-shop-listing]').forEach(button=>button.addEventListener('click',()=>startEditShopListing(button.dataset.editShopListing)));
@@ -1384,6 +1390,13 @@ $('collector-search-form').addEventListener('submit',event=>{
     keyInput.value=data.key;setStatus(statusId,'Photo uploaded. Save to apply it.');
    }catch(error){setStatus(statusId,error.message);}
   }
+  $('profile-shop-edit-toggle').addEventListener('click',()=>{
+   const wrap=$('profile-shop-form-wrap');
+   const opening=wrap.hidden;
+   wrap.hidden=!opening;
+   $('profile-shop-edit-toggle').textContent=opening?'Cancel':'Edit shop';
+   if(opening)wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
   $('profile-shop-form').elements.logo_file.addEventListener('change',event=>uploadShopPhoto(event.target.files?.[0],$('profile-shop-form').elements.logo_key,'profile-shop-status'));
   $('profile-shop-form').elements.cover_file.addEventListener('change',event=>uploadShopPhoto(event.target.files?.[0],$('profile-shop-form').elements.cover_key,'profile-shop-status'));
   $('profile-shop-form').addEventListener('submit',async event=>{
