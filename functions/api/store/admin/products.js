@@ -1,4 +1,4 @@
-import { json, wrap, readJson, requireAdmin, HttpError, ensureCollectorPlusPriceColumn } from '../../../_lib/store.js';
+import { json, wrap, readJson, requireAdmin, HttpError, ensureCollectorPlusPriceColumn, ensureSoldOutColumn } from '../../../_lib/store.js';
 import { printifyCommerceReady } from '../../../_lib/printify.js';
 
 const CATS = ['sealed', 'singles', 'slabs', 'accessories', 'merch'];
@@ -21,6 +21,7 @@ function clean(b, partial) {
   if (!partial || b.collectorPlusPriceCents !== undefined) o.collector_plus_price_cents = b.collectorPlusPriceCents == null ? null : int(b.collectorPlusPriceCents);
   set('inventory', () => int(b.inventory));
   set('active', () => (b.active ? 1 : 0));
+  set('soldOut', () => (b.soldOut ? 1 : 0));
   set('preorder', () => (b.preorder ? 1 : 0));
   if (!partial || b.comingSoon !== undefined) o.coming_soon = b.comingSoon ? 1 : 0;
   set('images', () => { const a = Array.isArray(b.images) ? b.images.filter((x) => typeof x === 'string' && x.startsWith('https://')).slice(0, 10) : []; return JSON.stringify(a); });
@@ -57,6 +58,7 @@ const audit = (db, actor, action, detail) =>
 export const onRequestGet = wrap(async (ctx) => {
   await requireAdmin(ctx);
   await ensureCollectorPlusPriceColumn(ctx.env.DB);
+  await ensureSoldOutColumn(ctx.env.DB);
   const { results } = await ctx.env.DB.prepare('SELECT * FROM store_products ORDER BY id DESC LIMIT 500').all();
   return json({ products: results, printifyCommerceReady: printifyCommerceReady(ctx.env), manualOrdersEnabled: String(ctx.env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual' });
 });
@@ -64,6 +66,7 @@ export const onRequestGet = wrap(async (ctx) => {
 export const onRequestPost = wrap(async (ctx) => {
   const actor = await requireAdmin(ctx);
   await ensureCollectorPlusPriceColumn(ctx.env.DB);
+  await ensureSoldOutColumn(ctx.env.DB);
   await ensureAuditTable(ctx.env.DB);
   const b = await readJson(ctx.request, 50000), o = clean(b, false);
   if (o.external_checkout_url && o.category !== 'merch') throw new HttpError(400, 'Printify checkout links are only allowed for merchandise products.');
@@ -80,6 +83,7 @@ export const onRequestPost = wrap(async (ctx) => {
 export const onRequestPatch = wrap(async (ctx) => {
   const actor = await requireAdmin(ctx);
   await ensureCollectorPlusPriceColumn(ctx.env.DB);
+  await ensureSoldOutColumn(ctx.env.DB);
   await ensureAuditTable(ctx.env.DB);
   const id = int(new URL(ctx.request.url).searchParams.get('id'), 1);
   const o = clean(await readJson(ctx.request, 50000), true);
