@@ -39,7 +39,7 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   const hasPrintifyColumn = (productColumns.results || []).some((c) => c.name === 'printify_product_id');
   const printifyReady = printifyCommerceReady(env);
   const manualOrdersEnabled = String(env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual';
-  if (av === 'in') where.push(`COALESCE(sold_out, 0) = 0 AND ${hasPrintifyColumn && printifyReady ? "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '') OR printify_product_id IS NOT NULL)" : "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != ''))"} AND preorder = 0`);
+  if (av === 'in') where.push(`COALESCE(sold_out, 0) = 0${manualOrdersEnabled ? '' : ` AND ${hasPrintifyColumn && printifyReady ? "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '') OR printify_product_id IS NOT NULL)" : "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != ''))"}`} AND preorder = 0`);
   if (av === 'pre') where.push('preorder = 1');
   const min = parseInt(u.searchParams.get('min') || '', 10), max = parseInt(u.searchParams.get('max') || '', 10);
   if (Number.isInteger(min)) { where.push('(external_checkout_url IS NULL OR external_checkout_url = \'\') AND price_cents >= ?'); args.push(min); }
