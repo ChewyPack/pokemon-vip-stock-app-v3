@@ -1,9 +1,10 @@
-import { json, wrap, publicProduct, ensureCollectorPlusPriceColumn, isCollectorPlusViewer } from '../../_lib/store.js';
+import { json, wrap, publicProduct, ensureCollectorPlusPriceColumn, ensureSoldOutColumn, isCollectorPlusViewer } from '../../_lib/store.js';
 import { printifyCommerceReady, BLOCKED_PRINTIFY_PRODUCT_TITLES, isBlockedPrintifyProductTitle } from '../../_lib/printify.js';
 
 // GET /api/store/products?q=&category=&availability=in|pre&min=&max=&sort=new|lo|hi&page=1&slug=
 export const onRequestGet = wrap(async ({ request, env }) => {
   await ensureCollectorPlusPriceColumn(env.DB);
+  await ensureSoldOutColumn(env.DB);
   const viewerIsCollectorPlus = await isCollectorPlusViewer(request, env);
   const u = new URL(request.url);
   const where = ['active = 1', `LOWER(name) NOT IN (${BLOCKED_PRINTIFY_PRODUCT_TITLES.map(() => '?').join(',')})`]; const args = BLOCKED_PRINTIFY_PRODUCT_TITLES.map((name) => name.toLowerCase());
@@ -38,9 +39,7 @@ export const onRequestGet = wrap(async ({ request, env }) => {
   const hasPrintifyColumn = (productColumns.results || []).some((c) => c.name === 'printify_product_id');
   const printifyReady = printifyCommerceReady(env);
   const manualOrdersEnabled = String(env.STORE_PAYMENT_MODE || 'manual').trim().toLowerCase() === 'manual';
-  if (av === 'in' && !manualOrdersEnabled) where.push(hasPrintifyColumn && printifyReady
-    ? "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '') OR printify_product_id IS NOT NULL) AND preorder = 0"
-    : "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '')) AND preorder = 0");
+  if (av === 'in') where.push(`COALESCE(sold_out, 0) = 0 AND ${hasPrintifyColumn && printifyReady ? "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != '') OR printify_product_id IS NOT NULL)" : "(inventory > 0 OR (external_checkout_url IS NOT NULL AND external_checkout_url != ''))"} AND preorder = 0`);
   if (av === 'pre') where.push('preorder = 1');
   const min = parseInt(u.searchParams.get('min') || '', 10), max = parseInt(u.searchParams.get('max') || '', 10);
   if (Number.isInteger(min)) { where.push('(external_checkout_url IS NULL OR external_checkout_url = \'\') AND price_cents >= ?'); args.push(min); }
@@ -69,7 +68,7 @@ export const onRequestGet = wrap(async ({ request, env }) => {
           .trim();
         // An active product remains requestable even if its stored inventory count is zero.
         // This is not an immediate sale; the owner confirms stock before collecting/finalizing payment.
-        if (!product.isPrintify) product.available = Math.max(1, Number(row.inventory) || 0);
+        if (!product.isPrintify && !product.soldOut) product.available = Math.max(1, Number(row.inventory) || 0);
       } else if (product.isPrintify && !printifyReady) product.comingSoon = true;
       return product;
     }),
