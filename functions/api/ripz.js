@@ -455,7 +455,7 @@ export async function onRequestPost({ request, env }) {
           (buyNow !== null && (!Number.isSafeInteger(buyNow) || buyNow <= startingBid || buyNow > 100000000))) {
         return json({ ok: false, error: "invalid_auction_details", message: "Check the item, starting bid, bid increment, duration and optional Buy It Now price." }, 400);
       }
-      if (imageUrl && !/^https:\\/\\//i.test(imageUrl)) return json({ ok: false, error: "invalid_image_url", message: "Item image links must use HTTPS." }, 400);
+      if (imageUrl && !imageUrl.toLowerCase().startsWith("https://")) return json({ ok: false, error: "invalid_image_url", message: "Item image links must use HTTPS." }, 400);
       const existing = await env.DB.prepare(`
         SELECT a.id, a.stream_id, a.status, s.account_id AS stream_owner_id, s.status AS stream_status
         FROM ripz_auctions a JOIN ripz_streams s ON s.id = a.stream_id
