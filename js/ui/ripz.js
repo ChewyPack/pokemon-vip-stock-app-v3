@@ -480,9 +480,62 @@
       return;
     }
     list.innerHTML = state.auctionDrafts.map(function (item) {
-      var amount = Number(item.starting_bid_cents || 0) / 100;
+      var amount = (Number(item.starting_bid_cents || 0) / 100).toFixed(2);
       var label = item.item_type === "single" ? "Single card" : item.item_type === "sealed" ? "Sealed product" : "Collectible";
-      return '<article class="ripz-auction-draft"><div><strong>' + esc(item.item_title) + '</strong><small>' + esc(label) + ' · Starting at 
+      return '<article class="ripz-auction-draft"><div><strong>' + esc(item.item_title) + '</strong><small>' + esc(label) + " · Starting at " + amount + " USD · " + Number(item.duration_seconds) + " sec · " + esc(item.status) + '</small></div><span class="ripz-pill">Draft</span></article>';
+    }).join("");
+  }
+
+  async function loadAuctionDrafts() {
+    if (!state.myStream || !state.myStream.id) { state.auctionDrafts = []; renderAuctionDrafts(); return; }
+    var result = await api("POST", { action: "auction_list", stream_id: state.myStream.id });
+    state.auctionDrafts = Array.isArray(result.auctions) ? result.auctions : [];
+    renderAuctionDrafts();
+  }
+
+  function openAuctionModal() {
+    if (!state.canHostAuctions || !state.myStream || state.myStream.status === "ended") {
+      setStatus("ripz-auction-status", "Start your RIPZ stream session before creating an auction.", true);
+      return;
+    }
+    var modal = $("ripz-auction-modal");
+    if (!modal) return;
+    modal.hidden = false;
+    var button = $("ripz-host-auctions");
+    if (button) button.setAttribute("aria-expanded", "true");
+    loadAuctionDrafts().catch(function (error) { setStatus("ripz-auction-status", error.message || "Could not load auction drafts.", true); });
+    var title = $("ripz-auction-title");
+    if (title) title.focus();
+  }
+
+  async function createAuctionDraft(event) {
+    event.preventDefault();
+    var button = $("ripz-auction-create");
+    if (!state.myStream || !state.myStream.id) { setStatus("ripz-auction-status", "Create your RIPZ stream session first.", true); return; }
+    function toCents(value) { if (value === "" || value == null) return null; var number = Number(value); return Number.isFinite(number) ? Math.round(number * 100) : NaN; }
+    var starting = toCents($("ripz-auction-starting").value);
+    var increment = toCents($("ripz-auction-increment").value);
+    var buyNow = toCents($("ripz-auction-buy-now").value);
+    if (!Number.isSafeInteger(starting) || starting < 1 || !Number.isSafeInteger(increment) || increment < 1 || (buyNow !== null && (!Number.isSafeInteger(buyNow) || buyNow <= starting))) {
+      setStatus("ripz-auction-status", "Enter valid prices. Buy It Now must be higher than the starting bid.", true); return;
+    }
+    var payload = { action: "auction_create", stream_id: state.myStream.id, item_type: $("ripz-auction-type").value, item_title: $("ripz-auction-title").value, item_description: $("ripz-auction-description").value, image_url: $("ripz-auction-image").value, starting_bid_cents: starting, bid_increment_cents: increment, buy_now_price_cents: buyNow, duration_seconds: Number($("ripz-auction-duration").value) };
+    if (button) button.disabled = true;
+    setStatus("ripz-auction-status", "Saving auction draft…");
+    try {
+      var result = await api("POST", payload);
+      if (result.auction) state.auctionDrafts.unshift(result.auction);
+      renderAuctionDrafts();
+      $("ripz-auction-form").reset();
+      $("ripz-auction-starting").value = "1.00";
+      $("ripz-auction-increment").value = "1.00";
+      $("ripz-auction-duration").value = "60";
+      setStatus("ripz-auction-status", "Auction draft saved. It is not visible to viewers and cannot accept bids yet.");
+    } catch (error) { setStatus("ripz-auction-status", error.message || "Could not save auction draft.", true); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  function renderGiveaway() {
     var content = $("ripz-giveaway-modal-content");
     if (!content || !content.querySelector("#ripz-giveaway-title")) return;
     content.innerHTML = giveawayMarkup();
