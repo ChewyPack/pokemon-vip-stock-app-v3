@@ -388,7 +388,7 @@ export async function onRequestPost({ request, env }) {
                buy_now_price_cents, duration_seconds, status, created_at
         FROM ripz_auctions
         WHERE stream_id = ? AND seller_account_id = ?
-        ORDER BY created_at ASC LIMIT 30
+        ORDER BY created_at ASC, rowid ASC LIMIT 30
       `).bind(streamId, account.id).all();
       return json({ ok: true, auctions: results });
     }
