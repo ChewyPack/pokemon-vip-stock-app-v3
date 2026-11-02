@@ -437,6 +437,143 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true, auction }, 201);
     }
 
+    if (action === "auction_start") {
+      const auctionId = clean(data.auction_id, 100);
+      if (!auctionId) return json({ ok: false, error: "auction_id_required" }, 400);
+      const auction = await env.DB.prepare(`
+        SELECT a.*, s.status AS stream_status, s.account_id AS stream_owner_id
+        FROM ripz_auctions a JOIN ripz_streams s ON s.id = a.stream_id
+        WHERE a.id = ? LIMIT 1
+      `).bind(auctionId).first();
+      if (!auction) return json({ ok: false, error: "auction_not_found" }, 404);
+      if (Number(auction.seller_account_id) !== Number(account.id) || Number(auction.stream_owner_id) !== Number(account.id)) {
+        return json({ ok: false, error: "not_auction_owner" }, 403);
+      }
+      if (!canHostRipzAuctions(account)) return json({ ok: false, error: "collector_plus_required" }, 403);
+      if (auction.stream_status !== "live") return json({ ok: false, error: "stream_not_live", message: "Go live before starting an auction." }, 409);
+      const startedAt = new Date().toISOString();
+      const endsAt = new Date(Date.now() + Number(auction.duration_seconds) * 1000).toISOString();
+      const results = await env.DB.batch([
+        env.DB.prepare(`UPDATE ripz_auctions SET status='live', started_at=?, ends_at=?, ended_at=NULL, winner_account_id=NULL, current_bid_cents=0, version=version+1, updated_at=CURRENT_TIMESTAMP WHERE id=? AND seller_account_id=? AND status='draft'`).bind(startedAt, endsAt, auctionId, account.id),
+        env.DB.prepare(`INSERT INTO ripz_auction_events (auction_id, actor_account_id, event_type, event_data_json) SELECT id, ?, 'started', ? FROM ripz_auctions WHERE id=? AND status='live' AND started_at=?`).bind(account.id, JSON.stringify({ ends_at: endsAt }), auctionId, startedAt)
+      ]);
+      if (!Number(results?.[0]?.meta?.changes || 0)) return json({ ok: false, error: "auction_not_startable", message: "This auction is no longer a draft." }, 409);
+      const saved = await env.DB.prepare("SELECT * FROM ripz_auctions WHERE id=? LIMIT 1").bind(auctionId).first();
+      return json({ ok: true, auction: saved });
+    }
+
+    if (action === "auction_state") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id=? LIMIT 1").bind(streamId).first();
+      if (!stream || stream.status !== "live") return json({ ok: true, auction: null });
+      let auction = await env.DB.prepare(`
+        SELECT a.*, COALESCE(NULLIF(p.username,''), NULLIF(seller.display_name,''), 'Collector') AS seller_name
+        FROM ripz_auctions a JOIN accounts seller ON seller.id=a.seller_account_id
+        LEFT JOIN collector_profiles p ON p.account_id=seller.id
+        WHERE a.stream_id=? AND a.status='live'
+        ORDER BY a.started_at DESC LIMIT 1
+      `).bind(streamId).first();
+      if (!auction) return json({ ok: true, auction: null });
+      if (Date.parse(String(auction.ends_at || "")) <= Date.now()) {
+        const now = new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare(`UPDATE ripz_auctions SET status='ended', ended_at=?, winner_account_id=(SELECT bidder_account_id FROM ripz_auction_bids WHERE auction_id=? ORDER BY amount_cents DESC, id ASC LIMIT 1), version=version+1, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='live' AND julianday(ends_at)<=julianday(?)`).bind(now, auction.id, auction.id, now),
+          env.DB.prepare(`INSERT INTO ripz_auction_events (auction_id, actor_account_id, event_type, event_data_json) SELECT id, NULL, 'ended', ? FROM ripz_auctions WHERE id=? AND status='ended' AND ended_at=?`).bind(JSON.stringify({ reason: "timer_expired" }), auction.id, now)
+        ]);
+        return json({ ok: true, auction: null, ended_auction_id: auction.id });
+      }
+      const countRow = await env.DB.prepare("SELECT COUNT(*) AS bid_count FROM ripz_auction_bids WHERE auction_id=?").bind(auction.id).first();
+      const bidCount = Number(countRow?.bid_count || 0);
+      const latest = await env.DB.prepare(`
+        SELECT b.amount_cents, b.created_at,
+               COALESCE(NULLIF(p.username,''), NULLIF(a.display_name,''), 'Collector') AS bidder_name
+        FROM ripz_auction_bids b JOIN accounts a ON a.id=b.bidder_account_id
+        LEFT JOIN collector_profiles p ON p.account_id=a.id
+        WHERE b.auction_id=? ORDER BY b.id DESC LIMIT 1
+      `).bind(auction.id).first();
+      const { results: recentBids = [] } = await env.DB.prepare(`
+        SELECT b.amount_cents, b.created_at,
+               COALESCE(NULLIF(p.username,''), NULLIF(a.display_name,''), 'Collector') AS bidder_name
+        FROM ripz_auction_bids b JOIN accounts a ON a.id=b.bidder_account_id
+        LEFT JOIN collector_profiles p ON p.account_id=a.id
+        WHERE b.auction_id=? ORDER BY b.id DESC LIMIT 8
+      `).bind(auction.id).all();
+      const minimumBid = bidCount ? Number(auction.current_bid_cents) + Number(auction.bid_increment_cents) : Number(auction.starting_bid_cents);
+      return json({ ok: true, auction: {
+        id: auction.id, stream_id: auction.stream_id, item_type: auction.item_type,
+        item_title: auction.item_title, item_description: auction.item_description,
+        image_url: auction.image_url, starting_bid_cents: Number(auction.starting_bid_cents),
+        current_bid_cents: Number(auction.current_bid_cents), bid_increment_cents: Number(auction.bid_increment_cents),
+        duration_seconds: Number(auction.duration_seconds), status: auction.status,
+        started_at: auction.started_at, ends_at: auction.ends_at, seller_name: auction.seller_name,
+        bid_count: bidCount, minimum_bid_cents: minimumBid,
+        highest_bidder_name: latest?.bidder_name || "", recent_bids: recentBids
+      }});
+    }
+
+    if (action === "auction_bid") {
+      const auctionId = clean(data.auction_id, 100);
+      const idempotencyKey = clean(data.idempotency_key, 80);
+      const amountCents = Number(data.amount_cents);
+      if (!auctionId || !idempotencyKey || !Number.isSafeInteger(amountCents) || amountCents < 1) {
+        return json({ ok: false, error: "invalid_bid", message: "Enter a valid bid amount." }, 400);
+      }
+      const previous = await env.DB.prepare("SELECT id, amount_cents FROM ripz_auction_bids WHERE auction_id=? AND bidder_account_id=? AND idempotency_key=? LIMIT 1").bind(auctionId, account.id, idempotencyKey).first();
+      if (previous) return json({ ok: true, accepted: true, duplicate: true, bid: previous });
+      const auction = await env.DB.prepare("SELECT * FROM ripz_auctions WHERE id=? LIMIT 1").bind(auctionId).first();
+      if (!auction) return json({ ok: false, error: "auction_not_found" }, 404);
+      if (Number(auction.seller_account_id) === Number(account.id)) return json({ ok: false, error: "seller_cannot_bid", message: "You cannot bid on your own auction." }, 403);
+      const stream = await env.DB.prepare("SELECT status FROM ripz_streams WHERE id=? LIMIT 1").bind(auction.stream_id).first();
+      if (!stream || stream.status !== "live") return json({ ok: false, error: "stream_not_live" }, 409);
+      const bidCountRow = await env.DB.prepare("SELECT COUNT(*) AS bid_count FROM ripz_auction_bids WHERE auction_id=?").bind(auctionId).first();
+      const bidCount = Number(bidCountRow?.bid_count || 0);
+      const nowMs = Date.now();
+      const endsMs = Date.parse(String(auction.ends_at || ""));
+      if (auction.status !== "live" || !Number.isFinite(endsMs) || endsMs <= nowMs) {
+        return json({ ok: false, error: "auction_expired", message: "This auction has ended." }, 409);
+      }
+      const minimumBid = bidCount ? Number(auction.current_bid_cents) + Number(auction.bid_increment_cents) : Number(auction.starting_bid_cents);
+      if (!Number.isSafeInteger(minimumBid) || amountCents < minimumBid) {
+        return json({ ok: false, error: "bid_too_low", minimum_bid_cents: minimumBid, message: "The next bid must be at least $" + (minimumBid / 100).toFixed(2) + "." }, 409);
+      }
+      if (amountCents > 100000000) return json({ ok: false, error: "bid_too_high" }, 400);
+      const extended = endsMs - nowMs <= 10000;
+      const newEndsAt = extended ? new Date(endsMs + 10000).toISOString() : auction.ends_at;
+      const newVersion = Number(auction.version || 0) + 1;
+      const results = await env.DB.batch([
+        env.DB.prepare(`UPDATE ripz_auctions SET current_bid_cents=?, ends_at=?, version=version+1, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='live' AND version=? AND current_bid_cents=? AND julianday(ends_at)>julianday(?) AND ? >= CASE WHEN (SELECT COUNT(*) FROM ripz_auction_bids WHERE auction_id=?)=0 THEN starting_bid_cents ELSE current_bid_cents+bid_increment_cents END`).bind(amountCents, newEndsAt, auctionId, Number(auction.version || 0), Number(auction.current_bid_cents || 0), new Date(nowMs).toISOString(), amountCents, auctionId),
+        env.DB.prepare(`INSERT INTO ripz_auction_bids (auction_id,bidder_account_id,amount_cents,idempotency_key) SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM ripz_auctions WHERE id=? AND status='live' AND version=? AND current_bid_cents=? )`).bind(auctionId, account.id, amountCents, idempotencyKey, auctionId, newVersion, amountCents),
+        env.DB.prepare(`INSERT INTO ripz_auction_events (auction_id,actor_account_id,event_type,event_data_json) SELECT ?,?,'bid_accepted',? WHERE EXISTS (SELECT 1 FROM ripz_auctions WHERE id=? AND version=? AND current_bid_cents=?)`).bind(auctionId, account.id, JSON.stringify({ amount_cents: amountCents }), auctionId, newVersion, amountCents),
+        ...(extended ? [env.DB.prepare(`INSERT INTO ripz_auction_events (auction_id,actor_account_id,event_type,event_data_json) SELECT ?,?,'extended',? WHERE EXISTS (SELECT 1 FROM ripz_auctions WHERE id=? AND version=? AND current_bid_cents=?)`).bind(auctionId, account.id, JSON.stringify({ ends_at: newEndsAt }), auctionId, newVersion, amountCents)] : [])
+      ]);
+      if (!Number(results?.[0]?.meta?.changes || 0)) {
+        const latest = await env.DB.prepare("SELECT current_bid_cents, bid_increment_cents, status FROM ripz_auctions WHERE id=? LIMIT 1").bind(auctionId).first();
+        const next = latest ? Number(latest.current_bid_cents || 0) + Number(latest.bid_increment_cents || 0) : 0;
+        return json({ ok: false, error: latest?.status === "live" ? "bid_outpaced" : "auction_expired", minimum_bid_cents: next, message: latest?.status === "live" ? "Another bid arrived first. Refresh and place the next bid." : "This auction has ended." }, 409);
+      }
+      const bid = await env.DB.prepare("SELECT id, amount_cents, created_at FROM ripz_auction_bids WHERE auction_id=? AND bidder_account_id=? AND idempotency_key=? LIMIT 1").bind(auctionId, account.id, idempotencyKey).first();
+      return json({ ok: true, accepted: true, extended, bid, ends_at: newEndsAt });
+    }
+
+    if (action === "auction_cancel") {
+      const auctionId = clean(data.auction_id, 100);
+      if (!auctionId) return json({ ok: false, error: "auction_id_required" }, 400);
+      const auction = await env.DB.prepare("SELECT id, seller_account_id, status FROM ripz_auctions WHERE id=? LIMIT 1").bind(auctionId).first();
+      if (!auction) return json({ ok: false, error: "auction_not_found" }, 404);
+      if (Number(auction.seller_account_id) !== Number(account.id) && !account.is_admin) return json({ ok: false, error: "not_auction_owner" }, 403);
+      if (auction.status !== "live" && auction.status !== "draft") return json({ ok: false, error: "auction_not_cancellable" }, 409);
+      if (Number(auction.status === "live" ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM ripz_auction_bids WHERE auction_id=?").bind(auctionId).first())?.n : 0) > 0) {
+        return json({ ok: false, error: "auction_has_bids", message: "An auction with bids cannot be cancelled from the live controls." }, 409);
+      }
+      const now = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE ripz_auctions SET status='cancelled', ended_at=?, version=version+1, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('draft','live')").bind(now, auctionId),
+        env.DB.prepare("INSERT INTO ripz_auction_events (auction_id,actor_account_id,event_type,event_data_json) VALUES (?,?,'cancelled',?)").bind(auctionId, account.id, JSON.stringify({ reason: "seller_cancelled" }))
+      ]);
+      return json({ ok: true });
+    }
+
     if (action === "viewer_heartbeat" || action === "viewer_leave") {
       const streamId = clean(data.stream_id, 100);
       if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
