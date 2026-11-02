@@ -437,6 +437,50 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true, auction }, 201);
     }
 
+    if (action === "auction_update") {
+      if (!canHostRipzAuctions(account)) return json({ ok: false, error: "collector_plus_required", message: "An active Collector+ or Vendor+ membership is required to manage RIPZ auctions." }, 403);
+      const auctionId = clean(data.auction_id, 100);
+      const itemType = ["single", "sealed", "collectible"].includes(data.item_type) ? data.item_type : "";
+      const itemTitle = clean(data.item_title, 120);
+      const itemDescription = clean(data.item_description, 600);
+      const imageUrl = clean(data.image_url, 1200);
+      const startingBid = Number(data.starting_bid_cents);
+      const increment = Number(data.bid_increment_cents);
+      const buyNow = data.buy_now_price_cents == null || data.buy_now_price_cents === "" ? null : Number(data.buy_now_price_cents);
+      const duration = Number(data.duration_seconds);
+      if (!auctionId || !itemType || itemTitle.length < 2 ||
+          !Number.isSafeInteger(startingBid) || startingBid < 1 || startingBid > 100000000 ||
+          !Number.isSafeInteger(increment) || increment < 1 || increment > 100000000 ||
+          !Number.isInteger(duration) || duration < 15 || duration > 600 ||
+          (buyNow !== null && (!Number.isSafeInteger(buyNow) || buyNow <= startingBid || buyNow > 100000000))) {
+        return json({ ok: false, error: "invalid_auction_details", message: "Check the item, starting bid, bid increment, duration and optional Buy It Now price." }, 400);
+      }
+      if (imageUrl && !/^https:\\/\\//i.test(imageUrl)) return json({ ok: false, error: "invalid_image_url", message: "Item image links must use HTTPS." }, 400);
+      const existing = await env.DB.prepare(`
+        SELECT a.id, a.stream_id, a.status, s.account_id AS stream_owner_id, s.status AS stream_status
+        FROM ripz_auctions a JOIN ripz_streams s ON s.id = a.stream_id
+        WHERE a.id = ? AND a.seller_account_id = ? LIMIT 1
+      `).bind(auctionId, account.id).first();
+      if (!existing || Number(existing.stream_owner_id) !== Number(account.id) || !["ready", "live"].includes(existing.stream_status)) {
+        return json({ ok: false, error: "not_auction_owner", message: "You can only edit auctions attached to your own active RIPZ session." }, 403);
+      }
+      if (existing.status !== "draft") return json({ ok: false, error: "auction_terms_locked", message: "Auction details are locked after the auction starts so bids remain fair." }, 409);
+      const result = await env.DB.prepare(`
+        UPDATE ripz_auctions
+        SET item_type=?, item_title=?, item_description=?, image_url=?, starting_bid_cents=?,
+            bid_increment_cents=?, buy_now_price_cents=?, duration_seconds=?, version=version+1,
+            updated_at=CURRENT_TIMESTAMP
+        WHERE id=? AND seller_account_id=? AND status='draft'
+      `).bind(itemType, itemTitle, itemDescription, imageUrl, startingBid, increment, buyNow, duration, auctionId, account.id).run();
+      if (!Number(result?.meta?.changes || 0)) return json({ ok: false, error: "auction_terms_locked", message: "This auction can no longer be edited." }, 409);
+      await env.DB.prepare(`
+        INSERT INTO ripz_auction_events (auction_id, actor_account_id, event_type, event_data_json)
+        VALUES (?, ?, 'created', ?)
+      `).bind(auctionId, account.id, JSON.stringify({ action: "draft_updated", item_title: itemTitle })).run();
+      const saved = await env.DB.prepare("SELECT id, stream_id, item_type, item_title, item_description, image_url, starting_bid_cents, current_bid_cents, bid_increment_cents, buy_now_price_cents, duration_seconds, status, created_at FROM ripz_auctions WHERE id=? LIMIT 1").bind(auctionId).first();
+      return json({ ok: true, auction: saved });
+    }
+
     if (action === "auction_start") {
       const auctionId = clean(data.auction_id, 100);
       if (!auctionId) return json({ ok: false, error: "auction_id_required" }, 400);
