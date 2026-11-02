@@ -63,3 +63,27 @@ export function canHostRipzAuctions(account) {
   return ["active", "trialing"].includes(status) &&
     ["collector+", "collector plus", "vendor", "vendor+", "vendor plus"].includes(tier);
 }
+
+export function validateRipzAuctionBid(auction, bidderAccountId, amountCents, bidCount = 0, nowMs = Date.now()) {
+  if (!auction) return { ok: false, error: "auction_not_found" };
+  if (String(auction.status || "") !== "live") return { ok: false, error: "auction_not_live" };
+  if (Number(auction.seller_account_id) === Number(bidderAccountId)) {
+    return { ok: false, error: "seller_cannot_bid" };
+  }
+  const endsAt = Date.parse(String(auction.ends_at || ""));
+  if (!Number.isFinite(endsAt) || endsAt <= nowMs) return { ok: false, error: "auction_expired" };
+  if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
+    return { ok: false, error: "invalid_bid_amount" };
+  }
+  const openingBid = Math.max(0, Number(auction.starting_bid_cents) || 0);
+  const currentBid = Math.max(0, Number(auction.current_bid_cents) || 0);
+  const increment = Number(auction.bid_increment_cents);
+  if (!Number.isSafeInteger(increment) || increment <= 0) {
+    return { ok: false, error: "invalid_bid_increment" };
+  }
+  const minimumBid = Number(bidCount) > 0 ? currentBid + increment : openingBid;
+  if (!Number.isSafeInteger(minimumBid) || amountCents < minimumBid) {
+    return { ok: false, error: "bid_too_low", minimum_bid_cents: minimumBid };
+  }
+  return { ok: true, minimum_bid_cents: minimumBid };
+}
