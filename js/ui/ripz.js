@@ -415,7 +415,7 @@
     var isHostStudio = !!(state.authenticated && state.studioOpen && state.canGoLive && (!state.myStream || state.myStream.status !== "ended"));
     if (dock) dock.hidden = !(isLiveHost || isHostStudio);
     var auctionsButton = $("ripz-host-auctions");
-    if (auctionsButton) auctionsButton.hidden = !state.canHostAuctions;
+    if (auctionsButton) { auctionsButton.hidden = !state.canHostAuctions; auctionsButton.disabled = !state.myStream || state.myStream.status === "ended"; }
     if (modal && !(isLiveHost || isHostStudio)) modal.hidden = true;
     if (content && (isLiveHost || isHostStudio) && !content.querySelector("#ripz-giveaway-title")) {
       content.innerHTML = giveawayMarkup();
