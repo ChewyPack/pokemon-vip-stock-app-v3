@@ -48,10 +48,21 @@ const AUCTION_SCHEMA = [
   `CREATE INDEX IF NOT EXISTS idx_ripz_auction_events_auction ON ripz_auction_events(auction_id, id DESC)`
 ];
 
+let ripzAuctionSchemaPromise = null;
+
 export async function ensureRipzAuctionSchema(env) {
   if (!env?.DB) throw new Error("database_not_configured");
-  for (const statement of AUCTION_SCHEMA) {
-    await env.DB.prepare(statement).run();
+  if (ripzAuctionSchemaPromise) return ripzAuctionSchemaPromise;
+  ripzAuctionSchemaPromise = (async function () {
+    for (const statement of AUCTION_SCHEMA) {
+      await env.DB.prepare(statement).run();
+    }
+  })();
+  try {
+    await ripzAuctionSchemaPromise;
+  } catch (error) {
+    ripzAuctionSchemaPromise = null;
+    throw error;
   }
 }
 
