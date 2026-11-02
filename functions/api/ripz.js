@@ -1,4 +1,5 @@
 import { notifyCollector } from "../_lib/collector-notifications.js";
+import { ensureRipzAuctionSchema } from "../_lib/ripz-auctions.js";
 
 const COOKIE = "collector_session";
 
@@ -284,6 +285,7 @@ export async function onRequestGet({ request, env }) {
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: false, error: "login_required" }, 401);
     await ensureSchema(env);
+    await ensureRipzAuctionSchema(env);
     const { results: liveRows = [] } = await env.DB.prepare(`
       SELECT s.id, s.account_id, s.title, s.product_name, s.status, s.created_at, s.live_at, s.playback_url,
              (SELECT COUNT(DISTINCT v.account_id) FROM ripz_viewers v WHERE v.stream_id = s.id AND v.account_id <> s.account_id AND unixepoch(v.last_seen_at) >= unixepoch() - 45) AS viewer_count,
