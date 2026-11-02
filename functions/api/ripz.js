@@ -348,7 +348,7 @@ export async function onRequestGet({ request, env }) {
     }
     return json({
       ok: true,
-      account: { display_name: account.display_name || "Collector" },
+      account: { id: Number(account.id), display_name: account.display_name || "Collector" },
       membership_tier: account.membership_tier,
       authenticated: true,
       can_go_live: Boolean(account.can_go_live),
@@ -501,7 +501,7 @@ export async function onRequestPost({ request, env }) {
       `).bind(auction.id).all();
       const minimumBid = bidCount ? Number(auction.current_bid_cents) + Number(auction.bid_increment_cents) : Number(auction.starting_bid_cents);
       return json({ ok: true, auction: {
-        id: auction.id, stream_id: auction.stream_id, item_type: auction.item_type,
+        id: auction.id, stream_id: auction.stream_id, seller_account_id: Number(auction.seller_account_id), item_type: auction.item_type,
         item_title: auction.item_title, item_description: auction.item_description,
         image_url: auction.image_url, starting_bid_cents: Number(auction.starting_bid_cents),
         current_bid_cents: Number(auction.current_bid_cents), bid_increment_cents: Number(auction.bid_increment_cents),
