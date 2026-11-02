@@ -42,6 +42,7 @@ async function currentAccount(request, env) {
   const status = String(membership?.membership_status || "").trim().toLowerCase();
   const tier = normalizeTier(membership?.membership_entitlement_tier || membership?.membership_tier);
   account.is_admin = Number(account.is_admin || 0) === 1;
+  account.membership_status = status;
   account.can_go_live = account.is_admin || (
     ["active", "trialing"].includes(status) &&
     ["collector+", "collector plus"].includes(tier)
