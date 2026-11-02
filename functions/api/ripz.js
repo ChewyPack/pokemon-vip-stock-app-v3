@@ -451,8 +451,17 @@ export async function onRequestPost({ request, env }) {
       }
       if (!canHostRipzAuctions(account)) return json({ ok: false, error: "collector_plus_required" }, 403);
       if (auction.stream_status !== "live") return json({ ok: false, error: "stream_not_live", message: "Go live before starting an auction." }, 409);
-      const otherLive = await env.DB.prepare("SELECT id FROM ripz_auctions WHERE stream_id=? AND status='live' AND julianday(ends_at)>julianday(?) LIMIT 1").bind(auction.stream_id, new Date().toISOString()).first();
-      if (otherLive) return json({ ok: false, error: "auction_already_live", message: "Finish the current live auction before starting another." }, 409);
+      const otherLive = await env.DB.prepare("SELECT id, ends_at FROM ripz_auctions WHERE stream_id=? AND status='live' LIMIT 1").bind(auction.stream_id).first();
+      if (otherLive) {
+        if (Date.parse(String(otherLive.ends_at || "")) > Date.now()) {
+          return json({ ok: false, error: "auction_already_live", message: "Finish the current live auction before starting another." }, 409);
+        }
+        const expiredAt = new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare("UPDATE ripz_auctions SET status='ended', ended_at=?, winner_account_id=(SELECT bidder_account_id FROM ripz_auction_bids WHERE auction_id=? ORDER BY amount_cents DESC, id ASC LIMIT 1), version=version+1, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='live' AND julianday(ends_at)<=julianday(?)").bind(expiredAt, otherLive.id, otherLive.id, expiredAt),
+          env.DB.prepare("INSERT INTO ripz_auction_events (auction_id, actor_account_id, event_type, event_data_json) SELECT id, NULL, 'ended', ? FROM ripz_auctions WHERE id=? AND status='ended' AND ended_at=?").bind(JSON.stringify({ reason: "timer_expired" }), otherLive.id, expiredAt)
+        ]);
+      }
       const startedAt = new Date().toISOString();
       const endsAt = new Date(Date.now() + Number(auction.duration_seconds) * 1000).toISOString();
       const results = await env.DB.batch([
@@ -516,7 +525,7 @@ export async function onRequestPost({ request, env }) {
 
     if (action === "auction_bid") {
       const auctionId = clean(data.auction_id, 100);
-      const idempotencyKey = clean(data.idempotency_key, 80);
+      const idempotencyKey = String(account.id) + ":" + clean(data.idempotency_key, 70);
       const amountCents = Number(data.amount_cents);
       if (!auctionId || !idempotencyKey || !Number.isSafeInteger(amountCents) || amountCents < 1) {
         return json({ ok: false, error: "invalid_bid", message: "Enter a valid bid amount." }, 400);
