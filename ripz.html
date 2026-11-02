@@ -164,6 +164,20 @@
     .ripz-host-dock{position:fixed;z-index:1200;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);padding:10px 12px;border:1px solid rgba(245,196,81,.5);border-radius:18px;background:rgba(5,16,39,.96);box-shadow:0 12px 38px rgba(0,0,0,.4);backdrop-filter:blur(14px)}
     .ripz-host-dock__live{display:flex;align-items:center;gap:7px;color:#f5c451;font-weight:850;font-size:.76rem;letter-spacing:.07em;padding:0 4px;white-space:nowrap}
     .ripz-host-dock .ripz-button{white-space:nowrap}.ripz-host-dock .ripz-button[aria-pressed="true"]{border-color:#a74456;background:#421a2b;color:#ffe5e9}
+    .ripz-auction-modal{position:fixed;z-index:1301;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,8,22,.84);backdrop-filter:blur(8px)}
+    .ripz-auction-modal[hidden]{display:none!important}
+    .ripz-auction-modal__panel{position:relative;width:min(760px,100%);max-height:calc(100dvh - 32px);overflow:auto;border:1px solid rgba(145,171,213,.3);border-radius:22px;background:#091a3a;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.5);padding:20px}
+    .ripz-auction-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .ripz-auction-form label{display:flex;flex-direction:column;gap:6px;color:#c8d6eb;font-size:.84rem;font-weight:700}
+    .ripz-auction-form label.ripz-auction-full{grid-column:1/-1}
+    .ripz-auction-form input,.ripz-auction-form select,.ripz-auction-form textarea{width:100%;box-sizing:border-box;min-height:42px;padding:10px 12px;border:1px solid #3a5071;border-radius:10px;background:#07142e;color:#fff;font:inherit}
+    .ripz-auction-form textarea{min-height:74px;resize:vertical}
+    .ripz-auction-drafts{display:grid;gap:8px;margin-top:18px}
+    .ripz-auction-draft{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #304765;border-radius:12px;background:#0b1b35}
+    .ripz-auction-draft strong{display:block;color:#fff}.ripz-auction-draft small{color:#aebfd8}
+    .ripz-auction-modal__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .ripz-auction-modal__head h2{margin:4px 0;color:#fff}
+    @media(max-width:560px){.ripz-auction-form{grid-template-columns:1fr}.ripz-auction-form label.ripz-auction-full{grid-column:auto}.ripz-auction-modal{padding:8px}.ripz-auction-modal__panel{padding:14px;max-height:calc(100dvh - 16px)}.ripz-auction-draft{align-items:flex-start;flex-direction:column}}
     .ripz-giveaway-modal{position:fixed;z-index:1300;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,8,22,.82);backdrop-filter:blur(8px)}
     .ripz-giveaway-modal__panel{position:relative;width:min(760px,100%);max-height:calc(100dvh - 32px);overflow:auto;border:1px solid rgba(145,171,213,.3);border-radius:22px;background:#091a3a;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.5);padding:18px}
     .ripz-giveaway-modal__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -284,8 +298,29 @@
       <button id="ripz-host-mute" class="ripz-button ripz-button--secondary" type="button" aria-pressed="false" disabled>Mute mic</button>
       <button id="ripz-host-camera" class="ripz-button ripz-button--secondary" type="button" aria-pressed="false" disabled>Turn camera off</button>
       <button id="ripz-host-pause" class="ripz-button ripz-button--secondary" type="button" aria-pressed="false" disabled>Pause stream</button>
+      <button id="ripz-host-auctions" class="ripz-button" type="button" aria-expanded="false" aria-controls="ripz-auction-modal">Live Auctions</button>
       <button id="ripz-host-giveaway" class="ripz-button" type="button" aria-expanded="false" aria-controls="ripz-giveaway-modal"><span aria-hidden="true">🎛️</span> Stream tools & giveaway</button>
       <button id="ripz-host-dock-end" class="ripz-button ripz-button--danger" type="button">End stream</button>
+    </div>
+    <div id="ripz-auction-modal" class="ripz-auction-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ripz-auction-modal-title">
+      <div class="ripz-auction-modal__panel">
+        <div class="ripz-auction-modal__head">
+          <div><span class="ripz-kicker">RIPZ LIVE CONTROLS</span><h2 id="ripz-auction-modal-title">Live auctions</h2><p class="ripz-note">Create an item listing for this stream. Auctions will be started in a later step.</p></div>
+          <button id="ripz-auction-close" class="ripz-giveaway-modal__close" type="button" aria-label="Close auction controls">×</button>
+        </div>
+        <form id="ripz-auction-form" class="ripz-auction-form">
+          <label>Item type<select id="ripz-auction-type" required><option value="single">Single card</option><option value="sealed">Sealed product</option><option value="collectible">Other collectible</option></select></label>
+          <label>Item name<input id="ripz-auction-title" maxlength="120" required placeholder="e.g. Umbreon VMAX Alternate Art"></label>
+          <label class="ripz-auction-full">Item description<textarea id="ripz-auction-description" maxlength="600" placeholder="Condition, set, language, details…"></textarea></label>
+          <label class="ripz-auction-full">Item image URL (optional)<input id="ripz-auction-image" type="url" maxlength="1200" placeholder="https://…"></label>
+          <label>Starting bid ($)<input id="ripz-auction-starting" type="number" min="0.01" max="999999" step="0.01" value="1.00" required></label>
+          <label>Bid increment ($)<input id="ripz-auction-increment" type="number" min="0.01" max="999999" step="0.01" value="1.00" required></label>
+          <label>Auction duration<select id="ripz-auction-duration"><option value="30">30 seconds</option><option value="60" selected>60 seconds</option><option value="90">90 seconds</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option><option value="600">10 minutes</option></select></label>
+          <label>Buy It Now ($, optional)<input id="ripz-auction-buy-now" type="number" min="0.01" max="999999" step="0.01" placeholder="Leave blank to disable"></label>
+          <div class="ripz-auction-full" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button id="ripz-auction-create" class="ripz-button" type="submit">Save auction draft</button><p id="ripz-auction-status" class="ripz-status" role="status" aria-live="polite"></p></div>
+        </form>
+        <div class="ripz-auction-drafts"><h3>Saved auction drafts</h3><div id="ripz-auction-draft-list"><p class="ripz-note">No auction drafts yet.</p></div></div>
+      </div>
     </div>
     <div id="ripz-giveaway-modal" class="ripz-giveaway-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ripz-giveaway-modal-title">
       <div class="ripz-giveaway-modal__panel">
