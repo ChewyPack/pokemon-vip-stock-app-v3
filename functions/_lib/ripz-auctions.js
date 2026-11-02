@@ -59,7 +59,7 @@ export function canHostRipzAuctions(account) {
   if (!account) return false;
   if (account.is_admin) return true;
   const status = String(account.membership_status || "").trim().toLowerCase();
-  const tier = String(account.membership_tier || "").trim().toLowerCase().replace(/[_-]/g, " ").replace(/\\s+/g, " ");
+  const tier = String(account.membership_tier || "").trim().toLowerCase().replace(/[_-]/g, " ").replace(/\s+/g, " ");
   return ["active", "trialing"].includes(status) &&
     ["collector+", "collector plus", "vendor", "vendor+", "vendor plus"].includes(tier);
 }
