@@ -71,6 +71,11 @@
     if (!response.ok || !data.ok) {
       var message = data.message || ({
         login_required: "Please sign in to PokePrizePool to use Ripz.",
+        bid_too_low: "That bid is below the current minimum. The latest bid may have changed.",
+        bid_outpaced: "Another viewer's bid arrived first. The next minimum has been updated.",
+        auction_expired: "This auction has ended.",
+        seller_cannot_bid: "You cannot bid on your own auction.",
+        auction_already_live: "Finish the current auction before starting another.",
         collector_plus_required: "Hosting a live rip requires an active Collector+ membership.",
         streaming_not_configured: "Live video is not connected yet. Please contact PokePrizePool support.",
         unknown_action: "The live site has not finished updating the giveaway controls yet. Refresh Ripz and try again shortly.",
