@@ -178,6 +178,31 @@
     .ripz-auction-modal__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
     .ripz-auction-modal__head h2{margin:4px 0;color:#fff}
     @media(max-width:560px){.ripz-auction-form{grid-template-columns:1fr}.ripz-auction-form label.ripz-auction-full{grid-column:auto}.ripz-auction-modal{padding:8px}.ripz-auction-modal__panel{padding:14px;max-height:calc(100dvh - 16px)}.ripz-auction-draft{align-items:flex-start;flex-direction:column}}
+    .ripz-auction-overlay{position:absolute;z-index:8;left:14px;right:14px;bottom:14px;max-width:520px;pointer-events:none}
+    .ripz-auction-overlay[hidden]{display:none!important}
+    .ripz-auction-overlay__card{pointer-events:auto;overflow:hidden;border:1px solid rgba(127,180,255,.42);border-radius:16px;background:linear-gradient(145deg,rgba(5,18,43,.97),rgba(9,35,70,.96));color:#fff;box-shadow:0 16px 50px rgba(0,0,0,.45);backdrop-filter:blur(12px)}
+    .ripz-auction-overlay__top,.ripz-auction-overlay__actions{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px}
+    .ripz-auction-overlay__top{border-bottom:1px solid rgba(255,255,255,.1)}
+    .ripz-auction-overlay__live{display:flex;align-items:center;gap:7px;font-size:.7rem;font-weight:900;letter-spacing:.1em;color:#ff7474}
+    .ripz-auction-overlay__live i{width:7px;height:7px;border-radius:50%;background:#ff4d5d;box-shadow:0 0 12px #ff4d5d}
+    .ripz-auction-overlay__time{font-variant-numeric:tabular-nums;font-weight:900}
+    .ripz-auction-overlay__body{display:flex;gap:12px;padding:12px}
+    .ripz-auction-overlay__image{width:94px;height:112px;flex:0 0 94px;object-fit:contain;border-radius:10px;background:#07142e}
+    .ripz-auction-overlay__placeholder{display:grid;place-items:center;font-size:2rem}
+    .ripz-auction-overlay__details{min-width:0;display:flex;flex-direction:column;gap:5px}
+    .ripz-auction-overlay__details>strong{font-size:1rem;line-height:1.2}
+    .ripz-auction-overlay__details>span,.ripz-auction-overlay__price small{font-size:.72rem;color:#bdcce1}
+    .ripz-auction-overlay__price{display:flex;flex-direction:column;gap:1px;margin-top:auto}
+    .ripz-auction-overlay__price b{font-size:1.65rem;line-height:1.1;font-variant-numeric:tabular-nums}
+    .ripz-auction-overlay__actions{padding-top:0}
+    .ripz-auction-overlay__actions .ripz-button{min-height:42px;white-space:nowrap}
+    .ripz-auction-overlay__minimum,.ripz-auction-overlay__seller{font-size:.72rem;color:#bdcce1;text-align:right}
+    .ripz-auction-overlay__bids{list-style:none;display:flex;gap:12px;overflow:hidden;margin:0;padding:8px 12px 10px;border-top:1px solid rgba(255,255,255,.1)}
+    .ripz-auction-overlay__bids li{display:flex;gap:5px;align-items:center;white-space:nowrap;font-size:.68rem;color:#c8d6eb}
+    .ripz-auction-overlay__bids strong{color:#fff}
+    .ripz-auction-overlay__first{margin:0;padding:0 12px 10px;color:#bdcce1;font-size:.75rem}
+    .ripz-auction-draft .ripz-button{flex:0 0 auto}
+    @media(max-width:560px){.ripz-auction-overlay{left:7px;right:7px;bottom:7px}.ripz-auction-overlay__image{width:68px;height:86px;flex-basis:68px}.ripz-auction-overlay__body{gap:8px;padding:9px}.ripz-auction-overlay__price b{font-size:1.35rem}.ripz-auction-overlay__actions{align-items:flex-start;flex-direction:column}.ripz-auction-overlay__actions .ripz-button{width:100%}.ripz-auction-overlay__minimum,.ripz-auction-overlay__seller{text-align:left}}
     .ripz-giveaway-modal{position:fixed;z-index:1300;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,8,22,.82);backdrop-filter:blur(8px)}
     .ripz-giveaway-modal__panel{position:relative;width:min(760px,100%);max-height:calc(100dvh - 32px);overflow:auto;border:1px solid rgba(145,171,213,.3);border-radius:22px;background:#091a3a;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.5);padding:18px}
     .ripz-giveaway-modal__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -268,6 +293,7 @@
                 <button id="ripz-video-fullscreen" class="ripz-video-fullscreen" type="button" aria-label="View host and guest feeds full screen">⛶ Full screen</button>
               </div>
               <div id="ripz-viewer-giveaway-overlay" class="ripz-viewer-giveaway-overlay" hidden aria-live="polite"></div>
+              <div id="ripz-auction-overlay" class="ripz-auction-overlay" hidden aria-live="polite"></div>
               <iframe id="ripz-replay-frame" class="ripz-replay-frame" title="Ripz replay" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen hidden></iframe>
               <div id="ripz-guest-join-panel" class="ripz-guest-join" hidden>
                 <h3>Join the live rip</h3>
