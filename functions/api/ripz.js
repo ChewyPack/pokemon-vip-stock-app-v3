@@ -1,5 +1,5 @@
 import { notifyCollector } from "../_lib/collector-notifications.js";
-import { ensureRipzAuctionSchema } from "../_lib/ripz-auctions.js";
+import { ensureRipzAuctionSchema, canHostRipzAuctions } from "../_lib/ripz-auctions.js";
 
 const COOKIE = "collector_session";
 
@@ -43,10 +43,7 @@ async function currentAccount(request, env) {
   const tier = normalizeTier(membership?.membership_entitlement_tier || membership?.membership_tier);
   account.is_admin = Number(account.is_admin || 0) === 1;
   account.membership_status = status;
-  account.can_go_live = account.is_admin || (
-    ["active", "trialing"].includes(status) &&
-    ["collector+", "collector plus"].includes(tier)
-  );
+  account.can_go_live = canHostRipzAuctions(account);
   account.membership_tier = tier || "free";
   return account;
 }
@@ -287,7 +284,6 @@ export async function onRequestGet({ request, env }) {
     if (!account) return json({ ok: false, error: "login_required" }, 401);
     await ensureSchema(env);
     await ensureRipzAuctionSchema(env);
-    await ensureRipzAuctionSchema(env);
     const { results: liveRows = [] } = await env.DB.prepare(`
       SELECT s.id, s.account_id, s.title, s.product_name, s.status, s.created_at, s.live_at, s.playback_url,
              (SELECT COUNT(DISTINCT v.account_id) FROM ripz_viewers v WHERE v.stream_id = s.id AND v.account_id <> s.account_id AND unixepoch(v.last_seen_at) >= unixepoch() - 45) AS viewer_count,
@@ -369,9 +365,72 @@ export async function onRequestPost({ request, env }) {
     const account = await currentAccount(request, env);
     if (!account) return json({ ok: false, error: "login_required" }, 401);
     await ensureSchema(env);
+    await ensureRipzAuctionSchema(env);
     let data;
     try { data = await request.json(); } catch (_) { return json({ ok: false, error: "bad_request" }, 400); }
     const action = clean(data?.action, 30);
+
+    if (action === "auction_list") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || Number(stream.account_id) !== Number(account.id) || !["ready", "live"].includes(stream.status)) {
+        return json({ ok: false, error: "not_stream_owner" }, 403);
+      }
+      const { results = [] } = await env.DB.prepare(`
+        SELECT id, stream_id, item_type, item_title, item_description, image_url,
+               starting_bid_cents, current_bid_cents, bid_increment_cents,
+               buy_now_price_cents, duration_seconds, status, created_at
+        FROM ripz_auctions
+        WHERE stream_id = ? AND seller_account_id = ?
+        ORDER BY created_at DESC LIMIT 30
+      `).bind(streamId, account.id).all();
+      return json({ ok: true, auctions: results });
+    }
+
+    if (action === "auction_create") {
+      if (!canHostRipzAuctions(account)) {
+        return json({ ok: false, error: "collector_plus_required", message: "An active Collector+ or Vendor+ membership is required to host RIPZ auctions." }, 403);
+      }
+      const streamId = clean(data.stream_id, 100);
+      const itemType = ["single", "sealed", "collectible"].includes(data.item_type) ? data.item_type : "";
+      const itemTitle = clean(data.item_title, 120);
+      const itemDescription = clean(data.item_description, 600);
+      const imageUrl = clean(data.image_url, 1200);
+      const startingBid = Number(data.starting_bid_cents);
+      const increment = Number(data.bid_increment_cents);
+      const buyNow = data.buy_now_price_cents == null || data.buy_now_price_cents === "" ? null : Number(data.buy_now_price_cents);
+      const duration = Number(data.duration_seconds);
+      if (!streamId || !itemType || itemTitle.length < 2 ||
+          !Number.isSafeInteger(startingBid) || startingBid < 1 ||
+          !Number.isSafeInteger(increment) || increment < 1 ||
+          !Number.isInteger(duration) || duration < 15 || duration > 600 ||
+          (buyNow !== null && (!Number.isSafeInteger(buyNow) || buyNow <= startingBid))) {
+        return json({ ok: false, error: "invalid_auction_details", message: "Check the item, starting bid, bid increment, duration and optional Buy It Now price." }, 400);
+      }
+      if (imageUrl && !/^https:\/\//i.test(imageUrl)) {
+        return json({ ok: false, error: "invalid_image_url", message: "Item image links must use HTTPS." }, 400);
+      }
+      const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || Number(stream.account_id) !== Number(account.id) || !["ready", "live"].includes(stream.status)) {
+        return json({ ok: false, error: "not_stream_owner", message: "You can only create auctions for your own active RIPZ session." }, 403);
+      }
+      const auctionId = crypto.randomUUID();
+      await env.DB.prepare(`
+        INSERT INTO ripz_auctions (
+          id, stream_id, seller_account_id, item_type, item_title, item_description,
+          image_url, starting_bid_cents, current_bid_cents, bid_increment_cents,
+          buy_now_price_cents, duration_seconds, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'draft')
+      `).bind(auctionId, streamId, account.id, itemType, itemTitle, itemDescription,
+        imageUrl, startingBid, increment, buyNow, duration).run();
+      await env.DB.prepare(`
+        INSERT INTO ripz_auction_events (auction_id, actor_account_id, event_type, event_data_json)
+        VALUES (?, ?, 'created', ?)
+      `).bind(auctionId, account.id, JSON.stringify({ item_type: itemType, item_title: itemTitle })).run();
+      const auction = await env.DB.prepare("SELECT id, stream_id, item_type, item_title, item_description, image_url, starting_bid_cents, current_bid_cents, bid_increment_cents, buy_now_price_cents, duration_seconds, status, created_at FROM ripz_auctions WHERE id = ? LIMIT 1").bind(auctionId).first();
+      return json({ ok: true, auction }, 201);
+    }
 
     if (action === "viewer_heartbeat" || action === "viewer_leave") {
       const streamId = clean(data.stream_id, 100);
