@@ -6,6 +6,7 @@
     canGoLive: false,
     canHostAuctions: false,
     auctionDrafts: [],
+    editingAuctionId: "",
     accountId: 0,
     activeAuction: null,
     auctionTimer: null,
@@ -209,6 +210,7 @@
       host.innerHTML = '<div class="ripz-host-content">' +
         '<div class="ripz-host-card ripz-host-span"><div class="ripz-live-badge">Your session</div><h3 style="margin-top:10px">' + esc(state.myStream.title) + '</h3><p>' + esc(state.myStream.product_name) + '</p>' + (state.myStream.status === "live" ? '<p id="ripz-host-viewer-count" class="ripz-viewer-count" aria-live="polite">' + Number(state.myStream.viewer_count || 0) + ' watching</p>' : '') + '<p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite" style="margin-top:10px">' + esc(statusText) + '</p></div>' +
         cameraSetupMarkup(true) +
+        (state.canHostAuctions ? '<div class="ripz-camera-actions ripz-host-span"><button id="ripz-auction-setup" class="ripz-button ripz-button--secondary" type="button">Manage auctions</button><span class="ripz-note">Prepare and edit auction drafts before or during your stream.</span></div>' : '') +
         '<div id="ripz-guest-requests" class="ripz-guest-requests ripz-host-span"><h3>Guest requests</h3><p class="ripz-note">No requests yet.</p></div>' +
         '<div class="ripz-camera-actions ripz-host-span">' +
           '<button id="ripz-host-connect" class="ripz-button" type="button" ' + (state.isPublishing || !state.media ? "disabled" : "") + '>' + (state.myStream.status === "live" ? "Reconnect &amp; go live" : "Go live") + '</button>' +
@@ -478,6 +480,7 @@
   function closeAuctionModal() {
     var modal = $("ripz-auction-modal");
     if (modal) modal.hidden = true;
+    resetAuctionForm();
     var button = $("ripz-host-auctions");
     if (button) button.setAttribute("aria-expanded", "false");
   }
@@ -605,7 +608,9 @@
     list.innerHTML = state.auctionDrafts.map(function (item) {
       var amount = (Number(item.starting_bid_cents || 0) / 100).toFixed(2);
       var label = item.item_type === "single" ? "Single card" : item.item_type === "sealed" ? "Sealed product" : "Collectible";
-      var action = item.status === "draft" ? '<button class="ripz-button" type="button" data-ripz-auction-start="' + esc(item.id) + '">Start auction</button>' : '<span class="ripz-pill">' + esc(item.status) + '</span>';
+      var action = item.status === "draft"
+        ? '<div class="ripz-auction-draft__actions"><button class="ripz-button ripz-button--secondary" type="button" data-ripz-auction-edit="' + esc(item.id) + '">Edit</button><button class="ripz-button" type="button" data-ripz-auction-start="' + esc(item.id) + '">Start auction</button></div>'
+        : '<span class="ripz-pill">' + esc(item.status) + '</span>';
       return '<article class="ripz-auction-draft"><div><strong>' + esc(item.item_title) + '</strong><small>' + esc(label) + " · Starting at " + amount + " USD · " + Number(item.duration_seconds) + " sec · " + esc(item.status) + '</small></div>' + action + '</article>';
     }).join("");
   }
@@ -619,7 +624,7 @@
 
   function openAuctionModal() {
     if (!state.canHostAuctions || !state.myStream || state.myStream.status === "ended") {
-      setStatus("ripz-auction-status", "Start your RIPZ stream session before creating an auction.", true);
+      setStatus("ripz-auction-status", "Create your RIPZ stream session first. You can prepare auctions before pressing Go live.", true);
       return;
     }
     var modal = $("ripz-auction-modal");
@@ -627,9 +632,37 @@
     modal.hidden = false;
     var button = $("ripz-host-auctions");
     if (button) button.setAttribute("aria-expanded", "true");
+    resetAuctionForm();
     loadAuctionDrafts().catch(function (error) { setStatus("ripz-auction-status", error.message || "Could not load auction drafts.", true); });
     var title = $("ripz-auction-title");
     if (title) title.focus();
+  }
+
+  function resetAuctionForm() {
+    state.editingAuctionId = "";
+    var form = $("ripz-auction-form");
+    if (form) form.reset();
+    if ($("ripz-auction-starting")) $("ripz-auction-starting").value = "1.00";
+    if ($("ripz-auction-increment")) $("ripz-auction-increment").value = "1.00";
+    if ($("ripz-auction-duration")) $("ripz-auction-duration").value = "60";
+    if ($("ripz-auction-create")) $("ripz-auction-create").textContent = "Save auction draft";
+  }
+
+  function editAuctionDraft(auctionId) {
+    var item = state.auctionDrafts.find(function (draft) { return draft.id === auctionId && draft.status === "draft"; });
+    if (!item) return;
+    state.editingAuctionId = item.id;
+    $("ripz-auction-type").value = item.item_type || "single";
+    $("ripz-auction-title").value = item.item_title || "";
+    $("ripz-auction-description").value = item.item_description || "";
+    $("ripz-auction-image").value = item.image_url || "";
+    $("ripz-auction-starting").value = (Number(item.starting_bid_cents || 0) / 100).toFixed(2);
+    $("ripz-auction-increment").value = (Number(item.bid_increment_cents || 0) / 100).toFixed(2);
+    $("ripz-auction-buy-now").value = item.buy_now_price_cents ? (Number(item.buy_now_price_cents) / 100).toFixed(2) : "";
+    $("ripz-auction-duration").value = String(item.duration_seconds || 60);
+    $("ripz-auction-create").textContent = "Update auction draft";
+    setStatus("ripz-auction-status", "Editing draft. Saved changes remain private until you start the auction.");
+    $("ripz-auction-title").focus();
   }
 
   async function createAuctionDraft(event) {
@@ -643,18 +676,20 @@
     if (!Number.isSafeInteger(starting) || starting < 1 || !Number.isSafeInteger(increment) || increment < 1 || (buyNow !== null && (!Number.isSafeInteger(buyNow) || buyNow <= starting))) {
       setStatus("ripz-auction-status", "Enter valid prices. Buy It Now must be higher than the starting bid.", true); return;
     }
-    var payload = { action: "auction_create", stream_id: state.myStream.id, item_type: $("ripz-auction-type").value, item_title: $("ripz-auction-title").value, item_description: $("ripz-auction-description").value, image_url: $("ripz-auction-image").value, starting_bid_cents: starting, bid_increment_cents: increment, buy_now_price_cents: buyNow, duration_seconds: Number($("ripz-auction-duration").value) };
+    var payload = { action: state.editingAuctionId ? "auction_update" : "auction_create", auction_id: state.editingAuctionId || undefined, stream_id: state.myStream.id, item_type: $("ripz-auction-type").value, item_title: $("ripz-auction-title").value, item_description: $("ripz-auction-description").value, image_url: $("ripz-auction-image").value, starting_bid_cents: starting, bid_increment_cents: increment, buy_now_price_cents: buyNow, duration_seconds: Number($("ripz-auction-duration").value) };
     if (button) button.disabled = true;
     setStatus("ripz-auction-status", "Saving auction draft…");
     try {
+      var wasEditing = !!state.editingAuctionId;
       var result = await api("POST", payload);
-      if (result.auction) state.auctionDrafts.unshift(result.auction);
+      if (result.auction) {
+        var existingIndex = state.auctionDrafts.findIndex(function (item) { return item.id === result.auction.id; });
+        if (existingIndex >= 0) state.auctionDrafts[existingIndex] = result.auction;
+        else state.auctionDrafts.unshift(result.auction);
+      }
       renderAuctionDrafts();
-      $("ripz-auction-form").reset();
-      $("ripz-auction-starting").value = "1.00";
-      $("ripz-auction-increment").value = "1.00";
-      $("ripz-auction-duration").value = "60";
-      setStatus("ripz-auction-status", "Auction draft saved. It is not visible to viewers and cannot accept bids yet.");
+      resetAuctionForm();
+      setStatus("ripz-auction-status", wasEditing ? "Auction draft updated. It is ready to start when you go live." : "Auction draft saved. It is private and cannot accept bids until you start it during a live stream.");
     } catch (error) { setStatus("ripz-auction-status", error.message || "Could not save auction draft.", true); }
     finally { if (button) button.disabled = false; }
   }
@@ -1650,6 +1685,10 @@
 
   var auctionOpenButton = $("ripz-host-auctions");
   if (auctionOpenButton) auctionOpenButton.addEventListener("click", openAuctionModal);
+  var auctionHostPanel = $("ripz-host-panel");
+  if (auctionHostPanel) auctionHostPanel.addEventListener("click", function (event) {
+    if (event.target.closest("#ripz-auction-setup")) openAuctionModal();
+  });
   var auctionCloseButton = $("ripz-auction-close");
   if (auctionCloseButton) auctionCloseButton.addEventListener("click", closeAuctionModal);
   var auctionBackdrop = $("ripz-auction-modal");
@@ -1658,6 +1697,8 @@
   });
   var auctionDraftList = $("ripz-auction-draft-list");
   if (auctionDraftList) auctionDraftList.addEventListener("click", function (event) {
+    var editButton = event.target.closest("[data-ripz-auction-edit]");
+    if (editButton) { editAuctionDraft(editButton.getAttribute("data-ripz-auction-edit")); return; }
     var button = event.target.closest("[data-ripz-auction-start]");
     if (button) startAuctionDraft(button.getAttribute("data-ripz-auction-start"));
   });
