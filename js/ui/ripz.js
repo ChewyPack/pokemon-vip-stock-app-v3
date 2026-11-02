@@ -230,7 +230,7 @@
       '<label for="ripz-product">What are you ripping?<input id="ripz-product" name="product_name" maxlength="120" required minlength="2" placeholder="e.g. Mega Evolution booster packs"></label>' +
       '<label for="ripz-description">Stream description<textarea id="ripz-description" name="description" maxlength="1000" rows="3" placeholder="Tell viewers what you are opening or hunting for."></textarea></label>' +
       cameraSetupMarkup(false) +
-      '<button id="ripz-start-button" class="ripz-button" type="submit" disabled>🎥 Go live</button>' +
+      '<button id="ripz-start-button" class="ripz-button" type="submit" disabled>Create stream room</button>' +
       '<p id="ripz-host-status" class="ripz-host-status" role="status" aria-live="polite">Start your camera preview first. You can check your picture, microphone, and devices before going live.</p>' +
       '<p class="ripz-note">Your local preview is muted to prevent echo. A camera and microphone are required. Streams are recorded for replay; the MP4 download becomes available after processing.</p>' +
       '</form>';
@@ -1084,8 +1084,7 @@
       }
       var preview = $("ripz-host-preview");
       if (preview) preview.srcObject = state.media;
-      setStatus("ripz-host-status", "Connecting your camera to the live room…");
-      await beginPublish(state.myStream);
+      setStatus("ripz-host-status", "Your stream room is ready. Set up or edit your auctions, then press Go live when you're ready.");
     } catch (error) {
       if (streamCreatedHere && state.myStream) {
         try { await api("POST", { action: "end", stream_id: state.myStream.id }); } catch (_) {}
