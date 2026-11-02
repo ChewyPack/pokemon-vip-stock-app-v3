@@ -43,12 +43,12 @@ async function currentAccount(request, env) {
   const tier = normalizeTier(membership?.membership_entitlement_tier || membership?.membership_tier);
   account.is_admin = Number(account.is_admin || 0) === 1;
   account.membership_status = status;
+  account.membership_tier = tier || "free";
   account.can_go_live = account.is_admin || (
     ["active", "trialing"].includes(status) &&
     ["collector+", "collector plus"].includes(tier)
   );
   account.can_host_auctions = canHostRipzAuctions(account);
-  account.membership_tier = tier || "free";
   return account;
 }
 let schemaPromise = null;
