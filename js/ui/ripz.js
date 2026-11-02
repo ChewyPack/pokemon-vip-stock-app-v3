@@ -6,6 +6,10 @@
     canGoLive: false,
     canHostAuctions: false,
     auctionDrafts: [],
+    accountId: 0,
+    activeAuction: null,
+    auctionTimer: null,
+    auctionClockTimer: null,
     streamingConfigured: false,
     liveStreams: [],
     pastStreams: [],
@@ -325,6 +329,7 @@
   function refreshData() {
     return api("GET").then(function (data) {
       state.authenticated = true;
+      state.accountId = Number(data.account && data.account.id || 0);
       state.canGoLive = !!data.can_go_live;
       state.canHostAuctions = !!data.can_host_auctions;
       state.streamingConfigured = !!data.streaming_configured;
@@ -472,6 +477,119 @@
     if (button) button.setAttribute("aria-expanded", "false");
   }
 
+  function formatAuctionMoney(cents) {
+    return "$" + (Number(cents || 0) / 100).toFixed(2);
+  }
+
+  function renderAuctionOverlay() {
+    var overlay = $("ripz-auction-overlay");
+    if (!overlay) return;
+    var auction = state.activeAuction;
+    if (!auction || auction.status !== "live") {
+      overlay.hidden = true;
+      overlay.innerHTML = "";
+      return;
+    }
+    var isSeller = Number(auction.seller_account_id) === Number(state.accountId);
+    var remaining = Math.max(0, Math.ceil((Date.parse(auction.ends_at) - Date.now()) / 1000));
+    var current = Number(auction.bid_count) ? Number(auction.current_bid_cents) : Number(auction.starting_bid_cents);
+    var minimum = Number(auction.minimum_bid_cents || auction.starting_bid_cents);
+    var image = auction.image_url ? '<img class="ripz-auction-overlay__image" src="' + esc(auction.image_url) + '" alt="' + esc(auction.item_title) + '">' : '<div class="ripz-auction-overlay__image ripz-auction-overlay__placeholder">🎴</div>';
+    var bids = (auction.recent_bids || []).slice(0, 5).map(function (bid) {
+      return '<li><span>@' + esc(bid.bidder_name) + '</span><strong>' + formatAuctionMoney(bid.amount_cents) + '</strong></li>';
+    }).join("");
+    overlay.innerHTML = '<div class="ripz-auction-overlay__card">' +
+      '<div class="ripz-auction-overlay__top"><span class="ripz-auction-overlay__live"><i></i> LIVE AUCTION</span><span class="ripz-auction-overlay__time" data-auction-ends="' + esc(auction.ends_at) + '">' + remaining + 's left</span></div>' +
+      '<div class="ripz-auction-overlay__body">' + image + '<div class="ripz-auction-overlay__details"><strong>' + esc(auction.item_title) + '</strong><span>' + esc(auction.item_type === "single" ? "Single card" : auction.item_type === "sealed" ? "Sealed product" : "Collectible") + ' · Hosted by @' + esc(auction.seller_name || "Collector") + '</span>' +
+      '<div class="ripz-auction-overlay__price"><small>Current bid</small><b>' + formatAuctionMoney(current) + '</b><small>' + Number(auction.bid_count || 0) + ' bids' + (auction.highest_bidder_name ? ' · @' + esc(auction.highest_bidder_name) + ' leading' : '') + '</small></div></div></div>' +
+      '<div class="ripz-auction-overlay__actions">' + (isSeller ? '<span class="ripz-auction-overlay__seller">You are hosting this auction</span>' : '<button type="button" class="ripz-button" id="ripz-place-bid" data-auction-id="' + esc(auction.id) + '" data-bid-cents="' + minimum + '">Bid ' + formatAuctionMoney(minimum) + '</button>') +
+      '<span class="ripz-auction-overlay__minimum">' + (isSeller ? 'Bidding is open to viewers' : 'Next minimum bid') + '</span></div>' +
+      (bids ? '<ul class="ripz-auction-overlay__bids">' + bids + '</ul>' : '<p class="ripz-auction-overlay__first">Be the first to bid.</p>') +
+      '</div>';
+    overlay.hidden = false;
+    var bidButton = $("ripz-place-bid");
+    if (bidButton) bidButton.addEventListener("click", placeAuctionBid);
+  }
+
+  function renderAuctionClock() {
+    var node = $("ripz-auction-overlay");
+    if (!node || node.hidden || !state.activeAuction) return;
+    var time = node.querySelector("[data-auction-ends]");
+    if (!time) return;
+    var remaining = Math.max(0, Math.ceil((Date.parse(time.getAttribute("data-auction-ends")) - Date.now()) / 1000));
+    time.textContent = remaining + "s left";
+    if (remaining <= 0) time.textContent = "Closing…";
+  }
+
+  function activeAuctionStreamId() {
+    if (state.myStream && state.myStream.status === "live") return state.myStream.id;
+    if (state.selectedStream && state.selectedStream.id) return state.selectedStream.id;
+    return "";
+  }
+
+  async function refreshActiveAuction() {
+    var streamId = activeAuctionStreamId();
+    if (!streamId) {
+      state.activeAuction = null;
+      renderAuctionOverlay();
+      return;
+    }
+    try {
+      var result = await api("POST", { action: "auction_state", stream_id: streamId });
+      state.activeAuction = result.auction || null;
+      renderAuctionOverlay();
+      if (result.ended_auction_id) {
+        loadAuctionDrafts().catch(function () {});
+      }
+    } catch (_) {}
+  }
+
+  async function placeAuctionBid(event) {
+    var button = event.currentTarget;
+    if (!button || button.disabled) return;
+    var auctionId = button.getAttribute("data-auction-id");
+    var amount = Number(button.getAttribute("data-bid-cents"));
+    if (!auctionId || !Number.isSafeInteger(amount) || amount < 1) return;
+    button.disabled = true;
+    button.textContent = "Submitting…";
+    try {
+      await api("POST", {
+        action: "auction_bid",
+        auction_id: auctionId,
+        amount_cents: amount,
+        idempotency_key: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(36).slice(2)
+      });
+      await refreshActiveAuction();
+    } catch (error) {
+      if (error.data && error.data.minimum_bid_cents) {
+        button.textContent = "Next bid " + formatAuctionMoney(error.data.minimum_bid_cents);
+      } else {
+        button.textContent = error.message || "Bid failed";
+      }
+      window.setTimeout(function () { refreshActiveAuction(); }, 1200);
+    } finally {
+      window.setTimeout(function () {
+        var current = $("ripz-place-bid");
+        if (current) { current.disabled = false; current.textContent = "Bid " + formatAuctionMoney(current.getAttribute("data-bid-cents")); }
+      }, 900);
+    }
+  }
+
+  async function startAuctionDraft(auctionId) {
+    var buttons = $("ripz-auction-draft-list");
+    if (buttons) buttons.querySelectorAll("[data-ripz-auction-start]").forEach(function (button) { button.disabled = true; });
+    try {
+      await api("POST", { action: "auction_start", auction_id: auctionId });
+      setStatus("ripz-auction-status", "Auction is live. Viewers can now bid.");
+      await loadAuctionDrafts();
+      await refreshActiveAuction();
+    } catch (error) {
+      setStatus("ripz-auction-status", error.message || "Could not start auction.", true);
+    } finally {
+      if (buttons) buttons.querySelectorAll("[data-ripz-auction-start]").forEach(function (button) { button.disabled = false; });
+    }
+  }
+
   function renderAuctionDrafts() {
     var list = $("ripz-auction-draft-list");
     if (!list) return;
@@ -482,7 +600,8 @@
     list.innerHTML = state.auctionDrafts.map(function (item) {
       var amount = (Number(item.starting_bid_cents || 0) / 100).toFixed(2);
       var label = item.item_type === "single" ? "Single card" : item.item_type === "sealed" ? "Sealed product" : "Collectible";
-      return '<article class="ripz-auction-draft"><div><strong>' + esc(item.item_title) + '</strong><small>' + esc(label) + " · Starting at " + amount + " USD · " + Number(item.duration_seconds) + " sec · " + esc(item.status) + '</small></div><span class="ripz-pill">Draft</span></article>';
+      var action = item.status === "draft" ? '<button class="ripz-button" type="button" data-ripz-auction-start="' + esc(item.id) + '">Start auction</button>' : '<span class="ripz-pill">' + esc(item.status) + '</span>';
+      return '<article class="ripz-auction-draft"><div><strong>' + esc(item.item_title) + '</strong><small>' + esc(label) + " · Starting at " + amount + " USD · " + Number(item.duration_seconds) + " sec · " + esc(item.status) + '</small></div>' + action + '</article>';
     }).join("");
   }
 
@@ -1532,6 +1651,11 @@
   if (auctionBackdrop) auctionBackdrop.addEventListener("click", function (event) {
     if (event.target === auctionBackdrop) closeAuctionModal();
   });
+  var auctionDraftList = $("ripz-auction-draft-list");
+  if (auctionDraftList) auctionDraftList.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-ripz-auction-start]");
+    if (button) startAuctionDraft(button.getAttribute("data-ripz-auction-start"));
+  });
   var auctionForm = $("ripz-auction-form");
   if (auctionForm) auctionForm.addEventListener("submit", createAuctionDraft);
 
@@ -1553,6 +1677,8 @@
   var pauseButton = $("ripz-host-pause"); if (pauseButton) pauseButton.addEventListener("click", toggleHostPause);
 
   refreshData().then(function () {
+    if (!state.auctionTimer) state.auctionTimer = window.setInterval(refreshActiveAuction, 1800);
+    if (!state.auctionClockTimer) state.auctionClockTimer = window.setInterval(renderAuctionClock, 1000);
     state.listTimer = window.setInterval(refreshLiveList, 12000);
     state.chatTimer = window.setInterval(function () {
       if (state.selectedStream) loadChat(state.selectedStream.id);
