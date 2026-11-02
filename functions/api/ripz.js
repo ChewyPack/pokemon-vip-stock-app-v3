@@ -407,10 +407,10 @@ export async function onRequestPost({ request, env }) {
       const buyNow = data.buy_now_price_cents == null || data.buy_now_price_cents === "" ? null : Number(data.buy_now_price_cents);
       const duration = Number(data.duration_seconds);
       if (!streamId || !itemType || itemTitle.length < 2 ||
-          !Number.isSafeInteger(startingBid) || startingBid < 1 ||
-          !Number.isSafeInteger(increment) || increment < 1 ||
+          !Number.isSafeInteger(startingBid) || startingBid < 1 || startingBid > 100000000 ||
+          !Number.isSafeInteger(increment) || increment < 1 || increment > 100000000 ||
           !Number.isInteger(duration) || duration < 15 || duration > 600 ||
-          (buyNow !== null && (!Number.isSafeInteger(buyNow) || buyNow <= startingBid))) {
+          (buyNow !== null && (!Number.isSafeInteger(buyNow) || buyNow <= startingBid || buyNow > 100000000))) {
         return json({ ok: false, error: "invalid_auction_details", message: "Check the item, starting bid, bid increment, duration and optional Buy It Now price." }, 400);
       }
       if (imageUrl && !/^https:\/\//i.test(imageUrl)) {
