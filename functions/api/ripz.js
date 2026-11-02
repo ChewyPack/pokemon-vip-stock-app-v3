@@ -43,7 +43,11 @@ async function currentAccount(request, env) {
   const tier = normalizeTier(membership?.membership_entitlement_tier || membership?.membership_tier);
   account.is_admin = Number(account.is_admin || 0) === 1;
   account.membership_status = status;
-  account.can_go_live = canHostRipzAuctions(account);
+  account.can_go_live = account.is_admin || (
+    ["active", "trialing"].includes(status) &&
+    ["collector+", "collector plus"].includes(tier)
+  );
+  account.can_host_auctions = canHostRipzAuctions(account);
   account.membership_tier = tier || "free";
   return account;
 }
@@ -348,6 +352,7 @@ export async function onRequestGet({ request, env }) {
       membership_tier: account.membership_tier,
       authenticated: true,
       can_go_live: Boolean(account.can_go_live),
+      can_host_auctions: Boolean(account.can_host_auctions),
       streaming_configured: cloudflareConfigured(env),
       live_streams: liveRows.map(row => streamShape(row, false)),
       past_streams: pastRows.map(row => ({ ...streamShape(row, false), ended_at: row.ended_at || null, replay_url: "https://iframe.videodelivery.net/" + encodeURIComponent(row.cloudflare_video_uid) })),
