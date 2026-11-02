@@ -6,6 +6,7 @@
     canGoLive: false,
     canHostAuctions: false,
     auctionDrafts: [],
+    catalogProducts: [],
     editingAuctionId: "",
     accountId: 0,
     activeAuction: null,
@@ -549,6 +550,7 @@
       if (result.ended_auction_id) {
         loadAuctionDrafts().catch(function () {});
       }
+      syncNextAuctionButton();
     } catch (_) {}
   }
 
@@ -583,6 +585,70 @@
     }
   }
 
+  async function searchAuctionCatalog() {
+    var query = ($("ripz-auction-catalog-search") || {}).value || "";
+    query = query.trim();
+    var type = ($("ripz-auction-catalog-type") || {}).value || "single";
+    var resultsNode = $("ripz-auction-catalog-results");
+    if (query.length < 2) { setStatus("ripz-auction-catalog-status", "Enter at least two characters to search."); return; }
+    setStatus("ripz-auction-catalog-status", "Searching the synced TCGCSV catalog…");
+    if (resultsNode) resultsNode.innerHTML = "";
+    try {
+      var response = await fetch("/api/collector/catalog?" + new URLSearchParams({ q: query, type: type === "graded" ? "single" : type, limit: "30" }).toString(), { credentials: "same-origin", cache: "no-store" });
+      var data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.message || "Catalog search is unavailable.");
+      state.catalogProducts = Array.isArray(data.products) ? data.products : [];
+      if (!state.catalogProducts.length) { setStatus("ripz-auction-catalog-status", "No matching catalog items found."); return; }
+      setStatus("ripz-auction-catalog-status", state.catalogProducts.length + " catalog matches. Add each item to your queue.");
+      resultsNode.innerHTML = state.catalogProducts.map(function (p, index) {
+        var meta = [p.set_name, p.card_number ? "#" + p.card_number : "", p.rarity, p.market_price == null ? "Market price unavailable" : "Market $" + Number(p.market_price).toFixed(2)].filter(Boolean).join(" · ");
+        return '<article class="ripz-auction-catalog__item">' + (p.image_url ? '<img src="' + esc(p.image_url) + '" alt="" loading="lazy">' : '') + '<div><strong>' + esc(p.name) + '</strong><small>' + esc(meta || "TCGCSV catalog item") + '</small></div><button type="button" class="ripz-button" data-ripz-catalog-add="' + index + '">Add to queue</button></article>';
+      }).join("");
+    } catch (error) { setStatus("ripz-auction-catalog-status", error.message || "Catalog search failed.", true); }
+  }
+
+  async function addCatalogAuction(index) {
+    var product = state.catalogProducts[index];
+    if (!product || !state.myStream || !state.myStream.id) return;
+    var type = ($("ripz-auction-catalog-type") || {}).value || "single";
+    var title = product.name || "Pokémon TCG item";
+    var description = [product.set_name, product.card_number ? "Card #" + product.card_number : "", product.rarity, product.market_price == null ? "" : "TCGCSV market reference $" + Number(product.market_price).toFixed(2), "TCGCSV product #" + product.tcgcsv_product_id].filter(Boolean).join(" · ");
+    if (type === "graded") {
+      var company = (($("ripz-auction-grade-company") || {}).value || "").trim().toUpperCase();
+      var grade = (($("ripz-auction-grade-value") || {}).value || "").trim();
+      if (!company || !grade) { setStatus("ripz-auction-catalog-status", "Enter the grading company and grade before adding a graded card.", true); return; }
+      title = company + " " + grade + " · " + title;
+      description = "Graded card · " + company + " " + grade + (description.length ? " · " + description : "");
+    }
+    try {
+      await api("POST", { action: "auction_create", stream_id: state.myStream.id, item_type: type === "sealed" ? "sealed" : "single", item_title: title, item_description: description, image_url: product.image_url || "", starting_bid_cents: 100, bid_increment_cents: 100, duration_seconds: 60 });
+      await loadAuctionDrafts();
+      setStatus("ripz-auction-catalog-status", title + " added to the auction queue. Edit its starting bid and timing below if needed.");
+    } catch (error) { setStatus("ripz-auction-catalog-status", error.message || "Could not add catalog item.", true); }
+  }
+
+  function syncNextAuctionButton() {
+    var button = $("ripz-host-next-item");
+    if (!button) return;
+    var isHostLive = !!(state.myStream && state.myStream.status === "live");
+    var hasActive = !!state.activeAuction;
+    var hasDraft = state.auctionDrafts.some(function (item) { return item.status === "draft"; });
+    button.disabled = !state.canHostAuctions || !isHostLive || hasActive || !hasDraft;
+    button.textContent = hasActive ? "Auction in progress" : hasDraft ? "Next Item" : "Queue empty";
+  }
+
+  async function startNextAuctionItem() {
+    var button = $("ripz-host-next-item");
+    if (!state.myStream || state.myStream.status !== "live" || state.activeAuction) return;
+    if (button) button.disabled = true;
+    try {
+      await loadAuctionDrafts();
+      var next = state.auctionDrafts.find(function (item) { return item.status === "draft"; });
+      if (!next) { setStatus("ripz-auction-status", "There are no more items in the queue."); return; }
+      await startAuctionDraft(next.id);
+    } finally { syncNextAuctionButton(); }
+  }
+
   async function startAuctionDraft(auctionId) {
     var buttons = $("ripz-auction-draft-list");
     if (buttons) buttons.querySelectorAll("[data-ripz-auction-start]").forEach(function (button) { button.disabled = true; });
@@ -607,7 +673,7 @@
     }
     list.innerHTML = state.auctionDrafts.map(function (item) {
       var amount = (Number(item.starting_bid_cents || 0) / 100).toFixed(2);
-      var label = item.item_type === "single" ? "Single card" : item.item_type === "sealed" ? "Sealed product" : "Collectible";
+      var label = String(item.item_description || "").indexOf("Graded card ·") === 0 ? "Graded card" : item.item_type === "single" ? "Single card" : item.item_type === "sealed" ? "Sealed product" : "Collectible";
       var action = item.status === "draft"
         ? '<div class="ripz-auction-draft__actions"><button class="ripz-button ripz-button--secondary" type="button" data-ripz-auction-edit="' + esc(item.id) + '">Edit</button><button class="ripz-button" type="button" data-ripz-auction-start="' + esc(item.id) + '">Start auction</button></div>'
         : '<span class="ripz-pill">' + esc(item.status) + '</span>';
@@ -620,6 +686,7 @@
     var result = await api("POST", { action: "auction_list", stream_id: state.myStream.id });
     state.auctionDrafts = Array.isArray(result.auctions) ? result.auctions : [];
     renderAuctionDrafts();
+    syncNextAuctionButton();
   }
 
   function openAuctionModal() {
@@ -1703,6 +1770,16 @@
   });
   var auctionForm = $("ripz-auction-form");
   if (auctionForm) auctionForm.addEventListener("submit", createAuctionDraft);
+  var catalogSearchButton = $("ripz-auction-catalog-search-button");
+  if (catalogSearchButton) catalogSearchButton.addEventListener("click", searchAuctionCatalog);
+  var catalogSearchInput = $("ripz-auction-catalog-search");
+  if (catalogSearchInput) catalogSearchInput.addEventListener("keydown", function (event) { if (event.key === "Enter") { event.preventDefault(); searchAuctionCatalog(); } });
+  var catalogType = $("ripz-auction-catalog-type");
+  if (catalogType) catalogType.addEventListener("change", function () { var graded = $("ripz-auction-graded-fields"); if (graded) graded.hidden = catalogType.value !== "graded"; });
+  var catalogResults = $("ripz-auction-catalog-results");
+  if (catalogResults) catalogResults.addEventListener("click", function (event) { var add = event.target.closest("[data-ripz-catalog-add]"); if (add) addCatalogAuction(Number(add.getAttribute("data-ripz-catalog-add"))); });
+  var nextItemButton = $("ripz-host-next-item");
+  if (nextItemButton) nextItemButton.addEventListener("click", startNextAuctionItem);
 
   var giveawayOpenButton = $("ripz-host-giveaway");
   if (giveawayOpenButton) giveawayOpenButton.addEventListener("click", openGiveawayModal);
