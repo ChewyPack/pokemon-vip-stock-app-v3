@@ -413,7 +413,7 @@ export async function onRequestPost({ request, env }) {
           (buyNow !== null && (!Number.isSafeInteger(buyNow) || buyNow <= startingBid || buyNow > 100000000))) {
         return json({ ok: false, error: "invalid_auction_details", message: "Check the item, starting bid, bid increment, duration and optional Buy It Now price." }, 400);
       }
-      if (imageUrl && !/^https:\/\//i.test(imageUrl)) {
+      if (imageUrl && !imageUrl.toLowerCase().startsWith("https://")) {
         return json({ ok: false, error: "invalid_image_url", message: "Item image links must use HTTPS." }, 400);
       }
       const stream = await env.DB.prepare("SELECT id, account_id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
