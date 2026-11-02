@@ -451,6 +451,8 @@ export async function onRequestPost({ request, env }) {
       }
       if (!canHostRipzAuctions(account)) return json({ ok: false, error: "collector_plus_required" }, 403);
       if (auction.stream_status !== "live") return json({ ok: false, error: "stream_not_live", message: "Go live before starting an auction." }, 409);
+      const otherLive = await env.DB.prepare("SELECT id FROM ripz_auctions WHERE stream_id=? AND status='live' AND julianday(ends_at)>julianday(?) LIMIT 1").bind(auction.stream_id, new Date().toISOString()).first();
+      if (otherLive) return json({ ok: false, error: "auction_already_live", message: "Finish the current live auction before starting another." }, 409);
       const startedAt = new Date().toISOString();
       const endsAt = new Date(Date.now() + Number(auction.duration_seconds) * 1000).toISOString();
       const results = await env.DB.batch([
