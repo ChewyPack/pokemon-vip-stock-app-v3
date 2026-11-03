@@ -375,6 +375,19 @@ export async function onRequestPost({ request, env }) {
     try { data = await request.json(); } catch (_) { return json({ ok: false, error: "bad_request" }, 400); }
     const action = clean(data?.action, 30);
 
+    if (action === "auction_upcoming") {
+      const streamId = clean(data.stream_id, 100);
+      if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
+      const stream = await env.DB.prepare("SELECT id, status FROM ripz_streams WHERE id = ? LIMIT 1").bind(streamId).first();
+      if (!stream || !["live", "ready"].includes(stream.status)) return json({ ok: false, error: "stream_not_available" }, 404);
+      const { results = [] } = await env.DB.prepare(`
+        SELECT id, item_type, item_title, item_description, image_url, starting_bid_cents, duration_seconds, created_at
+        FROM ripz_auctions WHERE stream_id = ? AND status = 'draft'
+        ORDER BY created_at ASC, rowid ASC LIMIT 30
+      `).bind(streamId).all();
+      return json({ ok: true, items: results });
+    }
+
     if (action === "auction_list") {
       const streamId = clean(data.stream_id, 100);
       if (!streamId) return json({ ok: false, error: "stream_id_required" }, 400);
