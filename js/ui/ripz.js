@@ -544,7 +544,9 @@
     var streamId = activeAuctionStreamId();
     if (!streamId) {
       state.activeAuction = null;
+      state.upcomingItems = [];
       renderAuctionOverlay();
+      renderUpcomingItems();
       return;
     }
     try {
@@ -642,7 +644,8 @@
     var modal = $("ripz-viewer-upcoming-modal");
     var list = $("ripz-viewer-upcoming-list");
     if (!button || !list) return;
-    button.hidden = !state.selectedStream && !(state.myStream && state.myStream.status === "live");
+    var hasLiveStream = !!((state.selectedStream && state.selectedStream.status === "live") || (state.myStream && state.myStream.status === "live"));
+    button.hidden = !hasLiveStream;
     button.textContent = "Upcoming Items" + (state.upcomingItems.length ? " (" + state.upcomingItems.length + ")" : "");
     if (!state.upcomingItems.length) list.innerHTML = '<p class="ripz-note">The host has not added any upcoming items yet.</p>';
     else list.innerHTML = state.upcomingItems.map(function (item, index) {
@@ -1374,6 +1377,9 @@
     if (state.selectedStream && state.selectedStream.id === stream.id && state.playback) return;
     await closePlayback();
     state.selectedStream = stream;
+    state.upcomingItems = [];
+    renderUpcomingItems();
+    refreshUpcomingItems(stream.id).catch(function () {});
     var guestJoinPanel = $("ripz-guest-join-panel");
     if (guestJoinPanel) guestJoinPanel.hidden = !!(state.myStream && state.myStream.status === "live" && state.myStream.id === stream.id);
     state.guestRequest = null;
