@@ -7,6 +7,10 @@
     canHostAuctions: false,
     auctionDrafts: [],
     catalogProducts: [],
+    catalogSearchTimer: null,
+    catalogSearchRequest: 0,
+    upcomingItems: [],
+    upcomingItemsOpen: false,
     editingAuctionId: "",
     accountId: 0,
     activeAuction: null,
@@ -547,6 +551,7 @@
       var result = await api("POST", { action: "auction_state", stream_id: streamId });
       state.activeAuction = result.auction || null;
       renderAuctionOverlay();
+      refreshUpcomingItems(streamId).catch(function () {});
       if (result.ended_auction_id) {
         loadAuctionDrafts().catch(function () {});
       }
@@ -590,22 +595,67 @@
     query = query.trim();
     var type = ($("ripz-auction-catalog-type") || {}).value || "single";
     var resultsNode = $("ripz-auction-catalog-results");
-    if (query.length < 2) { setStatus("ripz-auction-catalog-status", "Enter at least two characters to search."); return; }
+    var requestId = ++state.catalogSearchRequest;
+    if (query.length < 2) {
+      state.catalogProducts = [];
+      if (resultsNode) resultsNode.innerHTML = "";
+      setStatus("ripz-auction-catalog-status", "Type at least two characters to search cards and products.");
+      return;
+    }
     setStatus("ripz-auction-catalog-status", "Searching the synced TCGCSV catalog…");
-    if (resultsNode) resultsNode.innerHTML = "";
     try {
       var response = await fetch("/api/collector/catalog?" + new URLSearchParams({ q: query, type: type === "graded" ? "single" : type, limit: "30" }).toString(), { credentials: "same-origin", cache: "no-store" });
       var data = await response.json();
-      if (!response.ok || !data.ok) throw new Error(data.message || "Catalog search is unavailable.");
+      if (requestId !== state.catalogSearchRequest) return;
+      if (!response.ok || !data.ok) throw new Error(data.message || data.error || "Catalog search is unavailable.");
       state.catalogProducts = Array.isArray(data.products) ? data.products : [];
-      if (!state.catalogProducts.length) { setStatus("ripz-auction-catalog-status", "No matching catalog items found."); return; }
-      setStatus("ripz-auction-catalog-status", state.catalogProducts.length + " catalog matches. Add each item to your queue.");
-      resultsNode.innerHTML = state.catalogProducts.map(function (p, index) {
+      if (!state.catalogProducts.length) {
+        if (resultsNode) resultsNode.innerHTML = "";
+        setStatus("ripz-auction-catalog-status", "No matching catalog items found.");
+        return;
+      }
+      setStatus("ripz-auction-catalog-status", state.catalogProducts.length + " matches. Select an item to add it to your queue.");
+      if (resultsNode) resultsNode.innerHTML = state.catalogProducts.map(function (p, index) {
         var meta = [p.set_name, p.card_number ? "#" + p.card_number : "", p.rarity, p.market_price == null ? "Market price unavailable" : "Market $" + Number(p.market_price).toFixed(2)].filter(Boolean).join(" · ");
-        return '<article class="ripz-auction-catalog__item">' + (p.image_url ? '<img src="' + esc(p.image_url) + '" alt="" loading="lazy">' : '') + '<div><strong>' + esc(p.name) + '</strong><small>' + esc(meta || "TCGCSV catalog item") + '</small></div><button type="button" class="ripz-button" data-ripz-catalog-add="' + index + '">Add to queue</button></article>';
+        return '<article class="ripz-auction-catalog__item">' + (p.image_url ? '<img src="' + esc(p.image_url) + '" alt="" loading="lazy">' : '<div class="ripz-auction-catalog__placeholder">🎴</div>') + '<div><strong>' + esc(p.name) + '</strong><small>' + esc(meta || "TCGCSV catalog item") + '</small></div><button type="button" class="ripz-button" data-ripz-catalog-add="' + index + '">Add to queue</button></article>';
       }).join("");
-    } catch (error) { setStatus("ripz-auction-catalog-status", error.message || "Catalog search failed.", true); }
+    } catch (error) {
+      if (requestId !== state.catalogSearchRequest) return;
+      setStatus("ripz-auction-catalog-status", error.message || "Catalog search failed.", true);
+    }
   }
+
+  function queueCatalogSearch() {
+    if (state.catalogSearchTimer) window.clearTimeout(state.catalogSearchTimer);
+    state.catalogSearchTimer = window.setTimeout(searchAuctionCatalog, 280);
+  }
+
+  async function refreshUpcomingItems(streamId) {
+    if (!streamId) return;
+    var result = await api("POST", { action: "auction_upcoming", stream_id: streamId });
+    state.upcomingItems = Array.isArray(result.items) ? result.items : [];
+    renderUpcomingItems();
+  }
+
+  function renderUpcomingItems() {
+    var button = $("ripz-viewer-upcoming-button");
+    var modal = $("ripz-viewer-upcoming-modal");
+    var list = $("ripz-viewer-upcoming-list");
+    if (!button || !list) return;
+    button.hidden = !state.selectedStream && !(state.myStream && state.myStream.status === "live");
+    button.textContent = "Upcoming Items" + (state.upcomingItems.length ? " (" + state.upcomingItems.length + ")" : "");
+    if (!state.upcomingItems.length) list.innerHTML = '<p class="ripz-note">The host has not added any upcoming items yet.</p>';
+    else list.innerHTML = state.upcomingItems.map(function (item, index) {
+      var image = item.image_url ? '<img src="' + esc(item.image_url) + '" alt="" loading="lazy">' : '<div class="ripz-viewer-upcoming__placeholder">🎴</div>';
+      var kind = item.item_type === "sealed" ? "Sealed product" : String(item.item_description || "").indexOf("Graded card ·") === 0 ? "Graded card" : item.item_type === "single" ? "Single card" : "Collectible";
+      var meta = kind + " · Starting at " + formatAuctionMoney(item.starting_bid_cents);
+      return '<article class="ripz-viewer-upcoming__item">' + image + '<div><small>UP NEXT · ' + (index + 1) + '</small><strong>' + esc(item.item_title) + '</strong><span>' + esc(meta) + '</span>' + (item.item_description ? '<span>' + esc(item.item_description) + '</span>' : '') + '</div></article>';
+    }).join("");
+    if (modal) modal.hidden = !state.upcomingItemsOpen;
+  }
+
+  function openUpcomingItems() { state.upcomingItemsOpen = true; renderUpcomingItems(); }
+  function closeUpcomingItems() { state.upcomingItemsOpen = false; renderUpcomingItems(); }
 
   async function addCatalogAuction(index) {
     var product = state.catalogProducts[index];
@@ -1773,9 +1823,18 @@
   var catalogSearchButton = $("ripz-auction-catalog-search-button");
   if (catalogSearchButton) catalogSearchButton.addEventListener("click", searchAuctionCatalog);
   var catalogSearchInput = $("ripz-auction-catalog-search");
-  if (catalogSearchInput) catalogSearchInput.addEventListener("keydown", function (event) { if (event.key === "Enter") { event.preventDefault(); searchAuctionCatalog(); } });
+  if (catalogSearchInput) {
+    catalogSearchInput.addEventListener("input", queueCatalogSearch);
+    catalogSearchInput.addEventListener("keydown", function (event) { if (event.key === "Enter") { event.preventDefault(); if (state.catalogSearchTimer) window.clearTimeout(state.catalogSearchTimer); searchAuctionCatalog(); } });
+  }
   var catalogType = $("ripz-auction-catalog-type");
-  if (catalogType) catalogType.addEventListener("change", function () { var graded = $("ripz-auction-graded-fields"); if (graded) graded.hidden = catalogType.value !== "graded"; });
+  if (catalogType) catalogType.addEventListener("change", function () { var graded = $("ripz-auction-graded-fields"); if (graded) graded.hidden = catalogType.value !== "graded"; queueCatalogSearch(); });
+  var upcomingButton = $("ripz-viewer-upcoming-button");
+  if (upcomingButton) upcomingButton.addEventListener("click", openUpcomingItems);
+  var upcomingClose = $("ripz-viewer-upcoming-close");
+  if (upcomingClose) upcomingClose.addEventListener("click", closeUpcomingItems);
+  var upcomingModal = $("ripz-viewer-upcoming-modal");
+  if (upcomingModal) upcomingModal.addEventListener("click", function (event) { if (event.target === upcomingModal) closeUpcomingItems(); });
   var catalogResults = $("ripz-auction-catalog-results");
   if (catalogResults) catalogResults.addEventListener("click", function (event) { var add = event.target.closest("[data-ripz-catalog-add]"); if (add) addCatalogAuction(Number(add.getAttribute("data-ripz-catalog-add"))); });
   var nextItemButton = $("ripz-host-next-item");
@@ -1790,7 +1849,7 @@
     if (event.target === giveawayBackdrop) closeGiveawayModal();
   });
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") { closeGiveawayModal(); closeAuctionModal(); }
+    if (event.key === "Escape") { closeGiveawayModal(); closeAuctionModal(); closeUpcomingItems(); }
   });
   var dockEndButton = $("ripz-host-dock-end");
   if (dockEndButton) dockEndButton.addEventListener("click", function () { stopHostStream(false); });
