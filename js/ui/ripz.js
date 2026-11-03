@@ -507,17 +507,13 @@
     var remaining = Math.max(0, Math.ceil((Date.parse(auction.ends_at) - Date.now()) / 1000));
     var current = Number(auction.bid_count) ? Number(auction.current_bid_cents) : Number(auction.starting_bid_cents);
     var minimum = Number(auction.minimum_bid_cents || auction.starting_bid_cents);
+    var kind = String(auction.item_description || "").indexOf("Graded card ·") === 0 ? "Graded" : auction.item_type === "single" ? "Single" : auction.item_type === "sealed" ? "Sealed" : "Collectible";
     var image = auction.image_url ? '<img class="ripz-auction-overlay__image" src="' + esc(auction.image_url) + '" alt="' + esc(auction.item_title) + '">' : '<div class="ripz-auction-overlay__image ripz-auction-overlay__placeholder">🎴</div>';
-    var bids = (auction.recent_bids || []).slice(0, 5).map(function (bid) {
-      return '<li><span>@' + esc(bid.bidder_name) + '</span><strong>' + formatAuctionMoney(bid.amount_cents) + '</strong></li>';
-    }).join("");
     overlay.innerHTML = '<div class="ripz-auction-overlay__card">' +
       '<div class="ripz-auction-overlay__top"><span class="ripz-auction-overlay__live"><i></i> LIVE AUCTION</span><span class="ripz-auction-overlay__time" data-auction-ends="' + esc(auction.ends_at) + '">' + remaining + 's left</span></div>' +
-      '<div class="ripz-auction-overlay__body">' + image + '<div class="ripz-auction-overlay__details"><strong>' + esc(auction.item_title) + '</strong><span>' + esc(String(auction.item_description || "").indexOf("Graded card ·") === 0 ? "Graded card" : auction.item_type === "single" ? "Single card" : auction.item_type === "sealed" ? "Sealed product" : "Collectible") + ' · Hosted by @' + esc(auction.seller_name || "Collector") + '</span>' + (auction.item_description ? '<span>' + esc(auction.item_description) + '</span>' : '') +
-      '<div class="ripz-auction-overlay__price"><small>' + (Number(auction.bid_count) ? "Current bid" : "Starting bid") + '</small><b>' + formatAuctionMoney(current) + '</b><small>' + Number(auction.bid_count || 0) + ' bids' + (auction.highest_bidder_name ? ' · @' + esc(auction.highest_bidder_name) + ' leading' : '') + '</small></div></div></div>' +
-      '<div class="ripz-auction-overlay__actions">' + (isSeller ? '<span class="ripz-auction-overlay__seller">You are hosting this auction</span>' : '<button type="button" class="ripz-button" id="ripz-place-bid" data-auction-id="' + esc(auction.id) + '" data-bid-cents="' + minimum + '">Bid ' + formatAuctionMoney(minimum) + '</button>') +
-      '<span class="ripz-auction-overlay__minimum">' + (isSeller ? 'Bidding is open to viewers' : 'Next minimum bid') + '</span></div>' +
-      (bids ? '<ul class="ripz-auction-overlay__bids">' + bids + '</ul>' : '<p class="ripz-auction-overlay__first">Be the first to bid.</p>') +
+      '<div class="ripz-auction-overlay__body">' + image + '<div class="ripz-auction-overlay__details"><strong>' + esc(auction.item_title) + '</strong><span>' + esc(kind + ' · @' + (auction.seller_name || "Collector")) + '</span><div class="ripz-auction-overlay__price"><small>' + (Number(auction.bid_count) ? "Current" : "Start") + '</small><b>' + formatAuctionMoney(current) + '</b><small>' + Number(auction.bid_count || 0) + ' bids</small></div></div></div>' +
+      '<div class="ripz-auction-overlay__actions">' + (isSeller ? '<span class="ripz-auction-overlay__seller">Your auction · bids open</span>' : '<button type="button" class="ripz-button" id="ripz-place-bid" data-auction-id="' + esc(auction.id) + '" data-bid-cents="' + minimum + '">Bid ' + formatAuctionMoney(minimum) + '</button>') +
+      '<span class="ripz-auction-overlay__minimum">' + (isSeller ? '' : 'Next bid') + '</span></div>' +
       '</div>';
     overlay.hidden = false;
     var bidButton = $("ripz-place-bid");
