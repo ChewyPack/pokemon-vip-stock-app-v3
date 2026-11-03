@@ -292,6 +292,7 @@
                 <div id="ripz-guest-video-grid" class="ripz-guest-video-grid" hidden aria-label="Guest video feed"></div>
                 <button id="ripz-video-fullscreen" class="ripz-video-fullscreen" type="button" aria-label="View host and guest feeds full screen">⛶ Full screen</button>
                 <div id="ripz-auction-overlay" class="ripz-auction-overlay" hidden aria-live="polite"></div>
+                <button id="ripz-viewer-upcoming-button" class="ripz-viewer-upcoming-button" type="button" hidden>Upcoming Items</button>
               </div>
               <div id="ripz-viewer-giveaway-overlay" class="ripz-viewer-giveaway-overlay" hidden aria-live="polite"></div>
               <iframe id="ripz-replay-frame" class="ripz-replay-frame" title="Ripz replay" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen hidden></iframe>
@@ -364,6 +365,12 @@
         <div class="ripz-auction-drafts"><h3>Saved auction drafts</h3><div id="ripz-auction-draft-list"><p class="ripz-note">No auction drafts yet.</p></div></div>
       </div>
     </div>
+    <div id="ripz-viewer-upcoming-modal" class="ripz-viewer-upcoming-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ripz-viewer-upcoming-title">
+      <div class="ripz-viewer-upcoming-modal__panel">
+        <div class="ripz-auction-modal__head"><div><span class="ripz-kicker">RIPZ STREAM QUEUE</span><h2 id="ripz-viewer-upcoming-title">Upcoming Items</h2><p class="ripz-note">See what the host plans to auction next.</p></div><button id="ripz-viewer-upcoming-close" class="ripz-giveaway-modal__close" type="button" aria-label="Close upcoming items">×</button></div>
+        <div id="ripz-viewer-upcoming-list" class="ripz-viewer-upcoming__list"><p class="ripz-note">Loading upcoming items…</p></div>
+      </div>
+    </div>
     <div id="ripz-giveaway-modal" class="ripz-giveaway-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ripz-giveaway-modal-title">
       <div class="ripz-giveaway-modal__panel">
         <div class="ripz-giveaway-modal__head"><div><span class="ripz-kicker">RIPZ LIVE CONTROLS</span><h2 id="ripz-giveaway-modal-title">Giveaway control room</h2></div><button id="ripz-giveaway-close" class="ripz-giveaway-modal__close" type="button" aria-label="Close giveaway controls">×</button></div>
@@ -373,6 +380,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>
-  <script src="/js/ui/ripz.js?v=20261102-ripz-tcgcsv-auction-queue-v1"></script>
+  <script src="/js/ui/ripz.js?v=20261102-ripz-tcgcsv-live-search-viewer-queue-v2"></script>
 </body>
 </html>
