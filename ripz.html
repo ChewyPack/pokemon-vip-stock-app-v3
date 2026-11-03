@@ -164,9 +164,12 @@
     .ripz-host-dock{position:fixed;z-index:1200;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);padding:10px 12px;border:1px solid rgba(245,196,81,.5);border-radius:18px;background:rgba(5,16,39,.96);box-shadow:0 12px 38px rgba(0,0,0,.4);backdrop-filter:blur(14px)}
     .ripz-host-dock__live{display:flex;align-items:center;gap:7px;color:#f5c451;font-weight:850;font-size:.76rem;letter-spacing:.07em;padding:0 4px;white-space:nowrap}
     .ripz-host-dock .ripz-button{white-space:nowrap}.ripz-host-dock .ripz-button[aria-pressed="true"]{border-color:#a74456;background:#421a2b;color:#ffe5e9}
-    .ripz-auction-modal{position:fixed;z-index:1301;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,8,22,.84);backdrop-filter:blur(8px)}
+    .ripz-auction-modal{position:fixed;z-index:1301;inset:auto 16px 88px auto;display:block;width:min(560px,calc(100vw - 32px));padding:0;background:transparent;backdrop-filter:none;pointer-events:none}
     .ripz-auction-modal[hidden]{display:none!important}
-    .ripz-auction-modal__panel{position:relative;width:min(760px,100%);max-height:calc(100dvh - 32px);overflow:auto;border:1px solid rgba(145,171,213,.3);border-radius:22px;background:#091a3a;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.5);padding:20px}
+    .ripz-auction-modal__panel{position:relative;width:100%;max-height:min(76dvh,720px);overflow:auto;box-sizing:border-box;border:1px solid rgba(145,171,213,.38);border-radius:18px;background:#091a3a;color:#fff;box-shadow:0 18px 58px rgba(0,0,0,.52);padding:16px;pointer-events:auto}
+    .ripz-auction-modal__head{position:sticky;top:-16px;z-index:2;padding:4px 0 10px;background:#091a3a}
+    .ripz-auction-catalog{padding:10px}.ripz-auction-catalog__tools{grid-template-columns:112px minmax(0,1fr) auto}.ripz-auction-catalog__item{gap:8px;padding:7px}.ripz-auction-catalog__item img{width:42px;height:50px}
+    @media(max-width:560px){.ripz-auction-modal{inset:auto 8px calc(82px + env(safe-area-inset-bottom)) 8px;width:auto}.ripz-auction-modal__panel{max-height:70dvh;padding:12px}.ripz-auction-modal__head{top:-12px}.ripz-auction-catalog__tools{grid-template-columns:100px minmax(0,1fr)}.ripz-auction-catalog__tools .ripz-button{grid-column:1/-1}}
     .ripz-auction-catalog{grid-column:1/-1;padding:13px;border:1px solid #304765;border-radius:14px;background:#07142e}.ripz-auction-catalog h3{margin:0 0 5px;color:#fff}.ripz-auction-catalog__tools[hidden]{display:none!important}.ripz-auction-catalog__tools{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:8px;margin-top:10px}.ripz-auction-catalog__tools input,.ripz-auction-catalog__tools select{min-width:0;box-sizing:border-box;min-height:40px;padding:9px 10px;border:1px solid #3a5071;border-radius:9px;background:#091a3a;color:#fff;font:inherit}.ripz-auction-catalog__results{display:grid;gap:8px;margin-top:10px}.ripz-auction-catalog__item{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #304765;border-radius:10px;background:#0b1b35}.ripz-auction-catalog__item img{width:54px;height:64px;object-fit:contain;background:#fff;border-radius:6px}.ripz-auction-catalog__item>div{min-width:0;flex:1}.ripz-auction-catalog__item strong,.ripz-auction-catalog__item small{display:block}.ripz-auction-catalog__item small{color:#aebfd8;font-size:.74rem}.ripz-auction-catalog__divider{grid-column:1/-1;color:#aebfd8;font-size:.8rem;font-weight:800}.ripz-auction-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
     .ripz-auction-form label{display:flex;flex-direction:column;gap:6px;color:#c8d6eb;font-size:.84rem;font-weight:700}
     .ripz-auction-form label.ripz-auction-full{grid-column:1/-1}
@@ -178,31 +181,27 @@
     .ripz-auction-modal__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
     .ripz-auction-modal__head h2{margin:4px 0;color:#fff}
     @media(max-width:560px){.ripz-auction-catalog__tools{grid-template-columns:1fr}.ripz-auction-catalog__item{align-items:flex-start;flex-wrap:wrap}.ripz-auction-form{grid-template-columns:1fr}.ripz-auction-form label.ripz-auction-full{grid-column:auto}.ripz-auction-modal{padding:8px}.ripz-auction-modal__panel{padding:14px;max-height:calc(100dvh - 16px)}.ripz-auction-draft{align-items:flex-start;flex-direction:column}}
-    .ripz-auction-overlay{position:absolute;z-index:8;left:14px;right:14px;bottom:14px;max-width:520px;pointer-events:none}
+    .ripz-auction-overlay{position:absolute;z-index:8;right:10px;bottom:10px;width:min(292px,calc(100% - 20px));pointer-events:none}
     .ripz-auction-overlay[hidden]{display:none!important}
-    .ripz-auction-overlay__card{pointer-events:auto;overflow:hidden;border:1px solid rgba(127,180,255,.42);border-radius:16px;background:linear-gradient(145deg,rgba(5,18,43,.97),rgba(9,35,70,.96));color:#fff;box-shadow:0 16px 50px rgba(0,0,0,.45);backdrop-filter:blur(12px)}
-    .ripz-auction-overlay__top,.ripz-auction-overlay__actions{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px}
+    .ripz-auction-overlay__card{pointer-events:auto;overflow:hidden;border:1px solid rgba(127,180,255,.42);border-radius:12px;background:rgba(5,18,43,.91);color:#fff;box-shadow:0 8px 26px rgba(0,0,0,.32);backdrop-filter:blur(8px)}
+    .ripz-auction-overlay__top,.ripz-auction-overlay__actions{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:6px 8px}
     .ripz-auction-overlay__top{border-bottom:1px solid rgba(255,255,255,.1)}
-    .ripz-auction-overlay__live{display:flex;align-items:center;gap:7px;font-size:.7rem;font-weight:900;letter-spacing:.1em;color:#ff7474}
-    .ripz-auction-overlay__live i{width:7px;height:7px;border-radius:50%;background:#ff4d5d;box-shadow:0 0 12px #ff4d5d}
-    .ripz-auction-overlay__time{font-variant-numeric:tabular-nums;font-weight:900}
-    .ripz-auction-overlay__body{display:flex;gap:12px;padding:12px}
-    .ripz-auction-overlay__image{width:94px;height:112px;flex:0 0 94px;object-fit:contain;border-radius:10px;background:#07142e}
-    .ripz-auction-overlay__placeholder{display:grid;place-items:center;font-size:2rem}
-    .ripz-auction-overlay__details{min-width:0;display:flex;flex-direction:column;gap:5px}
-    .ripz-auction-overlay__details>strong{font-size:1rem;line-height:1.2}
-    .ripz-auction-overlay__details>span,.ripz-auction-overlay__price small{font-size:.72rem;color:#bdcce1}
-    .ripz-auction-overlay__price{display:flex;flex-direction:column;gap:1px;margin-top:auto}
-    .ripz-auction-overlay__price b{font-size:1.65rem;line-height:1.1;font-variant-numeric:tabular-nums}
-    .ripz-auction-overlay__actions{padding-top:0}
-    .ripz-auction-overlay__actions .ripz-button{min-height:42px;white-space:nowrap}
-    .ripz-auction-overlay__minimum,.ripz-auction-overlay__seller{font-size:.72rem;color:#bdcce1;text-align:right}
-    .ripz-auction-overlay__bids{list-style:none;display:flex;gap:12px;overflow:hidden;margin:0;padding:8px 12px 10px;border-top:1px solid rgba(255,255,255,.1)}
-    .ripz-auction-overlay__bids li{display:flex;gap:5px;align-items:center;white-space:nowrap;font-size:.68rem;color:#c8d6eb}
-    .ripz-auction-overlay__bids strong{color:#fff}
-    .ripz-auction-overlay__first{margin:0;padding:0 12px 10px;color:#bdcce1;font-size:.75rem}
-    .ripz-auction-draft .ripz-button{flex:0 0 auto}.ripz-auction-draft__actions{display:flex;gap:8px;flex-wrap:wrap}.ripz-auction-draft__actions .ripz-button{flex:0 0 auto}
-    @media(max-width:560px){.ripz-auction-overlay{left:7px;right:7px;bottom:7px}.ripz-auction-overlay__image{width:68px;height:86px;flex-basis:68px}.ripz-auction-overlay__body{gap:8px;padding:9px}.ripz-auction-overlay__price b{font-size:1.35rem}.ripz-auction-overlay__actions{align-items:flex-start;flex-direction:column}.ripz-auction-overlay__actions .ripz-button{width:100%}.ripz-auction-overlay__minimum,.ripz-auction-overlay__seller{text-align:left}}
+    .ripz-auction-overlay__live{display:flex;align-items:center;gap:5px;font-size:.61rem;font-weight:900;letter-spacing:.08em;color:#ff8585}
+    .ripz-auction-overlay__live i{width:6px;height:6px;border-radius:50%;background:#ff4d5d}
+    .ripz-auction-overlay__time{font-size:.72rem;font-variant-numeric:tabular-nums;font-weight:900}
+    .ripz-auction-overlay__body{display:flex;gap:8px;padding:8px;align-items:center}
+    .ripz-auction-overlay__image{width:48px;height:58px;flex:0 0 48px;object-fit:contain;border-radius:6px;background:#07142e}
+    .ripz-auction-overlay__placeholder{display:grid;place-items:center;font-size:1.3rem}
+    .ripz-auction-overlay__details{min-width:0;display:flex;flex-direction:column;gap:3px;flex:1}
+    .ripz-auction-overlay__details>strong{font-size:.78rem;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .ripz-auction-overlay__details>span,.ripz-auction-overlay__price small{font-size:.62rem;color:#bdcce1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ripz-auction-overlay__price{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;margin-top:2px}
+    .ripz-auction-overlay__price b{font-size:1.12rem;line-height:1.05;font-variant-numeric:tabular-nums}
+    .ripz-auction-overlay__actions{padding:0 8px 8px}
+    .ripz-auction-overlay__actions .ripz-button{min-height:34px;padding:7px 11px;font-size:.76rem;white-space:nowrap}
+    .ripz-auction-overlay__minimum,.ripz-auction-overlay__seller{font-size:.61rem;color:#bdcce1;text-align:right}
+    .ripz-auction-overlay__bids,.ripz-auction-overlay__first{display:none}
+    @media(max-width:560px){.ripz-auction-overlay{right:6px;bottom:6px;width:min(258px,calc(100% - 12px))}.ripz-auction-overlay__image{width:40px;height:48px;flex-basis:40px}.ripz-auction-overlay__body{gap:6px;padding:6px}.ripz-auction-overlay__actions{padding:0 6px 6px}.ripz-auction-overlay__actions .ripz-button{min-height:32px}}
     .ripz-giveaway-modal{position:fixed;z-index:1300;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,8,22,.82);backdrop-filter:blur(8px)}
     .ripz-giveaway-modal__panel{position:relative;width:min(760px,100%);max-height:calc(100dvh - 32px);overflow:auto;border:1px solid rgba(145,171,213,.3);border-radius:22px;background:#091a3a;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.5);padding:18px}
     .ripz-giveaway-modal__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -329,7 +328,7 @@
       <button id="ripz-host-giveaway" class="ripz-button" type="button" aria-expanded="false" aria-controls="ripz-giveaway-modal"><span aria-hidden="true">🎛️</span> Stream tools & giveaway</button>
       <button id="ripz-host-dock-end" class="ripz-button ripz-button--danger" type="button">End stream</button>
     </div>
-    <div id="ripz-auction-modal" class="ripz-auction-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ripz-auction-modal-title">
+    <div id="ripz-auction-modal" class="ripz-auction-modal" hidden role="dialog" aria-modal="false" aria-labelledby="ripz-auction-modal-title">
       <div class="ripz-auction-modal__panel">
         <div class="ripz-auction-modal__head">
           <div><span class="ripz-kicker">RIPZ LIVE CONTROLS</span><h2 id="ripz-auction-modal-title">Live auctions</h2><p class="ripz-note">Start a saved auction to feature it over the live video and accept viewer bids.</p></div>
@@ -380,6 +379,6 @@
     <p class="ripz-bottom-note">Be respectful in chat and only stream content you have the right to share. Streams are recorded for replay; recording and video delivery usage may be billed by Cloudflare Stream. End your stream when you finish ripping.</p>
   </main>
   <script src="/js/ui/site-nav.js?v=20261028-live-profile-rings-v1"></script>
-  <script src="/js/ui/ripz.js?v=20261102-ripz-tcgcsv-live-search-viewer-queue-v2"></script>
+  <script src="/js/ui/ripz.js?v=20261102-ripz-auction-compact-studio-v3"></script>
 </body>
 </html>
