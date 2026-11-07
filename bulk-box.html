@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06174A"><title>The Bulk Box | PokePrizePool</title>
+<meta name="description" content="Search Pokémon bulk cards listed by PokePrizePool members at simple price tiers.">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+.bulk-wrap{width:min(1240px,calc(100% - 28px));margin:28px auto 76px;color:#102b55}
+.bulk-hero{position:relative;overflow:hidden;padding:clamp(24px,4vw,42px);border-radius:20px;background:linear-gradient(125deg,#071b4b,#123d78 70%,#17638a);color:#fff;box-shadow:0 16px 40px #06174a25}
+.bulk-hero:after{content:"";position:absolute;width:300px;height:300px;right:-90px;top:-130px;border:1px solid #ffffff24;border-radius:50%;box-shadow:0 0 0 35px #ffffff0b,0 0 0 70px #ffffff08}
+.bulk-kicker{margin:0 0 8px;color:#9fd8ff;font-size:.76rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+.bulk-title{position:relative;z-index:1;margin:0;font-size:clamp(2.4rem,6vw,4.3rem);line-height:1;font-weight:1000;letter-spacing:-.045em}
+.bulk-intro{position:relative;z-index:1;max-width:700px;margin:14px 0 0;color:#e1edff;line-height:1.65}
+.bulk-tiers{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px;position:relative;z-index:1}
+.bulk-tier-chip{padding:7px 11px;border:1px solid #ffffff50;border-radius:999px;background:#ffffff12;color:#fff;font-size:.85rem;font-weight:900}
+.bulk-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) minmax(150px,210px) auto;gap:10px;margin:22px 0 10px}
+.bulk-toolbar input,.bulk-toolbar select,.bulk-form input,.bulk-form select{box-sizing:border-box;width:100%;min-height:46px;padding:10px 12px;border:1px solid #c8d6e9;border-radius:10px;background:#fff;color:#102b55;font:inherit}
+.bulk-toolbar button,.bulk-btn{min-height:44px;padding:10px 16px;border:0;border-radius:10px;background:#123d78;color:#fff;font:900 .9rem inherit;cursor:pointer}
+.bulk-toolbar button:hover,.bulk-btn:hover{background:#0b2a60}
+.bulk-status{min-height:1.5em;color:#536987;font-size:.9rem}
+.bulk-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:13px}
+.bulk-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;border:1px solid #d9e3f0;border-radius:14px;background:#fff;box-shadow:0 5px 18px #102b550b}
+.bulk-card-image{height:190px;display:grid;place-items:center;padding:10px;background:linear-gradient(145deg,#f5f8fc,#eaf1fb)}
+.bulk-card-image img{width:100%;height:100%;object-fit:contain}
+.bulk-card-body{display:flex;flex:1;flex-direction:column;padding:12px}
+.bulk-card h2{margin:0 0 6px;font-size:.98rem;line-height:1.3}
+.bulk-meta{margin:3px 0;color:#62748e;font-size:.8rem;line-height:1.45}
+.bulk-price{margin:8px 0;color:#0b3470;font-size:1.25rem;font-weight:1000}
+.bulk-card-footer{margin-top:auto;padding-top:8px;color:#64758c;font-size:.78rem}
+.bulk-empty{grid-column:1/-1;padding:32px;border:1px dashed #c5d4e8;border-radius:14px;background:#fff;text-align:center;color:#60728b}
+.bulk-panel{margin-top:34px;padding:22px;border:1px solid #dbe4f0;border-radius:16px;background:#fff;box-shadow:0 8px 24px #102b5508}
+.bulk-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.bulk-panel h2{margin:0;font-size:1.45rem}
+.bulk-muted{color:#61738c;line-height:1.5;font-size:.9rem}
+.bulk-form{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:10px;margin-top:16px}
+.bulk-form label{display:grid;gap:6px;color:#425a78;font-size:.8rem;font-weight:900}
+.bulk-form .wide{grid-column:span 2}
+.bulk-form-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.bulk-catalog{margin-top:12px;padding:14px;border:1px solid #dbe4f0;border-radius:12px;background:#f7faff}
+.bulk-catalog-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px}
+.bulk-catalog-result{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #d8e2ef;border-radius:9px;background:#fff;text-align:left;cursor:pointer;color:#17365f}
+.bulk-catalog-result img{width:44px;height:54px;object-fit:contain}
+.bulk-catalog-result small{display:block;color:#687b94}
+.bulk-mine{display:grid;gap:8px;margin-top:18px}
+.bulk-mine-row{display:grid;grid-template-columns:minmax(0,1fr) 90px 100px auto;gap:10px;align-items:center;padding:11px;border:1px solid #e0e8f2;border-radius:10px}
+.bulk-mine-row strong{display:block}.bulk-mine-row small{color:#64758c}
+.bulk-small-btn{padding:7px 10px;border:1px solid #cbd8e8;border-radius:8px;background:#fff;color:#183b6a;font-weight:800;cursor:pointer}
+.bulk-upload{margin-top:16px;padding:14px;border:1px dashed #b7c9e2;border-radius:12px;background:#f8fbff}
+.bulk-upload input{max-width:100%}
+@media(max-width:1050px){.bulk-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:760px){.bulk-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.bulk-form{grid-template-columns:repeat(2,minmax(0,1fr))}.bulk-form .wide{grid-column:span 2}}
+@media(max-width:520px){.bulk-toolbar{grid-template-columns:1fr}.bulk-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.bulk-card-image{height:150px}.bulk-card-body{padding:9px}.bulk-mine-row{grid-template-columns:1fr auto}.bulk-catalog-results{grid-template-columns:1fr}}
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+</head>
+<body>
+<div id="site-navigation"></div>
+<main class="bulk-wrap">
+<section class="bulk-hero">
+<p class="bulk-kicker">Member-to-member card inventory</p>
+<h1 class="bulk-title">The Bulk Box</h1>
+<p class="bulk-intro">Find the cards you need without digging through thousands of listings. Search member-listed bulk by card name, set, card number, condition, and price.</p>
+<div class="bulk-tiers"><span class="bulk-tier-chip">FREE</span><span class="bulk-tier-chip">$0.25</span><span class="bulk-tier-chip">$0.50</span><span class="bulk-tier-chip">$0.75</span><span class="bulk-tier-chip">$1</span><span class="bulk-tier-chip">$2</span><span class="bulk-tier-chip">$3</span><span class="bulk-tier-chip">$4</span><span class="bulk-tier-chip">$5</span></div>
+</section>
+<form id="bulk-search" class="bulk-toolbar" role="search">
+<input id="bulk-query" type="search" maxlength="80" placeholder="Search card name, set, card number, or seller…" aria-label="Search The Bulk Box">
+<select id="bulk-tier" aria-label="Filter by price"><option value="">All price tiers</option><option value="0">Free</option><option value="25">$0.25</option><option value="50">$0.50</option><option value="75">$0.75</option><option value="100">$1.00</option><option value="200">$2.00</option><option value="300">$3.00</option><option value="400">$4.00</option><option value="500">$5.00</option></select>
+<button type="submit">Search bulk</button>
+</form>
+<p id="bulk-status" class="bulk-status" role="status" aria-live="polite">Loading available cards…</p>
+<section id="bulk-results" class="bulk-grid" aria-label="Available bulk cards"><div class="bulk-empty">Loading The Bulk Box…</div></section>
+
+<section class="bulk-panel" id="bulk-manage">
+<div class="bulk-panel-head"><div><h2>Manage your bulk</h2><p class="bulk-muted">Add cards individually or import a CSV exported from Google Sheets. Each row becomes a card inventory entry with its own quantity and price tier.</p></div><a class="bulk-small-btn" href="/account?mode=login">Sign in</a></div>
+<div id="bulk-login-note" class="bulk-muted">Sign in to add and manage your bulk inventory. Browsing is open to everyone.</div>
+<form id="bulk-add-form" class="bulk-form" hidden>
+<input type="hidden" name="id"><input type="hidden" name="tcgcsv_product_id"><input type="hidden" name="image_url">
+<label class="wide">Card name<input name="item_name" maxlength="160" required placeholder="Search catalog or enter card name"></label>
+<label>Set<input name="set_name" maxlength="120" placeholder="Set name"></label>
+<label>Card number<input name="card_number" maxlength="50" placeholder="e.g. 025/198"></label>
+<label>Condition<select name="condition_label"><option>Near Mint</option><option>Lightly Played</option><option>Moderately Played</option><option>Heavily Played</option><option>Damaged</option></select></label>
+<label>Quantity<input name="quantity" type="number" min="1" max="9999" value="1" required></label>
+<label>Price tier<select name="price_cents"><option value="0">Free</option><option value="25">$0.25</option><option value="50">$0.50</option><option value="75">$0.75</option><option value="100">$1.00</option><option value="200">$2.00</option><option value="300">$3.00</option><option value="400">$4.00</option><option value="500">$5.00</option></select></label>
+<div class="wide bulk-catalog"><strong>Find card details in TCGCSV</strong><div style="display:flex;gap:8px;margin-top:8px"><input id="bulk-catalog-query" type="search" placeholder="Search card name or number" style="flex:1;min-width:0"><button class="bulk-small-btn" id="bulk-catalog-search" type="button">Search</button></div><div id="bulk-catalog-results" class="bulk-catalog-results"></div></div>
+<div class="wide bulk-form-actions"><button class="bulk-btn" type="submit">Add to Bulk Box</button><button class="bulk-small-btn" id="bulk-form-reset" type="button">Clear</button><span id="bulk-save-status" class="bulk-muted" role="status"></span></div>
+</form>
+<div class="bulk-upload" id="bulk-upload" hidden><strong>Import spreadsheet</strong><p class="bulk-muted">Upload a CSV exported from Google Sheets. Supported columns: card_name (or name), set, card_number, condition, quantity, price. Price accepts 0, 0.25, 0.50, 0.75, 1, 2, 3, 4, or 5.</p><input id="bulk-csv-file" type="file" accept=".csv,text/csv"><button id="bulk-import-button" class="bulk-small-btn" type="button">Import CSV</button><p id="bulk-import-status" class="bulk-muted" role="status"></p></div>
+<div id="bulk-my-items" class="bulk-mine"></div>
+</section>
+<p class="bulk-muted">The Bulk Box is a member listing directory. Contact sellers through their PokePrizePool profile to arrange a purchase. Inventory and checkout connections to member shops and RIPZ will be added as the next integration step.</p>
+</main>
+<script src="/js/ui/site-nav.js?v=20261107-bulk-box"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id),form=$('bulk-add-form'),status=$('bulk-status'),results=$('bulk-results');
+let mine=[],catalog=[];
+const money=c=>Number(c)===0?'FREE':'$'+(Number(c)/100).toFixed(2);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function request(url,options){const r=await fetch(url,{credentials:'same-origin',cache:'no-store',...(options||{})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.message||({login_required:'Please sign in first.'}[d.error])||d.error||'Request failed.');return d;}
+function card(item){return '<article class="bulk-card"><div class="bulk-card-image">'+(item.image_url?'<img loading="lazy" alt="" src="'+esc(item.image_url)+'">':'<span>Card image unavailable</span>')+'</div><div class="bulk-card-body"><h2>'+esc(item.item_name)+'</h2><p class="bulk-meta">'+esc(item.set_name||'Set not specified')+(item.card_number?' · #'+esc(item.card_number):'')+'</p><p class="bulk-meta">'+esc(item.condition_label||'Condition not specified')+' · Qty '+Number(item.quantity)+'</p><p class="bulk-price">'+money(item.price_cents)+'</p><div class="bulk-card-footer">Listed by <a href="/collector.html?user='+encodeURIComponent(item.username)+'">@'+esc(item.username)+'</a></div></div></article>';}
+async function load(){const p=new URLSearchParams();if($('bulk-query').value.trim())p.set('q',$('bulk-query').value.trim());if($('bulk-tier').value)p.set('tier',$('bulk-tier').value);status.textContent='Searching available cards…';try{const d=await request('/api/bulk-box?'+p.toString());results.innerHTML=d.items.length?d.items.map(card).join(''):'<div class="bulk-empty"><strong>No matching cards yet.</strong><br>Try another search or price tier.</div>';status.textContent=d.count+' available listing'+(d.count===1?'':'s')+' found.';if(d.authenticated){$('bulk-login-note').hidden=true;form.hidden=false;$('bulk-upload').hidden=false;mine=d.mine||[];renderMine();}else{$('bulk-login-note').hidden=false;form.hidden=true;$('bulk-upload').hidden=true;}}catch(e){status.textContent=e.message;results.innerHTML='<div class="bulk-empty">The Bulk Box could not be loaded. Please refresh and try again.</div>';}}
+function renderMine(){const root=$('bulk-my-items');root.innerHTML=mine.length?'<h3 style="margin:20px 0 4px">Your inventory ('+mine.length+')</h3>'+mine.map(i=>'<div class="bulk-mine-row"><div><strong>'+esc(i.item_name)+'</strong><small>'+esc(i.set_name||'')+(i.card_number?' · #'+esc(i.card_number):'')+' · '+esc(i.condition_label)+'</small></div><span>Qty '+i.quantity+'</span><strong>'+money(i.price_cents)+'</strong><span><button class="bulk-small-btn" data-edit="'+i.id+'">Edit</button> <button class="bulk-small-btn" data-delete="'+i.id+'">Delete</button></span></div>').join(''):'<p class="bulk-muted">You have not added any bulk cards yet.</p>';}
+form.addEventListener('submit',async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(form).entries());d.action='save';d.quantity=Number(d.quantity);d.price_cents=Number(d.price_cents);d.tcgcsv_product_id=d.tcgcsv_product_id?Number(d.tcgcsv_product_id):null;const button=form.querySelector('[type=submit]');button.disabled=true;$('bulk-save-status').textContent='Saving…';try{const out=await request('/api/bulk-box',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(d)});mine=out.mine||[];renderMine();form.reset();form.elements.id.value='';form.elements.tcgcsv_product_id.value='';form.elements.image_url.value='';$('bulk-save-status').textContent='Saved to your Bulk Box.';load();}catch(err){$('bulk-save-status').textContent=err.message;}finally{button.disabled=false;}});
+$('bulk-form-reset').addEventListener('click',()=>{form.reset();form.elements.id.value='';form.elements.tcgcsv_product_id.value='';form.elements.image_url.value='';});
+$('bulk-my-items').addEventListener('click',async e=>{const edit=e.target.closest('[data-edit]'),del=e.target.closest('[data-delete]');if(edit){const i=mine.find(x=>String(x.id)===edit.dataset.edit);if(i)for(const [k,v] of Object.entries({id:i.id,item_name:i.item_name,set_name:i.set_name,card_number:i.card_number,condition_label:i.condition_label,quantity:i.quantity,price_cents:i.price_cents,tcgcsv_product_id:i.tcgcsv_product_id,image_url:i.image_url}))if(form.elements[k])form.elements[k].value=v??'';form.scrollIntoView({behavior:'smooth',block:'center'});}if(del&&confirm('Remove this card from your Bulk Box?')){try{const d=await request('/api/bulk-box',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'delete',id:Number(del.dataset.delete)})});mine=d.mine||[];renderMine();load();}catch(err){alert(err.message);}}});
+$('bulk-catalog-search').addEventListener('click',async()=>{const q=$('bulk-catalog-query').value.trim();if(q.length<2){$('bulk-catalog-results').textContent='Enter at least two characters.';return;}try{const d=await request('/api/collector/catalog?'+new URLSearchParams({q,type:'single',limit:'12'}));catalog=d.products||[];$('bulk-catalog-results').innerHTML=catalog.map((p,i)=>'<button type="button" class="bulk-catalog-result" data-product="'+i+'">'+(p.image_url?'<img alt="" src="'+esc(p.image_url)+'">':'')+'<span><strong>'+esc(p.name)+'</strong><small>'+esc(p.set_name)+(p.card_number?' · #'+esc(p.card_number):'')+'</small></span></button>').join('')||'No catalog matches.';}catch(e){$('bulk-catalog-results').textContent=e.message;}});
+$('bulk-catalog-results').addEventListener('click',e=>{const b=e.target.closest('[data-product]');if(!b)return;const p=catalog[Number(b.dataset.product)];if(!p)return;form.elements.tcgcsv_product_id.value=p.tcgcsv_product_id||p.id;form.elements.item_name.value=p.name||'';form.elements.set_name.value=p.set_name||'';form.elements.card_number.value=p.card_number||'';form.elements.image_url.value=p.image_url||'';$('bulk-catalog-results').innerHTML='<p class="bulk-muted">Selected: '+esc(p.name)+'. Set quantity, condition, and price tier.</p>';});
+function parseCSV(text){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=false;else cell+=c;}else if(c==='"')quoted=true;else if(c===','){row.push(cell);cell='';}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell='';}else if(c!=='\r')cell+=c;}row.push(cell);if(row.some(x=>x.trim()))rows.push(row);if(rows.length<2)return [];const headers=rows.shift().map(x=>x.trim().toLowerCase().replace(/[ -]+/g,'_'));return rows.filter(r=>r.some(x=>x.trim())).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]||''])));}
+$('bulk-import-button').addEventListener('click',async()=>{const file=$('bulk-csv-file').files[0];if(!file){$('bulk-import-status').textContent='Choose a CSV file first.';return;}try{const rows=parseCSV(await file.text());const items=rows.map(r=>{const raw=String(r.price??r.price_tier??'').replace(/[$,]/g,'').trim();const price=Number(raw);return {item_name:r.card_name||r.item_name||r.name||r.product_name,set_name:r.set||r.set_name||r.expansion||'',card_number:r.card_number||r.number||r.no||'',condition:r.condition||r.condition_label||'Near Mint',quantity:Number(r.quantity||r.qty||1),price_cents:Math.round(price*100),image_url:r.image_url||r.image||''};});if(!items.length)throw new Error('No card rows found.');if(items.length>200)throw new Error('Import up to 200 rows at a time. Split the spreadsheet into smaller CSV files.');$('bulk-import-status').textContent='Importing '+items.length+' rows…';const d=await request('/api/bulk-box',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'import',items})});mine=d.mine||[];renderMine();$('bulk-import-status').textContent='Imported '+items.length+' cards successfully.';$('bulk-csv-file').value='';load();}catch(e){$('bulk-import-status').textContent=e.message;}});
+$('bulk-search').addEventListener('submit',e=>{e.preventDefault();load();});$('bulk-query').addEventListener('input',()=>{clearTimeout(window.bulkSearchTimer);window.bulkSearchTimer=setTimeout(load,300);});$('bulk-tier').addEventListener('change',load);
+load();
+})();
+</script>
+</body></html>
